@@ -1,0 +1,340 @@
+{
+ "hybrid": {
+  "k": 6,
+  "n": 12,
+  "context_recall": 0.917,
+  "context_precision_mrr": 0.806,
+  "chapter_hit": 1.0,
+  "rows": [
+   {
+    "text": "不锈钢保温杯 500ml / Stainless steel vacuum flask, 500 ml",
+    "expected": "9617.00",
+    "rank": 1,
+    "retrieved": [
+     "hs:9617.00",
+     "hs:7010.90",
+     "hs:3923.30",
+     "hs:7310.21",
+     "hs:7613.00",
+     "hs:3907.61"
+    ]
+   },
+   {
+    "text": "纯棉针织T恤 / Cotton T-shirts, knitted",
+    "expected": "6109.10",
+    "rank": 3,
+    "retrieved": [
+     "hs:6105.10",
+     "hs:6106.10",
+     "hs:6109.10",
+     "hs:6109.90",
+     "hs:6105.90",
+     "hs:6205.20"
+    ]
+   },
+   {
+    "text": "塑料玩具车 / Plastic toy cars",
+    "expected": "9503.00",
+    "rank": 1,
+    "retrieved": [
+     "hs:9503.00",
+     "hs:9508.30",
+     "hs:9508.23",
+     "hs:9508.22",
+     "hs:8716.80",
+     "hs:9505.90"
+    ]
+   },
+   {
+    "text": "无线蓝牙耳机 / Wireless Bluetooth earphones",
+    "expected": "8518.30",
+    "rank": 1,
+    "retrieved": [
+     "hs:8518.30",
+     "hs:8518.90",
+     "hs:8517.11",
+     "hs:8517.79",
+     "hs:8517.13",
+     "hs:8517.14"
+    ]
+   },
+   {
+    "text": "不锈钢六角螺栓 / Stainless steel hexagon bolts, threaded",
+    "expected": "7318.15",
+    "rank": 1,
+    "retrieved": [
+     "hs:7318.15",
+     "hs:7318.12",
+     "hs:7415.33",
+     "hs:7318.19",
+     "hs:7318.11",
+     "hs:7318.16"
+    ]
+   },
+   {
+    "text": "家用塑料收纳箱 / Plastic storage boxes for household use",
+    "expected": "3924.90",
+    "rank": 3,
+    "retrieved": [
+     "hs:3923.10",
+     "hs:4819.60",
+     "hs:3924.90",
+     "hs:3923.30",
+     "hs:3924.10",
+     "hs:3923.90"
+    ]
+   },
+   {
+    "text": "硅胶手机壳 / Silicone mobile phone cases",
+    "expected": "3926.90",
+    "rank": null,
+    "retrieved": [
+     "hs:9111.80",
+     "hs:9112.20",
+     "hs:9111.20",
+     "hs:3910.00",
+     "hs:3923.10",
+     "hs:4016.10"
+    ]
+   },
+   {
+    "text": "LED台灯 USB供电 / LED desk lamp, USB powered",
+    "expected": "9405.21",
+    "rank": 1,
+    "retrieved": [
+     "hs:9405.21",
+     "hs:8539.52",
+     "hs:9405.29",
+     "hs:8539.49",
+     "hs:8539.51",
+     "hs:8539.10"
+    ]
+   },
+   {
+    "text": "工业缝纫机钢制梭芯套 / Steel bobbin cases for industrial sewing machines",
+    "expected": "8452.90",
+    "rank": 1,
+    "retrieved": [
+     "hs:8452.90",
+     "hs:8452.29",
+     "hs:8452.21",
+     "hs:8452.10",
+     "hs:8452.30",
+     "hs:8448.51"
+    ]
+   },
+   {
+    "text": "真皮女式手提包 / Women's handbags with outer surface of leather",
+    "expected": "4202.21",
+    "rank": 1,
+    "retrieved": [
+     "hs:4202.21",
+     "hs:4202.31",
+     "hs:4202.11",
+     "hs:4202.91",
+     "hs:4202.29",
+     "hs:4202.22"
+    ]
+   },
+   {
+    "text": "男式纯棉牛仔裤 梭织 / Men's cotton denim trousers, woven",
+    "expected": "6203.42",
+    "rank": 1,
+    "retrieved": [
+     "hs:6203.42",
+     "hs:6103.22",
+     "hs:6203.22",
+     "hs:6103.42",
+     "hs:6103.49",
+     "hs:6103.32"
+    ]
+   },
+   {
+    "text": "女式运动鞋 橡胶底纺织面 / Women's sports shoes, rubber outer sole, textile upper",
+    "expected": "6404.11",
+    "rank": 1,
+    "retrieved": [
+     "hs:6404.11",
+     "hs:6404.19",
+     "hs:6402.99",
+     "hs:6403.99",
+     "hs:6402.20",
+     "hs:6401.99"
+    ]
+   }
+  ]
+ },
+ "vector_only": {
+  "k": 6,
+  "n": 12,
+  "context_recall": 0.917,
+  "context_precision_mrr": 0.819,
+  "chapter_hit": 1.0,
+  "rows": [
+   {
+    "text": "不锈钢保温杯 500ml / Stainless steel vacuum flask, 500 ml",
+    "expected": "9617.00",
+    "rank": 1,
+    "retrieved": [
+     "hs:9617.00",
+     "hs:7010.90",
+     "hs:3923.30",
+     "hs:7310.21",
+     "hs:7010.20",
+     "hs:7613.00"
+    ]
+   },
+   {
+    "text": "纯棉针织T恤 / Cotton T-shirts, knitted",
+    "expected": "6109.10",
+    "rank": 1,
+    "retrieved": [
+     "hs:6109.10",
+     "hs:6105.10",
+     "hs:6106.10",
+     "hs:6107.91",
+     "hs:6205.20",
+     "hs:6109.90"
+    ]
+   },
+   {
+    "text": "塑料玩具车 / Plastic toy cars",
+    "expected": "9503.00",
+    "rank": 1,
+    "retrieved": [
+     "hs:9503.00",
+     "hs:9508.23",
+     "hs:9508.22",
+     "hs:9508.25",
+     "hs:9508.30",
+     "hs:9505.90"
+    ]
+   },
+   {
+    "text": "无线蓝牙耳机 / Wireless Bluetooth earphones",
+    "expected": "8518.30",
+    "rank": 1,
+    "retrieved": [
+     "hs:8518.30",
+     "hs:8517.11",
+     "hs:8517.79",
+     "hs:8518.21",
+     "hs:8518.90",
+     "hs:8517.14"
+    ]
+   },
+   {
+    "text": "不锈钢六角螺栓 / Stainless steel hexagon bolts, threaded",
+    "expected": "7318.15",
+    "rank": 3,
+    "retrieved": [
+     "hs:7318.19",
+     "hs:7318.29",
+     "hs:7318.15",
+     "hs:7318.11",
+     "hs:7318.16",
+     "hs:7318.13"
+    ]
+   },
+   {
+    "text": "家用塑料收纳箱 / Plastic storage boxes for household use",
+    "expected": "3924.90",
+    "rank": 1,
+    "retrieved": [
+     "hs:3924.90",
+     "hs:3923.10",
+     "hs:3923.30",
+     "hs:3924.10",
+     "hs:3923.90",
+     "hs:3925.10"
+    ]
+   },
+   {
+    "text": "硅胶手机壳 / Silicone mobile phone cases",
+    "expected": "3926.90",
+    "rank": null,
+    "retrieved": [
+     "hs:3910.00",
+     "hs:3923.10",
+     "hs:9111.80",
+     "hs:4016.10",
+     "hs:9111.20",
+     "hs:4015.90"
+    ]
+   },
+   {
+    "text": "LED台灯 USB供电 / LED desk lamp, USB powered",
+    "expected": "9405.21",
+    "rank": 1,
+    "retrieved": [
+     "hs:9405.21",
+     "hs:8513.10",
+     "hs:8539.52",
+     "hs:8539.22",
+     "hs:8539.49",
+     "hs:9405.31"
+    ]
+   },
+   {
+    "text": "工业缝纫机钢制梭芯套 / Steel bobbin cases for industrial sewing machines",
+    "expected": "8452.90",
+    "rank": 1,
+    "retrieved": [
+     "hs:8452.90",
+     "hs:8448.51",
+     "hs:8448.39",
+     "hs:8448.59",
+     "hs:8448.31",
+     "hs:8448.33"
+    ]
+   },
+   {
+    "text": "真皮女式手提包 / Women's handbags with outer surface of leather",
+    "expected": "4202.21",
+    "rank": 2,
+    "retrieved": [
+     "hs:4202.31",
+     "hs:4202.21",
+     "hs:4202.11",
+     "hs:4202.29",
+     "hs:4202.91",
+     "hs:4203.40"
+    ]
+   },
+   {
+    "text": "男式纯棉牛仔裤 梭织 / Men's cotton denim trousers, woven",
+    "expected": "6203.42",
+    "rank": 1,
+    "retrieved": [
+     "hs:6203.42",
+     "hs:6103.42",
+     "hs:6207.11",
+     "hs:6103.22",
+     "hs:6107.11",
+     "hs:6107.91"
+    ]
+   },
+   {
+    "text": "女式运动鞋 橡胶底纺织面 / Women's sports shoes, rubber outer sole, textile upper",
+    "expected": "6404.11",
+    "rank": 1,
+    "retrieved": [
+     "hs:6404.11",
+     "hs:6404.19",
+     "hs:6402.19",
+     "hs:6404.20",
+     "hs:6403.19",
+     "hs:6403.99"
+    ]
+   }
+  ]
+ },
+ "usage": {
+  "prompt_tokens": 3043,
+  "completion_tokens": 595,
+  "total_tokens": 3638,
+  "cost_usd": 0.0008134500000000001,
+  "cost_eur": 0.000748374,
+  "calls": 12
+ }
+}

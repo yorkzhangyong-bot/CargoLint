@@ -69,12 +69,13 @@ def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCal
     translated = translate_and_expand(client, line)
     queries = list(translated.queries) + ([translated.hyde] if translated.hyde else [])
     mode = "hybrid" if ctx.hybrid else "vector_only"
-    chunks, trace = kb.retriever.search(queries, chapter_filter=None, mode=mode, k=ctx.k)
+    query_vectors = kb.retriever.embed_queries(queries)  # one embedding request per line
+    chunks, trace = kb.retriever.search(queries, chapter_filter=None, mode=mode, k=ctx.k, query_vectors=query_vectors)
     chapter_filter = None
     filter_reason = "none"
     history_chapters = _history_chapters(ctx.shipper_history_codes)
     if history_chapters:
-        boosted, trace2 = kb.retriever.search(queries, chapter_filter=history_chapters, mode=mode, k=ctx.k)
+        boosted, trace2 = kb.retriever.search(queries, chapter_filter=history_chapters, mode=mode, k=ctx.k, query_vectors=query_vectors)
         by_id = {c.id: c for c in [*chunks, *boosted]}
         fused = rrf([[c.id for c in chunks], [c.id for c in boosted]])
         chunks = [by_id[i] for i, _ in fused][: ctx.k]

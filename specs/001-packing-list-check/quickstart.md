@@ -125,10 +125,12 @@ the "What I can and cannot do" panel (FR-019, FR-026).
 
 ### S6 — Scale (SC-005)
 
-1. `python tests/eval/make_big_list.py --lines 100` generates a 100-line spreadsheet from the
-   labelled and sample lines.
-2. Upload it → first progress step within 2 s; all lines checked or failed within 5 minutes;
-   the table and counts render; a 201-line file is rejected whole with the cap stated (FR-006).
+1. `python tests/eval/make_big_list.py --lines 100` and `--lines 201` generate the spreadsheets from
+   the labelled and sample lines; `python tests/eval/scale_check.py` runs the check headlessly and
+   writes `tests/eval/scale.json`.
+2. Upload it (or read `scale.json`) → first progress step within 2 s; all lines checked or failed
+   within 5 minutes; the table and counts render; a 201-line file is rejected whole with the cap
+   stated (FR-006). Measured 2026-10-14: 1.6 s / 130 s / 0 failed / €0.05.
 
 ## 7. Done when
 

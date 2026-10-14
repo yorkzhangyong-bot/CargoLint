@@ -137,13 +137,35 @@ puts at `7318.19`). Both modes miss silicone mobile phone cases (`3923.10` packa
 design illustration on 10/12 lines; the other two are legitimate model confidences (LED desk lamp
 95 → auto-accept, bare "Furniture" 40 → ask the shipper).
 
+Retrieval alone (`python tests/eval/ragas_eval.py`, RAGAs-style context metrics against the reference
+chunk, no LLM judge), k = 6, 12 clear lines: context recall 92 % in both modes, context precision
+(MRR) 0.81 hybrid / 0.82 vector-only, chapter hit 100 %. The phone-case miss is a retrieval miss —
+the `3926.90` chunk is never among the six candidates — so better query expansion ("protective
+cover"), not better ranking, is the fix.
+
+Scale (`python tests/eval/scale_check.py`, 100 generated lines, six workers): first progress step
+after 1.6 s, all 100 lines checked in 130 s, none failed, €0.05; a 201-line file is rejected whole
+before any model call. (The first run took 484 s because every expansion query was embedded with its
+own API call; the queries of a line are now embedded in one request and reused by the history boost.)
+
+Live budget (`pytest -m live`): the 12-line sample plus two follow-up questions = 40.6k tokens,
+36 calls, €0.007.
+
+Manual checks (not automated): moving the threshold slider re-routes lines instantly without a model
+call; uploading a second file while a shipment is open asks for confirmation; the CSV/JSON downloads
+open with Chinese text intact.
+
 ## Known weaknesses and next steps
 
 - Confidence is model-estimated and only loosely calibrated against 20 labelled lines; it must not be
   read as a probability.
 - Chinese product slang and brand-only names still miss; the hybrid index helps but does not solve it.
 - Classification confusions remain where the nomenclature itself is subtle (protective phone cases vs
-  packaging cases).
+  packaging cases; aluminium bicycle frames landed in aluminium structures `7610.90` instead of
+  `8714.91` in one live run) — and the model occasionally auto-accepts such a wrong code at high
+  confidence, which is why the threshold is adjustable and the audit trail exists.
+- `gpt-4o-mini` sometimes skips `lookup_precedent`; the completeness guard runs it, so results are
+  complete, but the progress block then shows the step as "run by the app".
 - BTI coverage: the demo subset holds 192 rulings (all German-language) for the ten target chapters;
   the full subset (73,899 valid rulings) is a loader option. Rulings must be refreshed as they expire.
 - OCR on phone photos is the weakest input path (RapidOCR, PP-OCR models); quantities and values are

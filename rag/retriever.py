@@ -70,6 +70,15 @@ class BM25Index:
 
 class VectorSearch(Protocol):
     def search(self, query: str, k: int, chapter_filter: list[str] | None) -> list[tuple[str, float]]: ...
+    def embed_queries(self, queries: list[str]) -> list[list[float]]: ...
+    def search_by_vector(self, vector: list[float], k: int, chapter_filter: list[str] | None) -> list[tuple[str, float]]: ...
+
+
+def _embed_queries(embeddings: Any, queries: list[str]) -> list[list[float]]:
+    fn = getattr(embeddings, "embed_queries", None)
+    if callable(fn):
+        return fn(queries)
+    return [embeddings.embed_query(q) for q in queries]
 
 
 class InMemoryVectorSearch:
@@ -87,8 +96,11 @@ class InMemoryVectorSearch:
         n = math.sqrt(sum(x * x for x in v)) or 1.0
         return [x / n for x in v]
 
-    def search(self, query: str, k: int, chapter_filter: list[str] | None = None) -> list[tuple[str, float]]:
-        q = self._norm(self.embeddings.embed_query(query))
+    def embed_queries(self, queries: list[str]) -> list[list[float]]:
+        return _embed_queries(self.embeddings, queries)
+
+    def search_by_vector(self, vector: list[float], k: int, chapter_filter: list[str] | None = None) -> list[tuple[str, float]]:
+        q = self._norm(vector)
         scored = []
         for doc_id, vec in zip(self.ids, self.vectors):
             if chapter_filter and self.meta.get(doc_id, {}).get("chapter") not in chapter_filter:
@@ -97,6 +109,9 @@ class InMemoryVectorSearch:
         scored.sort(key=lambda t: -t[1])
         return scored[:k]
 
+    def search(self, query: str, k: int, chapter_filter: list[str] | None = None) -> list[tuple[str, float]]:
+        return self.search_by_vector(self.embeddings.embed_query(query), k, chapter_filter)
+
 
 class ChromaVectorSearch:
     """Persisted Chroma collection (cosine space) behind the VectorSearch protocol."""
@@ -104,8 +119,17 @@ class ChromaVectorSearch:
     def __init__(self, persist_dir: Path | str, embeddings: Any, collection_name: str = "cn2026") -> None:
         from langchain_chroma import Chroma
 
+        self.embeddings = embeddings
         self.store = Chroma(collection_name=collection_name, embedding_function=embeddings, persist_directory=str(persist_dir),
                             collection_metadata={"hnsw:space": "cosine"})
+
+    def embed_queries(self, queries: list[str]) -> list[list[float]]:
+        return _embed_queries(self.embeddings, queries)
+
+    def search_by_vector(self, vector: list[float], k: int, chapter_filter: list[str] | None = None) -> list[tuple[str, float]]:
+        where = {"chapter": {"$in": list(chapter_filter)}} if chapter_filter else None
+        results = self.store.similarity_search_by_vector_with_relevance_scores(embedding=vector, k=k, filter=where)
+        return [((getattr(doc, "id", None) or doc.metadata.get("id")), float(score)) for doc, score in results]
 
     def add(self, docs: list[tuple[str, str, dict]], batch_size: int = 256) -> int:
         n = 0
@@ -142,16 +166,21 @@ class HybridRetriever:
             return self.chunks.get(code)
         return self.chunks.get(doc_id)
 
+    def embed_queries(self, queries: list[str]) -> list[list[float]]:
+        """Embed all queries in one request so both the plain and the chapter-boosted search reuse them."""
+        clean = [q for q in queries if q and q.strip()]
+        return self.vectors.embed_queries(clean) if clean else []
+
     def search(self, queries: list[str], chapter_filter: list[str] | None = None, mode: str = "hybrid",
-               k: int | None = None) -> tuple[list[NomenclatureChunk], dict[str, Any]]:
+               k: int | None = None, query_vectors: list[list[float]] | None = None) -> tuple[list[NomenclatureChunk], dict[str, Any]]:
         k = k or self.k
         rankings: list[list[str]] = []
         vec_ranks: dict[str, int] = {}
         bm25_ranks: dict[str, int] = {}
-        for q in queries:
-            if not q or not q.strip():
-                continue
-            vhits = [d for d, _ in self.vectors.search(q, k * 2, chapter_filter)]
+        clean = [q for q in queries if q and q.strip()]
+        vectors = query_vectors if query_vectors is not None else self.embed_queries(clean)
+        for q, qvec in zip(clean, vectors):
+            vhits = [d for d, _ in self.vectors.search_by_vector(qvec, k * 2, chapter_filter)]
             rankings.append(vhits)
             for r, d in enumerate(vhits, start=1):
                 vec_ranks[d] = min(vec_ranks.get(d, r), r)

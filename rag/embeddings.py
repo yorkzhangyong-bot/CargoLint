@@ -38,6 +38,9 @@ class FakeEmbeddings(Embeddings):
     def embed_query(self, text: str) -> list[float]:
         return self._vec(text)
 
+    def embed_queries(self, texts: list[str]) -> list[list[float]]:
+        return [self._vec(t) for t in texts]
+
 
 class OpenRouterEmbeddings(Embeddings):
     """POST /api/v1/embeddings with `input_type` and provider pinning; records usage.cost."""
@@ -89,6 +92,13 @@ class OpenRouterEmbeddings(Embeddings):
 
     def embed_query(self, text: str) -> list[float]:
         return self._call([text], "search_query")[0]
+
+    def embed_queries(self, texts: list[str]) -> list[list[float]]:
+        """All of a line's queries in one request (the expensive part of classify_hs6 at scale)."""
+        out: list[list[float]] = []
+        for i in range(0, len(texts), self.batch_size):
+            out.extend(self._call(texts[i:i + self.batch_size], "search_query"))
+        return out
 
 
 def get_embeddings(settings: Settings | None = None, usage_sink: Callable[[Usage], None] | None = None) -> Embeddings:

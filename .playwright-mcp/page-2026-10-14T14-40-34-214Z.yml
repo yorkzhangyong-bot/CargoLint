@@ -1,0 +1,105 @@
+- generic [ref=f1e2]:
+  - generic [ref=f1e11]:
+    - heading "CargoLint" [level=1] [ref=f1e15]
+    - paragraph [ref=f1e20]: Description check · HS-6 suggestions · ICS2 house filings
+    - heading "Packing list / invoice" [level=3] [ref=f1e24]
+    - region "Drag and drop files here" [ref=f1e27] [cursor=pointer]:
+      - button "file upload"
+      - button "upload Upload" [ref=f1e29]:
+        - generic [ref=f1e31]:
+          - generic [ref=f1e32]: upload
+          - paragraph [ref=f1e36]: Upload
+      - generic [ref=f1e37]: 20MB per file • XLSX, CSV, PDF, JPG, PNG
+    - paragraph [ref=f1e44]: Limit 20MB · XLSX, CSV, PDF, JPG, PNG
+    - generic [ref=f1e283]:
+      - paragraph [ref=f1e290]:
+        - text: 📄
+        - strong [ref=f1e291]: sample_packing_list.xlsx
+        - text: 6 KB
+      - button [ref=f1e299] [cursor=pointer]:
+        - paragraph [ref=f1e300]: ✕
+    - heading "Shipment" [level=3] [ref=f1e304]
+    - generic [ref=f1e50]:
+      - paragraph [ref=f1e54]: Your reference
+      - textbox "Your reference" [ref=f1e57]:
+        - /placeholder: HOL-2026-10-…
+        - text: HOL-2026-10-0472
+    - generic [ref=f1e306]:
+      - paragraph [ref=f1e310]: Shipper
+      - group [ref=f1e312]:
+        - combobox "Shipper" [ref=f1e313]: Detect from file
+        - button "Open" [ref=f1e314] [cursor=pointer]
+    - generic [ref=f1e319]:
+      - paragraph [ref=f1e323]: Filing
+      - group [ref=f1e325]:
+        - combobox "Filing" [ref=f1e326]: ICS2 house (ENS)
+        - button "Open" [ref=f1e327] [cursor=pointer]
+    - heading "Rules" [level=3] [ref=f1e334]
+    - generic [ref=f1e90]:
+      - generic [ref=f1e91]:
+        - paragraph [ref=f1e94]: Auto-accept threshold
+        - button "Help for Auto-accept threshold" [ref=f1e98] [cursor=pointer]
+      - group "Auto-accept threshold" [ref=f1e102]:
+        - generic [ref=f1e103]:
+          - generic [ref=f1e104]:
+            - slider "Auto-accept threshold Auto-accept threshold" [ref=f1e106]: "85"
+            - generic:
+              - generic:
+                - paragraph: 85%
+          - generic:
+            - generic:
+              - paragraph: 60%
+            - generic:
+              - paragraph: 99%
+    - generic [ref=f1e109] [cursor=pointer]:
+      - switch "Hybrid search" [checked] [ref=f1e111]
+      - generic [ref=f1e114]:
+        - paragraph [ref=f1e118]: Hybrid search
+        - button "Help for Hybrid search" [ref=f1e122]
+    - paragraph [ref=f1e339]: "Knowledge base: HS 2022 / CN 2026 — 5,612 subheadings · ICS2 lists (480 terms) · firm stop-words (32) · 192 BTI rulings · updated 2026-10-14"
+    - generic [ref=f1e341]:
+      - generic [ref=f1e346]:
+        - paragraph [ref=f1e350]: Tokens this shipment
+        - paragraph [ref=f1e353]: "0"
+      - generic [ref=f1e358]:
+        - generic [ref=f1e359]:
+          - paragraph [ref=f1e362]: Cost
+          - button "Help for Cost" [ref=f1e366] [cursor=pointer]
+        - paragraph [ref=f1e372]: €0.00
+    - paragraph [ref=f1e377]: Model via OpenRouter (openai/gpt-4o-mini) · knowledge base updated 2026-10-14
+    - button [disabled] [ref=f1e171]:
+      - paragraph [ref=f1e176]: Export results (CSV)
+    - button [disabled] [ref=f1e179]:
+      - paragraph [ref=f1e184]: Export results (JSON)
+  - generic [ref=f1e3]:
+    - banner [ref=f1e187]:
+      - generic [ref=f1e190]:
+        - generic [ref=f1e393]:
+          - img "Running..." [ref=f1e394]
+          - button "Stop" [ref=f1e399] [cursor=pointer]
+        - button "Deploy" [ref=f1e192] [cursor=pointer]
+        - button "Main menu" [ref=f1e196] [cursor=pointer]
+    - generic [active] [ref=f1e200]:
+      - generic [ref=f1e202]:
+        - generic [ref=f1e204]:
+          - generic [ref=f1e205]: smart_toy
+          - generic "Chat message from assistant" [ref=f1e208]:
+            - generic [ref=f1e209]:
+              - paragraph [ref=f1e214]: "Hi. I catch cargo descriptions customs will reject before you file ICS2. Upload a packing list or invoice on the left (Chinese, English or mixed), or paste a few lines below. For every line I flag vague and stop-word descriptions, suggest the top-3 HS-6 codes with reasoning and a precedent ruling, and route it: auto-accept, human review, or ask the shipper. When the shipper replies, paste the answer back and I update only that line."
+              - generic [ref=f1e216]:
+                - button [ref=f1e224] [cursor=pointer]:
+                  - paragraph [ref=f1e229]: Try one description
+                - button [ref=f1e237] [cursor=pointer]:
+                  - paragraph [ref=f1e242]: Use the sample packing list
+                - button [ref=f1e250] [cursor=pointer]:
+                  - paragraph [ref=f1e255]: Which terms does customs reject?
+              - group [ref=f1e258]:
+                - generic "keyboard_arrow_right What I can and cannot do" [ref=f1e259] [cursor=pointer]:
+                  - generic [ref=f1e260]:
+                    - generic [ref=f1e261]: keyboard_arrow_right
+                    - paragraph [ref=f1e265]: What I can and cannot do
+        - group [ref=f1e380]:
+          - paragraph [ref=f1e387] [cursor=pointer]: Checking…
+      - generic [ref=f1e274]:
+        - textbox "Paste descriptions (one per line) or ask a classification question…" [ref=f1e276]
+        - button "Send message" [disabled] [ref=f1e278]

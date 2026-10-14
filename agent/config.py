@@ -72,7 +72,7 @@ def load_settings(env: dict | None = None) -> Settings:
         embed_model=e.get("CARGOLINT_EMBED_MODEL") or "qwen/qwen3-embedding-8b",
         structured_method=e.get("CARGOLINT_STRUCTURED_METHOD") or "json_schema",
         usd_eur=float(e.get("CARGOLINT_USD_EUR") or 0.92),
-        workers=int(e.get("CARGOLINT_WORKERS") or 4),
+        workers=int(e.get("CARGOLINT_WORKERS") or 6),
         ocr_min_score=float(e.get("CARGOLINT_OCR_MIN_SCORE") or 0.6),
     )
 
