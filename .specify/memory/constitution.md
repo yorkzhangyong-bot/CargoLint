@@ -1,32 +1,3 @@
-<!--
-SYNC IMPACT REPORT (temporary review scratch; remove before committing this file)
-Version change: (unfilled template, no earlier version) → 1.0.0
-Bump rationale: first ratification of a fresh project. 1.0.0 is the baseline; there is no
-  earlier governance to be incompatible with.
-Modified principles: none (initial adoption). Template slots PROJECT_NAME and PRINCIPLE_1..5
-  were filled and two principles added (seven in total) so that the architecture and the UI
-  design are each covered by a principle.
-Added sections: Core Principles I–VII; Product Scope, Architecture & Technology Constraints;
-  Development Workflow & Quality Gates; Governance.
-Removed sections: none (template example comments dropped).
-Sources: CargoLint_Project_Intro.md (background, requirements, architecture, security, data,
-  plan) and "CargoLint — MVP screens.html" (start screen, post-check screen, architecture board).
-Dependent templates (not modified by this command):
-  - tasks-template.md marks tests OPTIONAL; Principle VII overrides that default for guardrail
-    code and says so explicitly.
-  - plan-template.md "Constitution Check" gates are Principles I–VII.
-Deferred placeholders: none.
-Mockup vs intro differences, resolved conservatively; confirm with the author:
-  1. The mockup offers filing "Import declaration (ATLAS)"; the intro puts import declarations
-     on the roadmap. Treated as out of scope: ICS2 house (ENS) is the only MVP filing type.
-  2. The mockup knowledge-base caption lists chapters 39/42/61–64/73/84/85/94/95/96 only; intro
-     section 10 indexes the full nomenclature and limits only the BTI rulings to those chapters.
-     The intro is followed; the caption must state what is really indexed.
-  3. BTI size: about 200 rulings in the mockup and diagram, tens of thousands in the intro's
-     dataset table. No number is fixed here.
-  4. The mockup mentions a consignee profile; the intro's dataset list has none. Left to the spec.
--->
-
 # CargoLint Constitution
 
 ## Core Principles
