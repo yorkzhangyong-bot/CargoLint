@@ -1,0 +1,20 @@
+{"id": 1, "text_zh": "配件", "text_en": "Parts", "expected_flag": "vague", "expected_code": null, "note": "ICS2 term 'parts'; no product information"}
+{"id": 2, "text_zh": "电子产品", "text_en": "Electronic products", "expected_flag": "vague", "expected_code": null, "note": "ICS2 term 'electronics'"}
+{"id": 3, "text_zh": "家具", "text_en": "Furniture", "expected_flag": "vague", "expected_code": null, "note": "ICS2 term 'furniture'"}
+{"id": 4, "text_zh": "服装", "text_en": "Apparel", "expected_flag": "vague", "expected_code": null, "note": "ICS2 term 'apparel'"}
+{"id": 5, "text_zh": "五金", "text_en": "Hardware", "expected_flag": "vague", "expected_code": null, "note": "ICS2 term 'hardware'"}
+{"id": 6, "text_zh": "礼品", "text_en": "Gift", "expected_flag": "stop_word", "expected_code": null, "note": "firm stop-word 'gift'"}
+{"id": 7, "text_zh": "样品", "text_en": "Samples", "expected_flag": "stop_word", "expected_code": null, "note": "firm stop-word 'samples'"}
+{"id": 8, "text_zh": "个人物品", "text_en": "Personal effects", "expected_flag": "stop_word", "expected_code": null, "note": "firm stop-word 'personal effects'"}
+{"id": 9, "text_zh": "不锈钢保温杯 500ml", "text_en": "Stainless steel vacuum flask, 500 ml", "expected_flag": "ok", "expected_code": "9617.00", "note": "vacuum flasks, chapter 96"}
+{"id": 10, "text_zh": "纯棉针织T恤", "text_en": "Cotton T-shirts, knitted", "expected_flag": "ok", "expected_code": "6109.10", "note": "T-shirts of cotton, knitted, chapter 61"}
+{"id": 11, "text_zh": "塑料玩具车", "text_en": "Plastic toy cars", "expected_flag": "ok", "expected_code": "9503.00", "note": "toys, chapter 95"}
+{"id": 12, "text_zh": "无线蓝牙耳机", "text_en": "Wireless Bluetooth earphones", "expected_flag": "ok", "expected_code": "8518.30", "note": "headphones and earphones, chapter 85"}
+{"id": 13, "text_zh": "不锈钢六角螺栓", "text_en": "Stainless steel hexagon bolts, threaded", "expected_flag": "ok", "expected_code": "7318.15", "note": "other screws and bolts, chapter 73"}
+{"id": 14, "text_zh": "家用塑料收纳箱", "text_en": "Plastic storage boxes for household use", "expected_flag": "ok", "expected_code": "3924.90", "note": "household articles of plastics, chapter 39"}
+{"id": 15, "text_zh": "硅胶手机壳", "text_en": "Silicone mobile phone cases", "expected_flag": "ok", "expected_code": "3926.90", "note": "other articles of plastics, chapter 39"}
+{"id": 16, "text_zh": "LED台灯 USB供电", "text_en": "LED desk lamp, USB powered", "expected_flag": "ok", "expected_code": "9405.21", "note": "electric table/desk lamps for LED light sources, chapter 94"}
+{"id": 17, "text_zh": "工业缝纫机钢制梭芯套", "text_en": "Steel bobbin cases for industrial sewing machines", "expected_flag": "ok", "expected_code": "8452.90", "note": "parts of sewing machines, chapter 84"}
+{"id": 18, "text_zh": "真皮女式手提包", "text_en": "Women's handbags with outer surface of leather", "expected_flag": "ok", "expected_code": "4202.21", "note": "handbags, leather outer surface, chapter 42"}
+{"id": 19, "text_zh": "男式纯棉牛仔裤 梭织", "text_en": "Men's cotton denim trousers, woven", "expected_flag": "ok", "expected_code": "6203.42", "note": "men's trousers of cotton, woven, chapter 62"}
+{"id": 20, "text_zh": "女式运动鞋 橡胶底纺织面", "text_en": "Women's sports shoes, rubber outer sole, textile upper", "expected_flag": "ok", "expected_code": "6404.11", "note": "sports footwear with textile uppers, chapter 64"}

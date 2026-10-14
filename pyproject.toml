@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cargolint"
+version = "0.1.0"
+description = "A linter for packing lists: ICS2 description check and HS-6 suggestion for China->EU sea freight"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+  "streamlit==1.65.0",
+  "langchain==1.4.5",
+  "langchain-core==1.6.10",
+  "langgraph==1.2.15",
+  "langchain-openai==1.7.1",
+  "openai==3.31.0",
+  "langchain-chroma==1.1.0",
+  "chromadb==1.5.9",
+  "rank_bm25==0.2.2",
+  "pydantic>=2.7,<3",
+  "pandas>=2.2",
+  "openpyxl>=3.1",
+  "pdfplumber==0.11.10",
+  "rapidocr==3.10.0",
+  "onnxruntime==1.31.0",
+  "pillow>=10",
+  "lxml>=5",
+  "python-dotenv>=1",
+  "requests>=2.32",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-timeout>=2.3"]
+eval = ["ragas"]
+
+[tool.setuptools]
+packages = ["agent", "tools", "rag", "ui"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+  "unit: offline unit tests",
+  "integration: offline integration tests with fake clients",
+  "adversarial: prompt-injection fixtures",
+  "live: needs OPENROUTER_API_KEY and spends credits",
+]
+addopts = "--strict-markers -m 'not live'"
+timeout = 120

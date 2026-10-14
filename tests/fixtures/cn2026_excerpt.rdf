@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Hand-made excerpt in the shape of the Publications Office "Combined Nomenclature, 2026" SKOS
+     RDF/XML (ESTAT-CN2026.rdf): one chapter (96), two headings (9608, 9617), their HS-6
+     subheadings, CN-8 lines and one text-only dash line. Texts are abbreviated. -->
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:skos="http://www.w3.org/2004/02/skos/core#"
+         xmlns:xkos="http://rdf-vocabulary.ddialliance.org/xkos#"
+         xmlns:dc="http://purl.org/dc/elements/1.1/"
+         xmlns:adms="http://www.w3.org/ns/adms#">
+
+  <skos:Concept rdf:about="http://data.europa.eu/xsp/cn2026/960000000080">
+    <skos:notation>96</skos:notation>
+    <dc:identifier>960000000080</dc:identifier>
+    <xkos:depth>2</xkos:depth>
+    <skos:prefLabel xml:lang="en">96 Miscellaneous manufactured articles</skos:prefLabel>
+    <skos:altLabel xml:lang="en">Miscellaneous manufactured articles</skos:altLabel>
+    <skos:narrower rdf:resource="http://data.europa.eu/xsp/cn2026/960800000080"/>
+    <skos:narrower rdf:resource="http://data.europa.eu/xsp/cn2026/961700000080"/>
+  </skos:Concept>
+
+  <skos:Concept rdf:about="http://data.europa.eu/xsp/cn2026/960800000080">
+    <skos:notation>9608</skos:notation>
+    <dc:identifier>960800000080</dc:identifier>
+    <adms:identifier>9608</adms:identifier>
+    <xkos:depth>3</xkos:depth>
+    <skos:prefLabel xml:lang="en">9608 Ball-point pens; felt-tipped and other porous-tipped pens and markers; fountain pens, stylograph pens and other pens</skos:prefLabel>
+    <skos:altLabel xml:lang="en">Ball-point pens; felt-tipped and other porous-tipped pens and markers; fountain pens, stylograph pens and other pens</skos:altLabel>
+    <skos:broader rdf:resource="http://data.europa.eu/xsp/cn2026/960000000080"/>
+    <skos:narrower rdf:resource="http://data.europa.eu/xsp/cn2026/960810000080"/>
+    <skos:narrower rdf:resource="http://data.europa.eu/xsp/cn2026/960820000080"/>
+  </skos:Concept>
+
+  <skos:Concept rdf:about="http://data.europa.eu/xsp/cn2026/960810000080">
+    <skos:notation>9608 10</skos:notation>
+    <dc:identifier>960810000080</dc:identifier>
+    <adms:identifier>9608.10</adms:identifier>
+    <xkos:depth>4</xkos:depth>
+    <skos:hiddenLabel>-</skos:hiddenLabel>
+    <skos:prefLabel xml:lang="en">9608 10 - Ball-point pens</skos:prefLabel>
+    <skos:altLabel xml:lang="en">- Ball-point pens</skos:altLabel>
+    <skos:scopeNote xml:lang="en">Ball-point pens</skos:scopeNote>
+    <skos:broader rdf:resource="http://data.europa.eu/xsp/cn2026/960800000080"/>
+    <skos:narrower rdf:resource="http://data.europa.eu/xsp/cn2026/960810100080"/>
+    <skos:narrower rdf:resource="http://data.europa.eu/xsp/cn2026/960810920080"/>
+    <skos:narrower rdf:resource="http://data.europa.eu/xsp/cn2026/960810990080"/>
+  </skos:Concept>
+
+  <skos:Concept rdf:about="http://data.europa.eu/xsp/cn2026/960810100080">
+    <skos:notation>9608 10 10</skos:notation>
+    <dc:identifier>960810100080</dc:identifier>
+    <adms:identifier>9608.10.10</adms:identifier>
+    <xkos:depth>5</xkos:depth>
+    <skos:hiddenLabel>- -</skos:hiddenLabel>
+    <skos:prefLabel xml:lang="en">9608 10 10 - - With liquid ink (rolling ball pens)</skos:prefLabel>
+    <skos:altLabel xml:lang="en">- - With liquid ink (rolling ball pens)</skos:altLabel>
+    <skos:broader rdf:resource="http://data.europa.eu/xsp/cn2026/960810000080"/>
+  </skos:Concept>
+
+  <skos:Concept rdf:about="http://data.europa.eu/xsp/cn2026/960810920080">
+    <skos:notation>9608 10 92</skos:notation>
+    <dc:identifier>960810920080</dc:identifier>
+    <adms:identifier>9608.10.92</adms:identifier>
+    <xkos:depth>6</xkos:depth>
+    <skos:hiddenLabel>- - -</skos:hiddenLabel>
+    <skos:prefLabel xml:lang="en">9608 10 92 - - - With replaceable refill</skos:prefLabel>
+    <skos:altLabel xml:lang="en">- - - With replaceable refill</skos:altLabel>
+    <skos:broader rdf:resource="http://data.europa.eu/xsp/cn2026/960810000080"/>
+  </skos:Concept>
+
+  <skos:Concept rdf:about="http://data.europa.eu/xsp/cn2026/960810990080">
+    <skos:notation>9608 10 99</skos:notation>
+    <dc:identifier>960810990080</dc:identifier>
+    <adms:identifier>9608.10.99</adms:identifier>
+    <xkos:depth>6</xkos:depth>
+    <skos:hiddenLabel>- - -</skos:hiddenLabel>
+    <skos:prefLabel xml:lang="en">9608 10 99 - - - Other</skos:prefLabel>
+    <skos:altLabel xml:lang="en">- - - Other</skos:altLabel>
+    <skos:broader rdf:resource="http://data.europa.eu/xsp/cn2026/960810000080"/>
+  </skos:Concept>
+
+  <skos:Concept rdf:about="http://data.europa.eu/xsp/cn2026/960820000080">
+    <skos:notation>9608 20</skos:notation>
+    <dc:identifier>960820000080</dc:identifier>
+    <adms:identifier>9608.20</adms:identifier>
+    <xkos:depth>4</xkos:depth>
+    <skos:hiddenLabel>-</skos:hiddenLabel>
+    <skos:prefLabel xml:lang="en">9608 20 00 - Felt-tipped and other porous-tipped pens and markers</skos:prefLabel>
+    <skos:altLabel xml:lang="en">- Felt-tipped and other porous-tipped pens and markers</skos:altLabel>
+    <skos:broader rdf:resource="http://data.europa.eu/xsp/cn2026/960800000080"/>
+  </skos:Concept>
+
+  <skos:Concept rdf:about="http://data.europa.eu/xsp/cn2026/961700000080">
+    <skos:notation>9617</skos:notation>
+    <dc:identifier>961700000080</dc:identifier>
+    <adms:identifier>9617</adms:identifier>
+    <xkos:depth>3</xkos:depth>
+    <skos:prefLabel xml:lang="en">9617 Vacuum flasks and other vacuum vessels, complete with cases; parts thereof other than glass inners</skos:prefLabel>
+    <skos:altLabel xml:lang="en">Vacuum flasks and other vacuum vessels, complete with cases; parts thereof other than glass inners</skos:altLabel>
+    <skos:broader rdf:resource="http://data.europa.eu/xsp/cn2026/960000000080"/>
+    <skos:narrower rdf:resource="http://data.europa.eu/xsp/cn2026/961700000010"/>
+  </skos:Concept>
+
+  <skos:Concept rdf:about="http://data.europa.eu/xsp/cn2026/961700000010">
+    <skos:notation>9617 00</skos:notation>
+    <dc:identifier>961700000010</dc:identifier>
+    <adms:identifier>9617.00</adms:identifier>
+    <xkos:depth>4</xkos:depth>
+    <skos:prefLabel xml:lang="en">9617 00 00 Vacuum flasks and other vacuum vessels, complete with cases; parts thereof other than glass inners</skos:prefLabel>
+    <skos:altLabel xml:lang="en">Vacuum flasks and other vacuum vessels, complete with cases; parts thereof other than glass inners</skos:altLabel>
+    <skos:scopeNote xml:lang="en">This subheading covers vacuum flasks (thermos flasks) and other vacuum vessels with cases, and their parts other than glass inners.</skos:scopeNote>
+    <skos:broader rdf:resource="http://data.europa.eu/xsp/cn2026/961700000080"/>
+  </skos:Concept>
+
+</rdf:RDF>

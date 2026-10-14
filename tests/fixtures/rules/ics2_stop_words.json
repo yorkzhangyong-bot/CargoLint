@@ -1,0 +1,18 @@
+{
+  "list": "ics2_stop_words",
+  "source_doc": "Introduction of Stop Words/Phrases in the Common Repository (ICS2, CIRCABC), version in force 2026-08-03 - TEST FIXTURE EXCERPT",
+  "source_date": "2026-08-03",
+  "entries": [
+    {"term": "gift", "category": "Goods description", "implementation_date": "2025-04-01"},
+    {"term": "gifts", "category": "Goods description", "implementation_date": "2025-04-01"},
+    {"term": "samples", "category": "Goods description", "implementation_date": "2025-04-01"},
+    {"term": "parts", "category": "Goods description", "implementation_date": "2025-04-01"},
+    {"term": "goods", "category": "Goods description", "implementation_date": "2025-04-01"},
+    {"term": "merchandise", "category": "Goods description", "implementation_date": "2025-04-01"},
+    {"term": "general cargo", "category": "Goods description", "implementation_date": "2025-04-01"},
+    {"term": "consolidated", "category": "Goods description", "implementation_date": "2025-08-01"},
+    {"term": "personal effects", "category": "Goods description", "implementation_date": "2025-04-01"},
+    {"term": "said to contain", "category": "Goods description", "implementation_date": "2025-04-01"},
+    {"term": "no commercial value", "category": "Goods description", "implementation_date": "2026-02-02"}
+  ]
+}

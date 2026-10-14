@@ -1,0 +1,33 @@
+{
+  "list": "ics2_unacceptable",
+  "source_doc": "DG TAXUD Guidance on acceptable and unacceptable terms for the description of goods, v4.10 (TAXUD b.1(2021)1688480) - TEST FIXTURE EXCERPT",
+  "source_date": "2021-03-04",
+  "entries": [
+    {"term": "accessories", "acceptable_example": "phone cases, belts"},
+    {"term": "apparel", "acceptable_example": "men's cotton shirts"},
+    {"term": "appliances", "acceptable_example": "electric toasters"},
+    {"term": "auto parts", "acceptable_example": "brake pads for passenger cars"},
+    {"term": "bags", "acceptable_example": "women's leather handbags"},
+    {"term": "chemicals", "acceptable_example": "sodium bicarbonate"},
+    {"term": "clothing", "acceptable_example": "women's cotton dresses"},
+    {"term": "decorations", "acceptable_example": "glass Christmas baubles"},
+    {"term": "electronics", "acceptable_example": "wireless Bluetooth earphones"},
+    {"term": "equipment", "acceptable_example": "hydraulic jacks"},
+    {"term": "fabric", "acceptable_example": "woven polyester fabric, 150 cm"},
+    {"term": "foodstuffs", "acceptable_example": "dried mango slices"},
+    {"term": "footwear", "acceptable_example": "women's leather boots"},
+    {"term": "furniture", "acceptable_example": "wooden dining tables"},
+    {"term": "gift", "acceptable_example": "state the actual goods"},
+    {"term": "hardware", "acceptable_example": "stainless steel hinges"},
+    {"term": "household goods", "acceptable_example": "plastic storage boxes"},
+    {"term": "machinery", "acceptable_example": "industrial sewing machines"},
+    {"term": "metal goods", "acceptable_example": "steel bolts and nuts"},
+    {"term": "parts", "acceptable_example": "bobbin cases for sewing machines"},
+    {"term": "plastic goods", "acceptable_example": "plastic cutlery"},
+    {"term": "samples", "acceptable_example": "state the actual goods"},
+    {"term": "spare parts", "acceptable_example": "compressor valves"},
+    {"term": "supplies", "acceptable_example": "ball-point pens"},
+    {"term": "tools", "acceptable_example": "hand-operated spanners"},
+    {"term": "toys", "acceptable_example": "plastic toy cars"}
+  ]
+}

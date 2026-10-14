@@ -1,0 +1,32 @@
+{
+  "note": "Synthetic demo data. No real companies, no contact details (FR-046).",
+  "shippers": [
+    {
+      "name": "Yiwu Hengfa Trading",
+      "aliases": ["义乌恒发贸易", "YIWU HENGFA TRADING CO., LTD", "Yiwu Hengfa", "Hengfa Trading"],
+      "past_shipments": [
+        {"reference": "HOL-2026-03-0118", "date": "2026-03-12", "codes": ["8452.90", "8452.30"]},
+        {"reference": "HOL-2026-04-0167", "date": "2026-04-20", "codes": ["8452.90"]},
+        {"reference": "HOL-2026-05-0221", "date": "2026-05-28", "codes": ["8452.90", "8452.40"]},
+        {"reference": "HOL-2026-07-0302", "date": "2026-07-09", "codes": ["8452.90"]},
+        {"reference": "HOL-2026-08-0355", "date": "2026-08-17", "codes": ["8452.29", "8452.90"]},
+        {"reference": "HOL-2026-09-0410", "date": "2026-09-23", "codes": ["8452.90"]}
+      ]
+    },
+    {
+      "name": "Ningbo Brightlite Electronics",
+      "aliases": ["宁波亮光电子", "NINGBO BRIGHTLITE ELECTRONICS CO., LTD", "Brightlite"],
+      "past_shipments": [
+        {"reference": "HOL-2026-06-0260", "date": "2026-06-15", "codes": ["9405.21", "8518.30", "8543.70"]},
+        {"reference": "HOL-2026-09-0388", "date": "2026-09-02", "codes": ["9405.21", "8504.40"]}
+      ]
+    },
+    {
+      "name": "Shenzhen Kaida Toys",
+      "aliases": ["深圳凯达玩具", "SHENZHEN KAIDA TOYS CO., LTD", "Kaida Toys"],
+      "past_shipments": [
+        {"reference": "HOL-2026-02-0071", "date": "2026-02-03", "codes": ["9503.00"]}
+      ]
+    }
+  ]
+}
