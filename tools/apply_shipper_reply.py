@@ -56,7 +56,14 @@ def extract_reply(client: StructuredCaller, reply_text: str, line_no: int, origi
     user = (f"Shipper reply for line {line_no}:\n{fence(reply_text, line_no)}\n"
             f"The line as filed:\n{fence(original, line_no)}")
     out: ExtractOut = client.call(ExtractOut, EXTRACT_SYSTEM, user)
-    return Extracted(material=out.material.strip(), part_name=out.part_name.strip(), use=out.use.strip())
+    return Extracted(material=_clean_field(out.material, r"made (?:of|from)|of|in"), part_name=_clean_field(out.part_name, r"a|an|the"),
+                     use=_clean_field(out.use, r"for use (?:in|with|on)|used (?:for|in|with|on)|for|in|to"))
+
+
+def _clean_field(value: str, leading: str) -> str:
+    """Trim a leading preposition/article so composed text never reads 'for for …'."""
+    v = (value or "").strip(" ,.;；，。")
+    return re.sub(rf"^(?:{leading})\s+", "", v, flags=re.I).strip()
 
 
 def apply_reply(reply_text: str, line_no: int | None, selected_line_no: int | None, store, kb, client: StructuredCaller | None) -> ApplyReplyOutput:

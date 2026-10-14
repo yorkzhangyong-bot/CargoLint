@@ -45,7 +45,14 @@
   "candidates": []
  },
  "五金 / Hardware": {
-  "candidates": []
+  "candidates": [
+   {
+    "code": "7318.15",
+    "confidence": 80,
+    "rationale": "over-confident guess for a generic term",
+    "history_only": false
+   }
+  ]
  },
  "礼品 / Gift": {
   "candidates": []

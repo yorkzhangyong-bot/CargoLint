@@ -16,7 +16,9 @@ def render(store, kb) -> None:
     usage = store.shipment.usage if has else None
     c1, c2 = st.columns(2)
     c1.metric("Tokens this shipment", _tokens(usage.total_tokens) if usage else "0")
-    c2.metric("Cost", f"€{usage.cost_eur:.2f}" if usage else "€0.00", help="Estimated from OpenRouter token counts × the price table, converted to EUR")
+    cost = usage.cost_eur if usage else 0.0
+    c2.metric("Cost", f"€{cost:.2f}" if cost >= 0.01 or cost == 0 else f"€{cost:.3f}",
+              help="Estimated from OpenRouter token counts × the price table, converted to EUR")
     st.caption(f"Model via OpenRouter ({get_settings().chat_model}) · knowledge base updated {kb.updated or 'unknown'}")
     checked = has and any(l.current.status != LineStatus.pending for l in store.lines)
     st.download_button("Export results (CSV)", data=store.to_csv_bytes() if checked else b"",

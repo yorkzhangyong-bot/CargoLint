@@ -86,6 +86,11 @@ def _route_control(store, line) -> None:
         store.set_decision(line.line_no, Decision(route=DecisionRoute.ask_shipper))
         st.session_state.pop("accepting_line", None)
         st.rerun()
+    code, how = store.decided_code(line)
+    if code:
+        how_text = {"auto": "top candidate, auto-accepted", "top": "top candidate, confirmed by you", "other_candidate": "another candidate, chosen by you",
+                    "typed": "typed by you"}.get(how or "", how or "")
+        st.caption(f"✅ Decided code **{code}** ({how_text}).")
     if lock:
         st.caption(f"🔒 {lock}.")
     elif store.ready_to_accept(line):

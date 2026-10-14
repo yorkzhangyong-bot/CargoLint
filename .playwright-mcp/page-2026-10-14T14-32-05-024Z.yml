@@ -1,0 +1,364 @@
+- generic [ref=e2]:
+  - generic [ref=e11]:
+    - heading "CargoLint" [level=1] [ref=e15]
+    - paragraph [ref=e20]: Description check · HS-6 suggestions · ICS2 house filings
+    - heading "Packing list / invoice" [level=3] [ref=e24]
+    - region "Drag and drop files here" [ref=e27] [cursor=pointer]:
+      - button "file upload"
+      - button "upload Upload" [ref=e29]:
+        - generic [ref=e31]:
+          - generic [ref=e32]: upload
+          - paragraph [ref=e36]: Upload
+      - generic [ref=e37]: 20MB per file • XLSX, CSV, PDF, JPG, PNG
+    - paragraph [ref=e44]: Limit 20MB · XLSX, CSV, PDF, JPG, PNG
+    - generic [ref=e831]:
+      - paragraph [ref=e838]:
+        - text: 📄
+        - strong [ref=e839]: sample_packing_list.xlsx
+        - text: 6 KB
+      - button [ref=e847] [cursor=pointer]:
+        - paragraph [ref=e852]: ✕
+    - heading "Shipment" [level=3] [ref=e856]
+    - generic [ref=e50]:
+      - paragraph [ref=e54]: Your reference
+      - textbox "Your reference" [ref=e57]:
+        - /placeholder: HOL-2026-10-…
+        - text: HOL-2026-10-0472
+    - generic [ref=e858]:
+      - paragraph [ref=e862]: Shipper
+      - group [ref=e864]:
+        - combobox "Shipper" [ref=e865]: Detect from file
+        - button "Open" [ref=e866] [cursor=pointer]
+    - generic [ref=e72]:
+      - paragraph [ref=e76]: Filing
+      - group [ref=e78]:
+        - combobox "Filing" [ref=e79]: ICS2 house (ENS)
+        - button "Open" [ref=e80] [cursor=pointer]
+    - heading "Rules" [level=3] [ref=e873]
+    - generic [ref=e90]:
+      - generic [ref=e91]:
+        - paragraph [ref=e94]: Auto-accept threshold
+        - button "Help for Auto-accept threshold" [ref=e98] [cursor=pointer]
+      - group "Auto-accept threshold" [ref=e102]:
+        - generic [ref=e103]:
+          - generic [ref=e104]:
+            - slider "Auto-accept threshold Auto-accept threshold" [ref=e106]: "85"
+            - generic:
+              - generic:
+                - paragraph: 85%
+          - generic:
+            - generic:
+              - paragraph: 60%
+            - generic:
+              - paragraph: 99%
+    - generic [ref=e109] [cursor=pointer]:
+      - switch "Hybrid search" [checked] [ref=e111]
+      - generic [ref=e114]:
+        - paragraph [ref=e118]: Hybrid search
+        - button "Help for Hybrid search" [ref=e122]
+    - paragraph [ref=e878]: "Knowledge base: HS 2022 / CN 2026 — 5,612 subheadings · ICS2 lists (480 terms) · firm stop-words (32) · 192 BTI rulings · updated 2026-10-14"
+    - generic [ref=e880]:
+      - generic [ref=e885]:
+        - paragraph [ref=e889]: Tokens this shipment
+        - paragraph [ref=e892]: 36.5k
+      - generic [ref=e897]:
+        - generic [ref=e898]:
+          - paragraph [ref=e901]: Cost
+          - button "Help for Cost" [ref=e905] [cursor=pointer]
+        - paragraph [ref=e911]: €0.01
+    - paragraph [ref=e916]: Model via OpenRouter (openai/gpt-4o-mini) · knowledge base updated 2026-10-14
+    - button [ref=e171] [cursor=pointer]:
+      - paragraph [ref=e176]: Export results (CSV)
+    - button [ref=e179] [cursor=pointer]:
+      - paragraph [ref=e184]: Export results (JSON)
+  - generic [ref=e3]:
+    - banner [ref=e187]:
+      - generic [ref=e190]:
+        - button "Deploy" [ref=e192] [cursor=pointer]
+        - button "Main menu" [ref=e196] [cursor=pointer]
+    - generic [ref=e1004]:
+      - generic [ref=e1006]:
+        - generic [ref=e1008]:
+          - generic [ref=e1009]: smart_toy
+          - generic "Chat message from assistant" [ref=e1012]:
+            - generic [ref=e1013]:
+              - paragraph [ref=e1018]: "Hi. I catch cargo descriptions customs will reject before you file ICS2. Upload a packing list or invoice on the left (Chinese, English or mixed), or paste a few lines below. For every line I flag vague and stop-word descriptions, suggest the top-3 HS-6 codes with reasoning and a precedent ruling, and route it: auto-accept, human review, or ask the shipper. When the shipper replies, paste the answer back and I update only that line."
+              - generic [ref=e1020]:
+                - button [ref=e1028] [cursor=pointer]:
+                  - paragraph [ref=e1033]: Try one description
+                - button [ref=e1041] [cursor=pointer]:
+                  - paragraph [ref=e1046]: Use the sample packing list
+                - button [ref=e1054] [cursor=pointer]:
+                  - paragraph [ref=e1059]: Which terms does customs reject?
+              - group [ref=e1062]:
+                - generic "keyboard_arrow_right What I can and cannot do" [ref=e1063] [cursor=pointer]:
+                  - generic [ref=e1064]:
+                    - generic [ref=e1065]: keyboard_arrow_right
+                    - paragraph [ref=e1069]: What I can and cannot do
+        - generic [ref=e1071]:
+          - generic [ref=e1072]: face
+          - generic "Chat message from user" [ref=e1075]:
+            - generic [ref=e1076]:
+              - paragraph [ref=e1081]: Check the packing list for HOL-2026-10-0472.
+              - paragraph [ref=e1086]: 📄 sample_packing_list.xlsx
+        - generic [ref=e1088]:
+          - generic [ref=e1089]: smart_toy
+          - generic "Chat message from assistant" [ref=e1092]:
+            - generic [ref=e1093]:
+              - group [ref=e1096]:
+                - generic "check 0 lines checked · 4 tools · 77.9 s" [ref=e1097] [cursor=pointer]:
+                  - generic [ref=e1098]:
+                    - generic [ref=e1099]: check
+                    - paragraph [ref=e1103]: 0 lines checked · 4 tools · 77.9 s
+              - generic [ref=e1105]:
+                - generic [ref=e1110]:
+                  - paragraph [ref=e1114]: Auto-accept
+                  - paragraph [ref=e1117]: "8"
+                - generic [ref=e1122]:
+                  - paragraph [ref=e1126]: Human review
+                  - paragraph [ref=e1129]: "3"
+                - generic [ref=e1134]:
+                  - paragraph [ref=e1138]: Ask the shipper
+                  - paragraph [ref=e1141]: "1"
+              - generic [ref=e1145]:
+                - paragraph [ref=e1146]: "Here are the results from checking the packing list for HOL-2026-10-0472:"
+                - heading "Flagged Lines" [level=3] [ref=e1148]:
+                  - text: Flagged Lines
+                  - generic [ref=e1149]:
+                    - link "Link to heading":
+                      - /url: "#flagged-lines"
+                - list [ref=e1150]:
+                  - listitem [ref=e1151]:
+                    - paragraph [ref=e1152]:
+                      - strong [ref=e1153]: "Line 1: \"Parts\""
+                    - list [ref=e1154]:
+                      - listitem [ref=e1155]:
+                        - strong [ref=e1156]: "Status:"
+                        - text: Vague
+                      - listitem [ref=e1157]:
+                        - strong [ref=e1158]: "Ask the shipper for:"
+                        - text: Material, exact product name, and what the goods are used for.
+                  - listitem [ref=e1159]:
+                    - paragraph [ref=e1160]:
+                      - strong [ref=e1161]: "Line 4: \"Gift\""
+                    - list [ref=e1162]:
+                      - listitem [ref=e1163]:
+                        - strong [ref=e1164]: "Status:"
+                        - text: Stop-word
+                      - listitem [ref=e1165]:
+                        - strong [ref=e1166]: "Ask the shipper for:"
+                        - text: Material, exact product name, and what the goods are used for.
+                  - listitem [ref=e1167]:
+                    - paragraph [ref=e1168]:
+                      - strong [ref=e1169]: "Line 7: \"Electronic products\""
+                    - list [ref=e1170]:
+                      - listitem [ref=e1171]:
+                        - strong [ref=e1172]: "Status:"
+                        - text: Vague
+                      - listitem [ref=e1173]:
+                        - strong [ref=e1174]: "Ask the shipper for:"
+                        - text: Material, exact product name, and what the goods are used for.
+                  - listitem [ref=e1175]:
+                    - paragraph [ref=e1176]:
+                      - strong [ref=e1177]: "Line 9: \"Furniture\""
+                    - list [ref=e1178]:
+                      - listitem [ref=e1179]:
+                        - strong [ref=e1180]: "Status:"
+                        - text: Vague
+                      - listitem [ref=e1181]:
+                        - strong [ref=e1182]: "Ask the shipper for:"
+                        - text: Material, exact product name, and what the goods are used for.
+                - heading "Suggested HS-6 Subheadings" [level=3] [ref=e1184]:
+                  - text: Suggested HS-6 Subheadings
+                  - generic [ref=e1185]:
+                    - link "Link to heading":
+                      - /url: "#suggested-hs-6-subheadings"
+                - list [ref=e1186]:
+                  - listitem [ref=e1187]:
+                    - paragraph [ref=e1188]:
+                      - strong [ref=e1189]: "Line 1 (Parts):"
+                    - list [ref=e1190]:
+                      - listitem [ref=e1191]: 8409.99 (60% confidence, history only)
+                      - listitem [ref=e1192]: 8431.39 (50% confidence, history only)
+                      - listitem [ref=e1193]: 8482.99 (40% confidence, history only)
+                  - listitem [ref=e1194]:
+                    - paragraph [ref=e1195]:
+                      - strong [ref=e1196]: "Line 2 (LED desk lamp, USB powered):"
+                    - list [ref=e1197]:
+                      - listitem [ref=e1198]: 9405.21 (95% confidence)
+                      - listitem [ref=e1199]: 9405.29 (70% confidence)
+                      - listitem [ref=e1200]: 8539.52 (60% confidence)
+                  - listitem [ref=e1201]:
+                    - paragraph [ref=e1202]:
+                      - strong [ref=e1203]: "Line 3 (Stainless steel vacuum flask, 500 ml):"
+                    - list [ref=e1204]:
+                      - listitem [ref=e1205]: 9617.00 (95% confidence)
+                      - listitem [ref=e1206]: 3923.30 (40% confidence)
+                      - listitem [ref=e1207]: 7010.90 (30% confidence)
+                  - listitem [ref=e1208]:
+                    - paragraph [ref=e1209]:
+                      - strong [ref=e1210]: "Line 4 (Gift):"
+                    - list [ref=e1211]:
+                      - listitem [ref=e1212]: 9505.90 (60% confidence)
+                      - listitem [ref=e1213]: 9505.10 (50% confidence, history only)
+                      - listitem [ref=e1214]: 9508.40 (40% confidence, history only)
+                  - listitem [ref=e1215]:
+                    - paragraph [ref=e1216]:
+                      - strong [ref=e1217]: "Line 5 (Cotton T-shirts, knitted):"
+                    - list [ref=e1218]:
+                      - listitem [ref=e1219]: 6109.10 (95% confidence)
+                      - listitem [ref=e1220]: 6105.10 (60% confidence)
+                      - listitem [ref=e1221]: 6106.10 (60% confidence)
+                  - listitem [ref=e1222]:
+                    - paragraph [ref=e1223]:
+                      - strong [ref=e1224]: "Line 6 (Plastic toy cars):"
+                    - list [ref=e1225]:
+                      - listitem [ref=e1226]: 9503.00 (95% confidence)
+                      - listitem [ref=e1227]: 9508.23 (40% confidence)
+                      - listitem [ref=e1228]: 9508.30 (30% confidence)
+                  - listitem [ref=e1229]:
+                    - paragraph [ref=e1230]:
+                      - strong [ref=e1231]: "Line 7 (Electronic products):"
+                    - list [ref=e1232]:
+                      - listitem [ref=e1233]: 8543.70 (60% confidence)
+                      - listitem [ref=e1234]: 8517.79 (50% confidence, history only)
+                      - listitem [ref=e1235]: 8486.20 (40% confidence, history only)
+                  - listitem [ref=e1236]:
+                    - paragraph [ref=e1237]:
+                      - strong [ref=e1238]: "Line 8 (Wireless Bluetooth earphones):"
+                    - list [ref=e1239]:
+                      - listitem [ref=e1240]: 8518.30 (95% confidence)
+                      - listitem [ref=e1241]: 8518.90 (40% confidence)
+                      - listitem [ref=e1242]: 8517.11 (30% confidence)
+                  - listitem [ref=e1243]:
+                    - paragraph [ref=e1244]:
+                      - strong [ref=e1245]: "Line 9 (Furniture):"
+                    - list [ref=e1246]:
+                      - listitem [ref=e1247]: 9403.60 (85% confidence)
+                      - listitem [ref=e1248]: 9403.91 (60% confidence)
+                      - listitem [ref=e1249]: 8418.50 (40% confidence)
+                  - listitem [ref=e1250]:
+                    - paragraph [ref=e1251]:
+                      - strong [ref=e1252]: "Line 10 (Aluminium alloy bicycle frames):"
+                    - list [ref=e1253]:
+                      - listitem [ref=e1254]: 7610.90 (85% confidence)
+                      - listitem [ref=e1255]: 7610.10 (60% confidence)
+                      - listitem [ref=e1256]: 7608.10 (40% confidence)
+                  - listitem [ref=e1257]:
+                    - paragraph [ref=e1258]:
+                      - strong [ref=e1259]: "Line 11 (Rubber O-ring gaskets, vulcanised):"
+                    - list [ref=e1260]:
+                      - listitem [ref=e1261]: 4016.93 (95% confidence)
+                      - listitem [ref=e1262]: 4016.99 (60% confidence)
+                      - listitem [ref=e1263]: 8484.20 (40% confidence)
+                  - listitem [ref=e1264]:
+                    - paragraph [ref=e1265]:
+                      - strong [ref=e1266]: "Line 12 (Silicone mobile phone cases):"
+                    - list [ref=e1267]:
+                      - listitem [ref=e1268]: 8480.79 (85% confidence)
+                      - listitem [ref=e1269]: 9111.80 (40% confidence)
+                      - listitem [ref=e1270]: 9112.20 (40% confidence)
+                - heading "BTI Rulings" [level=3] [ref=e1272]:
+                  - text: BTI Rulings
+                  - generic [ref=e1273]:
+                    - link "Link to heading":
+                      - /url: "#bti-rulings"
+                - paragraph [ref=e1274]: "There are current BTI rulings for the following codes:"
+                - list [ref=e1275]:
+                  - listitem [ref=e1276]:
+                    - strong [ref=e1277]: "8431.39:"
+                    - text: DEBTI53686/23-1
+                  - listitem [ref=e1278]:
+                    - strong [ref=e1279]: "9617.00:"
+                    - text: DEBTI41411/25-1, DEBTI42224/25-1, DEBTI34382/25-1
+                  - listitem [ref=e1280]:
+                    - strong [ref=e1281]: "9505.10:"
+                    - text: DEBTI15572/26-1, DEBTI27590/23-1
+                  - listitem [ref=e1282]:
+                    - strong [ref=e1283]: "6109.10:"
+                    - text: DEBTI45562/24-2, DEBTI43455/23-1
+                  - listitem [ref=e1284]:
+                    - strong [ref=e1285]: "9503.00:"
+                    - text: DEBTI40108/25-1, DEBTI41415/25-1, DEBTI27512/25-1
+                  - listitem [ref=e1286]:
+                    - strong [ref=e1287]: "8486.20:"
+                    - text: DEBTI44299/23-1
+                  - listitem [ref=e1288]:
+                    - strong [ref=e1289]: "9403.60:"
+                    - text: DEBTI19269/24-1
+                - paragraph [ref=e1290]: Please follow up with the shipper for the flagged lines to ensure accurate declarations.
+              - group [ref=e1293]:
+                - generic "keyboard_arrow_right Sources · 80" [ref=e1294] [cursor=pointer]:
+                  - generic [ref=e1295]:
+                    - generic [ref=e1296]: keyboard_arrow_right
+                    - paragraph [ref=e1300]: Sources · 80
+        - generic [ref=e1304]:
+          - textbox "Ask about any line, or paste the shipper’s reply…" [ref=e1306]
+          - button "Send message" [disabled] [ref=e1309]
+      - generic [ref=e1314]:
+        - heading "Review · HOL-2026-10-0472" [level=3] [ref=e1319]:
+          - text: Review · HOL-2026-10-0472
+          - generic [ref=e1320]:
+            - link "Link to heading":
+              - /url: "#review-hol-2026-10-0472"
+        - paragraph [ref=e1325]: Shanghai → Hamburg · LCL · 12 lines · needs-action first
+        - radiogroup "Filter" [ref=e1328]:
+          - radio [checked] [ref=e1329] [cursor=pointer]:
+            - paragraph [ref=e1334]: All 12
+          - radio [ref=e1335] [cursor=pointer]:
+            - paragraph [ref=e1340]: Needs action 4
+          - radio [ref=e1341] [cursor=pointer]:
+            - paragraph [ref=e1346]: Accepted 8
+        - generic [ref=e1351]:
+          - button "Show/hide columns" [ref=e1355] [cursor=pointer]
+          - button "Download as CSV" [ref=e1361] [cursor=pointer]
+          - button "Search" [ref=e1367] [cursor=pointer]
+          - button "Fullscreen" [ref=e1373] [cursor=pointer]
+        - generic [ref=e1386]:
+          - paragraph [ref=e1391]:
+            - strong [ref=e1392]: Line 1 · 14 CTN · 312 kg · USD 4,180
+          - paragraph [ref=e1397]:
+            - text: 配件 · Parts
+            - generic [ref=e1398]: Vague
+            - generic [ref=e1399]: Review
+            - text: v1
+          - paragraph [ref=e1404]:
+            - strong [ref=e1405]: Top-3 HS-6 candidates
+          - generic [ref=e1407]:
+            - paragraph [ref=e1410]: 8409.99 — Other · 60% · history only
+            - progressbar "progress" [ref=e1411]
+          - paragraph [ref=e1418]: The description 'Parts' is vague, but it could relate to machinery parts, which aligns with this subheading.
+          - paragraph [ref=e1423]: No current BTI precedent found for this code.
+          - generic [ref=e1425]:
+            - paragraph [ref=e1428]: 8431.39 — Other · 50% · history only
+            - progressbar "progress" [ref=e1429]
+          - paragraph [ref=e1436]: This subheading covers parts of machinery, but the description lacks specifics to confirm its relevance.
+          - generic [ref=e1440]:
+            - paragraph [ref=e1441]: "Precedent: BTI DE DEBTI53686/23-1 → 8431.39 (valid 2024-02-01 – 2027-01-31) — Kugelrolle (Abbildung siehe Anlage)"
+            - list [ref=e1442]:
+              - listitem [ref=e1443]: aus einem abgestuften, topförmigen Gehäuse (Außendurchmesser 25,4 mm) aus ver- zinktem Stahl, mit in
+          - generic [ref=e1445]:
+            - paragraph [ref=e1448]: 8482.99 — Other · 40% · history only
+            - progressbar "progress" [ref=e1449]
+          - paragraph [ref=e1456]: Parts of ball or roller bearings may fit, but the description does not provide enough detail to be certain.
+          - paragraph [ref=e1461]: No current BTI precedent found for this code.
+          - paragraph [ref=e1466]: Confidence is a model estimate, not a calibrated probability.
+          - paragraph [ref=e1471]:
+            - strong [ref=e1472]: Route
+          - generic [ref=e1474]:
+            - button [disabled] [ref=e1479]:
+              - generic "Accept" [ref=e1480]:
+                - paragraph [ref=e1484]: Accept
+            - button [ref=e1489] [cursor=pointer]:
+              - generic "Human review ✓" [ref=e1490]:
+                - paragraph [ref=e1494]: Human review ✓
+            - button [ref=e1499] [cursor=pointer]:
+              - generic "Ask the shipper" [ref=e1500]:
+                - paragraph [ref=e1504]: Ask the shipper
+          - paragraph [ref=e1509]: 🔒 Below the 85% threshold and flagged (vague), so auto-accept is locked until the description is updated and re-checked.
+          - paragraph [ref=e1514]:
+            - strong [ref=e1515]: Why it was flagged
+          - paragraph [ref=e1520]: "\"配件\" means \"parts\", which ICS2 lists as an unacceptable goods description — ics2 unacceptable: “parts”. Ask the shipper for: material, product name, use."
+          - paragraph [ref=e1525]:
+            - strong [ref=e1526]: Updating this line
+          - paragraph [ref=e1531]: Paste the shipper's reply into the chat on the left (e.g. “line 1 is steel bobbin cases for industrial sewing machines”). Only this line is re-checked and the table refreshes.

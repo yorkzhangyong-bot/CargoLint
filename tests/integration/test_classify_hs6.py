@@ -84,3 +84,22 @@ def test_per_line_isolation_in_a_batch(fake_llm, kb):
     out = classify_lines([_line(1, "X", "Unknown widget"), _line(2, "不锈钢保温杯", "Stainless steel vacuum flask, 500 ml")],
                          ClassifyContext(), kb=kb, client=get_client(), workers=2)
     assert out[0].status == LineStatus.failed and out[1].status == LineStatus.checked
+
+
+def test_history_codes_are_injected_as_candidates(fake_llm, small_index, fake_embeddings, rules):
+    # an empty retriever: whatever reaches the ranker must come from the shipper's past codes
+    empty = HybridRetriever(bm25=BM25Index([]), vectors=InMemoryVectorSearch([], fake_embeddings), chunks=small_index, k=6)
+    kb_empty = KnowledgeBase(small_index, empty, BTIStore([]), rules, {}, fake_embeddings)
+    out = classify_lines([_line(1, "配件", "Parts", flag_kind="vague")], ClassifyContext(shipper_history_codes=["8452.90", "8452.30"]),
+                         kb=kb_empty, client=get_client())
+    assert out[0].retrieval_trace.history_chunks == 2 and out[0].retrieval_trace.sent_to_model == 2
+    prompt = fake_llm.prompts_for("RankOut")[0]
+    assert "[hs:8452.90] (filed before by this shipper)" in prompt and "Description check: VAGUE" in prompt
+    assert out[0].candidates[0].code == "8452.90" and out[0].candidates[0].history_only is True
+
+
+def test_vague_line_confidence_is_capped_in_code(fake_llm, kb):
+    out = classify_lines([_line(5, "五金", "Hardware", flag_kind="vague")], ClassifyContext(), kb=kb, client=get_client())
+    assert out[0].candidates[0].code == "7318.15" and out[0].candidates[0].confidence == 59
+    out_ok = classify_lines([_line(5, "五金", "Hardware", flag_kind="ok")], ClassifyContext(), kb=kb, client=get_client())
+    assert out_ok[0].candidates[0].confidence == 80

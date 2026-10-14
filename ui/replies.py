@@ -19,7 +19,8 @@ def handle(line_no: int | None, reply_text: str, store, kb, chat: list, run) -> 
     target = int(target)
     ref = store.register_reply(reply_text)
     chat.append({"role": "user", "content": f"[Shipper reply pasted for line {target}]", "raw": reply_text})
-    msg = run(f"Apply reply {ref} to line {target}", store, kb, reply_ref=ref, is_check=False, new_line_nos=[target])
+    msg = run(f"Apply reply {ref} to line {target}", store, kb, reply_ref=ref, is_check=False, new_line_nos=[target],
+              label_prefix=f"Line {target} updated")
     if line_no is None:
         msg["content"] = f"Applied to line {target} (selected).\n\n" + (msg.get("content") or "")
     msg["trace_from"] = target

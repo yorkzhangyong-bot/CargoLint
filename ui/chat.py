@@ -60,8 +60,8 @@ def _progress_status(label: str):
 
 
 def _run(message: str, store, kb, *, file_ref: str | None = None, reply_ref: str | None = None, is_check: bool | None = None,
-         new_line_nos: list[int] | None = None) -> dict:
-    status = _progress_status("Checking…" if is_check else "Thinking…")
+         new_line_nos: list[int] | None = None, label_prefix: str | None = None) -> dict:
+    status = _progress_status("Checking…" if is_check else ("Updating…" if label_prefix else "Thinking…"))
     steps: list[str] = []
     t0 = time.perf_counter()
 
@@ -78,9 +78,11 @@ def _run(message: str, store, kb, *, file_ref: str | None = None, reply_ref: str
                       file_ref=file_ref, reply_ref=reply_ref, history=history, is_check=is_check)
     elapsed = time.perf_counter() - t0
     if is_check:
-        label = f"{result.check_run.line_count if result.check_run else len(store.lines)} lines checked · {result.tool_calls} tools · {elapsed:.1f} s"
+        n = len(store.lines) if store.has_shipment() else 0
+        label = f"{n} line{'s' if n != 1 else ''} checked · {result.tool_calls} tool{'s' if result.tool_calls != 1 else ''} · {elapsed:.1f} s"
     else:
-        label = f"Answered · {result.tool_calls} tools · {elapsed:.1f} s"
+        tools_txt = f"{result.tool_calls} tool{'s' if result.tool_calls != 1 else ''}"
+        label = f"{label_prefix or 'Answered'} · {tools_txt} · {elapsed:.1f} s"
     status.update(label=label, state="complete", expanded=False)
     return {"role": "assistant", "content": result.text, "agent_text": result.text, "label": label, "steps": steps,
             "counts": result.counts if is_check else None, "line_nos": new_line_nos, "is_check": bool(is_check),

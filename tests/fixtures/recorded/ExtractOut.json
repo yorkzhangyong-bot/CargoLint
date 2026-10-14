@@ -1,8 +1,8 @@
 {
  "line 1 is steel bobbin cases for industrial sewing machines": {
-  "material": "steel",
+  "material": "made of steel",
   "part_name": "bobbin cases",
-  "use": "industrial sewing machines"
+  "use": "for industrial sewing machines"
  },
  "steel bobbin cases for industrial sewing machines": {
   "material": "steel",

@@ -1,0 +1,212 @@
+- generic [ref=e2]:
+  - generic [ref=e11]:
+    - heading "CargoLint" [level=1] [ref=e15]
+    - paragraph [ref=e20]: Description check · HS-6 suggestions · ICS2 house filings
+    - heading "Packing list / invoice" [level=3] [ref=e24]
+    - region "Drag and drop files here" [ref=e27] [cursor=pointer]:
+      - button "file upload"
+      - button "upload Upload" [ref=e29]:
+        - generic [ref=e31]:
+          - generic [ref=e32]: upload
+          - paragraph [ref=e36]: Upload
+      - generic [ref=e37]: 20MB per file • XLSX, CSV, PDF, JPG, PNG
+    - paragraph [ref=e44]: Limit 20MB · XLSX, CSV, PDF, JPG, PNG
+    - heading "Shipment" [level=3] [ref=e48]
+    - generic [ref=e50]:
+      - paragraph [ref=e54]: Your reference
+      - textbox "Your reference" [ref=e57]:
+        - /placeholder: HOL-2026-10-…
+    - generic [ref=e296]:
+      - paragraph [ref=e300]: Shipper
+      - group [ref=e302]:
+        - combobox "Shipper" [ref=e303]: Detect from file
+        - button "Open" [ref=e304] [cursor=pointer]
+    - generic [ref=e72]:
+      - paragraph [ref=e76]: Filing
+      - group [ref=e78]:
+        - combobox "Filing" [ref=e79]: ICS2 house (ENS)
+        - button "Open" [ref=e80] [cursor=pointer]
+    - heading "Rules" [level=3] [ref=e87]
+    - generic [ref=e90]:
+      - generic [ref=e91]:
+        - paragraph [ref=e94]: Auto-accept threshold
+        - button "Help for Auto-accept threshold" [ref=e98] [cursor=pointer]
+      - group "Auto-accept threshold" [ref=e102]:
+        - generic [ref=e103]:
+          - generic [ref=e104]:
+            - slider "Auto-accept threshold Auto-accept threshold" [ref=e106]: "85"
+            - generic:
+              - generic:
+                - paragraph: 85%
+          - generic:
+            - generic:
+              - paragraph: 60%
+            - generic:
+              - paragraph: 99%
+    - generic [ref=e109] [cursor=pointer]:
+      - switch "Hybrid search" [checked] [ref=e111]
+      - generic [ref=e114]:
+        - paragraph [ref=e118]: Hybrid search
+        - button "Help for Hybrid search" [ref=e122]
+    - paragraph [ref=e130]: "Knowledge base: HS 2022 / CN 2026 — 5,612 subheadings · ICS2 lists (480 terms) · firm stop-words (32) · 192 BTI rulings · updated 2026-10-14"
+    - generic [ref=e132]:
+      - generic [ref=e137]:
+        - paragraph [ref=e141]: Tokens this shipment
+        - paragraph [ref=e144]: 9.4k
+      - generic [ref=e149]:
+        - generic [ref=e150]:
+          - paragraph [ref=e153]: Cost
+          - button "Help for Cost" [ref=e157] [cursor=pointer]
+        - paragraph [ref=e163]: €0.00
+    - paragraph [ref=e168]: Model via OpenRouter (openai/gpt-4o-mini) · knowledge base updated 2026-10-14
+    - button [ref=e171] [cursor=pointer]:
+      - paragraph [ref=e176]: Export results (CSV)
+    - button [ref=e179] [cursor=pointer]:
+      - paragraph [ref=e184]: Export results (JSON)
+  - generic [ref=e3]:
+    - banner [ref=e187]:
+      - generic [ref=e190]:
+        - button "Deploy" [ref=e192] [cursor=pointer]
+        - button "Main menu" [ref=e196] [cursor=pointer]
+    - generic [ref=e312]:
+      - generic [ref=e314]:
+        - generic [ref=e316]:
+          - generic [ref=e317]: smart_toy
+          - generic "Chat message from assistant" [ref=e320]:
+            - generic [ref=e321]:
+              - paragraph [ref=e326]: "Hi. I catch cargo descriptions customs will reject before you file ICS2. Upload a packing list or invoice on the left (Chinese, English or mixed), or paste a few lines below. For every line I flag vague and stop-word descriptions, suggest the top-3 HS-6 codes with reasoning and a precedent ruling, and route it: auto-accept, human review, or ask the shipper. When the shipper replies, paste the answer back and I update only that line."
+              - generic [ref=e328]:
+                - button [ref=e336] [cursor=pointer]:
+                  - paragraph [ref=e341]: Try one description
+                - button [ref=e349] [cursor=pointer]:
+                  - paragraph [ref=e354]: Use the sample packing list
+                - button [ref=e362] [cursor=pointer]:
+                  - paragraph [ref=e367]: Which terms does customs reject?
+              - group [ref=e370]:
+                - generic "keyboard_arrow_right What I can and cannot do" [ref=e371] [cursor=pointer]:
+                  - generic [ref=e372]:
+                    - generic [ref=e373]: keyboard_arrow_right
+                    - paragraph [ref=e377]: What I can and cannot do
+        - generic [ref=e379]:
+          - generic [ref=e380]: face
+          - generic "Chat message from user" [ref=e383]:
+            - generic [ref=e384]:
+              - paragraph [ref=e389]: "[1 description added as line 1]"
+              - paragraph [ref=e394]: 不锈钢保温杯 500ml
+        - generic [ref=e396]:
+          - generic [ref=e397]: smart_toy
+          - generic "Chat message from assistant" [ref=e400]:
+            - generic [ref=e401]:
+              - group [ref=e404]:
+                - generic "check 1 lines checked · 3 tools · 18.2 s" [ref=e405] [cursor=pointer]:
+                  - generic [ref=e406]:
+                    - generic [ref=e407]: check
+                    - paragraph [ref=e411]: 1 lines checked · 3 tools · 18.2 s
+              - generic [ref=e413]:
+                - generic [ref=e418]:
+                  - paragraph [ref=e422]: Auto-accept
+                  - paragraph [ref=e425]: "1"
+                - generic [ref=e430]:
+                  - paragraph [ref=e434]: Human review
+                  - paragraph [ref=e437]: "0"
+                - generic [ref=e442]:
+                  - paragraph [ref=e446]: Ask the shipper
+                  - paragraph [ref=e449]: "0"
+              - generic [ref=e453]:
+                - paragraph [ref=e454]: Line 1 description "不锈钢保温杯 500ml" is flagged as OK.
+                - paragraph [ref=e455]: "The suggested HS-6 subheading is:"
+                - list [ref=e456]:
+                  - listitem [ref=e457]:
+                    - strong [ref=e458]: "9617.00"
+                    - text: ": This code has a high confidence level of 95% and is supported by multiple BTI rulings (DEBTI41411/25-1, DEBTI42224/25-1, DEBTI34382/25-1)."
+                - paragraph [ref=e459]: The other suggested codes (7310.10 and 3923.30) do not have any current BTI rulings.
+                - paragraph [ref=e460]: You should ask the shipper for the material, the exact product name, and what the goods are used for, even though the description is currently acceptable.
+              - generic [ref=e462]:
+                - paragraph [ref=e467]:
+                  - strong [ref=e468]: Line 1
+                  - text: · 不锈钢保温杯 500ml
+                  - generic [ref=e469]: OK
+                  - generic [ref=e470]: Auto-accept
+                - generic [ref=e472]:
+                  - paragraph [ref=e475]: 9617.00 — Vacuum flasks and other vacuum vessels, complete; parts thereof other than glass inners · 95% · precedent BTI DE DEBTI41411/25-1
+                  - progressbar "progress" [ref=e476]
+                - paragraph [ref=e483]: The product is a stainless steel vacuum flask, which fits perfectly under the classification for vacuum flasks and other vacuum vessels.
+                - generic [ref=e485]:
+                  - paragraph [ref=e488]: 7310.10 — Of a capacity of 50 l or more · 40%
+                  - progressbar "progress" [ref=e489]
+                - paragraph [ref=e496]: While the product is made of stainless steel, it is primarily classified as a vacuum flask rather than a container, making this a less suitable option.
+                - generic [ref=e498]:
+                  - paragraph [ref=e501]: 3923.30 — Carboys, bottles, flasks and similar articles · 30%
+                  - progressbar "progress" [ref=e502]
+                - paragraph [ref=e509]: This classification is for plastic containers, which does not apply to a stainless steel vacuum flask, making it a very weak candidate.
+                - paragraph [ref=e514]: "Route: Auto-accept — confidence 95 at or above the threshold 85"
+              - paragraph [ref=e519]: Confidence is a model estimate, not a calibrated probability.
+              - group [ref=e522]:
+                - generic "keyboard_arrow_right Sources · 7" [ref=e523] [cursor=pointer]:
+                  - generic [ref=e524]:
+                    - generic [ref=e525]: keyboard_arrow_right
+                    - paragraph [ref=e529]: Sources · 7
+        - generic [ref=e533]:
+          - textbox "Ask about any line, or paste the shipper’s reply…" [ref=e535]
+          - button "Send message" [disabled] [ref=e538]
+      - generic [ref=e543]:
+        - heading "Review · 6c93a87d3ea8" [level=3] [ref=e548]:
+          - text: Review · 6c93a87d3ea8
+          - generic [ref=e549]:
+            - link "Link to heading":
+              - /url: "#review-6c93a87d3ea8"
+        - paragraph [ref=e554]: 1 lines · needs-action first
+        - radiogroup "Filter" [ref=e557]:
+          - radio [checked] [ref=e558] [cursor=pointer]:
+            - paragraph [ref=e563]: All 1
+          - radio [ref=e564] [cursor=pointer]:
+            - paragraph [ref=e569]: Needs action 0
+          - radio [ref=e570] [cursor=pointer]:
+            - paragraph [ref=e575]: Accepted 1
+        - generic [ref=e580]:
+          - button "Show/hide columns" [ref=e584] [cursor=pointer]
+          - button "Download as CSV" [ref=e590] [cursor=pointer]
+          - button "Search" [ref=e596] [cursor=pointer]
+          - button "Fullscreen" [ref=e602] [cursor=pointer]
+        - generic [ref=e615]:
+          - paragraph [ref=e620]:
+            - strong [ref=e621]: Line 1
+          - paragraph [ref=e626]:
+            - text: 不锈钢保温杯 500ml
+            - generic [ref=e627]: OK
+            - generic [ref=e628]: Auto-accept
+            - text: v1
+          - paragraph [ref=e633]:
+            - strong [ref=e634]: Top-3 HS-6 candidates
+          - generic [ref=e636]:
+            - paragraph [ref=e639]: 9617.00 — Vacuum flasks and other vacuum vessels, complete; parts thereof other than glass inners · 95%
+            - progressbar "progress" [ref=e640]
+          - paragraph [ref=e647]: The product is a stainless steel vacuum flask, which fits perfectly under the classification for vacuum flasks and other vacuum vessels.
+          - paragraph [ref=e652]: "Precedent: BTI DE DEBTI41411/25-1 → 9617.00 (valid 2026-02-02 – 2029-02-01) — Es handelt sich bei der Ware um ein ca. 15 cm hohes und im Durchmesser ca. 8 , 4 cm großes Trinkgefäß in Form eines doppelwandigen Behältnis"
+          - generic [ref=e654]:
+            - paragraph [ref=e657]: 7310.10 — Of a capacity of 50 l or more · 40%
+            - progressbar "progress" [ref=e658]
+          - paragraph [ref=e665]: While the product is made of stainless steel, it is primarily classified as a vacuum flask rather than a container, making this a less suitable option.
+          - paragraph [ref=e670]: No current BTI precedent found for this code.
+          - generic [ref=e672]:
+            - paragraph [ref=e675]: 3923.30 — Carboys, bottles, flasks and similar articles · 30%
+            - progressbar "progress" [ref=e676]
+          - paragraph [ref=e683]: This classification is for plastic containers, which does not apply to a stainless steel vacuum flask, making it a very weak candidate.
+          - paragraph [ref=e688]: No current BTI precedent found for this code.
+          - paragraph [ref=e693]: Confidence is a model estimate, not a calibrated probability.
+          - paragraph [ref=e698]:
+            - strong [ref=e699]: Route
+          - generic [ref=e701]:
+            - button [ref=e706] [cursor=pointer]:
+              - generic "Accept ✓" [ref=e707]:
+                - paragraph [ref=e711]: Accept ✓
+            - button [ref=e716] [cursor=pointer]:
+              - generic "Human review" [ref=e717]:
+                - paragraph [ref=e721]: Human review
+            - button [ref=e726] [cursor=pointer]:
+              - generic "Ask the shipper" [ref=e727]:
+                - paragraph [ref=e731]: Ask the shipper
+          - paragraph [ref=e736]: "Auto-accept: confidence 95 at or above the threshold 85."
+          - paragraph [ref=e741]:
+            - strong [ref=e742]: Updating this line
+          - paragraph [ref=e747]: Paste the shipper's reply into the chat on the left (e.g. “line 1 is steel bobbin cases for industrial sewing machines”). Only this line is re-checked and the table refreshes.

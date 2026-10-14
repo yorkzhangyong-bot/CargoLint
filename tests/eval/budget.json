@@ -1,0 +1,117 @@
+{
+ "tokens": 40599,
+ "calls": 36,
+ "cost_usd": 0.0077,
+ "cost_eur": 0.0071,
+ "counts": {
+  "auto_accept": 8,
+  "review": 3,
+  "ask_shipper": 1,
+  "needs_action": 4,
+  "accepted": 8
+ },
+ "tool_calls_check": 4,
+ "elapsed_check_s": 104.15,
+ "answers": {
+  "why_31": "The confidence for line 1 is at 60%, which indicates that the description \"配件 / Parts\" is considered vague according to the ICS2 guidelines. The term \"Parts\" does not specify the type of parts, making it difficult to classify accurately. \n\nIn the past, if the shipper's parts were filed under 8452.90, it may have been due to a more specific description provided at that time. For this shipment, we n",
+  "what_to_ask": "You need to ask the shipper for the following lines:\n\n1. **Line 1 (配件 / Parts)**: \n   - Ask for: material, product name, and what the goods are used for.\n\n2. **Line 4 (礼品 / Gift)**: \n   - Ask for: material, product name, and what the goods are used for.\n\n3. **Line 7 (电子产品 / Electronic products)**: \n   - Ask for: material, product name, and what the goods are used for.\n\n4. **Line 9 (家具 / Furniture)"
+ },
+ "lines": [
+  {
+   "line_no": 1,
+   "text": "配件 / Parts",
+   "flag": "vague",
+   "top": "8409.99",
+   "confidence": 60,
+   "route": "review"
+  },
+  {
+   "line_no": 2,
+   "text": "LED台灯 USB供电 / LED desk lamp, USB powered",
+   "flag": "ok",
+   "top": "9405.21",
+   "confidence": 95,
+   "route": "auto_accept"
+  },
+  {
+   "line_no": 3,
+   "text": "不锈钢保温杯 / Stainless steel vacuum flask, 500 ml",
+   "flag": "ok",
+   "top": "9617.00",
+   "confidence": 95,
+   "route": "auto_accept"
+  },
+  {
+   "line_no": 4,
+   "text": "礼品 / Gift",
+   "flag": "stop_word",
+   "top": "9505.90",
+   "confidence": 60,
+   "route": "ask_shipper"
+  },
+  {
+   "line_no": 5,
+   "text": "纯棉针织T恤 / Cotton T-shirts, knitted",
+   "flag": "ok",
+   "top": "6109.10",
+   "confidence": 95,
+   "route": "auto_accept"
+  },
+  {
+   "line_no": 6,
+   "text": "塑料玩具车 / Plastic toy cars",
+   "flag": "ok",
+   "top": "9503.00",
+   "confidence": 95,
+   "route": "auto_accept"
+  },
+  {
+   "line_no": 7,
+   "text": "电子产品 / Electronic products",
+   "flag": "vague",
+   "top": "8473.50",
+   "confidence": 70,
+   "route": "review"
+  },
+  {
+   "line_no": 8,
+   "text": "无线蓝牙耳机 / Wireless Bluetooth earphones",
+   "flag": "ok",
+   "top": "8518.30",
+   "confidence": 95,
+   "route": "auto_accept"
+  },
+  {
+   "line_no": 9,
+   "text": "家具 / Furniture",
+   "flag": "vague",
+   "top": "9403.91",
+   "confidence": 85,
+   "route": "review"
+  },
+  {
+   "line_no": 10,
+   "text": "铝合金自行车架 / Aluminium alloy bicycle frames",
+   "flag": "ok",
+   "top": "7610.90",
+   "confidence": 85,
+   "route": "auto_accept"
+  },
+  {
+   "line_no": 11,
+   "text": "橡胶密封圈 / Rubber O-ring gaskets, vulcanised",
+   "flag": "ok",
+   "top": "4016.93",
+   "confidence": 95,
+   "route": "auto_accept"
+  },
+  {
+   "line_no": 12,
+   "text": "硅胶手机壳 / Silicone mobile phone cases",
+   "flag": "ok",
+   "top": "8480.79",
+   "confidence": 90,
+   "route": "auto_accept"
+  }
+ ]
+}

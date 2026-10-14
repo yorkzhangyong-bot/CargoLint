@@ -122,8 +122,8 @@ def render(store, kb) -> None:
     options = [DETECT, *names, NEW_SHIPPER]
     detected = store.shipment.shipper.name if store.has_shipment() and store.shipment.shipper.known else None
     default_idx = options.index(detected) if detected in options else 0
-    choice = st.selectbox("Shipper", options, index=default_idx, key=f"shipper_choice_{store.shipment.id if store.has_shipment() else 'none'}",
-                          format_func=lambda n: _shipper_label(n, kb))
+    widget_key = f"shipper_choice_{store.shipment.id if store.has_shipment() else 'none'}_{detected or 'none'}"
+    choice = st.selectbox("Shipper", options, index=default_idx, key=widget_key, format_func=lambda n: _shipper_label(n, kb))
     if store.has_shipment() and choice not in (DETECT,) and choice != store.shipment.shipper.name:
         if choice == NEW_SHIPPER:
             store.set_shipper("New shipper", known=False)

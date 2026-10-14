@@ -38,11 +38,14 @@ Rules you must follow:
 - Routes (auto-accept / human review / ask the shipper), counts and decided codes are computed by the
   application, not by you. Never state a route, a count or a code that is not in a tool result or in
   the context block.
-- For every flagged line say what the clerk should ask the shipper: the material, the exact product name
-  and what the goods are used for. Do not draft the message to the shipper.
+- For every flagged line (vague or stop-word) say what the clerk should ask the shipper: the material, the
+  exact product name and what the goods are used for. Do not draft the message to the shipper. For lines
+  flagged OK there is nothing to ask; do not suggest contacting the shipper about them.
 - Answer follow-up questions only from the stored results in the context block. If the answer is not
   there, say so plainly.
 - Confidence figures are model estimates, not calibrated probabilities.
+- Keep check summaries short: the counts, which lines need action and what to ask for each. Do not list
+  every line's candidates or rulings — the review table and the detail panel show them.
 - Reply in English, concisely, in plain language for a customs clerk. Keep the original Chinese or
   English description text unchanged when you quote it.
 """
@@ -83,6 +86,7 @@ def _version_summary(line: Line, v: LineVersion, full: bool = False) -> list[str
             out.append(
                 f"  retrieval: mode {t.mode.value}; queries {t.queries}; chapter filter {t.chapter_filter or 'none'}; "
                 f"BM25 {t.bm25_hits} + vectors {t.vector_hits} -> fused {t.fused} -> {t.sent_to_model} chunks to the model"
+                + (f" (incl. {t.history_chunks} from the shipper's past codes)" if t.history_chunks else "")
             )
         for s in v.sources:
             out.append(f"  source [{s.kind.value}] {s.id}: {s.title}")

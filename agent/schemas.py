@@ -191,6 +191,7 @@ class RetrievalTrace(BaseModel):
     vector_hits: int = 0
     fused: int = 0
     sent_to_model: int = 0
+    history_chunks: int = 0
     mode: RetrievalMode = RetrievalMode.hybrid
 
 

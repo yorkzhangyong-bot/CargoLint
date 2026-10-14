@@ -44,7 +44,7 @@ def _style(df: pd.DataFrame):
 def render(store, kb) -> None:
     s = store.shipment
     counts = store.counts()
-    st.subheader(f"Review · {s.reference or s.id}")
+    st.subheader(f"Review · {s.reference}" if s.reference else "Review")
     bits = [b for b in (f"{s.origin} → {s.destination}" if s.origin and s.destination else None, s.mode, f"{len(store.lines)} lines",
                         "needs-action first") if b]
     st.caption(" · ".join(bits))
