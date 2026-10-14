@@ -62,7 +62,7 @@ def route_line(
         if ever_flagged:
             return Route.review, (
                 f"ready to accept — confidence {conf} at or above the threshold {threshold}, "
-                "but the line was flagged before; click Accept to confirm"
+                "but the line was flagged or updated before; click Accept to confirm"
             )
         return Route.auto_accept, f"confidence {conf} at or above the threshold {threshold}"
     return Route.review, f"below threshold ({conf} < {threshold})"

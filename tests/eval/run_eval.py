@@ -41,6 +41,8 @@ def evaluate(lines: list[dict], mode: str, kb, usage: Usage, workers: int) -> di
     checks = check_descriptions(inputs, kb.rules, client, workers)
     for inp, chk in zip(inputs, checks):
         inp.pure_stop_word = bool(chk.flag and chk.flag.pure_stop_word)
+        inp.flag_kind = chk.flag.kind.value if chk.flag else None
+        inp.flag_reason = chk.flag.reason if chk.flag else ""
     classes = classify_lines(inputs, ClassifyContext(hybrid=(mode == "hybrid")), kb, client, workers)
     elapsed = time.perf_counter() - t0
     rows = []

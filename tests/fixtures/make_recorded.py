@@ -43,10 +43,10 @@ def main() -> int:
     rank["X / Unknown widget"] = {"candidates": [{"code": "9999.99", "confidence": 70, "rationale": "nonexistent", "history_only": False}]}
     rank["steel bobbin cases for industrial sewing machines"] = {"candidates": [
         {"code": "8452.90", "confidence": 96, "rationale": "bobbin cases are parts of sewing machines", "history_only": False}]}
-    rank["塑料杯 / plastic cups"] = {"candidates": [{"code": "3924.10", "confidence": 90, "rationale": "plastic tableware", "history_only": False}]}
+    rank["塑料杯 / plastic cups for drinking"] = {"candidates": [{"code": "3924.10", "confidence": 90, "rationale": "plastic tableware", "history_only": False}]}
     judgement["steel bobbin cases for industrial sewing machines"] = {"vague": False, "missing": [], "reason": "material, part name and host machine given"}
-    judgement["塑料杯 / plastic cups"] = {"vague": False, "missing": [], "reason": "material and product named"}
-    translate["塑料杯 / plastic cups"] = {"queries": ["plastic cups", "plastic tableware"], "hyde": None}
+    judgement["塑料杯 / plastic cups for drinking"] = {"vague": False, "missing": [], "reason": "material and product named"}
+    translate["塑料杯 / plastic cups for drinking"] = {"queries": ["plastic cups", "plastic tableware"], "hyde": None}
     extract = {
         "line 1 is steel bobbin cases for industrial sewing machines": {"material": "steel", "part_name": "bobbin cases", "use": "industrial sewing machines"},
         "steel bobbin cases for industrial sewing machines": {"material": "steel", "part_name": "bobbin cases", "use": "industrial sewing machines"},

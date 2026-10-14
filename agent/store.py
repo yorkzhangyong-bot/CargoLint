@@ -284,7 +284,8 @@ class LineStore:
         s = self.shipment
         v = line.current
         kind = v.flag.kind if v.flag is not None else None
-        route, reason = route_line(kind, v.top_confidence, v.status, line.ever_flagged, s.threshold, s.ask_floor)
+        needs_click = line.ever_flagged or v.created_by == CreatedBy.shipper_reply  # never auto-accept after an update (FR-022)
+        route, reason = route_line(kind, v.top_confidence, v.status, needs_click, s.threshold, s.ask_floor)
         if v.unreadable and v.status == LineStatus.checked and not v.candidates:
             reason = "unreadable description — needs a human look"
         changed = route != v.computed_route or reason != v.route_reason

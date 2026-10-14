@@ -123,7 +123,7 @@ def run_turn(
     """One clerk turn: context block + code-built request → agent with tools → completeness guard → counts."""
     settings = get_settings()
     load_all()
-    ctx = ToolContext(store=store, kb=kb, settings=settings)
+    ctx = ToolContext(store=store, kb=kb, settings=settings, selected_line_no=selected_line_no)
     set_context(ctx)
     has_shipment = store.has_shipment()
     shipment = store.shipment if has_shipment else None

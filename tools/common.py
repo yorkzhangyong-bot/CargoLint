@@ -25,6 +25,8 @@ class LineText(BaseModel):
     text_en: str = ""
     extracted: Extracted | None = None
     pure_stop_word: bool = False
+    flag_kind: str | None = None
+    flag_reason: str = ""
 
     @property
     def display_text(self) -> str:
@@ -40,6 +42,7 @@ class ToolContext:
     settings: Settings = field(default_factory=get_settings)
     client: StructuredCaller | None = None
     workers: int | None = None
+    selected_line_no: int | None = None
 
     def __post_init__(self) -> None:
         if self.client is None:
@@ -72,7 +75,8 @@ def select_lines(store: Any, line_nos: list[int] | None = None, all_pending: boo
         if not line_nos and all_pending and v.status.value != "pending":
             continue
         out.append(LineText(line_no=line.line_no, text_zh=v.text_zh, text_en=v.text_en, extracted=v.extracted,
-                            pure_stop_word=bool(v.flag and v.flag.pure_stop_word)))
+                            pure_stop_word=bool(v.flag and v.flag.pure_stop_word),
+                            flag_kind=v.flag.kind.value if v.flag else None, flag_reason=v.flag.reason if v.flag else ""))
     return out
 
 
