@@ -1,0 +1,159 @@
+{
+ "配件 / Parts": {
+  "vague": true,
+  "missing": [
+   "material",
+   "product_name",
+   "use"
+  ],
+  "reason": "generic term, no material, product name or use"
+ },
+ "电子产品 / Electronic products": {
+  "vague": true,
+  "missing": [
+   "material",
+   "product_name",
+   "use"
+  ],
+  "reason": "generic term, no material, product name or use"
+ },
+ "家具 / Furniture": {
+  "vague": true,
+  "missing": [
+   "material",
+   "product_name",
+   "use"
+  ],
+  "reason": "generic term, no material, product name or use"
+ },
+ "服装 / Apparel": {
+  "vague": true,
+  "missing": [
+   "material",
+   "product_name",
+   "use"
+  ],
+  "reason": "generic term, no material, product name or use"
+ },
+ "五金 / Hardware": {
+  "vague": true,
+  "missing": [
+   "material",
+   "product_name",
+   "use"
+  ],
+  "reason": "generic term, no material, product name or use"
+ },
+ "礼品 / Gift": {
+  "vague": true,
+  "missing": [
+   "material",
+   "product_name",
+   "use"
+  ],
+  "reason": "generic term, no material, product name or use"
+ },
+ "样品 / Samples": {
+  "vague": true,
+  "missing": [
+   "material",
+   "product_name",
+   "use"
+  ],
+  "reason": "generic term, no material, product name or use"
+ },
+ "个人物品 / Personal effects": {
+  "vague": true,
+  "missing": [
+   "material",
+   "product_name",
+   "use"
+  ],
+  "reason": "generic term, no material, product name or use"
+ },
+ "不锈钢保温杯 500ml / Stainless steel vacuum flask, 500 ml": {
+  "vague": false,
+  "missing": [],
+  "reason": "specific product with material and type"
+ },
+ "纯棉针织T恤 / Cotton T-shirts, knitted": {
+  "vague": false,
+  "missing": [],
+  "reason": "specific product with material and type"
+ },
+ "塑料玩具车 / Plastic toy cars": {
+  "vague": false,
+  "missing": [],
+  "reason": "specific product with material and type"
+ },
+ "无线蓝牙耳机 / Wireless Bluetooth earphones": {
+  "vague": false,
+  "missing": [],
+  "reason": "specific product with material and type"
+ },
+ "不锈钢六角螺栓 / Stainless steel hexagon bolts, threaded": {
+  "vague": false,
+  "missing": [],
+  "reason": "specific product with material and type"
+ },
+ "家用塑料收纳箱 / Plastic storage boxes for household use": {
+  "vague": false,
+  "missing": [],
+  "reason": "specific product with material and type"
+ },
+ "硅胶手机壳 / Silicone mobile phone cases": {
+  "vague": false,
+  "missing": [],
+  "reason": "specific product with material and type"
+ },
+ "LED台灯 USB供电 / LED desk lamp, USB powered": {
+  "vague": false,
+  "missing": [],
+  "reason": "specific product with material and type"
+ },
+ "工业缝纫机钢制梭芯套 / Steel bobbin cases for industrial sewing machines": {
+  "vague": false,
+  "missing": [],
+  "reason": "specific product with material and type"
+ },
+ "真皮女式手提包 / Women's handbags with outer surface of leather": {
+  "vague": false,
+  "missing": [],
+  "reason": "specific product with material and type"
+ },
+ "男式纯棉牛仔裤 梭织 / Men's cotton denim trousers, woven": {
+  "vague": false,
+  "missing": [],
+  "reason": "specific product with material and type"
+ },
+ "女式运动鞋 橡胶底纺织面 / Women's sports shoes, rubber outer sole, textile upper": {
+  "vague": false,
+  "missing": [],
+  "reason": "specific product with material and type"
+ },
+ "不锈钢保温杯 / Stainless steel vacuum flask, 500 ml": {
+  "vague": false,
+  "missing": [],
+  "reason": "specific product with material and type"
+ },
+ "铝合金自行车架 / Aluminium alloy bicycle frames": {
+  "vague": false,
+  "missing": [],
+  "reason": "specific product with material and type"
+ },
+ "橡胶密封圈 / Rubber O-ring gaskets, vulcanised": {
+  "vague": false,
+  "missing": [],
+  "reason": "specific product with material and type"
+ },
+ "steel bobbin cases for industrial sewing machines": {
+  "vague": false,
+  "missing": [],
+  "reason": "material, part name and host machine given"
+ },
+ "塑料杯 / plastic cups": {
+  "vague": false,
+  "missing": [],
+  "reason": "material and product named"
+ }
+}

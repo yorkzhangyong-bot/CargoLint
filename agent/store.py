@@ -232,6 +232,20 @@ class LineStore:
                                        actor=Actor.clerk, note=decision.chosen_how.value if decision.chosen_how else None))
         return decision
 
+    def accept_lock_reason(self, line: Line) -> str | None:
+        """Why Accept is unavailable for this line, or None when the clerk may accept it (FR-022/FR-023)."""
+        v = line.current
+        if v.status != LineStatus.checked:
+            return "the line has not been checked successfully"
+        if v.flag is None or not can_accept(v.flag.kind):
+            kind = v.flag.kind.value.replace("_", "-") if v.flag else "unchecked"
+            below = (f"Below the {self.shipment.threshold}% threshold and " if (v.top_confidence or 0) < self.shipment.threshold else "")
+            return f"{below}flagged ({kind}), so auto-accept is locked until the description is updated and re-checked"
+        return None
+
+    def set_shipper(self, name: str, known: bool = False, past_shipment_count: int = 0) -> None:
+        self.shipment.shipper = ShipperRef(name=name or "New shipper", known=known, past_shipment_count=past_shipment_count)
+
     def clear_decision(self, line_no: int) -> None:
         line = self.get_line(line_no)
         line.current.decision = None

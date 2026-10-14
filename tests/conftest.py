@@ -64,6 +64,9 @@ def fake_llm():
     from agent.llm import set_client_factory
     from tests.fakes import FakeRawClient
 
+    from rag.translate import clear_cache
+
+    clear_cache()
     client = FakeRawClient.from_dir(FIXTURES / "recorded")
     set_client_factory(lambda: client)
     try:

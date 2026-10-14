@@ -168,9 +168,9 @@ def make_demo(records: list[dict], n: int = 200, seed: int = 7) -> list[dict]:
     per = max(1, n // max(1, len(by_chapter)))
     out: list[dict] = []
     for ch, items in sorted(by_chapter.items()):
-        items = sorted(items, key=lambda r: (r.get("language") not in ("EN", "DE"), r.get("valid_from") or ""), reverse=False)
+        items = sorted(items, key=lambda r: ((r.get("language") or "").upper() not in ("EN", "DE"), r.get("valid_from") or ""), reverse=False)
         rng.shuffle(items)
-        items.sort(key=lambda r: r.get("language") not in ("EN", "DE"))
+        items.sort(key=lambda r: (r.get("language") or "").upper() not in ("EN", "DE"))
         out.extend(items[:per])
     return out[:n]
 

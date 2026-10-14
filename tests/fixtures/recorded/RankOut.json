@@ -1,0 +1,239 @@
+{
+ "配件 / Parts": {
+  "candidates": [
+   {
+    "code": "8452.90",
+    "confidence": 31,
+    "rationale": "shipper history: 6 of 6 past shipments were 8452.xx",
+    "history_only": true
+   },
+   {
+    "code": "9999.99",
+    "confidence": 24,
+    "rationale": "made-up code that must be dropped",
+    "history_only": false
+   },
+   {
+    "code": "8487.90",
+    "confidence": 19,
+    "rationale": "fallback heading for machinery parts",
+    "history_only": false
+   }
+  ]
+ },
+ "电子产品 / Electronic products": {
+  "candidates": [
+   {
+    "code": "8543.70",
+    "confidence": 22,
+    "rationale": "matches subheading 8543.70",
+    "history_only": false
+   }
+  ]
+ },
+ "家具 / Furniture": {
+  "candidates": [
+   {
+    "code": "9403.60",
+    "confidence": 58,
+    "rationale": "matches subheading 9403.60",
+    "history_only": false
+   }
+  ]
+ },
+ "服装 / Apparel": {
+  "candidates": []
+ },
+ "五金 / Hardware": {
+  "candidates": []
+ },
+ "礼品 / Gift": {
+  "candidates": []
+ },
+ "样品 / Samples": {
+  "candidates": []
+ },
+ "个人物品 / Personal effects": {
+  "candidates": []
+ },
+ "不锈钢保温杯 500ml / Stainless steel vacuum flask, 500 ml": {
+  "candidates": [
+   {
+    "code": "9617.00",
+    "confidence": 90,
+    "rationale": "matches subheading 9617.00",
+    "history_only": false
+   }
+  ]
+ },
+ "纯棉针织T恤 / Cotton T-shirts, knitted": {
+  "candidates": [
+   {
+    "code": "6109.10",
+    "confidence": 94,
+    "rationale": "matches subheading 6109.10",
+    "history_only": false
+   }
+  ]
+ },
+ "塑料玩具车 / Plastic toy cars": {
+  "candidates": [
+   {
+    "code": "9503.00",
+    "confidence": 93,
+    "rationale": "matches subheading 9503.00",
+    "history_only": false
+   }
+  ]
+ },
+ "无线蓝牙耳机 / Wireless Bluetooth earphones": {
+  "candidates": [
+   {
+    "code": "8518.30",
+    "confidence": 91,
+    "rationale": "matches subheading 8518.30",
+    "history_only": false
+   }
+  ]
+ },
+ "不锈钢六角螺栓 / Stainless steel hexagon bolts, threaded": {
+  "candidates": [
+   {
+    "code": "7318.15",
+    "confidence": 90,
+    "rationale": "matches subheading 7318.15",
+    "history_only": false
+   }
+  ]
+ },
+ "家用塑料收纳箱 / Plastic storage boxes for household use": {
+  "candidates": [
+   {
+    "code": "3924.90",
+    "confidence": 90,
+    "rationale": "matches subheading 3924.90",
+    "history_only": false
+   }
+  ]
+ },
+ "硅胶手机壳 / Silicone mobile phone cases": {
+  "candidates": [
+   {
+    "code": "3926.90",
+    "confidence": 88,
+    "rationale": "matches subheading 3926.90",
+    "history_only": false
+   }
+  ]
+ },
+ "LED台灯 USB供电 / LED desk lamp, USB powered": {
+  "candidates": [
+   {
+    "code": "9405.21",
+    "confidence": 72,
+    "rationale": "matches subheading 9405.21",
+    "history_only": false
+   }
+  ]
+ },
+ "工业缝纫机钢制梭芯套 / Steel bobbin cases for industrial sewing machines": {
+  "candidates": [
+   {
+    "code": "8452.90",
+    "confidence": 90,
+    "rationale": "matches subheading 8452.90",
+    "history_only": false
+   }
+  ]
+ },
+ "真皮女式手提包 / Women's handbags with outer surface of leather": {
+  "candidates": [
+   {
+    "code": "4202.21",
+    "confidence": 90,
+    "rationale": "matches subheading 4202.21",
+    "history_only": false
+   }
+  ]
+ },
+ "男式纯棉牛仔裤 梭织 / Men's cotton denim trousers, woven": {
+  "candidates": [
+   {
+    "code": "6203.42",
+    "confidence": 90,
+    "rationale": "matches subheading 6203.42",
+    "history_only": false
+   }
+  ]
+ },
+ "女式运动鞋 橡胶底纺织面 / Women's sports shoes, rubber outer sole, textile upper": {
+  "candidates": [
+   {
+    "code": "6404.11",
+    "confidence": 90,
+    "rationale": "matches subheading 6404.11",
+    "history_only": false
+   }
+  ]
+ },
+ "不锈钢保温杯 / Stainless steel vacuum flask, 500 ml": {
+  "candidates": [
+   {
+    "code": "9617.00",
+    "confidence": 96,
+    "rationale": "matches subheading 9617.00",
+    "history_only": false
+   }
+  ]
+ },
+ "铝合金自行车架 / Aluminium alloy bicycle frames": {
+  "candidates": [
+   {
+    "code": "8714.91",
+    "confidence": 95,
+    "rationale": "matches subheading 8714.91",
+    "history_only": false
+   }
+  ]
+ },
+ "橡胶密封圈 / Rubber O-ring gaskets, vulcanised": {
+  "candidates": [
+   {
+    "code": "4016.93",
+    "confidence": 92,
+    "rationale": "matches subheading 4016.93",
+    "history_only": false
+   }
+  ]
+ },
+ "X / Unknown widget": {
+  "candidates": [
+   {
+    "code": "9999.99",
+    "confidence": 70,
+    "rationale": "nonexistent",
+    "history_only": false
+   }
+  ]
+ },
+ "steel bobbin cases for industrial sewing machines": {
+  "candidates": [
+   {
+    "code": "8452.90",
+    "confidence": 96,
+    "rationale": "bobbin cases are parts of sewing machines",
+    "history_only": false
+   }
+  ]
+ },
+ "塑料杯 / plastic cups": {
+  "candidates": [
+   {
+    "code": "3924.10",
+    "confidence": 90,
+    "rationale": "plastic tableware",
+    "history_only": false
+   }
+  ]
+ }
+}

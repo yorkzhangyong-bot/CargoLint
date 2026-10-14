@@ -227,13 +227,14 @@ def write_sources_md(meta: dict[str, Any], rules: RuleSet, demo: bool) -> None:
 # --------------------------------------------------------------------------- runtime opener
 class KnowledgeBase:
     def __init__(self, index: NomenclatureIndex, retriever: HybridRetriever, bti: bti_mod.BTIStore, rules: RuleSet,
-                 meta: dict[str, Any], embeddings: Any) -> None:
+                 meta: dict[str, Any], embeddings: Any, shippers: list | None = None) -> None:
         self.index = index
         self.retriever = retriever
         self.bti = bti
         self.rules = rules
         self.meta = meta
         self.embeddings = embeddings
+        self.shippers = shippers if shippers is not None else []
 
     @property
     def updated(self) -> str:
@@ -255,7 +256,9 @@ def open_knowledge_base(settings: Settings | None = None, usage_sink: Any = None
     retriever = HybridRetriever(bm25=bm25, vectors=vectors, chunks=index)
     bti_store = bti_mod.BTIStore.from_jsonl(STORE_DIR / "bti_docs.jsonl")
     rules = RuleSet.load(RULES_DIR)
-    return KnowledgeBase(index, retriever, bti_store, rules, meta, emb)
+    from rag.rules import load_shippers
+
+    return KnowledgeBase(index, retriever, bti_store, rules, meta, emb, shippers=load_shippers())
 
 
 # --------------------------------------------------------------------------- CLI

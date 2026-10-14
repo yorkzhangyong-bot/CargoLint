@@ -107,61 +107,76 @@ def _spaced(code: str) -> str:
     return " ".join([code[:4]] + [code[i:i + 2] for i in range(4, len(code), 2)])
 
 
+_CHAPTER_PREFIX = re.compile(r"^\s*CHAPTER\s+\d+\s*[-–—:]?\s*", re.I)
+
+
+def _clean_chapter_label(label: str) -> str:
+    text = _CHAPTER_PREFIX.sub("", label or "").strip()
+    if text and text.upper() == text:
+        text = text[0].upper() + text[1:].lower()
+    return text
+
+
 def build_chunks(concepts: Iterable[Concept], source: str = "EU Combined Nomenclature 2026 (ESTAT-CN2026 SKOS)",
                  edition_year: int = 2026) -> list[NomenclatureChunk]:
+    """One chunk per HS-6 subheading.
+
+    The SKOS file collapses levels: a subheading without CN-8 subdivisions appears only as its
+    8-digit code (`9617 00 00`), and a heading with a single code likewise. HS-6 keys are therefore
+    taken from the first six digits of every 8-digit code plus any explicit 6-digit notation;
+    labels come from the most specific concept available. Text-only dash lines between a CN-8
+    code and its coded ancestor are kept as a path prefix so the CN-8 line keeps its meaning.
+    """
     concepts = list(concepts)
     by_uri = {c.uri: c for c in concepts}
-    children: dict[str, list[Concept]] = {}
-    for c in concepts:
-        if c.broader:
-            children.setdefault(c.broader, []).append(c)
+    coded = [c for c in concepts if c.code]
+    by_code: dict[str, Concept] = {}
+    for c in coded:
+        by_code.setdefault(c.code, c)
+    cn8 = sorted((c for c in coded if len(c.code) == 8), key=lambda c: c.code)
+    members_by_key: dict[str, list[Concept]] = {}
+    for c in cn8:
+        members_by_key.setdefault(c.code[:6], []).append(c)
+    hs6_keys = sorted(set(members_by_key) | {c.code for c in coded if len(c.code) == 6})
 
-    def ancestor_with_len(c: Concept, n: int) -> Concept | None:
-        cur = c
-        seen = 0
-        while cur.broader and seen < 12:
-            cur = by_uri.get(cur.broader)  # type: ignore[assignment]
-            if cur is None:
-                return None
-            if len(cur.code) == n:
-                return cur
-            seen += 1
-        return None
-
-    def descendants(c: Concept) -> list[Concept]:
-        out: list[Concept] = []
-        stack = list(children.get(c.uri, []))
-        while stack:
-            d = stack.pop(0)
-            out.append(d)
-            stack = list(children.get(d.uri, [])) + stack
-        return out
+    def path_labels(c: Concept) -> list[str]:
+        labels: list[str] = []
+        cur: Concept | None = c
+        for _ in range(12):
+            if cur is None or not cur.broader:
+                break
+            cur = by_uri.get(cur.broader)
+            if cur is None or cur.code:
+                break
+            if cur.label_en:
+                labels.append(cur.label_en)
+        return list(reversed(labels))
 
     chunks: list[NomenclatureChunk] = []
-    for c in concepts:
-        if len(c.code) != 6:
-            continue
-        heading = ancestor_with_len(c, 4)
-        chapter = ancestor_with_len(c, 2)
-        dotted = _dotted(c.code)
-        lines = []
+    for key in hs6_keys:
+        chapter, heading, sub = by_code.get(key[:2]), by_code.get(key[:4]), by_code.get(key)
+        members = members_by_key.get(key, [])
+        collapsed = by_code.get(key + "00") if sub is None else None
+        sub_label = sub.label_en if sub else (collapsed.label_en if collapsed else (members[0].label_en if members else ""))
+        sub_scope = sub.scope_note if sub else (collapsed.scope_note if collapsed else "")
+        heading_label = heading.label_en if heading else sub_label
+        dotted = _dotted(key)
+        lines: list[str] = []
         if chapter is not None:
-            lines.append(f"Chapter {chapter.code} — {chapter.label_en}")
-        if heading is not None:
-            lines.append(f"Heading {heading.code} — {heading.label_en}")
-        lines.append(f"Subheading {dotted} — {c.label_en}")
-        if c.scope_note:
-            lines.append(c.scope_note)
-        for d in descendants(c):
-            if d.code and len(d.code) >= 8:
-                lines.append(f"CN {_spaced(d.code)} — {d.label_en}")
-            elif not d.code and d.label_en:
-                lines.append(f"{d.dashes} {d.label_en}".strip())
-            if d.scope_note:
-                lines.append(d.scope_note)
+            lines.append(f"Chapter {key[:2]} — {_clean_chapter_label(chapter.label_en)}")
+        lines.append(f"Heading {key[:4]} — {heading_label}")
+        lines.append(f"Subheading {dotted} — {sub_label}")
+        if sub_scope and sub_scope != sub_label:
+            lines.append(sub_scope)
+        for m in members:
+            path = path_labels(m)
+            prefix = (" > ".join(path) + " > ") if path else ""
+            lines.append(f"CN {_spaced(m.code)} — {prefix}{m.label_en}")
+            if m.scope_note and m.scope_note not in (sub_scope, m.label_en):
+                lines.append(m.scope_note)
         chunks.append(NomenclatureChunk(
             id=f"hs:{dotted}", text="\n".join(lines),
-            metadata={"chapter": c.code[:2], "heading": c.code[:4], "subheading": dotted, "language": "en",
+            metadata={"chapter": key[:2], "heading": key[:4], "subheading": dotted, "language": "en",
                       "source": source, "edition_year": edition_year},
         ))
     chunks.sort(key=lambda ch: ch.id)

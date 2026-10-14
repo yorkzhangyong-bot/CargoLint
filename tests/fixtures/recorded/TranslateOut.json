@@ -1,0 +1,147 @@
+{
+ "配件 / Parts": {
+  "queries": [
+   "Parts"
+  ],
+  "hyde": null
+ },
+ "电子产品 / Electronic products": {
+  "queries": [
+   "Electronic products"
+  ],
+  "hyde": null
+ },
+ "家具 / Furniture": {
+  "queries": [
+   "Furniture"
+  ],
+  "hyde": null
+ },
+ "服装 / Apparel": {
+  "queries": [
+   "Apparel"
+  ],
+  "hyde": null
+ },
+ "五金 / Hardware": {
+  "queries": [
+   "Hardware"
+  ],
+  "hyde": null
+ },
+ "礼品 / Gift": {
+  "queries": [
+   "Gift"
+  ],
+  "hyde": null
+ },
+ "样品 / Samples": {
+  "queries": [
+   "Samples"
+  ],
+  "hyde": null
+ },
+ "个人物品 / Personal effects": {
+  "queries": [
+   "Personal effects"
+  ],
+  "hyde": null
+ },
+ "不锈钢保温杯 500ml / Stainless steel vacuum flask, 500 ml": {
+  "queries": [
+   "Stainless steel vacuum flask, 500 ml"
+  ],
+  "hyde": null
+ },
+ "纯棉针织T恤 / Cotton T-shirts, knitted": {
+  "queries": [
+   "Cotton T-shirts, knitted"
+  ],
+  "hyde": null
+ },
+ "塑料玩具车 / Plastic toy cars": {
+  "queries": [
+   "Plastic toy cars"
+  ],
+  "hyde": null
+ },
+ "无线蓝牙耳机 / Wireless Bluetooth earphones": {
+  "queries": [
+   "Wireless Bluetooth earphones"
+  ],
+  "hyde": null
+ },
+ "不锈钢六角螺栓 / Stainless steel hexagon bolts, threaded": {
+  "queries": [
+   "Stainless steel hexagon bolts, threaded"
+  ],
+  "hyde": null
+ },
+ "家用塑料收纳箱 / Plastic storage boxes for household use": {
+  "queries": [
+   "Plastic storage boxes for household use"
+  ],
+  "hyde": null
+ },
+ "硅胶手机壳 / Silicone mobile phone cases": {
+  "queries": [
+   "Silicone mobile phone cases"
+  ],
+  "hyde": null
+ },
+ "LED台灯 USB供电 / LED desk lamp, USB powered": {
+  "queries": [
+   "LED desk lamp, USB powered"
+  ],
+  "hyde": null
+ },
+ "工业缝纫机钢制梭芯套 / Steel bobbin cases for industrial sewing machines": {
+  "queries": [
+   "Steel bobbin cases for industrial sewing machines"
+  ],
+  "hyde": null
+ },
+ "真皮女式手提包 / Women's handbags with outer surface of leather": {
+  "queries": [
+   "Women's handbags with outer surface of leather"
+  ],
+  "hyde": null
+ },
+ "男式纯棉牛仔裤 梭织 / Men's cotton denim trousers, woven": {
+  "queries": [
+   "Men's cotton denim trousers, woven"
+  ],
+  "hyde": null
+ },
+ "女式运动鞋 橡胶底纺织面 / Women's sports shoes, rubber outer sole, textile upper": {
+  "queries": [
+   "Women's sports shoes, rubber outer sole, textile upper"
+  ],
+  "hyde": null
+ },
+ "不锈钢保温杯 / Stainless steel vacuum flask, 500 ml": {
+  "queries": [
+   "Stainless steel vacuum flask, 500 ml"
+  ],
+  "hyde": null
+ },
+ "铝合金自行车架 / Aluminium alloy bicycle frames": {
+  "queries": [
+   "Aluminium alloy bicycle frames"
+  ],
+  "hyde": null
+ },
+ "橡胶密封圈 / Rubber O-ring gaskets, vulcanised": {
+  "queries": [
+   "Rubber O-ring gaskets, vulcanised"
+  ],
+  "hyde": null
+ },
+ "塑料杯 / plastic cups": {
+  "queries": [
+   "plastic cups",
+   "plastic tableware"
+  ],
+  "hyde": null
+ }
+}
