@@ -1,16 +1,16 @@
-"""Chat column: welcome and quick actions, message history, progress block, routing metrics, line
-result cards, sources and retrieval steps, chat input handling (contracts/ui.md)."""
+"""Assistant rail: compact welcome with quick-action cards, message history, live progress for the running
+turn, structured check summaries, line cards for pasted lines, grouped sources and retrieval steps, chat input."""
 from __future__ import annotations
 
 import re
-import time
 from typing import Any
 
+import pandas as pd
 import streamlit as st
 
-from agent.agent import ProgressEvent, run_turn
 from agent.config import MAX_PASTED_LINES
 from agent.schemas import CreatedBy, ParsedLine
+from ui import jobs
 
 QUESTION_RE = re.compile(
     r"\?|？|^(why|what|which|how|is|are|can|could|does|do|did|when|where|who|should|explain|tell|show|list|compare)\b"
@@ -18,20 +18,22 @@ QUESTION_RE = re.compile(
 LINE_REF_RE = re.compile(r"\bline\s*(\d{1,3})\b|第\s*(\d{1,3})\s*行", re.I)
 
 QUICK_ACTIONS = [
-    ("Try one description", "e.g. “不锈钢保温杯 500ml”", "不锈钢保温杯 500ml"),
+    ("Try one description", "e.g. 不锈钢保温杯 500ml", "不锈钢保温杯 500ml"),
     ("Use the sample packing list", "12 Yiwu consolidation lines, 5 problematic", "__sample__"),
-    ("Which terms does customs reject?", "Look up the ICS2 unacceptable-terms list", "__terms__"),
+    ("Which terms does customs reject?", "The ICS2 unacceptable-terms lists", "__terms__"),
 ]
 
-FLAG_BADGE = {"ok": ":gray-badge[OK]", "vague": ":orange-badge[Vague]", "stop_word": ":red-badge[Stop-word]", "failed": ":red-badge[Failed]"}
+FLAG_BADGE = {"ok": ":gray-badge[OK]", "vague": ":orange-badge[Vague]", "stop_word": ":red-badge[Stop-word]", "failed": ":red-badge[Failed]",
+              "pending": ":gray-badge[…]"}
 ROUTE_BADGE = {"auto_accept": ":green-badge[Auto-accept]", "accepted": ":green-badge[Accepted]", "review": ":orange-badge[Review]",
                "ask_shipper": ":blue-badge[Ask shipper]"}
 ROUTE_LABEL = {"auto_accept": "Auto-accept", "accepted": "Accepted", "review": "Human review", "ask_shipper": "Ask the shipper"}
+SOURCE_GROUP = {"nomenclature": "Nomenclature", "bti": "BTI rulings", "ics2_rule": "ICS2 rules", "firm_rule": "Firm list", "shipper_history": "Shipper history"}
 
 
 # --------------------------------------------------------------------------- message classification
 def classify_message(text: str, store) -> tuple[str, Any]:
-    """Code-side classification of a clerk message: ('lines', [...]) | ('reply', (line_no|None, text)) | ('question', text)."""
+    """('lines', [...]) | ('reply', (line_no|None, text)) | ('question', text) — decided in code, never by the model."""
     stripped = text.strip()
     lines = [l.strip() for l in stripped.splitlines() if l.strip()]
     if len(lines) > 1 and not QUESTION_RE.search(lines[0]):
@@ -48,45 +50,20 @@ def classify_message(text: str, store) -> tuple[str, Any]:
     return "lines", lines
 
 
-# --------------------------------------------------------------------------- handlers
+# --------------------------------------------------------------------------- starting turns (background)
 def _ensure_shipment(store) -> None:
     if not store.has_shipment():
-        store.new_shipment(reference="", threshold=int(st.session_state.get("threshold", 85)),
+        store.new_shipment(reference=st.session_state.get("reference", "") or "", threshold=int(st.session_state.get("threshold", 85)),
                            hybrid=bool(st.session_state.get("hybrid", True)))
 
 
-def _progress_status(label: str):
-    return st.status(label, expanded=True, state="running")
-
-
-def _run(message: str, store, kb, *, file_ref: str | None = None, reply_ref: str | None = None, is_check: bool | None = None,
-         new_line_nos: list[int] | None = None, label_prefix: str | None = None) -> dict:
-    status = _progress_status("Checking…" if is_check else ("Updating…" if label_prefix else "Thinking…"))
-    steps: list[str] = []
-    t0 = time.perf_counter()
-
-    def on_progress(ev: ProgressEvent) -> None:
-        if ev.phase == "start":
-            status.update(label=f"Running {ev.tool}…")
-        else:
-            who = " (app)" if ev.run_by == "app" else ""
-            steps.append(f"**{ev.tool}**{who} — {ev.summary}")
-            status.write(steps[-1])
-
-    history = [(m["role"], m.get("agent_text") or m["content"]) for m in st.session_state["chat"][-6:]]
-    result = run_turn(message, store, kb, selected_line_no=st.session_state.get("selected_line_no"), on_progress=on_progress,
-                      file_ref=file_ref, reply_ref=reply_ref, history=history, is_check=is_check)
-    elapsed = time.perf_counter() - t0
-    if is_check:
-        n = len(store.lines) if store.has_shipment() else 0
-        label = f"{n} line{'s' if n != 1 else ''} checked · {result.tool_calls} tool{'s' if result.tool_calls != 1 else ''} · {elapsed:.1f} s"
-    else:
-        tools_txt = f"{result.tool_calls} tool{'s' if result.tool_calls != 1 else ''}"
-        label = f"{label_prefix or 'Answered'} · {tools_txt} · {elapsed:.1f} s"
-    status.update(label=label, state="complete", expanded=False)
-    return {"role": "assistant", "content": result.text, "agent_text": result.text, "label": label, "steps": steps,
-            "counts": result.counts if is_check else None, "line_nos": new_line_nos, "is_check": bool(is_check),
-            "sources_from": new_line_nos, "trace_from": st.session_state.get("selected_line_no") if not is_check else None}
+def _start(message: str, store, kb, *, file_ref=None, reply_ref=None, is_check=None, new_line_nos=None, label_prefix=None, note=None,
+           kind: str = "question") -> None:
+    history = [(m["role"], m.get("agent_text") or m["content"]) for m in st.session_state["chat"][-6:] if m.get("role") in ("user", "assistant")]
+    job = jobs.Job(kind=kind, message=message, is_check=bool(is_check), file_ref=file_ref, reply_ref=reply_ref, new_line_nos=new_line_nos,
+                   label_prefix=label_prefix, selected_line_no=st.session_state.get("selected_line_no"), history=history, note=note)
+    st.session_state["job"] = jobs.start(job, store, kb)
+    return None
 
 
 def handle_message(text: str, store, kb) -> None:
@@ -96,8 +73,8 @@ def handle_message(text: str, store, kb) -> None:
         lines = payload
         if len(lines) > MAX_PASTED_LINES:
             chat.append({"role": "user", "content": text})
-            chat.append({"role": "assistant", "content": f"That is {len(lines)} lines; I can take up to {MAX_PASTED_LINES} pasted lines per message. "
-                                                        "Please upload the list as a file instead."})
+            chat.append({"role": "assistant", "content": f"That is {len(lines)} lines; I can take up to {MAX_PASTED_LINES} pasted lines per "
+                                                        "message. Please upload the list as a file instead."})
             return
         _ensure_shipment(store)
         parsed = [ParsedLine(text_zh=_zh(l), text_en=_en(l), source_ref=f"pasted line {i + 1}") for i, l in enumerate(lines)]
@@ -106,20 +83,26 @@ def handle_message(text: str, store, kb) -> None:
         chat.append({"role": "user", "content": f"[{len(nos)} description{'s' if len(nos) != 1 else ''} added as line{'s' if len(nos) != 1 else ''} "
                                                 f"{nos[0]}{'–' + str(nos[-1]) if len(nos) > 1 else ''}]", "raw": text})
         req = f"Check lines {nos[0]}–{nos[-1]}" if len(nos) > 1 else f"Check line {nos[0]}"
-        chat.append(_run(req, store, kb, is_check=True, new_line_nos=nos))
+        _start(req, store, kb, is_check=True, new_line_nos=nos, kind="check")
     elif kind == "reply":
-        line_no, reply_text = payload
-        from ui import replies  # US3
+        from ui import replies
 
-        replies.handle(line_no, reply_text, store, kb, chat, _run)
+        replies.handle(payload[0], payload[1], store, kb, chat, _start)
     else:
         chat.append({"role": "user", "content": text})
-        chat.append(_run(text, store, kb, is_check=False))
+        _start(text, store, kb, is_check=False, kind="question")
+
+
+def _split(line: str) -> list[str]:
+    from tools.parsers import split_mixed
+
+    zh, en = split_mixed(line)
+    return [zh, en] if zh and en else [line]
 
 
 def _zh(line: str) -> str:
-    zh = "".join(re.findall(r"[一-鿿0-9A-Za-z]+", _split(line)[0]))
-    return _split(line)[0].strip() if re.search(r"[一-鿿]", _split(line)[0]) else ""
+    parts = _split(line)
+    return parts[0].strip() if re.search(r"[一-鿿]", parts[0]) else ""
 
 
 def _en(line: str) -> str:
@@ -129,51 +112,59 @@ def _en(line: str) -> str:
     return "" if re.search(r"[一-鿿]", parts[0]) else parts[0].strip()
 
 
-def _split(line: str) -> list[str]:
-    from tools.parsers import split_mixed
+def _finish_job(store, kb) -> None:
+    job = st.session_state.pop("job")
+    label = jobs.finish_label(job, store)
+    if job.error:
+        content = f"I could not finish this: {job.error}"
+    else:
+        content = (job.result.text if job.result else "") or ""
+        if job.note:
+            content = job.note + "\n\n" + content
+    msg = {"role": "assistant", "content": content, "agent_text": job.result.text if job.result else "", "label": label,
+           "steps": job.step_lines(), "line_nos": job.new_line_nos,
+           "counts": (job.result.counts if (job.result and job.is_check and (job.file_ref or len(job.new_line_nos or []) >= 3)) else None),
+           "is_check": job.is_check, "kind": job.kind, "error": bool(job.error)}
+    if job.kind == "check" and job.file_ref:
+        msg["source_lines"] = [l.line_no for l in store.lines]
+    if job.kind == "reply" and job.new_line_nos:
+        msg["trace_from"] = job.new_line_nos[0]
+        msg["source_lines"] = job.new_line_nos
+    if job.kind == "question":
+        msg["trace_from"] = job.selected_line_no
+    st.session_state["chat"].append(msg)
+    from ui.review import reset_selection
 
-    zh, en = split_mixed(line)
-    if zh and en:
-        return [zh, en]
-    return [line]
-
-
-def terms_answer(kb) -> str:
-    facts = kb.rules.caption_facts()
-    out = ["These are the terms customs rejects as goods descriptions (the description must say what the goods are, "
-           "normally with material and product type):"]
-    for rl in kb.rules.ics2_lists:
-        terms = ", ".join(e.term for e in rl.entries[:70])
-        more = f" … and {len(rl.entries) - 70} more" if len(rl.entries) > 70 else ""
-        out.append(f"\n**{rl.source_doc}** ({rl.source_date}, {len(rl.entries)} terms): {terms}{more}")
-    out.append(f"\n**Firm stop-word list** ({facts['firm_terms']} terms): " + ", ".join(e.term for e in kb.rules.firm.entries))
-    out.append("\nFlagged lines are routed to *ask the shipper* (stop-word) or *human review / ask the shipper* (vague) — "
-               "ask for the material, the exact product name and the use.")
-    return "\n".join(out)
+    if job.kind == "check" and store.has_shipment() and st.session_state.get("selected_line_no") is None:
+        first = next((l.line_no for l in store.lines if store.needs_action(l)), None)
+        st.session_state["selected_line_no"] = first
+        reset_selection()
+    elif job.kind == "reply" and job.new_line_nos and not job.error:
+        st.session_state["selected_line_no"] = job.new_line_nos[0]   # show the clerk the updated version
+        reset_selection()
+    st.rerun()
 
 
 # --------------------------------------------------------------------------- rendering
-def _welcome(store, kb) -> None:
+def _welcome(store, kb, compact: bool) -> None:
+    busy = st.session_state.get("job") is not None
     with st.chat_message("assistant"):
-        st.markdown(
-            "Hi. I catch cargo descriptions customs will reject before you file ICS2. Upload a packing list or invoice on the "
-            "left (Chinese, English or mixed), or paste a few lines below. For every line I flag vague and stop-word "
-            "descriptions, suggest the top-3 HS-6 codes with reasoning and a precedent ruling, and route it: auto-accept, "
-            "human review, or ask the shipper. When the shipper replies, paste the answer back and I update only that line."
-        )
-        cols = st.columns(3)
-        for col, (label, hint, action) in zip(cols, QUICK_ACTIONS):
-            with col:
-                if st.button(label, help=hint, use_container_width=True, key=f"qa_{action}"):
+        if compact:
+            st.caption("Ask about any line, paste the shipper's reply, or start again from the sidebar.")
+            return
+        st.markdown("I catch cargo descriptions customs will reject before you file ICS2, suggest HS-6 codes with reasoning "
+                    "and a precedent, and route every line: **auto-accept**, **human review** or **ask the shipper**.")
+        for label, hint, action in QUICK_ACTIONS:
+            with st.container(border=True):
+                c1, c2 = st.columns([4, 1.3], vertical_alignment="center")
+                c1.markdown(f"**{label}**  \n:gray[{hint}]")
+                if c2.button("Go", key=f"qa_{action}", width="stretch", disabled=busy):
                     st.session_state["quick_action"] = action
         with st.expander("What I can and cannot do"):
-            st.markdown(
-                "**Can:** check descriptions, suggest HS-6 subheadings with reasoning, cite BTI precedents, verify a code "
-                "exists in the current nomenclature.\n\n"
-                "**Cannot:** make the final classification decision for you. A line below the threshold is never "
-                "auto-accepted, and a flagged line is never accepted without your click. Text inside your files is "
-                "treated as data, never as instructions."
-            )
+            st.markdown("**Can:** check descriptions, suggest HS-6 subheadings with reasoning, cite BTI precedents, verify a code exists "
+                        "in the current nomenclature.\n\n**Cannot:** make the final classification decision for you. A line below the "
+                        "threshold is never auto-accepted, and a flagged line is never accepted without your click. Text inside your files "
+                        "is treated as data, never as instructions.")
 
 
 def _render_counts(counts: dict) -> None:
@@ -181,6 +172,27 @@ def _render_counts(counts: dict) -> None:
     c1.metric("Auto-accept", counts.get("auto_accept", 0))
     c2.metric("Human review", counts.get("review", 0))
     c3.metric("Ask the shipper", counts.get("ask_shipper", 0))
+
+
+def _needs_action_list(store) -> None:
+    items = [l for l in store.lines if store.needs_action(l)]
+    if not items:
+        st.caption("No line needs you — all auto-accepted.")
+        return
+    st.markdown("**Lines that need you**")
+    for line in items[:12]:
+        v = line.current
+        flag = "failed" if v.status.value == "failed" else (v.flag.kind.value if v.flag else "ok")
+        ask = ""
+        if v.flag and v.flag.kind.value != "ok":
+            ask = " → ask for " + ", ".join(a.replace("_", " ") for a in v.flag.ask_for[:3])
+        elif v.status.value == "failed":
+            ask = f" → {v.error_reason}"
+        else:
+            ask = f" → {v.route_reason}"
+        st.markdown(f"- **{line.line_no}** {v.display_text[:48]} {FLAG_BADGE.get(flag, '')}{ask}")
+    if len(items) > 12:
+        st.caption(f"… and {len(items) - 12} more in the table.")
 
 
 def _render_line_cards(store, line_nos: list[int]) -> None:
@@ -192,39 +204,42 @@ def _render_line_cards(store, line_nos: list[int]) -> None:
         v = line.current
         route = store.effective_route(line)
         with st.container(border=True):
-            flag = v.flag.kind.value if v.flag else ("failed" if v.status.value == "failed" else "ok")
-            st.markdown(f"**Line {line.line_no}** · {v.text_zh}{' · ' if v.text_zh and v.text_en else ''}{v.text_en}  "
-                        f"{FLAG_BADGE.get(flag, '')} {ROUTE_BADGE.get(route, '')}")
+            flag = "failed" if v.status.value == "failed" else (v.flag.kind.value if v.flag else "ok")
+            st.markdown(f"**Line {line.line_no}** · {v.display_text}  {FLAG_BADGE.get(flag, '')} {ROUTE_BADGE.get(route, '')}")
             if v.flag and v.flag.kind.value != "ok":
-                rule = f" ({v.flag.rule_source.value.replace('_', ' ')}: “{v.flag.matched_term}”)" if v.flag.rule_source and v.flag.matched_term else ""
-                st.caption(f"Flagged: {v.flag.reason}{rule}. Ask the shipper for: {', '.join(a.replace('_', ' ') for a in v.flag.ask_for)}.")
+                st.caption(f"{v.flag.reason}. Ask the shipper for: {', '.join(a.replace('_', ' ') for a in v.flag.ask_for)}.")
             if v.status.value == "failed":
                 st.caption(f"Check failed: {v.error_reason}")
             for c in v.candidates[:3]:
+                prec = f" · BTI {c.precedent.member_state} {c.precedent.reference}" if c.precedent else ""
                 hist = " · history only" if c.history_only else ""
-                prec = f" · precedent BTI {c.precedent.member_state} {c.precedent.reference}" if c.precedent else ""
-                st.progress(c.confidence / 100, text=f"{c.code} — {c.subheading_text} · {c.confidence}%{hist}{prec}")
-                if c.rationale:
-                    st.caption(c.rationale)
+                st.progress(c.confidence / 100, text=f"`{c.code}` {c.subheading_text[:56]} · {c.confidence}%{hist}{prec}")
             if v.status.value == "checked" and not v.candidates:
                 st.caption("No candidate" + (" (no valid candidate)" if v.no_valid_candidate else "") + " — " + v.route_reason)
-            st.caption(f"Route: {ROUTE_LABEL.get(route, route)} — {v.route_reason}")
+            st.caption(f"{ROUTE_LABEL.get(route, route)} — {v.route_reason}")
     st.caption("Confidence is a model estimate, not a calibrated probability.")
 
 
 def _render_sources(store, line_nos: list[int]) -> None:
-    seen: dict[str, str] = {}
+    groups: dict[str, dict[str, str]] = {}
     for n in line_nos:
         try:
             v = store.get_line(n).current
         except KeyError:
             continue
         for s in v.sources:
-            seen.setdefault(s.id, s.title)
-    if seen:
-        with st.expander(f"Sources · {len(seen)}"):
-            for sid, title in seen.items():
+            groups.setdefault(SOURCE_GROUP.get(s.kind.value, s.kind.value), {}).setdefault(s.id, s.title)
+    total = sum(len(g) for g in groups.values())
+    if not total:
+        return
+    summary = " · ".join(f"{name} {len(items)}" for name, items in groups.items())
+    with st.expander(f"Sources · {total} — {summary}"):
+        for name, items in groups.items():
+            st.markdown(f"**{name}**")
+            for sid, title in list(items.items())[:40]:
                 st.markdown(f"- `{sid}` — {title}")
+            if len(items) > 40:
+                st.caption(f"… and {len(items) - 40} more")
 
 
 def _render_trace(store, line_no: int | None) -> None:
@@ -237,57 +252,138 @@ def _render_trace(store, line_no: int | None) -> None:
     t = v.retrieval_trace
     if t is None:
         return
-    with st.expander("Retrieval steps"):
-        st.markdown(f"- **Original**: {t.original}\n- **Query translation / expansion**: {', '.join(t.queries)}\n"
-                    f"- **Metadata filter**: {('chapters ' + ', '.join(t.chapter_filter) + ' (' + t.filter_reason + ')') if t.chapter_filter else 'none'}\n"
-                    f"- **Hits**: BM25 {t.bm25_hits} + vectors {t.vector_hits} → RRF fusion {t.fused} → {t.sent_to_model} chunks to the model "
-                    f"({t.mode.value})")
+    with st.expander(f"Retrieval steps · line {line_no}"):
+        hist = f" (+{t.history_chunks} from the shipper's past codes)" if t.history_chunks else ""
+        st.markdown(f"- **Original**: {t.original}\n- **Translation / expansion**: {', '.join(t.queries)}\n"
+                    f"- **Metadata filter**: {('chapters ' + ', '.join(t.chapter_filter) + ' — ' + t.filter_reason) if t.chapter_filter else 'none'}\n"
+                    f"- **Hits**: BM25 {t.bm25_hits} + vectors {t.vector_hits} → RRF {t.fused} → {t.sent_to_model} chunks to the model{hist} ({t.mode.value})")
 
 
-def _render_message(msg: dict, store) -> None:
+def terms_table(kb) -> pd.DataFrame:
+    rows = []
+    for rl in kb.rules.ics2_lists:
+        for e in rl.entries:
+            rows.append({"Term": e.term, "List": "ICS2 stop words" if rl.list == "ics2_stop_words" else "ICS2 unacceptable terms",
+                         "Source": rl.source_doc[:60], "Flag": "Vague"})
+    for e in kb.rules.firm.entries:
+        rows.append({"Term": e.term, "List": "Firm stop-words", "Source": kb.rules.firm.source_doc[:60], "Flag": "Stop-word"})
+    return pd.DataFrame(rows)
+
+
+def _render_message(msg: dict, store, kb, latest: bool) -> None:
     with st.chat_message(msg["role"]):
         if msg["role"] == "user":
             st.markdown(msg["content"])
             if msg.get("file"):
-                st.caption(f"📄 {msg['file']}")
+                st.caption(f":material/attach_file: {msg['file']}")
             if msg.get("raw") and msg.get("content", "").startswith("["):
                 st.caption(msg["raw"][:300])
             return
-        if msg.get("steps") is not None and msg.get("label"):
+        if msg.get("label") is not None:
             with st.status(msg["label"], state="complete", expanded=False):
-                for s in msg["steps"]:
+                for s in msg.get("steps") or []:
                     st.markdown(s)
         if msg.get("counts"):
             _render_counts(store.counts() if store.has_shipment() else msg["counts"])
-        if msg.get("content"):
+            if latest and store.has_shipment():
+                _needs_action_list(store)
+        if msg.get("kind") == "terms":
             st.markdown(msg["content"])
-        if msg.get("line_nos"):
-            _render_line_cards(store, msg["line_nos"])
+            st.dataframe(terms_table(kb), hide_index=True, width="stretch", height=300)
+            return
+        text = msg.get("content") or ""
+        if msg.get("error"):
+            st.error(text, icon="⚠️")
+        elif text and msg.get("kind") == "check" and (msg.get("line_nos") or msg.get("counts")):
+            with st.expander("Assistant notes"):  # the cards and counts below are the structured summary
+                st.markdown(text)
+        elif text:
+            st.markdown(text)
+        if msg.get("line_nos") and msg.get("kind") in ("check", "reply"):
+            if latest:
+                _render_line_cards(store, msg["line_nos"])
+            else:
+                with st.expander(f"Line results · {len(msg['line_nos'])}"):
+                    _render_line_cards(store, msg["line_nos"])
         if msg.get("source_lines") or msg.get("line_nos"):
             _render_sources(store, msg.get("source_lines") or msg["line_nos"])
         if msg.get("trace_from"):
             _render_trace(store, msg["trace_from"])
 
 
-def render(store, kb) -> None:
-    _welcome(store, kb)
-    for msg in st.session_state["chat"]:
-        _render_message(msg, store)
+def _live_turn(store) -> None:
+    @st.fragment(run_every=0.7)
+    def _poll() -> None:
+        job = st.session_state.get("job")
+        if job is None:
+            return
+        has_lines = store.has_shipment() and bool(store.lines)
+        if job.done or has_lines != st.session_state.get("layout_has_lines", False):
+            st.rerun()  # finished, or the review column must appear now that the parse step added lines
+            return
+        with st.chat_message("assistant"):
+            # not a `with` block: leaving a status context would flip it to "complete" while the job still runs
+            status = st.status(jobs.running_label(job, store), expanded=True, state="running")
+            for line in job.step_lines():
+                status.markdown(line)
+            if job.is_check and store.has_shipment():
+                n = len(store.lines)
+                done = sum(1 for l in store.lines if l.current.status.value != "pending")
+                if n:
+                    status.progress(done / n, text=f"{done} / {n} lines classified")
 
-    pending = st.session_state.pop("pending_check", None)
+    _poll()
+
+
+def _turns(messages: list[dict]) -> list[list[dict]]:
+    """Group the history into turns: a clerk message starts a turn, the replies that follow belong to it."""
+    turns: list[list[dict]] = []
+    for m in messages:
+        if m["role"] == "user" or not turns:
+            turns.append([m])
+        else:
+            turns[-1].append(m)
+    return turns
+
+
+def render(store, kb) -> None:
+    job = st.session_state.get("job")
+    if job is not None and job.done:
+        _finish_job(store, kb)
+
+    has_lines = store.has_shipment() and bool(store.lines)
+    _welcome(store, kb, compact=has_lines)
+    placeholder = "Ask about any line, or paste the shipper's reply…" if has_lines else "Paste descriptions (one per line) or ask a question…"
+    prompt = st.chat_input(placeholder, disabled=job is not None)   # under the welcome, above the history
+
+    messages = st.session_state["chat"]
+    last_assistant = max((i for i, m in enumerate(messages) if m["role"] == "assistant"), default=-1)
+    latest_msg = messages[last_assistant] if last_assistant >= 0 else None
+    running = job is not None and not job.done
+    turns = _turns(messages)
+    if running and not turns:
+        _live_turn(store)
+    for t_idx, turn in enumerate(reversed(turns)):   # newest turn first, chronological inside a turn
+        for msg in turn:
+            _render_message(msg, store, kb, latest=(msg is latest_msg))
+        if t_idx == 0 and running:
+            _live_turn(store)   # the running turn's progress sits right under the chat box
+
+    pending = st.session_state.pop("pending_check", None) if job is None else None
     if pending:
         ref = store.shipment.reference if store.has_shipment() else ""
         label = f"Check the packing list{(' for ' + ref) if ref else ''}."
         st.session_state["chat"].append({"role": "user", "content": label, "file": pending["name"]})
-        msg = _run(label, store, kb, file_ref=pending["file_ref"], is_check=True, new_line_nos=None)
-        msg["source_lines"] = [l.line_no for l in store.lines]
-        st.session_state["chat"].append(msg)
+        _start(label, store, kb, file_ref=pending["file_ref"], is_check=True, kind="check")
         st.rerun()
 
     action = st.session_state.pop("quick_action", None)
     if action == "__terms__":
         st.session_state["chat"].append({"role": "user", "content": "Which terms does customs reject?"})
-        st.session_state["chat"].append({"role": "assistant", "content": terms_answer(kb)})
+        facts = kb.rules.caption_facts()
+        st.session_state["chat"].append({"role": "assistant", "kind": "terms",
+                                         "content": f"Customs rejects descriptions that are only a generic term. {facts['ics2_terms']} ICS2 terms "
+                                                    f"(→ *Vague*) and {facts['firm_terms']} firm stop-words (→ *Stop-word*). Search the table:"})
         st.rerun()
     elif action == "__sample__":
         st.session_state["load_sample"] = True
@@ -296,9 +392,6 @@ def render(store, kb) -> None:
         handle_message(action, store, kb)
         st.rerun()
 
-    placeholder = ("Ask about any line, or paste the shipper’s reply…" if store.has_shipment() and store.lines
-                   else "Paste descriptions (one per line) or ask a classification question…")
-    prompt = st.chat_input(placeholder)
     if prompt:
         handle_message(prompt, store, kb)
         st.rerun()

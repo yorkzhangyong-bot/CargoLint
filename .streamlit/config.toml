@@ -1,6 +1,16 @@
 [theme]
 base = "light"
 primaryColor = "#1D4FB8"
+baseRadius = "medium"
+baseFontSize = 14
+borderColor = "#E6E6EA"
+
+[theme.sidebar]
+backgroundColor = "#F4F5F8"
+textColor = "#1F2430"
+
+[client]
+toolbarMode = "minimal"
 
 [server]
 maxUploadSize = 20

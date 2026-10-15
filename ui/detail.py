@@ -1,5 +1,6 @@
-"""Detail panel for the selected line: candidates, route control, decided code, lock and contradiction
-notes, why it was flagged and how to update it (FR-022, FR-023, FR-035, FR-038, FR-039)."""
+"""Detail card for the selected line: compact candidates, route pills, the Accept popover with the decided
+code, lock / ready / contradiction notes, why it was flagged, how to update it, triage navigation
+(FR-022, FR-023, FR-035, FR-038, FR-039)."""
 from __future__ import annotations
 
 import streamlit as st
@@ -7,12 +8,18 @@ import streamlit as st
 from agent.schemas import Decision, DecisionRoute
 from agent.store import LockedError, UnknownCodeError
 from ui.chat import FLAG_BADGE, ROUTE_BADGE, ROUTE_LABEL
+from ui.review import next_needs_action, reset_selection
+
+ROUTE_PILLS = {"review": "Human review", "ask_shipper": "Ask the shipper"}
 
 
 def _money(line) -> str:
-    if line.value is None:
-        return ""
-    return f"{line.value.currency} {float(line.value.amount):,.0f}"
+    return f"{line.value.currency} {float(line.value.amount):,.0f}" if line.value is not None else ""
+
+
+def _short(text: str, n: int) -> str:
+    text = (text or "").strip()
+    return text if len(text) <= n else text[: n - 1].rstrip() + "…"
 
 
 def render(store, kb) -> None:
@@ -25,33 +32,57 @@ def render(store, kb) -> None:
         return
     v = line.current
     route = store.effective_route(line)
-    header = " · ".join(b for b in (f"Line {line.line_no}", line.qty, f"{line.weight_kg:,.0f} kg" if line.weight_kg else None, _money(line)) if b)
     with st.container(border=True):
-        st.markdown(f"**{header}**")
-        flag = "failed" if v.status.value == "failed" else (v.flag.kind.value if v.flag else "ok")
-        badge = f"{FLAG_BADGE.get(flag, '')} {ROUTE_BADGE.get(route, '')}"
-        version = f"v{v.version_no} · updated {v.created_at.astimezone().strftime('%H:%M')}" if v.version_no > 1 else f"v{v.version_no}"
-        st.markdown(f"{v.text_zh}{' · ' if v.text_zh and v.text_en else ''}{v.text_en}  {badge}  \n:gray[{version}]")
+        head, nav = st.columns([4, 1.6], vertical_alignment="center")
+        with head:
+            parts = [f"Line {line.line_no}", line.qty, f"{line.weight_kg:,.0f} kg" if line.weight_kg else None, _money(line)]
+            st.markdown("**" + " · ".join(p for p in parts if p) + "**")
+        with nav:
+            b1, b2 = st.columns(2)
+            if b1.button("◀", key="nav_prev", help="Previous line needing action", width="stretch"):
+                st.session_state["selected_line_no"] = next_needs_action(store, line.line_no, -1) or line.line_no
+                reset_selection()
+                st.rerun()
+            if b2.button("Next ▶", key="nav_next", help="Next line needing action", width="stretch"):
+                st.session_state["selected_line_no"] = next_needs_action(store, line.line_no, 1) or line.line_no
+                reset_selection()
+                st.rerun()
+        flag = "failed" if v.status.value == "failed" else ("pending" if v.status.value == "pending" else (v.flag.kind.value if v.flag else "ok"))
+        version = f"v{v.version_no} · updated {v.created_at.astimezone().strftime('%H:%M')}" if v.version_no > 1 else "v1"
+        st.markdown(f"{v.text_zh}{' · ' if v.text_zh and v.text_en else ''}{v.text_en}  {FLAG_BADGE.get(flag, '')} "
+                    f"{ROUTE_BADGE.get(route, '') if v.status.value != 'pending' else ''}  :gray[{version}]")
+        if v.status.value == "pending":
+            st.caption("Still checking…")
+            return
         if v.contradiction_note:
-            st.warning(v.contradiction_note)
+            st.warning(v.contradiction_note, icon="⚠️")
         if v.extracted and any((v.extracted.material, v.extracted.part_name, v.extracted.use)):
-            st.caption(f"Extracted from the shipper's reply — material: {v.extracted.material or '—'} · part: {v.extracted.part_name or '—'} · use: {v.extracted.use or '—'}")
+            st.caption(f"From the shipper's reply — material: {v.extracted.material or '—'} · part: {v.extracted.part_name or '—'} · use: {v.extracted.use or '—'}")
 
         st.markdown("**Top-3 HS-6 candidates**")
         if v.candidates:
             for c in v.candidates[:3]:
-                hist = " · history only" if c.history_only else ""
-                st.progress(c.confidence / 100, text=f"{c.code} — {c.subheading_text} · {c.confidence}%{hist}")
+                c1, c2, c3 = st.columns([1.15, 4.6, 1.5], vertical_alignment="center")
+                c1.markdown(f"`{c.code}`")
+                hist = " :gray-badge[history only]" if c.history_only else ""
+                c2.markdown(f"{_short(c.subheading_text, 64)}{hist}", help=c.subheading_text)
+                c3.progress(c.confidence / 100, text=f"{c.confidence}%")
+                r1, r2 = st.columns([5.75, 1.5], vertical_alignment="center")
                 if c.rationale:
-                    st.caption(c.rationale)
+                    r1.caption(_short(c.rationale, 150), help=c.rationale)
                 if c.precedent:
                     p = c.precedent
-                    valid = f"valid {p.valid_from or '?'} – {p.valid_to or 'open'}"
-                    st.caption(f"Precedent: BTI {p.member_state} {p.reference} → {p.code} ({valid}) — {p.description[:140]}")
+                    with r2.popover(f"BTI {p.member_state}", help="Current binding tariff information ruling for this code", width="stretch"):
+                        st.markdown(f"**{p.reference}** → `{p.code}` · {p.member_state} · valid {p.valid_from or '?'} – {p.valid_to or 'open'}")
+                        st.write(p.description[:600])
+                        if p.reasoning:
+                            st.caption(p.reasoning[:400])
+                        if p.url:
+                            st.link_button("Open ruling", p.url)
                 else:
-                    st.caption("No current BTI precedent found for this code.")
+                    r2.caption("no precedent")
         elif v.status.value == "failed":
-            st.caption(f"Check failed: {v.error_reason}")
+            st.error(f"Check failed: {v.error_reason}", icon="⚠️")
         else:
             st.caption("No candidate" + (" (no valid candidate)" if v.no_valid_candidate else "") + ".")
         st.caption("Confidence is a model estimate, not a calibrated probability.")
@@ -59,62 +90,59 @@ def render(store, kb) -> None:
         _route_control(store, line)
 
         if v.flag and v.flag.kind.value != "ok":
-            st.markdown("**Why it was flagged**")
             rule = f" — {v.flag.rule_source.value.replace('_', ' ')}: “{v.flag.matched_term}”" if v.flag.rule_source and v.flag.matched_term else ""
-            st.write(f"{v.flag.reason}{rule}. Ask the shipper for: {', '.join(a.replace('_', ' ') for a in v.flag.ask_for)}.")
-        st.markdown("**Updating this line**")
-        st.caption(f"Paste the shipper's reply into the chat on the left (e.g. “line {line.line_no} is steel bobbin cases for industrial "
-                   "sewing machines”). Only this line is re-checked and the table refreshes.")
+            ask = ", ".join(a.replace("_", " ") for a in v.flag.ask_for)
+            st.warning(f"**Why it was flagged.** {v.flag.reason}{rule}. Ask the shipper for: {ask}.", icon="🚩")
+        st.caption(f"**Updating this line:** paste the shipper's reply into the chat (e.g. “line {line.line_no} is steel bobbin cases for "
+                   "industrial sewing machines”). Only this line is re-checked.")
 
 
 def _route_control(store, line) -> None:
     v = line.current
     route = store.effective_route(line)
     lock = store.accept_lock_reason(line)
-    st.markdown("**Route**")
-    c1, c2, c3 = st.columns(3)
-    accepting = st.session_state.get("accepting_line") == line.line_no
-    if c1.button("Accept" + (" ✓" if route in ("accepted", "auto_accept") else ""), key=f"acc_{line.line_no}", disabled=lock is not None,
-                 use_container_width=True, type="primary" if route in ("accepted", "auto_accept") else "secondary"):
-        st.session_state["accepting_line"] = line.line_no
-        accepting = True
-    if c2.button("Human review" + (" ✓" if route == "review" else ""), key=f"rev_{line.line_no}", use_container_width=True):
-        store.set_decision(line.line_no, Decision(route=DecisionRoute.review))
-        st.session_state.pop("accepting_line", None)
-        st.rerun()
-    if c3.button("Ask the shipper" + (" ✓" if route == "ask_shipper" else ""), key=f"ask_{line.line_no}", use_container_width=True):
-        store.set_decision(line.line_no, Decision(route=DecisionRoute.ask_shipper))
-        st.session_state.pop("accepting_line", None)
-        st.rerun()
     code, how = store.decided_code(line)
+    st.markdown("**Route**")
+    left, right = st.columns([3.2, 1.8], vertical_alignment="center")
+    with left:
+        current = ROUTE_PILLS.get(route)
+        pick = st.pills("Route", list(ROUTE_PILLS.values()), default=current, selection_mode="single",
+                        key=f"route_{line.line_no}_{v.version_no}_{route}", label_visibility="collapsed")
+        if pick and pick != current:
+            target = DecisionRoute.review if pick == "Human review" else DecisionRoute.ask_shipper
+            store.set_decision(line.line_no, Decision(route=target))
+            st.rerun()
+    with right:
+        if code:
+            st.success(f"Accepted · `{code}`", icon="✅")
+        else:
+            with st.popover("Accept…", disabled=lock is not None, width="stretch", help=lock or "Accept this line with a decided code"):
+                _decided_code_control(store, line)
     if code:
-        how_text = {"auto": "top candidate, auto-accepted", "top": "top candidate, confirmed by you", "other_candidate": "another candidate, chosen by you",
-                    "typed": "typed by you"}.get(how or "", how or "")
-        st.caption(f"✅ Decided code **{code}** ({how_text}).")
-    if lock:
+        how_text = {"auto": "top candidate, auto-accepted", "top": "top candidate, confirmed by you",
+                    "other_candidate": "another candidate, chosen by you", "typed": "typed by you"}.get(how or "", how or "")
+        st.caption(f"Decided code {code} ({how_text}).")
+    elif lock:
         st.caption(f"🔒 {lock}.")
     elif store.ready_to_accept(line):
-        st.caption("Ready to accept — click Accept to confirm.")
+        st.caption("Ready to accept — open *Accept…* to confirm the code.")
     elif v.decision is None:
         st.caption(f"{ROUTE_LABEL.get(route, route)}: {v.route_reason}.")
-    if accepting and lock is None:
-        _decided_code_control(store, line)
 
 
 def _decided_code_control(store, line) -> None:
     v = line.current
     codes = [c.code for c in v.candidates[:3]]
-    options = [f"{c.code} — {c.subheading_text}" for c in v.candidates[:3]] + ["Other HS-6 code…"]
-    pick = st.radio("Decided code", options, index=0, key=f"pick_{line.line_no}")
+    options = [f"{c.code} — {_short(c.subheading_text, 48)}" for c in v.candidates[:3]] + ["Other HS-6 code…"]
+    pick = st.radio("Decided code", options, index=0, key=f"pick_{line.line_no}_{v.version_no}")
     typed = ""
     if pick == "Other HS-6 code…":
-        typed = st.text_input("Other HS-6 code", key=f"typed_{line.line_no}", placeholder="e.g. 8452.90").strip()
+        typed = st.text_input("Other HS-6 code", key=f"typed_{line.line_no}_{v.version_no}", placeholder="e.g. 8452.90").strip()
     code = typed if pick == "Other HS-6 code…" else codes[options.index(pick)]
-    if st.button("Confirm decided code", key=f"confirm_{line.line_no}", type="primary"):
+    if st.button("Confirm", key=f"confirm_{line.line_no}_{v.version_no}", type="primary", width="stretch"):
         try:
             store.set_decision(line.line_no, Decision(route=DecisionRoute.accepted, decided_code=code or None))
         except (LockedError, UnknownCodeError, ValueError) as exc:
             st.error(f"Not accepted: {exc}")
             return
-        st.session_state.pop("accepting_line", None)
         st.rerun()

@@ -29,17 +29,24 @@ subset; `python -m rag.loader --bti-chapters 39,42,61-64,73,84,85,94,95,96` buil
 
 ## What the clerk sees
 
-**Start screen**: sidebar with uploader (XLSX/CSV/PDF/JPG/PNG, 20 MB), shipment reference and shipper
-(detected from the file or chosen), the auto-accept threshold (60–99, default 85) and the hybrid-search
-switch, a caption generated from the loaded knowledge base, tokens and cost; a welcome message with
-three quick actions and a "What I can and cannot do" panel.
+**Start screen**: a grouped sidebar — uploader (XLSX/CSV/PDF/JPG/PNG, 20 MB), shipment reference and
+shipper (detected from the file or chosen), the auto-accept threshold (60–99, default 85) and the
+hybrid-search switch, a knowledge-base caption, and tokens, cost and the CSV/JSON exports pinned at the
+bottom; a welcome message with three quick-action cards and a "What I can and cannot do" panel.
 
-**After a check**: the chat shows each tool step with a one-line result (`parse_packing_list` →
-`check_description` → `classify_hs6` → `lookup_precedent`), routing counts, the lines that need
-attention and what to ask the shipper, a Sources expander and a Retrieval-steps expander; the review
-table lists every line needs-action first (flag · HS-6 · confidence · route), and the detail panel
-shows the top-3 candidates with precedent, the route control, the decided-code control, why the line
-was flagged and how to update it.
+**While a check runs**: the agent turn runs in a worker thread, so the page stays live. The assistant
+rail shows each tool step as it finishes (`parse_packing_list` → `check_description` → `classify_hs6`
+→ `lookup_precedent`) with the current tool and elapsed time, and the review list appears as soon as
+the file is parsed, filling in flags, codes and routes line by line.
+
+**After a check**: routing counts, the lines that need attention and what to ask the shipper, the
+model's notes (collapsed), a Sources expander grouped by kind and a Retrieval-steps expander; the
+review list orders every line needs-action first (description · flag · HS-6 with confidence · route),
+25 per page, and the detail card beneath it shows the top-3 candidates with a BTI precedent popover,
+the route pills, an Accept popover with the decided-code control, why the line was flagged and how to
+update it, plus previous/next buttons that cycle through the lines needing action. The layout is
+native Streamlit only (no custom HTML or CSS); the review list uses proportional columns so nothing is
+clipped at laptop widths.
 
 ## How RAG works in this pipeline
 
@@ -180,7 +187,7 @@ SQLite persistence and multi-user access.
 ## Repository layout
 
 ```
-app.py          Streamlit entry point        ui/        sidebar, upload, chat, replies, review, detail, cost
+app.py          Streamlit entry point        ui/        sidebar, upload, chat, jobs (worker turns), replies, review, detail
 agent/          config, schemas, routing, prompts, llm (client factory + cost), agent (loop + guard), store
 tools/          the five tools, parsers, ocr, common (context + per-line runner)
 rag/            loader (CLI), nomenclature (SKOS), bti (EBTI), rules (ICS2 PDFs), embeddings, retriever, translate

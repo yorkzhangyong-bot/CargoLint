@@ -55,9 +55,10 @@ class TestShaping:
         assert by_no[3]["confidence"] == pytest.approx(0.96)
         assert by_no[4]["confidence"] == 0.0 and by_no[4]["hs6"] == "—"
 
-    def test_description_as_filed_combines_zh_en_and_qty(self, populated):
+    def test_description_as_filed_combines_zh_en_with_qty_in_its_own_column(self, populated):
         row = next(r for r in table_rows(populated) if r["line_no"] == 1)
-        assert "配件" in row["description"] and "Parts" in row["description"] and "14 CTN" in row["description"]
+        assert "配件" in row["description"] and "Parts" in row["description"] and row["qty"] == "14 CTN"
+        assert row["pending"] is False and row["version"] == 1
 
     def test_filters_with_counts(self, populated):
         rows = table_rows(populated)

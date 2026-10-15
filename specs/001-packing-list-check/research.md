@@ -128,34 +128,51 @@ constitution leaves open. Facts were verified against vendor documentation and P
 
 ## R-08 Streamlit APIs (1.65.0)
 
-- **Decision**: pin `streamlit==1.65.0`. Review table: `st.dataframe(df, on_select="rerun",
-  selection_mode="single-row", hide_index=True, key="review")` → `event.selection.rows[0]`.
-  Confidence: store 0–1 float, `st.column_config.ProgressColumn("Confidence", format="percent",
-  min_value=0, max_value=1.0)`. Flag/route colours in the table via pandas `Styler.map` on the
-  two columns (native, no HTML); chips in the detail panel via `st.badge` / `:orange-badge[…]`.
-  Progress: `s = st.status("Checking…", expanded=True, type="step")`, then
-  `s.update(label=…, state=…)` (object form, not `with`). Filters and route control:
-  `st.segmented_control` / `st.pills`; hybrid switch `st.toggle`; counts `st.metric`; export
-  `st.download_button`; chat `st.chat_message` / `st.chat_input`; `st.file_uploader(type=[…],
-  max_upload_size=20)` plus `[server] maxUploadSize = 20`.
-- **Rationale**: all APIs exist in 1.65.0 docs; Styler colouring works in `st.dataframe` (not
-  with lazy loading — pass `lazy=False`).
-- **Alternatives**: store 0–100 and `format="%d%%"` (printf escape not documented — test);
-  `st.column_config.ListColumn` pills; custom HTML for chips (constitution: only if native fails).
-- **Sources**: docs.streamlit.io/develop/api-reference/data/st.dataframe; …/status/st.status;
-  …/data/st.column_config/st.column_config.progresscolumn; …/text/st.badge;
-  …/widgets/st.file_uploader; …/configuration/config.toml.
+- **Decision**: pin `streamlit==1.65.0`. Review table: a **row list**, not `st.dataframe` — a
+  header row of captions plus a bordered `st.container(height=420 when > 8 rows, gap=None,
+  autoscroll=False)` holding one `st.columns([0.42, 3.3, 0.95, 1.5, 1.15, 0.5],
+  vertical_alignment="center")` row per line: number, two-line zh / en description with qty,
+  flag chip, `st.progress(conf, text="`code` · 95%")`, route chip, icon-only open button
+  (`type="primary"` for the selected line). 25 rows per page (`st.segmented_control` pager).
+  Chips are badge directives (`:orange-badge[Vague]`). Live updates: the agent turn runs in a
+  worker thread (`ui/jobs.py`); the assistant rail polls it with `@st.fragment(run_every=0.7)`
+  (object-form `st.status(...)`, never `with`, so leaving the block cannot flip it to
+  "complete"), the row list re-renders with `@st.fragment(run_every=1.0)` while a turn runs, and
+  the poll fragment calls `st.rerun()` when the turn finishes or when lines first appear (the
+  two-column layout is decided on full runs only). Accept: `st.popover("Accept…", disabled=lock)`
+  holding `st.radio` over the top-3 + "Other HS-6 code…" input + Confirm. Route: `st.pills`
+  keyed by line, version **and current route** so a threshold change never turns a computed route
+  into a decision. Filters: `st.segmented_control`; hybrid switch `st.toggle`; counts `st.metric`;
+  export `st.download_button(on_click="ignore")`; chat `st.chat_message` / `st.chat_input`;
+  `st.file_uploader(type=[…])` plus `[server] maxUploadSize = 20`. `width="stretch"` replaces
+  the deprecated `use_container_width=True` everywhere.
+- **Rationale**: `st.dataframe` columns are fixed pixels and never shrink, so at the 32 / 68
+  split on a 1440 px laptop (≈ 700 px for the review column) the Confidence and Route columns
+  clipped behind a horizontal scrollbar — the clerk's main complaint in the first live run.
+  Proportional `st.columns` wrap text instead of clipping, allow real chips and a two-line
+  description, and keep selection a plain button (no checkbox column). Sorting and search are
+  lost; filters, needs-action-first ordering and paging cover the MVP (≤ 200 lines). Verified in
+  a real browser at 1440 × 900: nothing clipped, 12 lines in 41 s with live rows.
+- **Alternatives**: `st.dataframe` + `ProgressColumn` + `Styler.map` (the first implementation —
+  clipped); `st.container(horizontal=True)` flex rows (less predictable widths); custom HTML
+  table (ruled out by the constitution).
+- **Sources**: docs.streamlit.io/develop/api-reference/layout/st.columns; …/layout/st.container;
+  …/execution-flow/st.fragment; …/status/st.status; …/layout/st.popover; …/widgets/st.pills;
+  …/text/st.badge; …/widgets/st.file_uploader; …/configuration/config.toml.
 
 ## R-09 Theme and Chinese rendering
 
 - **Decision**: `.streamlit/config.toml` `[theme]`: `primaryColor = "#1D4FB8"`, light base,
-  default `font`/`codeFont` (Source Sans 3 / Source Code Pro). No custom font faces in the MVP:
-  Chinese glyphs fall back to the browser's system CJK font (Microsoft YaHei on Windows).
-  Verified visually in quickstart scenario 1.
+  `baseFontSize = 14`, `baseRadius = "medium"`, `borderColor = "#E6E6EA"`; `[theme.sidebar]`
+  `backgroundColor = "#F4F5F8"` and `textColor = "#1F2430"` (the text colour must be set
+  explicitly — an empty value logs a browser warning on every render); `[client]
+  toolbarMode = "minimal"`. Default `font`/`codeFont` (Source Sans 3 / Source Code Pro); Chinese
+  glyphs fall back to the browser's system CJK font (Microsoft YaHei on Windows). Verified
+  visually in quickstart scenario 1 and in the redesign screenshots.
 - **Rationale**: `[[theme.fontFaces]]` (self-hosted Noto Sans SC) needs
   `[server] enableStaticServing = true` and static files — polish, not a requirement.
-- **Alternatives**: `[[theme.fontFaces]]` with Noto Sans SC subsets; `headingFont`, `codeFont`,
-  `baseRadius`, `[theme.sidebar]` for closer fidelity to the canvas.
+- **Alternatives**: `[[theme.fontFaces]]` with Noto Sans SC subsets; `headingFont` for closer
+  fidelity to the canvas.
 - **Sources**: docs.streamlit.io/develop/api-reference/configuration/config.toml.
 
 ## R-10 OCR engine (constitution deviation — see plan Complexity Tracking)

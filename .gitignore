@@ -29,3 +29,6 @@ Thumbs.db
 *.swp
 .vscode/
 .idea/
+
+# Playwright MCP browser snapshots
+.playwright-mcp/
