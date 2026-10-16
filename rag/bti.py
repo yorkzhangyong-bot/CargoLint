@@ -92,8 +92,11 @@ class BTIStore:
     def __init__(self, records: Iterable[dict]) -> None:
         self.records = list(records)
         self._by_code: dict[str, list[dict]] = {}
+        self._by_id: dict[str, dict] = {}
         for r in self.records:
             self._by_code.setdefault(r.get("code", ""), []).append(r)
+            if r.get("reference"):
+                self._by_id[f"bti:{r['reference']}"] = r
 
     @classmethod
     def from_jsonl(cls, path: Path | str) -> "BTIStore":
@@ -105,6 +108,17 @@ class BTIStore:
 
     def __len__(self) -> int:
         return len(self.records)
+
+    def get(self, ruling_id: str, as_of: date | None = None) -> dict | None:
+        """The ruling behind a vector-store id (`bti:<reference>`); None when unknown or not valid on `as_of`."""
+        r = self._by_id.get(ruling_id)
+        if r is None:
+            return None
+        if as_of is not None:
+            start, end = parse_date(r.get("valid_from")), parse_date(r.get("valid_to"))
+            if (end is not None and end < as_of) or (start is not None and start > as_of):
+                return None
+        return r
 
     def lookup(self, code: str, as_of: date, limit: int = 3) -> list[Precedent]:
         hits = []

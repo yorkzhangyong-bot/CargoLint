@@ -103,3 +103,39 @@ def test_vague_line_confidence_is_capped_in_code(fake_llm, kb):
     assert out[0].candidates[0].code == "7318.15" and out[0].candidates[0].confidence == 59
     out_ok = classify_lines([_line(5, "五金", "Hardware", flag_kind="ok")], ClassifyContext(), kb=kb, client=get_client())
     assert out_ok[0].candidates[0].confidence == 80
+
+
+# --------------------------------------------------------------------------- precedent-driven retrieval (R-18)
+PHONE_CASE_RULING = {"reference": "NL-TEST-1", "code": "3926.90", "cn_code": "3926909700", "chapter": "39", "member_state": "NL",
+                     "description": "Protective case for a smartphone, of silicone, fitted to the back of the telephone",
+                     "reasoning": "GRI 1 and 6; heading 3926", "valid_from": "2025-01-01", "valid_to": "2027-12-31", "language": "EN"}
+PHONE_CASE_KEY = "硅胶手机壳 / Silicone mobile phone cases"
+
+
+def _with_rulings(kb, fake_embeddings, rulings):
+    kb.bti = BTIStore(rulings)
+    kb.bti_vectors = InMemoryVectorSearch(kb.bti.chunk_texts(), fake_embeddings)
+    return kb
+
+
+def test_matching_rulings_propose_their_code_and_are_cited(fake_llm, kb, fake_embeddings):
+    fake_llm.recorded.setdefault("RankOut", {})[PHONE_CASE_KEY] = {"candidates": [
+        {"code": "3926.90", "confidence": 88, "rationale": "BTI NL-TEST-1 classifies silicone phone covers here", "history_only": False}]}
+    kb = _with_rulings(kb, fake_embeddings, [PHONE_CASE_RULING])
+    out = classify_lines([_line(15, "硅胶手机壳", "Silicone mobile phone cases")], ClassifyContext(), kb=kb, client=get_client())[0]
+    t = out.retrieval_trace
+    assert t.precedent_codes == ["3926.90"] and t.precedent_chunks in (0, 1)   # 0 when plain retrieval already had the chunk
+    prompt = fake_llm.prompts_for("RankOut")[0]
+    assert "[hs:3926.90]" in prompt and '(BTI precedent NL-TEST-1, NL: "Protective case for a smartphone' in prompt
+    assert out.candidates[0].code == "3926.90" and out.candidates[0].source_ids == ["hs:3926.90", "bti:NL-TEST-1"]
+    assert any(s.kind.value == "bti" and s.id == "bti:NL-TEST-1" and "3926.90" in s.title for s in out.sources)
+
+
+def test_precedents_can_be_switched_off_and_unknown_codes_are_ignored(fake_llm, kb, fake_embeddings):
+    kb = _with_rulings(kb, fake_embeddings, [PHONE_CASE_RULING, {**PHONE_CASE_RULING, "reference": "XX-9", "code": "9999.99"}])
+    off = classify_lines([_line(15, "硅胶手机壳", "Silicone mobile phone cases")], ClassifyContext(precedents=False), kb=kb,
+                         client=get_client())[0]
+    assert off.retrieval_trace.precedent_codes == [] and not any(s.kind.value == "bti" for s in off.sources)
+    assert "BTI precedent" not in fake_llm.prompts_for("RankOut")[0]
+    on = classify_lines([_line(15, "硅胶手机壳", "Silicone mobile phone cases")], ClassifyContext(), kb=kb, client=get_client())[0]
+    assert on.retrieval_trace.precedent_codes == ["3926.90"]          # 9999.99 is not in the nomenclature: skipped

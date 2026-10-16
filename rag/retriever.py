@@ -215,6 +215,32 @@ class HybridRetriever:
         return out, trace
 
 
+def precedent_codes(bti_vectors: VectorSearch, bti_store: Any, query_vectors: list[list[float]], k: int = RETRIEVAL_K,
+                    rrf_k: int = RRF_K, as_of: Any = None) -> list[dict[str, Any]]:
+    """Precedent-driven retrieval: rank HS-6 codes by the BTI rulings whose goods match the queries.
+
+    Each query's nearest rulings are fused with RRF; a code's score is the sum over its rulings, so a code backed by
+    several similar rulings outranks one backed by a single ruling. Returns one entry per code, best first:
+    {code, score, rulings, reference, member_state, excerpt}, where reference/excerpt are the best-ranked ruling.
+    Rulings unknown to the store, without a code, or not valid on `as_of` are skipped.
+    """
+    rankings = [[d for d, _ in bti_vectors.search_by_vector(vec, k * 2, None)] for vec in query_vectors]
+    by_code: dict[str, dict[str, Any]] = {}
+    for ruling_id, score in rrf(rankings, rrf_k):
+        rec = bti_store.get(ruling_id, as_of)
+        code = (rec or {}).get("code")
+        if not code:
+            continue
+        entry = by_code.get(code)
+        if entry is None:
+            excerpt = " ".join((rec.get("description") or "").split())[:200]
+            entry = by_code[code] = {"code": code, "score": 0.0, "rulings": 0, "reference": rec.get("reference", ""),
+                                     "member_state": rec.get("member_state", ""), "excerpt": excerpt}
+        entry["score"] += score
+        entry["rulings"] += 1
+    return sorted(by_code.values(), key=lambda e: -e["score"])
+
+
 # --------------------------------------------------------------------------- index metadata guard
 class IndexMismatchError(RuntimeError):
     pass

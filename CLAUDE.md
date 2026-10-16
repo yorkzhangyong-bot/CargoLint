@@ -23,6 +23,7 @@ The deleted `c:\ai\CargoLint1` project is unrelated; never refer to it.
 ```bash
 pip install -e ".[dev]"        # Python 3.11–3.13, .venv at the project root
 python -m rag.loader --demo    # builds the local knowledge base (Chroma + BM25), about 10 minutes
+python -m rag.loader           # full EBTI rulings index for precedent-driven retrieval: 74k rulings, about 90 minutes, $0.3, 1.8 GB
 pytest -q                      # offline suite, no key needed; live tests are deselected by default
 pytest -m live                 # OpenRouter smoke and budget tests: spends credits, run only when asked
 streamlit run app.py           # http://localhost:8501

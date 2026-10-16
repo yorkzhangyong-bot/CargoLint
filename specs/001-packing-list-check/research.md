@@ -304,3 +304,50 @@ constitution leaves open. Facts were verified against vendor documentation and P
 `openpyxl>=3.1` · `pdfplumber==0.11.10` · `rapidocr==3.10.0` · `onnxruntime==1.31.0` ·
 `pillow>=10` · `lxml>=5` · `python-dotenv>=1` · dev: `pytest>=8`, `pytest-timeout`,
 `ragas` (stretch, optional extra). No `langchain-community`, no `langchain-classic`.
+
+## R-18 Precedent-driven retrieval: BTI rulings propose candidate codes (2026-10-16)
+
+- **Decision**: `classify_hs6` gets a precedent leg inside the retrieval stage
+  (`rag/retriever.py:precedent_codes`, FR-051). The query vectors already computed for the nomenclature
+  search are run against a second Chroma collection holding the text (goods description + reasoning)
+  of every valid EBTI ruling in the target chapters (`store/chroma-bti`, collection `bti`, same
+  embedding model, built by `python -m rag.loader` without `--demo`). Per-query ruling rankings are
+  fused with RRF and each ruling votes its score for its HS-6 code, so a code backed by several similar
+  rulings outranks one backed by a single ruling. Up to three codes (`PRECEDENT_CODES_MAX`) join the
+  candidates: a code already retrieved keeps its chunk and gains the tag `(BTI precedent <reference>,
+  <state>: "<goods>" · n matching rulings)`; the others are appended with `ranks={"bti": n}`. Rulings
+  not valid on the day (`BTIStore.get(id, as_of)`) and codes absent from the loaded nomenclature are
+  skipped. The codes are recorded in `RetrievalTrace.precedent_codes` / `precedent_chunks`, cited as
+  `Source(kind=bti)` and appended to the candidate's `source_ids`; the ranking prompt explains the tag.
+  `ClassifyContext.precedents=False` switches the leg off (`run_eval.py --no-precedents`,
+  `ragas_eval.py --no-precedents`). The rulings index lives in its own directory so it can be rebuilt
+  while the app keeps reading `store/chroma`.
+- **Rationale**: residual "Other" subheadings (3926.90, 7326.90, 6307.90 …) carry no product words, so
+  neither BM25 nor vectors can reach them from a product description, while rulings describe real
+  goods in plain words and point at the code; precedent is also how customs experts classify.
+  Diagnosis on the labelled line "硅胶手机壳 / Silicone mobile phone cases" (3926.90): vector rank
+  12–43 per query, BM25 outside the top 60, while the full extract holds 20 phone-cover rulings under
+  3926.90 and 17 under 4202.32/4202.92. Measured on the 20-line set: top-3 11/12 → 12/12 in both modes,
+  vector-only top-1 9/12 → 11/12 (bolts 7318.15, handbags 4202.21), hybrid top-1 10/12 unchanged,
+  retrieval recall 92 % → 100 % with MRR 0.82 / 0.79 (baseline 0.81 / 0.82). The phone case is now a
+  ranking miss: 3926.90 at rank 2–3 behind 4202.32 or 3923.10, order unstable between runs.
+- **Cost**: one-off embedding of 73,899 rulings = 92 min and $0.27 (sequential batches of 256);
+  1.8 GB on disk and about 1.2 GB of RAM for the 4,096-dim index plus about 0.4 GB for the ruling
+  document store; per line one extra vector search per query and ≤ 3 extra chunks in the ranking
+  prompt (about 1k tokens). The `--demo` build (192 rulings) keeps the leg alive but weak.
+- **Tried and not adopted (same day)**: a translator prompt asking for queries of different kinds
+  (literal, functional description, "<article> of <material class>", subheading-style HyDE).
+  gpt-4o-mini never produced the material-class phrase ("cases of silicone", not "articles of
+  plastics"), and the more generic queries diluted RRF: plain-retrieval MRR 0.81 → 0.65 in both modes,
+  hexagon bolts dropped out of the vector-only top 6, end-to-end top-1 unchanged. Reverted; recorded in
+  the spec clarifications (session 2026-10-16).
+- **Alternatives**: appending ruling descriptions to the nomenclature chunks (no query-time cost, but
+  blurs the citation between nomenclature and ruling text and needs a re-embedding per refresh);
+  deterministic residual-heading expansion (add a chapter's "Other articles of <material>" basket when
+  the chapter is retrieved), complementary and planned next together with a ranking rule that a
+  protective cover fitted to a device is an article of its material, not packaging (3923) nor a
+  container (4202) unless it encloses the device like a pouch; a larger k (3926.90 at vector rank 12–17
+  would still miss often, and every line pays the tokens).
+- **Sources**: EBTI full extract (R-12); `langchain_chroma` upsert semantics for `add_texts`; tests
+  `tests/unit/test_retriever.py::TestPrecedentCodes` and `tests/integration/test_classify_hs6.py`
+  (precedent injection, citation, off switch).

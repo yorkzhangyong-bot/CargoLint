@@ -104,3 +104,56 @@ class TestIndexMeta:
     def test_missing_meta_is_refused(self, tmp_path):
         with pytest.raises(IndexMismatchError):
             load_index_meta(tmp_path)
+
+
+class TestPrecedentCodes:
+    """Precedent-driven retrieval: matching BTI rulings vote for their HS-6 code (research R-18)."""
+
+    class _Vectors:
+        def __init__(self, hits_per_query):
+            self.hits = list(hits_per_query)
+
+        def search_by_vector(self, vector, k, chapter_filter=None):
+            return [(d, 1.0) for d in self.hits.pop(0)[:k]]
+
+    @staticmethod
+    def _store():
+        from rag.bti import BTIStore
+
+        return BTIStore([
+            {"reference": "NL-1", "code": "3926.90", "member_state": "NL", "valid_from": "2024-01-01", "valid_to": "2027-01-01",
+             "description": "Protective  case for a smartphone,   of silicone"},
+            {"reference": "DE-2", "code": "3926.90", "member_state": "DE", "valid_from": "2024-01-01", "valid_to": "2027-01-01",
+             "description": "Schutzhülle aus Silikon für Mobiltelefone"},
+            {"reference": "DE-3", "code": "4202.32", "member_state": "DE", "valid_from": "2024-01-01", "valid_to": "2027-01-01",
+             "description": "Etui für ein Mobiltelefon, sog. Bookcase"},
+            {"reference": "FR-4", "code": "4202.32", "member_state": "FR", "valid_from": "2020-01-01", "valid_to": "2021-01-01",
+             "description": "expired ruling"},
+        ])
+
+    def test_codes_backed_by_more_rulings_rank_first_and_keep_their_best_ruling(self):
+        from rag.retriever import precedent_codes
+
+        vectors = self._Vectors([["bti:DE-3", "bti:NL-1", "bti:DE-2"], ["bti:NL-1", "bti:DE-3", "bti:DE-2"]])
+        out = precedent_codes(vectors, self._store(), [[0.1], [0.2]], k=3)
+        assert [e["code"] for e in out] == ["3926.90", "4202.32"]
+        assert out[0]["rulings"] == 2 and out[1]["rulings"] == 1
+        assert out[0]["reference"] == "NL-1" and out[0]["member_state"] == "NL"
+        assert out[0]["excerpt"] == "Protective case for a smartphone, of silicone"   # whitespace collapsed
+        assert out[0]["score"] > out[1]["score"]
+
+    def test_expired_and_unknown_rulings_are_skipped(self):
+        from datetime import date
+
+        from rag.retriever import precedent_codes
+
+        vectors = self._Vectors([["bti:FR-4", "bti:XX-9", "bti:DE-3"]])
+        out = precedent_codes(vectors, self._store(), [[0.1]], k=3, as_of=date(2026, 10, 16))
+        assert [e["code"] for e in out] == ["4202.32"] and out[0]["rulings"] == 1 and out[0]["reference"] == "DE-3"
+        without_date = precedent_codes(self._Vectors([["bti:FR-4", "bti:DE-3"]]), self._store(), [[0.1]], k=3)
+        assert without_date[0]["rulings"] == 2      # validity is only enforced when a date is given
+
+    def test_no_rulings_means_no_codes(self):
+        from rag.retriever import precedent_codes
+
+        assert precedent_codes(self._Vectors([[]]), self._store(), [[0.1]], k=3) == []

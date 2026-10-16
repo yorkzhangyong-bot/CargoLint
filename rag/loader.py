@@ -176,8 +176,11 @@ def build_indexes(index: NomenclatureIndex, bti_store: bti_mod.BTIStore, setting
         return meta
     emb = OpenRouterEmbeddings(settings=settings, usage_sink=usage.add)
     chroma_dir = STORE_DIR / "chroma"
-    if force and chroma_dir.exists():
-        shutil.rmtree(chroma_dir)
+    bti_dir = STORE_DIR / "chroma-bti"   # the rulings index is large and rebuilt on its own; the app keeps reading store/chroma meanwhile
+    if force:
+        for d in (chroma_dir, bti_dir):
+            if d.exists():
+                shutil.rmtree(d)
     cn = ChromaVectorSearch(chroma_dir, emb, "cn2026")
     docs = [(c.id, c.text, {k: v for k, v in c.metadata.items() if k in ("chapter", "heading", "subheading", "language", "edition_year")})
             for c in index.chunks]
@@ -189,7 +192,7 @@ def build_indexes(index: NomenclatureIndex, bti_store: bti_mod.BTIStore, setting
         log(f"chroma cn2026: embedded {n} chunks in {time.time() - t0:.0f}s")
     bti_docs = bti_store.chunk_texts()
     if bti_docs:
-        bt = ChromaVectorSearch(chroma_dir, emb, "bti")
+        bt = ChromaVectorSearch(bti_dir, emb, "bti")
         if bt.count() >= len(bti_docs):
             log(f"chroma bti: already has {bt.count()} vectors, skipping")
         else:
@@ -212,7 +215,8 @@ def write_sources_md(meta: dict[str, Any], rules: RuleSet, demo: bool) -> None:
     for key, src in SOURCES.items():
         if key == "ebti" and demo:
             continue
-        retrieved = today if (RAW_DIR / src["file"]).exists() else "(processed file reused)"
+        raw_file = RAW_DIR / src["file"]
+        retrieved = date.fromtimestamp(raw_file.stat().st_mtime).isoformat() if raw_file.exists() else "(processed file reused)"
         lines.append(f"| {src['name']} | {src['version']} | {retrieved} | {src['licence']} | {src['url']} |")
     lines += ["", f"- Firm stop-word list: {rules.firm.source_doc} ({rules.firm.source_date}) — synthetic demo data.",
               "- Shipper history (`data/shippers.json`) and the sample packing list are synthetic demo data; no real companies.",
@@ -227,7 +231,8 @@ def write_sources_md(meta: dict[str, Any], rules: RuleSet, demo: bool) -> None:
 # --------------------------------------------------------------------------- runtime opener
 class KnowledgeBase:
     def __init__(self, index: NomenclatureIndex, retriever: HybridRetriever, bti: bti_mod.BTIStore, rules: RuleSet,
-                 meta: dict[str, Any], embeddings: Any, shippers: list | None = None) -> None:
+                 meta: dict[str, Any], embeddings: Any, shippers: list | None = None, bti_vectors: Any = None) -> None:
+        self.bti_vectors = bti_vectors  # Chroma collection of ruling texts for precedent-driven retrieval; None when empty
         self.index = index
         self.retriever = retriever
         self.bti = bti
@@ -256,9 +261,12 @@ def open_knowledge_base(settings: Settings | None = None, usage_sink: Any = None
     retriever = HybridRetriever(bm25=bm25, vectors=vectors, chunks=index)
     bti_store = bti_mod.BTIStore.from_jsonl(STORE_DIR / "bti_docs.jsonl")
     rules = RuleSet.load(RULES_DIR)
+    bti_vectors = ChromaVectorSearch(STORE_DIR / "chroma-bti", emb, "bti") if (STORE_DIR / "chroma-bti").exists() else None
+    if bti_vectors is not None and bti_vectors.count() == 0:
+        bti_vectors = None
     from rag.rules import load_shippers
 
-    return KnowledgeBase(index, retriever, bti_store, rules, meta, emb, shippers=load_shippers())
+    return KnowledgeBase(index, retriever, bti_store, rules, meta, emb, shippers=load_shippers(), bti_vectors=bti_vectors)
 
 
 # --------------------------------------------------------------------------- CLI
@@ -277,6 +285,8 @@ def parse_chapters(spec: str) -> set[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")  # progress lines contain arrows; a redirected Windows console defaults to cp1252
     ap = argparse.ArgumentParser(description="Build the CargoLint knowledge base")
     ap.add_argument("--demo", action="store_true", help="use data/bti_demo.jsonl instead of the full EBTI extract")
     ap.add_argument("--bti-chapters", default=",".join(bti_mod.TARGET_CHAPTERS))

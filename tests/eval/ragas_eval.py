@@ -26,13 +26,17 @@ from agent.config import get_settings  # noqa: E402
 from agent.llm import get_client  # noqa: E402
 from agent.schemas import Usage  # noqa: E402
 from rag.loader import open_knowledge_base  # noqa: E402
+from rag.retriever import precedent_codes  # noqa: E402
 from rag.translate import translate_and_expand  # noqa: E402
 from tools.common import LineText  # noqa: E402
 
 
 def main(argv: list[str] | None = None) -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")  # Chinese line texts; a redirected Windows console defaults to cp1252
     ap = argparse.ArgumentParser()
     ap.add_argument("--k", type=int, default=6)
+    ap.add_argument("--no-precedents", action="store_true", help="measure plain retrieval only, without the precedent leg")
     ap.add_argument("--modes", default="hybrid,vector_only")
     args = ap.parse_args(argv)
     settings = get_settings()
@@ -52,8 +56,16 @@ def main(argv: list[str] | None = None) -> int:
             text = LineText(line_no=i, text_zh=l["text_zh"], text_en=l["text_en"])
             tr = translate_and_expand(client, text)
             queries = list(tr.queries) + ([tr.hyde] if tr.hyde else [])
-            chunks, _trace = kb.retriever.search(queries, chapter_filter=None, mode=mode, k=args.k)
+            vecs = kb.retriever.embed_queries(queries)
+            chunks, _trace = kb.retriever.search(queries, chapter_filter=None, mode=mode, k=args.k, query_vectors=vecs)
             ids = [c.id for c in chunks]
+            if not args.no_precedents and getattr(kb, "bti_vectors", None) is not None:
+                # the precedent leg of classify_hs6 (FR-051): matching rulings propose up to three codes
+                for p in precedent_codes(kb.bti_vectors, kb.bti, vecs, k=args.k)[:3]:
+                    ch = kb.index.get(p["code"])
+                    if ch is not None and ch.id not in ids:
+                        chunks.append(ch)
+                        ids.append(ch.id)
             ref = f"hs:{l['expected_code']}"
             rank = ids.index(ref) + 1 if ref in ids else None
             recall += 1 if rank else 0

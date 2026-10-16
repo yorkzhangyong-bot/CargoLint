@@ -192,6 +192,8 @@ class RetrievalTrace(BaseModel):
     fused: int = 0
     sent_to_model: int = 0
     history_chunks: int = 0
+    precedent_chunks: int = 0                                  # chunks added because a BTI ruling pointed at their code
+    precedent_codes: list[str] = Field(default_factory=list)   # codes proposed by matching rulings (≤ 3)
     mode: RetrievalMode = RetrievalMode.hybrid
 
 

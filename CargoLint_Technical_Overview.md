@@ -1,6 +1,6 @@
 # CargoLint: Technical Overview for the Project Review
 
-**Project**: CargoLint, a linter for packing lists · **Course**: Turing College, AI Engineering, Sprint 2 "Building Applications with AI" · **Author**: Yong Zhang · **State on 2026-10-15**: MVP complete, all 72 planned tasks done, 231 offline tests passing, pushed to `main`.
+**Project**: CargoLint, a linter for packing lists · **Course**: Turing College, AI Engineering, Sprint 2 "Building Applications with AI" · **Author**: Yong Zhang · **State on 2026-10-16**: MVP complete, all 72 planned tasks done, 236 offline tests passing; the precedent-driven retrieval added on 2026-10-16 is in the working tree.
 
 This document explains what was built, how it is designed, the technical details behind each part, and how the implementation maps to the Sprint 2 requirements. Sections 9 and 10 are a review checklist: the questions a reviewer is likely to ask, with the answers and the evidence. Pointers into the repository are given as `path:function` so each claim can be checked.
 
@@ -42,9 +42,9 @@ CargoLint advises; the clerk decides. Nothing is ever sent to a shipper or to a 
       │
       ▼
  rag/ + data/ + store/   loader.py (CLI), nomenclature.py (SKOS → HS-6 chunks), bti.py (EBTI extract),
-                         rules.py (ICS2 PDFs → term lists), embeddings.py, retriever.py (BM25 + Chroma + RRF),
+                         rules.py (ICS2 PDFs → term lists), embeddings.py, retriever.py (BM25 + Chroma + RRF, precedent votes),
                          translate.py (ZH→EN query expansion)
-                         data/ processed JSONL and rule lists · store/ Chroma, BM25 pickle, BTI document store
+                         data/ processed JSONL and rule lists · store/ Chroma (nomenclature in chroma/, rulings in chroma-bti/), BM25 pickle, BTI document store
 
  External service: OpenRouter only (chat model openai/gpt-4o-mini, embeddings qwen/qwen3-embedding-8b).
 ```
@@ -111,6 +111,7 @@ Full field tables: `specs/001-packing-list-check/data-model.md`.
 | **Untrusted input end to end**: every description, OCR text and shipper reply is fenced as `<data line="N">…</data>`; tools take references, not text | The shipper writes the document the system reads. The model should never see untrusted text as instruction, and never re-type it into tool arguments. | A fencing step at every model-call site, enforced by a static test. |
 | **One chunk per HS-6 subheading** with chapter / heading metadata | Mirrors how the nomenclature is organised; the subheading is exactly the thing being suggested. CN-8 lines are folded into their HS-6 chunk. | 5,612 chunks instead of the 10k first estimated; no CN-8 suggestions (out of scope anyway). |
 | **Hybrid retrieval** (BM25 + vectors, reciprocal rank fusion) with a vector-only baseline switch | HS code numbers and exact product terms retrieve poorly with vectors alone. Measured: hybrid wins the exact-term lines. | Two indexes to build and keep in sync; the index metadata guard refuses mismatched embedding models. |
+| **Precedent-driven retrieval**: the EBTI rulings nearest to the queries vote for their HS-6 code, and up to three codes join the candidates tagged with the ruling and the vote count | Residual \"Other\" subheadings have no product words in the nomenclature text; rulings describe real goods and point at the code. Top-3 went to 12/12 in both modes. | A 1.8 GB rulings index (about 1.2 GB of RAM), one more vector search per query, and votes that can point at a neighbouring code. |
 | **Exactly five single-purpose, schema-typed tools**, batched over line numbers | Testable without a model or Streamlit; a 12-line check is 4 tool calls, not 40. | A second orchestration path (the completeness guard) is needed because an LLM loop cannot guarantee it called every tool. |
 | **Completeness guard** in code after every check | Every line must end checked or failed with a computed route, even when the model skips a step. | Steps run by the app are labelled "(run by the app)" in the progress block, which is honest but visible. |
 | **Append-only versions and audit log** | A customs auditor can follow what changed, when, and why. Replies create v2, v3, … | No delete; "withdrawn" would be a new version state (roadmap). |
@@ -130,7 +131,7 @@ Full field tables: `specs/001-packing-list-check/data-model.md`.
 | Dataset | Source | Processing | Result |
 |---|---|---|---|
 | EU Combined Nomenclature 2026 (= HS 2022 six-digit structure + EU eight-digit codes) | Publications Office SKOS RDF/XML, 167 MB, CC BY 4.0 | streamed with `lxml.iterparse`; one chunk per HS-6 = chapter title + heading text + subheading text + self-explanatory notes + its CN-8 lines; metadata chapter, heading, subheading, language, source, edition year | 5,612 chunks (`data/nomenclature_2026.jsonl`, committed) |
-| EBTI rulings | official full extract, 397 MB, 23 yearly CSVs | rows with valid status, validity end ≥ today, chapters 39, 42, 61–64, 73, 84, 85, 94, 95, 96; HS-6 derived from the first six digits; `NAME_AND_ADDRESS` dropped at load | demo subset 192 rulings (committed); full subset 73,899 rulings as a loader option |
+| EBTI rulings | official full extract, 397 MB, 23 yearly CSVs | rows with valid status, validity end ≥ today, chapters 39, 42, 61–64, 73, 84, 85, 94, 95, 96; HS-6 derived from the first six digits; `NAME_AND_ADDRESS` dropped at load | full subset 73,899 rulings in the document store and embedded into `store/chroma-bti` (1.8 GB, 92 min, $0.27); `--demo` keeps 192 |
 | ICS2 guidance on acceptable goods descriptions v4.10, and the ICS2 stop-word list (CIRCABC, in force 2026-08-03) | official PDFs | tables extracted with pdfplumber into JSON term lists | roughly 480 terms across the two lists |
 | Firm stop-word list, shipper history, sample packing list | hand-written synthetic demo data | | 32 terms; 3 shippers with past codes; 12 sample lines |
 
@@ -144,7 +145,8 @@ Per line, in this order:
 2. **Embedding**: all queries of a line are embedded in one request and reused.
 3. **Hybrid search** (`HybridRetriever.search`): for each query, cosine search in Chroma (top 2k) and BM25 over `rank_bm25` (top 4k, filtered to 2k). The BM25 tokenizer keeps HS codes in both `9617.00` and `961700` forms and treats CJK runs as tokens. All rankings are fused with **reciprocal rank fusion** (k = 60) and the top k = 6 chunks are kept, each tagged with its vector and BM25 ranks for the trace.
 4. **Shipper history boost**: when the shipper has past filings, a second search restricted to those chapters is fused in as a soft boost, and the past codes' own chunks are added, marked "(filed before by this shipper)". The trace shows this as the metadata filter with its reason.
-5. **Vector-only baseline**: the sidebar switch sets `mode="vector_only"`, which skips BM25 and fusion. This is the comparison baseline required by the course.
+5. **Precedent leg** (`precedent_codes`): the same query vectors are run against the rulings collection; the nearest rulings are fused with RRF and each votes its score for its HS-6 code, so a code backed by several similar rulings outranks one backed by a single ruling. Up to three codes join the candidates; a code already retrieved keeps its chunk and gains a tag with the best ruling's reference, member state, goods description and the vote count, the others are appended. Only rulings valid on the day vote; the trace records the precedent codes and the sources cite the rulings.
+6. **Vector-only baseline**: the sidebar switch sets `mode="vector_only"`, which skips BM25 and fusion. This is the comparison baseline required by the course.
 
 Every classification stores a `RetrievalTrace` (original text, queries, filter, BM25 hits, vector hits, fused count, chunks sent to the model, mode) which the UI shows in the Retrieval-steps expander.
 
@@ -156,6 +158,8 @@ The fused chunks, the fenced description, the flag result, any facts confirmed b
 - `validate_code` drops any code that is not `####.##` **or not present in the nomenclature index**. Subheading text and chapter come from the index, never from the model. If nothing survives, the line is "no valid candidate".
 - A vague-flagged line's confidence is capped at 59 in code, so a generic description can never look near-certain whatever the model says.
 - `history_only` candidates are labelled and a "Shipper's past filings" source is added, so the UI can say the support came from history, not from the text.
+
+- Codes proposed by rulings carry their tag into the prompt, and the prompt tells the model to treat a matching ruling as strong evidence and to name it in the rationale, or to say why the ruling's goods differ.
 
 ### 4.4 Description check (`tools/check_description.py`, `rag/rules.py`)
 
@@ -239,25 +243,25 @@ Streamlit 1.65, native widgets only. Each turn runs in a worker thread (`ui/jobs
 
 | Marker | Count | What it covers | Needs a key |
 |---|---|---|---|
-| unit | 170 | routing table and threshold boundary, accept lock, code validation, fencing, parsers and caps, rule matching, RRF, BTI validity filter, line store and audit, reply scope, cost arithmetic, export, review-table rows | no |
-| integration | 40 | each tool with the fake client, the agent loop with a fake model, the completeness guard, the upload flow, follow-ups, the named error scenarios | no |
+| unit | 173 | routing table and threshold boundary, accept lock, code validation, fencing, parsers and caps, rule matching, RRF, BTI validity filter, line store and audit, reply scope, cost arithmetic, export, review-table rows, precedent code ranking | no |
+| integration | 42 | each tool with the fake client, the agent loop with a fake model, the completeness guard, the upload flow, follow-ups, the named error scenarios, precedent injection and citation | no |
 | adversarial | 21 | 12 injection fixtures through the tools; static fencing-coverage and host checks | no |
 | live | 4 | OpenRouter embeddings, structured output, cost reconciliation, the budget test | yes |
 
-`pytest -q` runs the 231 offline tests in about 3 seconds. Model calls are replaced by a fake structured-output backend that replays recorded outputs (`tests/fixtures/recorded/`); embeddings by a deterministic fake. Guardrail tests were written before the code they cover (constitution Principle VII).
+`pytest -q` runs the 236 offline tests in about 3 seconds. Model calls are replaced by a fake structured-output backend that replays recorded outputs (`tests/fixtures/recorded/`); embeddings by a deterministic fake. Guardrail tests were written before the code they cover (constitution Principle VII).
 
 ### 5.2 Measured results
 
-Labelled set: 20 lines (5 vague, 3 stop-word, 12 clear with known codes), `python tests/eval/run_eval.py`, 2026-10-14, `openai/gpt-4o-mini` + `qwen/qwen3-embedding-8b`:
+Labelled set: 20 lines (5 vague, 3 stop-word, 12 clear with known codes), `python tests/eval/run_eval.py`, `openai/gpt-4o-mini` + `qwen/qwen3-embedding-8b`. Baseline 2026-10-14 → with the precedent leg over the full rulings index, 2026-10-16:
 
 | Mode | Flag accuracy | Top-1 | Top-3 | Flagged lines auto-accepted | Time |
 |---|---|---|---|---|---|
-| Hybrid (BM25 + vectors, RRF) | 20 / 20 | 10 / 12 | 11 / 12 | 0 | 87 s |
-| Vector-only baseline | 20 / 20 | 9 / 12 | 10 / 12 | 0 | 65 s |
+| Hybrid (BM25 + vectors, RRF) | 20 / 20 | 10 / 12 → 10 / 12 | 11 / 12 → 12 / 12 | 0 | 32 s |
+| Vector-only baseline | 20 / 20 | 9 / 12 → 11 / 12 | 10 / 12 → 12 / 12 | 0 | 20 s |
 
-Hybrid wins the exact-term lines, for example `7318.15` stainless steel hexagon bolts, which vector-only puts at `7318.19`. Both modes miss silicone phone cases (`3923.10` packaging cases instead of `3926.90`). The whole evaluation cost €0.016.
+Plain retrieval: hybrid wins the exact-term lines, for example `7318.15` stainless steel hexagon bolts, which vector-only puts at `7318.19`. The precedent leg brings every expected code into the top-3 in both modes and fixes the two vector-only top-1 misses, because a ruling that classifies the same goods outweighs a near-neighbour subheading. The remaining top-1 miss is silicone mobile phone cases: `3926.90` is proposed with five matching rulings, but the model ranks an Irish ruling for an iPhone protection case (`4202.32`) or packaging (`3923.10`) above it, and the order flips between runs. A run of both modes costs €0.016.
 
-Retrieval alone (`python tests/eval/ragas_eval.py`, RAGAs-style context metrics against the reference chunk, k = 6, 12 clear lines): context recall 92 % in both modes, context precision (MRR) 0.81 hybrid / 0.82 vector-only, chapter hit 100 %. The phone-case miss is a retrieval miss (the right chunk is never among the six), so the fix is better query expansion, not better ranking.
+Retrieval alone (`python tests/eval/ragas_eval.py`, RAGAs-style context metrics against the reference chunk, k = 6, 12 clear lines): context recall 92 % → 100 % in both modes once the precedent leg's chunks count, context precision (MRR) 0.82 hybrid / 0.79 vector-only against a baseline of 0.81 / 0.82, chapter hit 100 %. The phone-case chunk arrives as the seventh candidate, from the rulings, never from the nomenclature text. A translator prompt asking for "queries of different kinds" was tried the same day and reverted: plain-retrieval MRR fell to 0.65 in both modes and `3926.90` was still not reached (research R-18).
 
 Scale (`python tests/eval/scale_check.py`, 100 generated lines, 6 workers): first progress step after 1.6 s, all 100 lines checked in 130 s, none failed, €0.05; a 201-line file is rejected before any model call.
 
@@ -273,9 +277,9 @@ The spec's eleven success criteria: SC-001, 002, 003, 005, 007, 010 and 011 are 
 
 | Requirement | Implementation | Evidence |
 |---|---|---|
-| Knowledge base relevant to the domain | EU Combined Nomenclature 2026 (5,612 HS-6 chunks), EBTI rulings (192 demo, 73,899 full option), the two ICS2 term lists, a firm stop-word list, synthetic shipper history; `rag/loader.py` builds it from the official sources and writes `data/SOURCES.md` | `python -m rag.loader --demo`; `tests/unit/test_loader.py`; knowledge-base caption in the sidebar |
-| Standard retrieval: embeddings, chunking, similarity search | one chunk per subheading with metadata (`rag/nomenclature.py:build_chunks`); `qwen/qwen3-embedding-8b` vectors in Chroma, cosine similarity (`rag/retriever.py:ChromaVectorSearch`) | `tests/unit/test_retriever.py`; retrieval-only recall 92 % |
-| Advanced RAG: query translation and structured retrieval | ZH→EN translation with multi-query expansion and HyDE (`rag/translate.py`); chapter metadata filter used as the shipper-history boost; per-line retrieval trace | Retrieval-steps expander in the UI; `tests/integration/test_classify_hs6.py` |
+| Knowledge base relevant to the domain | EU Combined Nomenclature 2026 (5,612 HS-6 chunks), EBTI rulings (73,899, embedded for precedent-driven retrieval), the two ICS2 term lists, a firm stop-word list, synthetic shipper history; `rag/loader.py` builds it from the official sources and writes `data/SOURCES.md` | `python -m rag.loader --demo`; `tests/unit/test_loader.py`; knowledge-base caption in the sidebar |
+| Standard retrieval: embeddings, chunking, similarity search | one chunk per subheading with metadata (`rag/nomenclature.py:build_chunks`); `qwen/qwen3-embedding-8b` vectors in Chroma, cosine similarity (`rag/retriever.py:ChromaVectorSearch`) | `tests/unit/test_retriever.py`; retrieval-only recall 100 % with the precedent leg, 92 % plain |
+| Advanced RAG: query translation and structured retrieval | ZH→EN translation with multi-query expansion and HyDE (`rag/translate.py`); chapter metadata filter used as the shipper-history boost; precedent leg where EBTI rulings vote for codes (FR-051); per-line retrieval trace | Retrieval-steps expander in the UI; `tests/integration/test_classify_hs6.py` |
 | At least 3 domain tools | 5 tools: `parse_packing_list`, `check_description`, `classify_hs6`, `lookup_precedent`, `apply_shipper_reply`, each with a Pydantic args schema, taking references | `tools/`; `tests/integration/test_agent_check_flow.py` shows the loop calling them in order |
 | Domain-specific prompts, responses and security | customs-clerk system prompt (`agent/prompts.py:SYSTEM_PROMPT`); ranking, judgement, translation and extraction prompts with examples; fenced data blocks; schema-validated outputs; routing in code | `tests/adversarial/`; section 4.9 |
 | LangChain with OpenRouter | LangChain 1.4 `create_agent`; `ChatOpenAI` with the OpenRouter base URL; embeddings through the OpenRouter embeddings endpoint; one client factory (`agent/llm.py`) | `tests/live/test_openrouter.py` |
@@ -288,7 +292,7 @@ The spec's eleven success criteria: SC-001, 002, 003, 005, 007, 010 and 011 are 
 |---|---|---|---|
 | Protect the app against prompt injection | medium | fencing at every model-call site, references instead of text in tool arguments, pasted text kept out of the agent history, schema validation, routing in code | 12 adversarial fixtures and the static fencing-coverage test, all passing (SC-007) |
 | Calculate and display token usage and cost | medium | usage captured per call, priced from `data/model_prices.json`, converted to EUR, shown as sidebar metrics and included in the JSON export | live reconciliation test; €0.007 for the sample plus two follow-ups |
-| Hybrid search | hard | BM25 + vector search fused by reciprocal rank fusion, with a vector-only baseline switch and a measured comparison | hybrid top-1 10/12 vs vector-only 9/12 |
+| Hybrid search | hard | BM25 + vector search fused by reciprocal rank fusion, with a vector-only baseline switch and a measured comparison | plain retrieval: hybrid top-1 10/12 vs vector-only 9/12; with the precedent leg both modes reach top-3 12/12 and vector-only top-1 11/12, so on this set rulings that name the goods matter more than the BM25 leg |
 | Multi-language support | bonus, inherent | Chinese, English and mixed input; ZH→EN query translation; bilingual header detection; rule terms in both languages; Chinese glyphs rendered | sample list and labelled set are bilingual |
 | RAG evaluation with RAGAs | stretch | `tests/eval/ragas_eval.py` computes the RAGAs context-recall and context-precision ideas deterministically against ground-truth chunk ids. The `ragas` library itself is not used (no LLM judge). | retrieval results table above |
 | Source citations | easy | every candidate carries source ids; Sources expander grouped by kind (nomenclature, BTI, ICS2 rule, firm rule, shipper history) | FR-029 |
@@ -312,14 +316,15 @@ The spec's eleven success criteria: SC-001, 002, 003, 005, 007, 010 and 011 are 
 GitHub Spec Kit, in this order, all artefacts in the repository:
 
 1. **Constitution** (`.specify/memory/constitution.md`, v1.0.0, 2026-10-14): seven principles, five of them non-negotiable for guardrail code; scope, architecture invariants, stack, UI design contract, definition of done.
-2. **Specification** (`specs/001-packing-list-check/spec.md`): four user stories by priority (check pasted lines; upload and review; follow-ups and shipper reply; export and cost), 50 functional requirements, 11 measurable success criteria.
+2. **Specification** (`specs/001-packing-list-check/spec.md`): four user stories by priority (check pasted lines; upload and review; follow-ups and shipper reply; export and cost), 51 functional requirements, 11 measurable success criteria.
 3. **Clarify**: four decisions recorded in the spec: the clerk chooses the decided code on accept; a confidence floor of 50 separates "ask the shipper" from "review" for vague lines; 200 lines per shipment with 100 lines in 5 minutes; how a reply's target line is resolved.
 4. **Plan** (`plan.md`, `research.md`, `data-model.md`, `contracts/`): 17 research entries with verified versions and sources; a Constitution Check gate per principle; two recorded deviations (RapidOCR instead of Tesseract/PaddleOCR; the completeness guard).
 5. **Tasks**: 72 tasks in the intro's build order (labelled set → loader → classify measured on the set → check, routing, precedent → UI → parsers and replies → security pass, cost, export, README, tests). All done.
 6. **Analyze** before implementation: consistency check across spec, plan and tasks.
 7. **Implement**, then a live-run polish round, a performance round (query embeddings batched: the 100-line check went from 484 s to 130 s) and a UI redesign round driven by the first real use (row list, live progress, grouped sidebar).
+8. **Retrieval review round** (2026-10-16), driven by the one labelled miss: precedent-driven retrieval designed, tested and measured; a translator-prompt change measured and reverted (research R-18).
 
-Commits on `main`: foundation → tools, agent, knowledge base, chat → replies, follow-ups, cost, export → polish, error-scenario and security tests → performance and evaluation → UI redesign → project CLAUDE.md → uv lock.
+Commits on `main`: foundation → tools, agent, knowledge base, chat → replies, follow-ups, cost, export → polish, error-scenario and security tests → performance and evaluation → UI redesign → project CLAUDE.md → uv lock → (next) precedent-driven retrieval.
 
 ---
 
@@ -331,7 +336,8 @@ Commits on `main`: foundation → tools, agent, knowledge base, chat → replies
 - Chinese product slang and brand-only names still miss; hybrid retrieval helps but does not solve it.
 - Classification confusions remain where the nomenclature itself is subtle (protective phone cases vs packaging cases; aluminium bicycle frames landed in aluminium structures in one live run), and the model occasionally auto-accepts such a wrong code at high confidence. This is why the threshold is adjustable and the audit trail exists.
 - `gpt-4o-mini` sometimes skips `lookup_precedent`; the guard covers it, visibly.
-- BTI coverage: the demo subset is 192 German-language rulings for the ten target chapters; the full subset is a loader option. Rulings expire and must be refreshed.
+- BTI coverage: the ten target chapters only (73,899 valid rulings). Rulings expire and must be refreshed, and the rulings index costs about 1.2 GB of RAM in the app. Precedent votes can point at a neighbouring code (plastic storage boxes, steel bobbin cases), so the tag is evidence, not a verdict.
+- The remaining labelled miss is a ranking miss: with `3926.90` proposed by five rulings, the model still ranks an iPhone-case ruling (`4202.32`) or packaging (`3923.10`) first for silicone phone cases, and the order flips between runs.
 - OCR on phone photos is the weakest input path; quantities and values are not read from photos.
 - State lives in the Streamlit session: nothing persists across restarts; one user, one shipment.
 - The chat box classifies a message by heuristics; a plain sentence without a question marker is treated as a new line after a check (a known rough edge, not yet changed).
@@ -344,7 +350,7 @@ Commits on `main`: foundation → tools, agent, knowledge base, chat → replies
 - Python 3.11 to 3.13 (the plan said up to 3.12); 3.13 is what runs the tests.
 - The "Stop-word" chip means the firm list; the ICS2 stop-word list feeds the Vague flag, as the spec defines. Customs itself calls the ICS2 list "stop words", so the label may deserve a rename.
 
-**Next steps, in order of customer value:** drafted bilingual shipper queries with send tracking; line version history and audit export; CN-8 classification (same pipeline, one more level); TARIC-10 lookup as a deterministic tool (duty rate, anti-dumping, certificates); SQLite persistence and multi-user access. Technical debt first: the constitution patch, the chat-message classification, and a withdrawn-line state if deleting lines is wanted.
+**Next steps, in order of customer value:** drafted bilingual shipper queries with send tracking; line version history and audit export; CN-8 classification (same pipeline, one more level); TARIC-10 lookup as a deterministic tool (duty rate, anti-dumping, certificates); SQLite persistence and multi-user access. Technical debt first: the constitution patch, the chat-message classification, the residual-heading expansion and the protective-cover ranking rule from research R-18, and a withdrawn-line state if deleting lines is wanted.
 
 ---
 
@@ -356,7 +362,9 @@ Commits on `main`: foundation → tools, agent, knowledge base, chat → replies
 
 **What if the model returns a code that does not exist?** It is dropped before display. If no candidate survives, the line is "no valid candidate" and goes to review. The same check runs on codes the clerk types.
 
-**Why hybrid retrieval, and did it help?** HS codes and exact product terms are poor vector queries. On the labelled set hybrid scores 10/12 top-1 against 9/12 for vector-only, winning exactly the exact-term lines. Retrieval-only recall is the same (92 %), so the gain is in ranking the right chunk higher.
+**Why hybrid retrieval, and did it help?** HS codes and exact product terms are poor vector queries. On plain retrieval hybrid scores 10/12 top-1 against 9/12 for vector-only, winning the exact-term lines; retrieval-only recall is the same (92 %), so the gain is in ranking the right chunk higher. Since the precedent leg, both modes reach top-3 12/12 and vector-only top-1 11/12: rulings that name the goods matter more than the BM25 leg on this set, and hybrid stays the default for exact code and term queries.
+
+**Why do rulings propose codes now, and is that safe?** Residual "Other" subheadings such as `3926.90` have no product words in the nomenclature, so no query reaches them; rulings describe real goods and point at the code. The nearest rulings vote for their code, up to three codes join the candidates tagged with the ruling and the vote count, and the same code-existence validation applies. Only valid rulings vote, the trace and the sources show them, and the model is told a ruling is evidence to weigh, not a verdict.
 
 **How is a 12-line check only four tool calls?** The tools are batched over line numbers and process lines in a thread pool with per-line isolation. One failed line never aborts the shipment.
 
@@ -364,11 +372,11 @@ Commits on `main`: foundation → tools, agent, knowledge base, chat → replies
 
 **How do you know the quality?** A 20-line labelled set built before the classifier, run in both retrieval modes; a retrieval-only evaluation with RAGAs-style metrics; a 100-line scale run; a live budget test. All numbers are in the README and in section 5.
 
-**What does it cost?** About €0.007 for the sample shipment plus two follow-ups; €0.05 for 100 lines; the one-off knowledge-base embedding was about $0.02 for the demo subset. Cost is computed from a price table and reconciled against OpenRouter's accounting.
+**What does it cost?** About €0.007 for the sample shipment plus two follow-ups; €0.05 for 100 lines; the one-off knowledge-base embedding was about $0.02 for the demo subset and $0.27 for the full rulings index. Cost is computed from a price table and reconciled against OpenRouter's accounting.
 
 **Why Streamlit threads and fragments instead of a simple spinner?** A check takes 20 to 130 s; the clerk needs to see each tool step and each row fill in, and to keep the page responsive. The worker never calls Streamlit; the UI polls a job object.
 
-**What would you do next with one more week?** Fix the chat-message classification, add the withdrawn-line state, run the full BTI subset, and calibrate confidence against a larger labelled set.
+**What would you do next with one more week?** Add the residual-heading expansion and the protective-cover ranking rule, fix the chat-message classification, add the withdrawn-line state, and calibrate confidence against a larger labelled set.
 
 ---
 

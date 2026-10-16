@@ -162,6 +162,8 @@ auto-accepted line without a decision, the decided code is the top candidate wit
 | `bm25_hits`, `vector_hits` | int |
 | `fused` | int (after RRF) |
 | `sent_to_model` | int (chunks in the ranking prompt) |
+| `precedent_codes` | list[str] (≤ 3 HS-6 codes proposed by matching BTI rulings, FR-051) |
+| `precedent_chunks` | int (of those, chunks added that plain retrieval had not returned) |
 | `mode` | `hybrid \| vector_only` |
 
 **NomenclatureChunk** (Chroma document + BM25 entry; one per HS-6 subheading)

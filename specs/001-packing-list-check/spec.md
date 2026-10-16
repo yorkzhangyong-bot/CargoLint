@@ -18,6 +18,10 @@
 - Q: How should the app work out which line a pasted shipper reply refers to? → A: The line number named in the clerk's message; if none is named and exactly one line is selected in the review table, the selected line (the app states which line it used); otherwise it asks. Replies may be in Chinese, English or mixed. (Recommended option, accepted by the user in advance.)
 - Q: How should the app decide that a shipper's reply contradicts the filed description? → A: By a fixed rule: the previous version had at least one candidate and the new version's top candidate falls in a different HS chapter from every previous candidate; the line then goes to human review with a note naming both codes. (Recommended option, accepted by the user in advance.)
 
+### Session 2026-10-16
+
+- Q: The labelled line "硅胶手机壳 / Silicone mobile phone cases" (3926.90) is missed in both retrieval modes because residual "Other" subheadings have no descriptive text; should BTI rulings be allowed to propose candidate codes? → A: Yes: rulings whose goods match the queries vote for their HS-6 code; up to three precedent codes join the candidates, tagged and cited as precedent (FR-051). A translator prompt asking for queries of different kinds (literal, functional, "<article> of <material class>") was tried the same day and not adopted: it lowered retrieval precision (rank-weighted 0.81 → 0.65) without reaching 3926.90.
+
 ## User Scenarios & Testing *(mandatory)*
 
 The user is a customs/export clerk at a Hamburg freight forwarder or consolidator who files ICS2 house declarations (ENS) for China→EU sea freight. Packing lists arrive from Chinese shippers in Chinese, English or a mix, and often contain descriptions that customs rejects ("配件 / Parts", "礼品 / Gift"). The clerk uses CargoLint before filing to find those lines, get a defensible HS-6 code for the others, and know what to ask the shipper.
@@ -208,6 +212,7 @@ The clerk exports the current results as CSV or JSON for the filing or for the s
 - **FR-048**: A failure on one line MUST NOT stop the shipment: the line is marked failed with a plain-language reason and routed to human review while the other lines complete.
 - **FR-049**: Transient service errors MUST be retried a bounded number of times with the status visible; a persistent error MUST produce a message telling the clerk what to do next.
 - **FR-050**: Empty, unreadable or header-less files MUST produce a clear message and no partial results.
+- **FR-051**: Candidate codes MAY also be proposed by Binding Tariff Information rulings whose goods match the description (precedent-driven retrieval): the rulings nearest to the translated queries vote for their HS-6 code, and up to three such codes are offered to the ranking step alongside the retrieved subheadings, each tagged with its best-matching ruling. Precedent-proposed codes MUST pass the same code-existence validation, MUST be marked as precedent-sourced in the retrieval trace and in the sources, and only rulings valid on the day of the check MAY vote.
 
 ### Key Entities
 

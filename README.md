@@ -17,6 +17,7 @@ python -m venv .venv && .venv\Scripts\activate          # Windows; Python 3.11�
 pip install -e ".[dev]"
 set OPENROUTER_API_KEY=sk-or-...                           # or put it in .env (see .env.example)
 python -m rag.loader --demo                               # builds the knowledge base (≈ 10 min, ≈ $0.02)
+python -m rag.loader                                      # full EBTI rulings index for precedent-driven retrieval (74k rulings, ≈ 90 min, ≈ $0.3, 1.8 GB on disk)
 pytest -q                                                 # 229 offline tests, no key needed
 streamlit run app.py
 ```
@@ -25,7 +26,8 @@ The loader downloads the EU Combined Nomenclature 2026 (SKOS, 171 MB), the two I
 — once, for the BTI subset — the EBTI full extract (397 MB), then embeds ≈ 5,600 nomenclature chunks
 and the 192-ruling demo subset through OpenRouter. `python -m rag.bti --make-demo` regenerates the demo
 subset; `python -m rag.loader --bti-chapters 39,42,61-64,73,84,85,94,95,96` builds the full
-73,899-ruling subset. Data provenance and licences: `data/SOURCES.md`.
+73,899-ruling subset and its own vector index (`store/chroma-bti`), which the precedent leg of the classifier
+searches (see below). Data provenance and licences: `data/SOURCES.md`.
 
 ## What the clerk sees
 
@@ -66,13 +68,19 @@ clipped at laptop widths.
    the shipper has a filing history, a second search restricted to those chapters is fused in as a soft
    boost (the trace shows it as the metadata filter). The sidebar switch turns BM25 off for the
    vector-only baseline.
-4. **Ranking** (`tools/classify_hs6.py`): the fused chunks, the fenced description, the flag result
+4. **Precedent leg** (`rag/retriever.py:precedent_codes`): the same query vectors are run against the index of
+   EBTI ruling texts (`store/chroma-bti`); the rulings nearest to the queries vote for their HS-6 code with their
+   RRF score, and up to three precedent codes join the candidate chunks, each tagged with its best-matching ruling
+   (reference, member state, goods description). This is how residual "Other" subheadings such as `3926.90`, whose
+   nomenclature text names no product, become reachable from a product description. Precedent codes are marked in
+   the retrieval trace and cited as BTI sources; only rulings valid on the day may vote.
+5. **Ranking** (`tools/classify_hs6.py`): the fused chunks, the fenced description, the flag result
    and the shipper's past codes go to the chat model, which returns up to three candidates with
    confidence and rationale as strict JSON.
-5. **Validation in code**: every returned code must match `^\d{4}\.\d{2}$` **and exist in the
+6. **Validation in code**: every returned code must match `^\d{4}\.\d{2}$` **and exist in the
    nomenclature index**; unknown codes are dropped, subheading text and chapter are filled from the
    index, never from the model. If nothing survives, the line is "no valid candidate".
-6. **Routing in code** (`agent/routing.py`): stop-word → ask the shipper; vague → ask the shipper below
+7. **Routing in code** (`agent/routing.py`): stop-word → ask the shipper; vague → ask the shipper below
    the ask floor (50) else review; OK → auto-accept at or above the threshold else review; a line that
    was ever flagged, or updated by a shipper reply, is never auto-accepted — it becomes "ready to
    accept" and needs the clerk's click.
@@ -129,26 +137,33 @@ the store, never from the model's prose.
 - `pytest -m live` — three OpenRouter smoke tests (embeddings, structured output, price-table cost vs
   OpenRouter accounting) and the budget test (sample shipment + two follow-ups < €0.10).
 - `python tests/eval/run_eval.py --sample` — the 20-line labelled set (5 vague, 3 stop-word, 12 clear
-  with known codes) in both retrieval modes plus the 12-line sample.
+  with known codes) in both retrieval modes plus the 12-line sample. `--no-precedents` switches the precedent leg off for before-and-after comparisons.
 
-Labelled-set results, 2026-10-14, `openai/gpt-4o-mini` + `qwen/qwen3-embedding-8b`:
+Labelled-set results, `openai/gpt-4o-mini` + `qwen/qwen3-embedding-8b`. Baseline 2026-10-14 → with the precedent
+leg (FR-051) over the full 73,899-ruling index, 2026-10-16:
 
-| Mode | Flag accuracy | Top-1 | Top-3 | Flagged lines auto-accepted | Time |
+| Mode | Flag accuracy | Top-1 (baseline → now) | Top-3 (baseline → now) | Flagged lines auto-accepted | Time |
 |---|---|---|---|---|---|
-| Hybrid (BM25 + vectors, RRF) | 20/20 | 10/12 | 11/12 | 0 | 87 s |
-| Vector-only baseline | 20/20 | 9/12 | 10/12 | 0 | 65 s |
+| Hybrid (BM25 + vectors, RRF) | 20/20 | 10/12 → 10/12 | 11/12 → 12/12 | 0 | 32 s |
+| Vector-only baseline | 20/20 | 9/12 → 11/12 | 10/12 → 12/12 | 0 | 20 s |
 
-Hybrid wins the exact-term lines (e.g. `7318.15` stainless steel hexagon bolts, which vector-only
-puts at `7318.19`). Both modes miss silicone mobile phone cases (`3923.10` packaging cases instead of
-`3926.90`). The whole evaluation (both modes and the sample) cost €0.016. Sample routes matched the
-design illustration on 10/12 lines; the other two are legitimate model confidences (LED desk lamp
-95 → auto-accept, bare "Furniture" 40 → ask the shipper).
+The precedent leg brings every expected code into the top-3 in both modes and fixes the two vector-only top-1
+misses (hexagon bolts `7318.15`, leather handbags `4202.21`): a ruling that classifies the same goods outweighs
+a near-neighbour subheading. Silicone mobile phone cases are the remaining top-1 miss: `3926.90` is now
+proposed with five matching rulings, but the model ranks an Irish ruling for an iPhone protection case
+(`4202.32`) or packaging (`3923.10`) above it, and the order flips between runs. That is a ranking problem,
+no longer a retrieval problem; it is also a genuine EU debate (the full extract holds 20 phone-cover rulings
+under `3926.90` and 17 under `4202.32`/`4202.92`), which the clerk now sees as two cited precedents. A run of
+both modes costs €0.016. Sample routes matched the design illustration on 10/12 lines; the other two are
+legitimate model confidences (LED desk lamp 95 → auto-accept, bare "Furniture" 40 → ask the shipper).
 
-Retrieval alone (`python tests/eval/ragas_eval.py`, RAGAs-style context metrics against the reference
-chunk, no LLM judge), k = 6, 12 clear lines: context recall 92 % in both modes, context precision
-(MRR) 0.81 hybrid / 0.82 vector-only, chapter hit 100 %. The phone-case miss is a retrieval miss —
-the `3926.90` chunk is never among the six candidates — so better query expansion ("protective
-cover"), not better ranking, is the fix.
+Retrieval alone (`python tests/eval/ragas_eval.py`, RAGAs-style context metrics against the reference chunk,
+no LLM judge; `--no-precedents` measures plain retrieval), k = 6, 12 clear lines: context recall 92 % → 100 %
+in both modes once the precedent leg's chunks count, context precision (MRR) 0.82 hybrid / 0.79 vector-only
+(baseline 0.81 / 0.82), chapter hit 100 %. The phone-case chunk arrives as the seventh candidate, from the
+rulings, never from the nomenclature text itself. A translator prompt asking for "queries of different kinds"
+was tried the same day and reverted: it lowered plain-retrieval MRR to 0.65 in both modes without reaching
+`3926.90`.
 
 Scale (`python tests/eval/scale_check.py`, 100 generated lines, six workers): first progress step
 after 1.6 s, all 100 lines checked in 130 s, none failed, €0.05; a 201-line file is rejected whole
@@ -171,10 +186,13 @@ open with Chinese text intact.
   packaging cases; aluminium bicycle frames landed in aluminium structures `7610.90` instead of
   `8714.91` in one live run) — and the model occasionally auto-accepts such a wrong code at high
   confidence, which is why the threshold is adjustable and the audit trail exists.
+- Precedent votes can point at a neighbouring code: for plastic household storage boxes the rulings vote
+  `3926.90`/`3923.10` first and for steel bobbin cases `7326.90`. The model kept the right code in both cases,
+  and the tag is presented as evidence, not as a verdict; the clerk sees the ruling and decides.
 - `gpt-4o-mini` sometimes skips `lookup_precedent`; the completeness guard runs it, so results are
   complete, but the progress block then shows the step as "run by the app".
-- BTI coverage: the demo subset holds 192 rulings (all German-language) for the ten target chapters;
-  the full subset (73,899 valid rulings) is a loader option. Rulings must be refreshed as they expire.
+- BTI coverage: the ten target chapters only (73,899 valid rulings with the full build, 192 with `--demo`). Rulings
+  must be refreshed as they expire, and the full rulings index costs about 1.2 GB of RAM in the app.
 - OCR on phone photos is the weakest input path (RapidOCR, PP-OCR models); quantities and values are
   not read from photos.
 - State lives in the Streamlit session: nothing persists across restarts; one user, one shipment.
@@ -192,7 +210,7 @@ agent/          config, schemas, routing, prompts, llm (client factory + cost), 
 tools/          the five tools, parsers, ocr, common (context + per-line runner)
 rag/            loader (CLI), nomenclature (SKOS), bti (EBTI), rules (ICS2 PDFs), embeddings, retriever, translate
 data/           processed knowledge base, rule lists, shipper history (synthetic), sample list, labelled set, SOURCES.md
-store/          Chroma vectors, BM25 pickle, BTI document store (git-ignored; rebuilt by the loader)
+store/          Chroma vectors (nomenclature in chroma/, rulings in chroma-bti/), BM25 pickle, BTI document store (git-ignored; rebuilt by the loader)
 tests/          unit, integration, adversarial, live, eval (run_eval.py, make_big_list.py), fixtures
 ```
 

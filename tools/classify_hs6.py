@@ -15,7 +15,7 @@ from agent.llm import StructuredCaller
 from agent.prompts import fence
 from agent.routing import validate_classification, validate_code
 from agent.schemas import Candidate, Classification, LineStatus, RankOut, RetrievalMode, RetrievalTrace, Source, SourceKind
-from rag.retriever import rrf
+from rag.retriever import rrf, precedent_codes
 from rag.rules import find_shipper, load_shippers
 from rag.translate import translate_and_expand
 from tools import register
@@ -42,6 +42,9 @@ Rules:
   used to make or carry such goods are not the goods themselves.
 - Candidates marked "(filed before by this shipper)" come from the shipper's past declarations; they are
   worth considering, but the description text decides.
+- Candidates marked "(BTI precedent ...)" carry a Binding Tariff Information ruling in which an EU customs authority
+  classified similar goods under that subheading. When the ruling's goods match the description, treat it as strong
+  evidence and mention the ruling in the rationale; when they differ, say why.
 - rationale: one or two short English sentences a customs clerk can check.
 Return JSON: {"candidates": [{"code": "####.##", "confidence": int, "rationale": "...", "history_only": bool}]}
 with at most three entries, best first."""
@@ -49,6 +52,7 @@ with at most three entries, best first."""
 
 VAGUE_CONFIDENCE_CAP = 59      # a vague-flagged line's candidates never exceed this (FR-016, FR-020)
 HISTORY_CHUNKS_MAX = 5         # shipper past codes injected as candidates
+PRECEDENT_CODES_MAX = 3        # codes proposed by matching BTI rulings (precedent-driven retrieval)
 
 
 @dataclass
@@ -57,6 +61,7 @@ class ClassifyContext:
     hybrid: bool = True
     k: int = RETRIEVAL_K
     as_of: date = field(default_factory=date.today)
+    precedents: bool = True        # let matching BTI rulings propose candidate codes
 
 
 def _history_chapters(codes: list[str]) -> list[str]:
@@ -92,6 +97,23 @@ def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCal
                 chunks.append(ch.model_copy(update={"ranks": {"history": 1}}))
                 present.add(ch.id)
                 history_chunks += 1
+    precedents: list[dict] = []
+    precedent_chunks = 0
+    bti_vectors = getattr(kb, "bti_vectors", None)
+    if ctx.precedents and bti_vectors is not None and query_vectors:
+        present = {c.id for c in chunks}
+        for p in precedent_codes(bti_vectors, kb.bti, query_vectors, k=ctx.k, as_of=ctx.as_of):
+            if len(precedents) >= PRECEDENT_CODES_MAX:
+                break
+            ch = kb.index.get(p["code"])
+            if ch is None:
+                continue  # the ruling's code is not in the loaded nomenclature edition
+            precedents.append(p)
+            if ch.id not in present:
+                chunks.append(ch.model_copy(update={"ranks": {"bti": len(precedents)}}))
+                present.add(ch.id)
+                precedent_chunks += 1
+    prec_by_code = {p["code"]: p for p in precedents}
     if client is None:
         raise RuntimeError("no model client available for ranking")
     user = [f"Description:\n{fence(line.display_text, line.line_no)}"]
@@ -106,6 +128,10 @@ def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCal
     user.append("Candidate subheadings from the nomenclature:")
     for ch in chunks:
         tag = " (filed before by this shipper)" if "history" in ch.ranks else ""
+        p = prec_by_code.get(ch.code)
+        if p:
+            more = f' · {p["rulings"]} matching rulings' if p["rulings"] > 1 else ""
+            tag += f' (BTI precedent {p["reference"]}, {p["member_state"]}: "{p["excerpt"]}"{more})'
         user.append(f"[{ch.id}]{tag} {ch.text[:900]}")
     ranked: RankOut = validate_classification(client.call(RankOut, RANK_SYSTEM, "\n".join(user)))
     candidates: list[Candidate] = []
@@ -116,8 +142,9 @@ def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCal
         confidence = rc.confidence
         if line.flag_kind == "vague" and confidence > VAGUE_CONFIDENCE_CAP:
             confidence = VAGUE_CONFIDENCE_CAP  # a generic description can never look near-certain (code, not prompt)
+        source_ids = [f"hs:{rc.code}"] + ([f"bti:{prec_by_code[rc.code]['reference']}"] if rc.code in prec_by_code else [])
         candidates.append(Candidate(code=rc.code, subheading_text=kb.index.subheading_text(rc.code), confidence=confidence,
-                                    rationale=rc.rationale, history_only=rc.history_only, source_ids=[f"hs:{rc.code}"]))
+                                    rationale=rc.rationale, history_only=rc.history_only, source_ids=source_ids))
     candidates.sort(key=lambda c: -c.confidence)
     year = kb.index.edition_year or ""
     sources = [Source(id=ch.id, kind=SourceKind.nomenclature,
@@ -127,9 +154,15 @@ def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCal
     if any(c.history_only for c in candidates):
         sources.append(Source(id="history:shipper", kind=SourceKind.shipper_history, title="Shipper's past filings",
                               excerpt=", ".join(ctx.shipper_history_codes[:12])))
+    for p in precedents:
+        sources.append(Source(id=f"bti:{p['reference']}", kind=SourceKind.bti,
+                              title=f"BTI {p['reference']} ({p['member_state']}) classifies similar goods under {p['code']}"
+                                    + (f" · {p['rulings']} matching rulings" if p["rulings"] > 1 else ""),
+                              excerpt=p["excerpt"]))
     rt = RetrievalTrace(original=line.display_text, queries=queries, chapter_filter=chapter_filter, filter_reason=filter_reason,
                         bm25_hits=trace["bm25_hits"], vector_hits=trace["vector_hits"], fused=trace["fused"],
-                        sent_to_model=len(chunks), history_chunks=history_chunks, mode=RetrievalMode(mode))
+                        sent_to_model=len(chunks), history_chunks=history_chunks, precedent_chunks=precedent_chunks,
+                        precedent_codes=[p["code"] for p in precedents], mode=RetrievalMode(mode))
     return Classification(line_no=line.line_no, candidates=candidates, no_valid_candidate=not candidates, retrieval_trace=rt,
                           sources=sources, status=LineStatus.checked)
 

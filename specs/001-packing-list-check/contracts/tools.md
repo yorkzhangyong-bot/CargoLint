@@ -72,7 +72,7 @@ Purpose: top-3 HS-6 candidates with confidence, rationale, sources and trace (FR
 ```text
 Input  ClassifyInput
   lines: [{line_no, text_zh, text_en, extracted: {material, part_name, use}|None, pure_stop_word: bool}]
-  context: {shipper_history_codes: [str], hybrid: bool, chapter_filter: [str]|None}
+  context: {shipper_history_codes: [str], hybrid: bool, chapter_filter: [str]|None, precedents: bool}
 Output [Classification]            # one per input line
   line_no
   candidates: [Candidate]          # ≤ 3, confidence desc; [] when pure_stop_word or no_valid_candidate
@@ -83,8 +83,7 @@ Output [Classification]            # one per input line
 ```
 
 Pipeline per line (constitution, Principle IV), in this order: translate + expand (ZH→EN,
-multi-query, optional HyDE) → metadata chapter filter → BM25 and vector retrieval → reciprocal
-rank fusion → ranking call with structured output `{candidates: [{code, confidence, rationale,
+multi-query, optional HyDE) → metadata chapter filter → BM25 and vector retrieval → reciprocal rank fusion → precedent leg (the BTI rulings nearest to the same queries vote for their HS-6 codes; up to three codes join the candidate chunks, tagged with the best-matching ruling, FR-051) → ranking call with structured output `{candidates: [{code, confidence, rationale,
 history_only}]}` → **code-existence validation** against the nomenclature index (codes not found
 are dropped; `subheading_text` and `chapter` are filled from the index, never from the model).
 `hybrid=False` skips BM25 and fusion (baseline for SC-011). Shipper history codes are passed as

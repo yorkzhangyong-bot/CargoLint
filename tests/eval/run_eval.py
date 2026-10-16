@@ -34,7 +34,7 @@ def load_jsonl(path: Path) -> list[dict]:
     return [json.loads(l) for l in path.read_text(encoding="utf-8").splitlines() if l.strip()]
 
 
-def evaluate(lines: list[dict], mode: str, kb, usage: Usage, workers: int) -> dict:
+def evaluate(lines: list[dict], mode: str, kb, usage: Usage, workers: int, precedents: bool = True) -> dict:
     client = get_client(usage_sink=usage.add)
     inputs = [LineText(line_no=i + 1, text_zh=l["text_zh"], text_en=l["text_en"]) for i, l in enumerate(lines)]
     t0 = time.perf_counter()
@@ -43,7 +43,7 @@ def evaluate(lines: list[dict], mode: str, kb, usage: Usage, workers: int) -> di
         inp.pure_stop_word = bool(chk.flag and chk.flag.pure_stop_word)
         inp.flag_kind = chk.flag.kind.value if chk.flag else None
         inp.flag_reason = chk.flag.reason if chk.flag else ""
-    classes = classify_lines(inputs, ClassifyContext(hybrid=(mode == "hybrid")), kb, client, workers)
+    classes = classify_lines(inputs, ClassifyContext(hybrid=(mode == "hybrid"), precedents=precedents), kb, client, workers)
     elapsed = time.perf_counter() - t0
     rows = []
     flag_ok = top1 = top3 = clear = bad_auto = 0
@@ -64,17 +64,21 @@ def evaluate(lines: list[dict], mode: str, kb, usage: Usage, workers: int) -> di
         if (got_flag in ("vague", "stop_word") or (conf is not None and conf < DEFAULT_THRESHOLD)) and route == Route.auto_accept:
             bad_auto += 1
         rows.append({"text": f"{l['text_zh']} / {l['text_en']}", "expected_flag": exp_flag, "flag": got_flag, "expected_code": exp_code,
-                     "codes": codes, "confidence": conf, "route": route.value, "status": cls.status.value, "error": cls.error_reason})
-    return {"mode": mode, "n": len(lines), "flag_accuracy": flag_ok / max(1, len(lines)), "clear_lines": clear, "top1": top1, "top3": top3,
+                     "codes": codes, "confidence": conf, "route": route.value, "status": cls.status.value, "error": cls.error_reason,
+                     "precedent_codes": cls.retrieval_trace.precedent_codes if cls.retrieval_trace else []})
+    return {"mode": mode, "precedents": precedents, "n": len(lines), "flag_accuracy": flag_ok / max(1, len(lines)), "clear_lines": clear, "top1": top1, "top3": top3,
             "flagged_auto_accepts": bad_auto, "elapsed_s": round(elapsed, 1), "rows": rows}
 
 
 def main(argv: list[str] | None = None) -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")  # Chinese line texts; a redirected Windows console defaults to cp1252
     ap = argparse.ArgumentParser()
     ap.add_argument("--modes", default="hybrid,vector_only")
     ap.add_argument("--set", default=str(ROOT / "data" / "labelled" / "lines_20.jsonl"))
     ap.add_argument("--sample", action="store_true", help="also evaluate data/samples/sample_lines.json against its expected routes")
     ap.add_argument("--workers", type=int, default=None)
+    ap.add_argument("--no-precedents", action="store_true", help="switch off precedent-driven retrieval (BTI rulings proposing codes)")
     args = ap.parse_args(argv)
     settings = get_settings()
     if not settings.api_key:
@@ -94,7 +98,7 @@ def main(argv: list[str] | None = None) -> int:
     results = {}
     ok = True
     for mode in [m.strip() for m in args.modes.split(",") if m.strip()]:
-        r = evaluate(lines, mode, kb, usage, args.workers or settings.workers)
+        r = evaluate(lines, mode, kb, usage, args.workers or settings.workers, precedents=not args.no_precedents)
         results[mode] = r
         print(f"\n== {mode}: flag accuracy {r['flag_accuracy']:.0%} ({int(r['flag_accuracy'] * r['n'])}/{r['n']}), "
               f"top-1 {r['top1']}/{r['clear_lines']}, top-3 {r['top3']}/{r['clear_lines']}, flagged auto-accepts {r['flagged_auto_accepts']}, {r['elapsed_s']} s")
