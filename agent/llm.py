@@ -71,6 +71,10 @@ def classify_error(exc: BaseException) -> tuple[bool, str]:
         return True, "The model provider is temporarily unavailable; retrying."
     if "finish_reason" in text and "error" in text:
         return True, "The model stream ended with an error; retrying."
+    module = type(exc).__module__.split(".")[0]
+    transport = status is not None or module in ("openai", "httpx", "httpcore") or isinstance(exc, (TimeoutError, ConnectionError))
+    if not transport:
+        return False, "The app hit an internal error in this step, not a model problem. Try again; if it repeats, report the message below."
     return True, "Temporary problem talking to the model; retrying."
 
 

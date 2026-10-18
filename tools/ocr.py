@@ -44,10 +44,14 @@ class RapidOCREngine:
     def __call__(self, image: np.ndarray) -> list[tuple[str, float, Any]]:
         result = self._load()(image)
         txts = getattr(result, "txts", None)
-        if not txts:
+        if txts is None or len(txts) == 0:
             return []
-        scores = getattr(result, "scores", None) or [0.0] * len(txts)
-        boxes = getattr(result, "boxes", None) or [None] * len(txts)
+        # RapidOCR 3 returns tuples for txts/scores and a numpy array for boxes: never test these with `or`/`not`,
+        # a multi-element array has no truth value
+        scores = getattr(result, "scores", None)
+        boxes = getattr(result, "boxes", None)
+        scores = list(scores) if scores is not None else [0.0] * len(txts)
+        boxes = list(boxes) if boxes is not None else [None] * len(txts)
         return list(zip(txts, [float(s) for s in scores], boxes))
 
 

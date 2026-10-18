@@ -78,3 +78,9 @@ def test_transport_error_policy_retries_transient_but_not_credit_errors():
     retry, msg = classify_error(_Err(402, "insufficient credits"))
     assert retry is False and "credits" in msg.lower()
     assert classify_error(_Err(403))[0] is False
+
+
+def test_internal_errors_are_not_reported_as_model_problems():
+    retry, msg = classify_error(ValueError("The truth value of an array with more than one element is ambiguous"))
+    assert retry is False and "internal error" in msg and "model" in msg
+    assert classify_error(ConnectionError("boom"))[0] is True   # transport errors keep the retry message

@@ -52,3 +52,27 @@ def test_prepare_image_converts_rgb_to_bgr_and_applies_exif_transpose():
     rotated.save(buf, format="JPEG", exif=exif.tobytes())
     arr2 = prepare_image(buf.getvalue())
     assert arr2.shape[:2] == (4, 2)  # transposed by EXIF orientation
+
+
+def test_rapidocr_result_with_array_boxes_is_unpacked(monkeypatch):
+    """RapidOCR 3 returns `boxes` as a numpy array; testing it with `or` raised 'truth value of an array is ambiguous'."""
+    from tools.ocr import RapidOCREngine
+
+    class _Result:
+        txts = ("Short Sleeve T-shirt", "QTY")
+        scores = (0.98, 0.91)
+        boxes = np.zeros((2, 4, 2), dtype=np.float32)
+
+    engine = RapidOCREngine()
+    monkeypatch.setattr(engine, "_load", lambda: (lambda image: _Result()))
+    out = engine(np.zeros((10, 10, 3), dtype=np.uint8))
+    assert [(t, s) for t, s, _ in out] == [("Short Sleeve T-shirt", 0.98), ("QTY", 0.91)]
+    assert all(isinstance(b, np.ndarray) and b.shape == (4, 2) for _, _, b in out)
+
+    class _Empty:
+        txts = ()
+        scores = ()
+        boxes = np.zeros((0, 4, 2), dtype=np.float32)
+
+    monkeypatch.setattr(engine, "_load", lambda: (lambda image: _Empty()))
+    assert engine(np.zeros((10, 10, 3), dtype=np.uint8)) == []
