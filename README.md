@@ -209,7 +209,7 @@ app.py          Streamlit entry point        ui/        sidebar, upload, chat, j
 agent/          config, schemas, routing, prompts, llm (client factory + cost), agent (loop + guard), store
 tools/          the five tools, parsers, ocr, common (context + per-line runner)
 rag/            loader (CLI), nomenclature (SKOS), bti (EBTI), rules (ICS2 PDFs), embeddings, retriever, translate
-data/           processed knowledge base, rule lists, shipper history (synthetic), sample list, labelled set, SOURCES.md
+data/           processed knowledge base, rule lists, shipper history (synthetic), sample lists (xlsx, gbk csv, text pdf, photo), labelled set, SOURCES.md
 store/          Chroma vectors (nomenclature in chroma/, rulings in chroma-bti/), BM25 pickle, BTI document store (git-ignored; rebuilt by the loader)
 tests/          unit, integration, adversarial, live, eval (run_eval.py, make_big_list.py), fixtures
 ```
