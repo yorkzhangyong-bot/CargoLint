@@ -197,7 +197,9 @@ The threshold is 60 to 99 (default 85); moving the slider recomputes undecided l
 
 ### 4.7 Shipper replies (`tools/apply_shipper_reply.py`, `ui/replies.py`)
 
-The target line is the line number named in the clerk's message, else the line selected in the review list (the app then says which line it used), else the app asks. The reply is stored as data (`register_reply`), one structured call extracts `{material, part_name, use}` from the fenced text, a new `LineVersion` is appended, and check, classify and precedent run **for that line only**. A fixed chapter rule flags contradictions: if the new top candidate's chapter is not among the previous version's candidate chapters, the version gets a note naming both codes and goes to review. A reply to an accepted line clears the decision.
+The target line is the line number named in the clerk's message, else the line selected in the review list (the app then says which line it used), else the app asks. The reply is stored as data (`register_reply`), one structured call extracts `{material, part_name, use}` from the fenced text, a new `LineVersion` is appended, and check, classify and precedent run **for that line only**. A fixed chapter rule flags contradictions: if the new top candidate's chapter is not among the previous version's candidate chapters, the version gets a note naming both codes and goes to review. A reply to an accepted line clears the decision. The target is resolved in code before the agent runs; the reply turn offers the agent only this tool, which applies the reply to that line whatever line argument the model passes, once per turn, and the app applies it itself if the agent never calls the tool.
+
+Whether a chat message is a reply at all is decided in code (`looks_like_shipper_reply`): it must name a line and state something about the goods, or state the material, the use or what the shipper said. Questions, commands and bare product phrases are answered and change nothing.
 
 ### 4.8 Parsing and OCR (`tools/parsers.py`, `tools/ocr.py`, `tools/parse_packing_list.py`)
 
@@ -340,7 +342,7 @@ Commits on `main`: foundation → tools, agent, knowledge base, chat → replies
 - The remaining labelled miss is a ranking miss: with `3926.90` proposed by five rulings, the model still ranks an iPhone-case ruling (`4202.32`) or packaging (`3923.10`) first for silicone phone cases, and the order flips between runs.
 - OCR on phone photos is the weakest input path; quantities and values are not read from photos.
 - State lives in the Streamlit session: nothing persists across restarts; one user, one shipment.
-- The chat box classifies a message by heuristics; a plain sentence without a question marker is treated as a new line after a check (a known rough edge, not yet changed).
+- Chat messages are classified by rules in code: after a check, only text that reads as the shipper's answer updates a line; a bare product phrase or an unclear sentence is answered, with a caption telling the clerk how to apply or add it. The rules are conservative by design, so some real replies need the "line N is …" form.
 
 **Deviations from the original plan, all recorded:**
 

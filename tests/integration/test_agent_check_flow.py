@@ -104,3 +104,36 @@ def test_context_block_is_in_the_model_input_and_raw_text_is_fenced(fake_llm, kb
     joined = "\n".join(getattr(m, "content", "") for m in first_input if isinstance(getattr(m, "content", ""), str))
     assert "CONTEXT" in joined
     assert '<data line="1">配件 / Parts</data>' in joined
+
+
+# --------------------------------------------------------------------------- reply turns (FR-036)
+def test_reply_goes_to_the_line_resolved_in_code_whatever_the_model_passes(fake_llm, kb, store_with_lines, scripted):
+    ref = store_with_lines.register_reply("line 3 is class")
+    model = scripted([ai_tool_call("apply_shipper_reply", {"reply_ref": ref, "line_no": 1}, "a1"),     # the selected line
+                      ai_tool_call("apply_shipper_reply", {"reply_ref": ref, "line_no": 3}, "a2"),     # the named line, again
+                      AIMessage(content="Applied.")])
+    result = run_turn("Apply reply r1 to line 3", store_with_lines, kb, selected_line_no=1, reply_ref=ref, reply_line_no=3, is_check=False)
+    assert store_with_lines.get_line(3).current.version_no == 2 and store_with_lines.get_line(3).current.text_en == "class"
+    assert store_with_lines.get_line(1).current.version_no == 1
+    assert [(s.tool, s.run_by, s.ok) for s in result.check_run.steps] == [("apply_shipper_reply", "agent", True)] * 2
+    request = model.seen[0][-1].content
+    assert "REPLY REFERENCE: r1 for line 3" in request and "SELECTED LINE: 3" in request and "SELECTED LINE: 1" not in request
+
+
+def test_reply_guard_applies_the_reply_when_the_agent_does_not(fake_llm, kb, store_with_lines, scripted):
+    ref = store_with_lines.register_reply("line 3 is class")
+    scripted([AIMessage(content="I cannot do that.")])
+    events = []
+    result = run_turn("Apply reply r1 to line 3", store_with_lines, kb, on_progress=events.append, reply_ref=ref, reply_line_no=3, is_check=False)
+    assert store_with_lines.get_line(3).current.version_no == 2
+    assert [(s.tool, s.run_by) for s in result.check_run.steps] == [("apply_shipper_reply", "app")]
+    assert [(e.phase, e.run_by) for e in events] == [("start", "app"), ("end", "app")]
+
+
+def test_a_reply_turn_offers_only_the_reply_tool():
+    from agent.agent import turn_tools
+    from tools import load_all
+
+    load_all()
+    assert [t.name for t in turn_tools(reply_ref="r1")] == ["apply_shipper_reply"]   # apply re-checks the line itself
+    assert len(turn_tools(reply_ref=None)) == 5

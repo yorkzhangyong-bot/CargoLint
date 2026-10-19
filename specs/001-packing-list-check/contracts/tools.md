@@ -125,7 +125,10 @@ Output ApplyReplyOutput
 ```
 
 Resolution: `line_no` if given; else `selected_line_no` if exactly one line is selected; else
-`needs_line=True`. The tool then calls `check_description`, `classify_hs6` and
+`needs_line=True`. When the app resolved the target in code before the turn (the chat hook always
+does: the named line, else the selected line), the wrapper applies the reply to that line whatever
+`line_no` / `selected_line_no` the model passes, and a reply reference is applied at most once per
+turn; a repeated call changes nothing and says so. The tool then calls `check_description`, `classify_hs6` and
 `lookup_precedent` for the single new version, runs the contradiction rule, and asks the line
 store to add the version (which recomputes the route under the lock). A reply to an accepted
 line clears the decision.
@@ -192,7 +195,8 @@ fails `validate_code`.
 - Completeness guard (code): after the agent finishes a check request, `finalize_check()`
   verifies every line is `checked` or `failed`; missing steps are run directly by the app and
   noted in the progress block. The summary message's counts come from `counts()`, not from the
-  model.
+  model. A reply turn binds only `apply_shipper_reply` (it re-checks the line itself); after the
+  turn the guard applies the reply itself (run by the app) if the agent never called it.
 - The agent never writes routes, decisions or decided codes.
 - Message handling: the app classifies each clerk message in code (question / pasted lines /
   shipper reply). Pasted content is stored (`add_lines`, `register_reply`) and the agent receives

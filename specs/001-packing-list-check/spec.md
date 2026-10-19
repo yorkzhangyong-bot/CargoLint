@@ -22,6 +22,11 @@
 
 - Q: The labelled line "硅胶手机壳 / Silicone mobile phone cases" (3926.90) is missed in both retrieval modes because residual "Other" subheadings have no descriptive text; should BTI rulings be allowed to propose candidate codes? → A: Yes: rulings whose goods match the queries vote for their HS-6 code; up to three precedent codes join the candidates, tagged and cited as precedent (FR-051). A translator prompt asking for queries of different kinds (literal, functional, "<article> of <material class>") was tried the same day and not adopted: it lowered retrieval precision (rank-weighted 0.81 → 0.65) without reaching 3926.90.
 
+### Session 2026-10-19
+
+- Q: After a check, a plain chat message was added as a new line, and any text naming a line was applied as a shipper reply. When should a message update a line? → A: Only when it reads as the shipper's answer: it names a line and states something about the goods, or it states the material, the use or what the shipper said (then the selected line is used, or the app asks which line). Questions, commands and bare product phrases are answered without changing any line; pasting several lines, or an `add:` / `check:` prefix, adds lines. Decided in code (FR-036, UI contract "Message classification").
+- Q: With a line selected in the review list, "line 4 is …" was applied by the model to the selected line as well as to line 4: it chose the tool's line argument itself. → A: The target line is resolved in code before the agent runs and passed with the reply reference; the tool applies that reply to that line whatever line the model names, at most once per turn; the reply turn offers the agent only that tool, and if the agent never calls it the app applies the reply itself (FR-036, tools contract §1.5).
+
 ## User Scenarios & Testing *(mandatory)*
 
 The user is a customs/export clerk at a Hamburg freight forwarder or consolidator who files ICS2 house declarations (ENS) for China→EU sea freight. Packing lists arrive from Chinese shippers in Chinese, English or a mix, and often contain descriptions that customs rejects ("配件 / Parts", "礼品 / Gift"). The clerk uses CargoLint before filing to find those lines, get a defensible HS-6 code for the others, and know what to ask the shipper.

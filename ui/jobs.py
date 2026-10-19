@@ -58,7 +58,8 @@ def start(job: Job, store: Any, kb: Any) -> Job:
     def target() -> None:
         try:
             job.result = run_turn(job.message, store, kb, selected_line_no=job.selected_line_no, on_progress=job.events.append,
-                                  file_ref=job.file_ref, reply_ref=job.reply_ref, history=job.history, is_check=job.is_check)
+                                  file_ref=job.file_ref, reply_ref=job.reply_ref, history=job.history, is_check=job.is_check,
+                                  reply_line_no=job.new_line_nos[0] if job.reply_ref and job.new_line_nos else None)
         except Exception as exc:  # noqa: BLE001 - surfaced to the clerk, never swallowed
             _retry, message = classify_error(exc)
             job.error = f"{message} ({type(exc).__name__}: {str(exc)[:160]})"

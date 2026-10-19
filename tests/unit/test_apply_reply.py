@@ -1,5 +1,6 @@
 """apply_shipper_reply: target resolution, single-line scope, versions, lock, contradiction (FR-036 … FR-039, SC-009)."""
 import copy
+import json
 
 import pytest
 
@@ -21,7 +22,8 @@ from agent.schemas import (
 from rag.bti import BTIStore
 from rag.loader import KnowledgeBase
 from rag.retriever import BM25Index, HybridRetriever, InMemoryVectorSearch
-from tools.apply_shipper_reply import apply_reply, parse_line_ref
+from tools.apply_shipper_reply import apply_reply, apply_shipper_reply_tool, looks_like_shipper_reply, parse_line_ref
+from tools.common import ToolContext, set_context
 
 pytestmark = pytest.mark.unit
 
@@ -147,3 +149,88 @@ class TestChineseReply:
         assert v.reply_text == "塑料杯" and v.extracted.material == "plastic" and v.text_en == "plastic cups for drinking"
         extract_prompts = fake_llm.prompts_for("ExtractOut")
         assert extract_prompts and '<data line="3">塑料杯</data>' in extract_prompts[0]
+
+
+class TestLooksLikeShipperReply:
+    """Only a message that reads as the shipper's answer updates a line; everything else is answered (FR-036)."""
+
+    @pytest.mark.parametrize("text, line_no", [
+        ("line 1 is steel bobbin cases for industrial sewing machines", 1),
+        ("第3行是不锈钢保温杯 500ml", 3),
+        ("Line 2: cotton knitted T-shirts, for women", 2),
+        ("shipper confirmed line 4 - plastic storage boxes for household use", 4),
+        ("line 5 stainless steel hexagon bolts M8", 5),
+    ])
+    def test_named_line_plus_a_statement_or_material_is_a_reply(self, text, line_no):
+        intent = looks_like_shipper_reply(text, has_lines=True)
+        assert intent.is_reply is True and intent.line_no == line_no and intent.cues
+
+    @pytest.mark.parametrize("text", [
+        "the material is stainless steel",
+        "the shipper says they are cotton T-shirts",
+        "不锈钢材质，用于工业缝纫机",
+    ])
+    def test_a_statement_about_the_goods_without_a_line_is_a_reply_to_resolve(self, text):
+        intent = looks_like_shipper_reply(text, has_lines=True)
+        assert intent.is_reply is True and intent.line_no is None
+
+    @pytest.mark.parametrize("text, reason", [
+        ("Why only 31% on line 1?", "question"),
+        ("what did the shipper say about line 2", "question"),
+        ("第1行是什么", "question"),
+        ("please explain line 1", "command"),
+        ("summarize the shipment", "command"),
+        ("line 3 looks wrong", "no reply cue"),
+        ("stainless steel bobbin cases for industrial sewing machines", "no reply cue"),   # product phrase, no statement
+        ("it is a gift", "no reply cue"),                                                   # statement alone is not enough
+        ("status", "no reply cue"),
+    ])
+    def test_questions_commands_and_bare_phrases_are_not_replies(self, text, reason):
+        intent = looks_like_shipper_reply(text, has_lines=True)
+        assert intent.is_reply is False and intent.reason == reason
+
+    def test_no_lines_or_too_long_is_never_a_reply(self):
+        assert looks_like_shipper_reply("line 1 is steel bobbin cases", has_lines=False).reason == "no lines to update"
+        assert looks_like_shipper_reply("line 1 is " + "x" * 1600, has_lines=True).reason == "empty or too long for a reply"
+        assert looks_like_shipper_reply("line 3 looks wrong", has_lines=True).line_no == 3   # the line is still reported for the hint
+
+
+class TestToolTargetLock:
+    """The agent-facing wrapper applies a reply to the line the app resolved in code, once per turn, whatever line
+    arguments the model passes (FR-036: the live model once applied "line 4 is …" to the selected line 1 as well)."""
+
+    @pytest.fixture
+    def turn(self, fake_llm, kb, checked):
+        ref = checked.register_reply("line 4 is class")
+        ctx = ToolContext(store=checked, kb=kb, client=get_client(), selected_line_no=1, reply_ref=ref, reply_line_no=4)
+        set_context(ctx)
+        yield ctx, ref
+        set_context(None)
+
+    def test_the_code_resolved_line_wins_over_the_models_arguments(self, checked, turn):
+        ctx, ref = turn
+        before = _snapshot(checked, skip=4)
+        payload = json.loads(apply_shipper_reply_tool.invoke({"reply_ref": ref, "line_no": 1, "selected_line_no": 1}))
+        assert payload["target_line_no"] == 4 and payload["summary"].startswith("Applied to line 4")
+        assert checked.get_line(4).current.version_no == 2 and checked.get_line(4).current.text_en == "class"
+        assert _snapshot(checked, skip=4) == before                    # line 1, the model's choice, is untouched
+        assert ctx.applied_replies[ref].target_line_no == 4
+
+    def test_a_second_call_for_the_same_reply_changes_nothing(self, checked, turn):
+        _ctx, ref = turn
+        apply_shipper_reply_tool.invoke({"reply_ref": ref})
+        after_first = _snapshot(checked, skip=0)
+        payload = json.loads(apply_shipper_reply_tool.invoke({"reply_ref": ref, "line_no": 1}))
+        assert _snapshot(checked, skip=0) == after_first
+        assert payload["target_line_no"] == 4 and "already applied" in payload["summary"]
+
+    def test_without_a_code_resolved_line_the_arguments_decide(self, fake_llm, kb, checked):
+        ref = checked.register_reply("line 1 is steel bobbin cases for industrial sewing machines")
+        set_context(ToolContext(store=checked, kb=kb, client=get_client(), selected_line_no=3))
+        try:
+            payload = json.loads(apply_shipper_reply_tool.invoke({"reply_ref": ref, "line_no": 1}))
+            assert payload["target_line_no"] == 1 and checked.get_line(1).current.version_no == 2
+            payload = json.loads(apply_shipper_reply_tool.invoke({"reply_ref": checked.register_reply("the material is steel")}))
+            assert payload["target_line_no"] == 3 and payload["applied_to_selected"] is True   # the selection stays the fallback
+        finally:
+            set_context(None)

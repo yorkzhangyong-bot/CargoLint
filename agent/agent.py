@@ -109,6 +109,14 @@ def build_agent(model: Any, tools: list[Any]) -> Any:
     return create_agent(model, tools=tools, system_prompt=SYSTEM_PROMPT)
 
 
+def turn_tools(reply_ref: str | None) -> list[Any]:
+    """A reply turn offers only apply_shipper_reply: it re-checks the line itself, so the check tools would only redo
+    that work and could outdate the contradiction note. Every other turn offers all five tools."""
+    if reply_ref:
+        return [t for t in TOOLS if t.name == "apply_shipper_reply"]
+    return list(TOOLS)
+
+
 def run_turn(
     message: str,
     store: Any,
@@ -117,13 +125,16 @@ def run_turn(
     on_progress: Callable[[ProgressEvent], None] | None = None,
     file_ref: str | None = None,
     reply_ref: str | None = None,
+    reply_line_no: int | None = None,
     history: list[tuple[str, str]] | None = None,
     is_check: bool | None = None,
 ) -> TurnResult:
     """One clerk turn: context block + code-built request → agent with tools → completeness guard → counts."""
     settings = get_settings()
     load_all()
-    ctx = ToolContext(store=store, kb=kb, settings=settings, selected_line_no=selected_line_no)
+    if reply_ref and reply_line_no is not None:
+        selected_line_no = reply_line_no   # a reply turn is about its target line; the table selection must not compete with it
+    ctx = ToolContext(store=store, kb=kb, settings=settings, selected_line_no=selected_line_no, reply_ref=reply_ref, reply_line_no=reply_line_no)
     set_context(ctx)
     has_shipment = store.has_shipment()
     shipment = store.shipment if has_shipment else None
@@ -137,7 +148,8 @@ def run_turn(
     if file_ref:
         request.append(f"FILE REFERENCE: {file_ref} (pass it to parse_packing_list)")
     if reply_ref:
-        request.append(f"REPLY REFERENCE: {reply_ref} (pass it to apply_shipper_reply)")
+        target = f" for line {reply_line_no}" if reply_line_no is not None else ""
+        request.append(f"REPLY REFERENCE: {reply_ref}{target} (pass it to apply_shipper_reply, once)")
     if pending_at_start:
         request.append(f"PENDING LINES: {pending_at_start}")
     if selected_line_no is not None:
@@ -151,7 +163,7 @@ def run_turn(
     handler = ProgressCallbackHandler(on_progress, check_run)
     usage_cb = UsageMetadataCallbackHandler()
     t0 = time.perf_counter()
-    agent = build_agent(get_chat_model(settings), list(TOOLS))
+    agent = build_agent(get_chat_model(settings), turn_tools(reply_ref))
     result = agent.invoke({"messages": messages}, config={"callbacks": [handler, usage_cb], "recursion_limit": 2 * MAX_TOOL_CALLS + 4})
     final = result.get("messages", [])[-1] if isinstance(result, dict) and result.get("messages") else None
     text = _text_of(final) if final is not None else ""
@@ -162,6 +174,8 @@ def run_turn(
 
     if is_check and has_shipment:
         _finalize(store, kb, ctx, check_run, on_progress)
+    if reply_ref and reply_line_no is not None and reply_ref not in ctx.applied_replies:
+        _finalize_reply(ctx, check_run, on_progress)
     check_run.elapsed_s = round(time.perf_counter() - t0, 2)
     if has_shipment:
         store.shipment.check_runs.append(check_run)
@@ -185,6 +199,33 @@ def _usage_from_callback(usage_cb: UsageMetadataCallbackHandler, settings) -> Us
     return total
 
 
+def _app_step(name: str, fn: Callable[[], str], check_run: CheckRun, on_progress: Callable[[ProgressEvent], None] | None) -> None:
+    """Run one step on the agent's behalf and record it like a tool call, marked as run by the app."""
+    t0 = time.perf_counter()
+    if on_progress:
+        on_progress(ProgressEvent("start", name, run_by="app"))
+    try:
+        summary = fn()
+        ok = True
+    except Exception as exc:  # noqa: BLE001
+        summary, ok = f"{type(exc).__name__}: {str(exc)[:120]}", False
+    elapsed = time.perf_counter() - t0
+    check_run.steps.append(CheckStep(tool=name, summary=summary + " (run by the app)", elapsed_s=round(elapsed, 2), ok=ok, run_by="app"))
+    if on_progress:
+        on_progress(ProgressEvent("end" if ok else "error", name, summary, elapsed, run_by="app"))
+
+
+def _finalize_reply(ctx: ToolContext, check_run: CheckRun, on_progress: Callable[[ProgressEvent], None] | None) -> None:
+    """Completeness guard for a reply turn: when the agent finished without applying the reply, the app applies it."""
+    from tools.apply_shipper_reply import apply_by_reference
+
+    def _apply() -> str:
+        out = apply_by_reference(ctx)
+        return f"Applied to line {out.target_line_no}: version {out.new_version_no}"
+
+    _app_step("apply_shipper_reply", _apply, check_run, on_progress)
+
+
 def _finalize(store: Any, kb: Any, ctx: ToolContext, check_run: CheckRun, on_progress: Callable[[ProgressEvent], None] | None) -> None:
     """Completeness guard: run any step the agent skipped, then fail whatever is still pending."""
     from tools.check_description import check_descriptions, summarize as check_summary
@@ -193,18 +234,7 @@ def _finalize(store: Any, kb: Any, ctx: ToolContext, check_run: CheckRun, on_pro
     from tools.lookup_precedent import lookup_precedents
 
     def step(name: str, fn: Callable[[], str]) -> None:
-        t0 = time.perf_counter()
-        if on_progress:
-            on_progress(ProgressEvent("start", name, run_by="app"))
-        try:
-            summary = fn()
-            ok = True
-        except Exception as exc:  # noqa: BLE001
-            summary, ok = f"{type(exc).__name__}: {str(exc)[:120]}", False
-        elapsed = time.perf_counter() - t0
-        check_run.steps.append(CheckStep(tool=name, summary=summary + " (run by the app)", elapsed_s=round(elapsed, 2), ok=ok, run_by="app"))
-        if on_progress:
-            on_progress(ProgressEvent("end" if ok else "error", name, summary, elapsed, run_by="app"))
+        _app_step(name, fn, check_run, on_progress)
 
     unchecked = [l.line_no for l in store.lines if l.current.status == LineStatus.pending and l.current.flag is None]
     if unchecked:

@@ -28,7 +28,8 @@ Tools, and the order to use them for a check request:
 2. check_description - flags lines as OK, vague or stop-word, citing the rule.
 3. classify_hs6 - suggests up to three HS-6 subheadings per line with confidence and sources.
 4. lookup_precedent - finds current BTI rulings for the suggested codes.
-5. apply_shipper_reply - applies a stored shipper reply to one line and re-checks only that line.
+5. apply_shipper_reply - applies a stored shipper reply to the line named in the request and re-checks only
+   that line; call it once per reply.
 For "check" requests call 2, 3 and 4 (after 1 when there is a file), always in that order, passing
 line numbers. Never skip a step.
 

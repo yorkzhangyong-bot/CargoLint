@@ -10,12 +10,12 @@ import streamlit as st
 
 from agent.config import MAX_PASTED_LINES
 from agent.schemas import CreatedBy, ParsedLine
+from tools.apply_shipper_reply import QUESTION_RE, looks_like_shipper_reply
 from ui import jobs
 
-QUESTION_RE = re.compile(
-    r"\?|？|^(why|what|which|how|is|are|can|could|does|do|did|when|where|who|should|explain|tell|show|list|compare)\b"
-    r"|为什么|什么|哪些|如何|怎么|吗$", re.I)
-LINE_REF_RE = re.compile(r"\bline\s*(\d{1,3})\b|第\s*(\d{1,3})\s*行", re.I)
+ADD_LINES_RE = re.compile(r"^\s*(?:add|check|new)\s*(?:lines?|descriptions?)?\s*[:：]\s*(.+)$|^\s*(?:添加|新增|检查)\s*[:：]\s*(.+)$", re.I | re.S)
+NOT_APPLIED_HINT = ("Answered, not applied: to update a line with this text start with “line N is …”; to add it as a new line "
+                    "start with “add:”.")
 
 QUICK_ACTIONS = [
     ("Try one description", "e.g. 不锈钢保温杯 500ml", "不锈钢保温杯 500ml"),
@@ -33,21 +33,35 @@ SOURCE_GROUP = {"nomenclature": "Nomenclature", "bti": "BTI rulings", "ics2_rule
 
 # --------------------------------------------------------------------------- message classification
 def classify_message(text: str, store) -> tuple[str, Any]:
-    """('lines', [...]) | ('reply', (line_no|None, text)) | ('question', text) — decided in code, never by the model."""
+    """('lines', [...]) | ('reply', (line_no|None, text)) | ('question', text) — decided in code, never by the model.
+
+    Once the shipment has lines, a message updates a line only when `looks_like_shipper_reply` says so; pasted
+    descriptions need several lines or an explicit "add:" / "check:" prefix; everything else is answered."""
     stripped = text.strip()
     lines = [l.strip() for l in stripped.splitlines() if l.strip()]
+    has_lines = store.has_shipment() and bool(store.lines)
+    intent = looks_like_shipper_reply(stripped, has_lines=has_lines)
+    if intent.is_reply and (len(lines) == 1 or intent.line_no is not None):
+        return "reply", (intent.line_no, stripped)
+    m = ADD_LINES_RE.match(stripped) if has_lines else None
+    if m:
+        body = [l.strip() for l in (m.group(1) or m.group(2) or "").splitlines() if l.strip()]
+        if body:
+            return "lines", body
     if len(lines) > 1 and not QUESTION_RE.search(lines[0]):
         return "lines", lines
-    has_shipment = store.has_shipment() and bool(store.lines)
-    m = LINE_REF_RE.search(stripped)
-    if has_shipment and m and not QUESTION_RE.search(stripped):
-        return "reply", (int(m.group(1) or m.group(2)), stripped)
-    if has_shipment and st.session_state.get("selected_line_no") and not QUESTION_RE.search(stripped) and len(stripped) <= 300 \
-            and re.search(r"\b(is|are|=|:)\b|是", stripped):
-        return "reply", (None, stripped)
-    if QUESTION_RE.search(stripped) or len(stripped) > 300:
-        return "question", stripped
-    return "lines", lines
+    if not has_lines and not QUESTION_RE.search(stripped) and len(stripped) <= 300:
+        return "lines", lines
+    return "question", stripped
+
+
+def _not_applied_hint(text: str, store) -> str | None:
+    """Caption under a message that mentions a line or states something about goods but was answered, not applied."""
+    has_lines = store.has_shipment() and bool(store.lines)
+    intent = looks_like_shipper_reply(text.strip(), has_lines=has_lines)
+    if not has_lines or intent.is_reply or intent.reason in ("question", "command") or not (intent.line_no or intent.cues):
+        return None
+    return NOT_APPLIED_HINT
 
 
 # --------------------------------------------------------------------------- starting turns (background)
@@ -89,7 +103,7 @@ def handle_message(text: str, store, kb) -> None:
 
         replies.handle(payload[0], payload[1], store, kb, chat, _start)
     else:
-        chat.append({"role": "user", "content": text})
+        chat.append({"role": "user", "content": text, "hint": _not_applied_hint(text, store)})
         _start(text, store, kb, is_check=False, kind="question")
 
 
@@ -280,6 +294,8 @@ def _render_message(msg: dict, store, kb, latest: bool) -> None:
                 st.caption(f":material/attach_file: {msg['file']}")
             if msg.get("raw") and msg.get("content", "").startswith("["):
                 st.caption(msg["raw"][:300])
+            if msg.get("hint"):
+                st.caption(f":material/info: {msg['hint']}")
             return
         if msg.get("label") is not None:
             with st.status(msg["label"], state="complete", expanded=False):

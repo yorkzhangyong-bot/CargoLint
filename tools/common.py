@@ -43,6 +43,9 @@ class ToolContext:
     client: StructuredCaller | None = None
     workers: int | None = None
     selected_line_no: int | None = None
+    reply_ref: str | None = None          # a reply turn: the stored reply and the line the app resolved for it in code
+    reply_line_no: int | None = None
+    applied_replies: dict[str, Any] = field(default_factory=dict)   # reply_ref → ApplyReplyOutput; each reply is applied once per turn
 
     def __post_init__(self) -> None:
         if self.client is None:

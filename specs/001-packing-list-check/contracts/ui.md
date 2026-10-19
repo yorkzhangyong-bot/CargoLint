@@ -59,6 +59,7 @@ parse step adds them (the live-progress fragment reruns the app when that happen
 | Terms the customs reject | assistant message with a searchable `st.dataframe` of ICS2 terms and firm stop-words | FR-026 |
 | Chat input | `st.chat_input` directly under the welcome and **above the history**, disabled while a turn runs; placeholder: start — "Paste descriptions (one per line) or ask a question…"; after — "Ask about any line, or paste the shipper's reply…" | FR-001, FR-036 |
 | Turn order | newest turn first (a clerk message and the replies that follow it), chronological inside a turn; the running turn's live progress sits right under the chat input | FR-027 |
+| Message classification | in code (`tools/apply_shipper_reply.py:looks_like_shipper_reply`): once lines exist, a message updates a line only when it names a line and states something about the goods, or states the material, the use or what the shipper said without a line number (then the selected line is used, or the app asks which line); questions, commands and bare product phrases are answered and change nothing, with a caption telling the clerk how to apply or add the text; several pasted lines, or an `add:` / `check:` prefix, add lines | FR-001, FR-036 |
 | Reply applied notice | "Applied to line N (selected)." prepended when the fallback was used; "Which line is this reply for?" when unresolved | FR-036, FR-037 |
 
 Turns run in a worker thread (`ui/jobs.py`); the script thread only polls. The worker never calls
