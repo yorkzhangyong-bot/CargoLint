@@ -25,6 +25,15 @@ def kb_caption(kb) -> str:
             f"firm list {facts['firm_terms']} · {len(kb.bti):,} BTI rulings · updated {kb.updated or 'unknown'}")
 
 
+def taric_caption(kb) -> str:
+    """The TARIC line under the knowledge-base caption (FR-024)."""
+    if kb.taric is None:
+        return "TARIC not loaded"
+    snap = kb.taric.snapshot
+    n = snap.cn8_mismatches
+    return f"TARIC snapshot {snap.snapshot_date} · {n:,} CN-8 mismatch{'' if n == 1 else 'es'}"
+
+
 def _tokens(n: int) -> str:
     return f"{n / 1000:.1f}k" if n >= 1000 else str(n)
 
@@ -52,6 +61,7 @@ def render(store, kb) -> None:
                       help="BM25 keyword search plus vector search, fused by reciprocal rank fusion. Off = vector-only baseline.")
         with st.expander("Knowledge base", expanded=False):
             st.caption(kb_caption(kb))
+            st.caption(taric_caption(kb))
             st.caption(f"Model via OpenRouter · {get_settings().chat_model}")
 
         st.divider()

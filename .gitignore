@@ -19,6 +19,7 @@ dist/
 # Knowledge base and raw downloads (rebuilt by `python -m rag.loader`)
 data/raw/
 data/bti_subset.jsonl
+data/taric.jsonl
 store/
 
 # Logs and OS / editor files

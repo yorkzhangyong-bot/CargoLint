@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<export xmlns="http://www.arcticgroup.se/tariff/arctictariff/export" xmlns:at="http://www.arcticgroup.se/tariff/arctictariff/export">
+	<id>11111111-2222-4333-8444-555555555555</id>
+	<exportType>DutyExpressionObject</exportType>
+	<parameters>
+		<queryDateStart>2014-01-01</queryDateStart>
+	</parameters>
+	<items>
+		<dutyExpression at:dutyExpressionId="01" at:national="0" at:dateStart="1972-01-01"><dutyExpressionDescription at:description="% or amount" at:languageId="EN" at:national="0"/></dutyExpression>
+		<dutyExpression at:dutyExpressionId="02" at:national="0" at:dateStart="1972-01-01"><dutyExpressionDescription at:description="minus % or amount" at:languageId="EN" at:national="0"/></dutyExpression>
+		<dutyExpression at:dutyExpressionId="04" at:national="0" at:dateStart="1972-01-01"><dutyExpressionDescription at:description="+ % or amount" at:languageId="EN" at:national="0"/></dutyExpression>
+		<dutyExpression at:dutyExpressionId="12" at:national="0" at:dateStart="1972-01-01"><dutyExpressionDescription at:description="+ agricultural component" at:languageId="EN" at:national="0"/></dutyExpression>
+		<dutyExpression at:dutyExpressionId="15" at:national="0" at:dateStart="1972-01-01"><dutyExpressionDescription at:description="Minimum" at:languageId="EN" at:national="0"/></dutyExpression>
+		<dutyExpression at:dutyExpressionId="17" at:national="0" at:dateStart="1972-01-01"><dutyExpressionDescription at:description="Maximum" at:languageId="EN" at:national="0"/></dutyExpression>
+		<dutyExpression at:dutyExpressionId="37" at:national="0" at:dateStart="1972-01-01"><dutyExpressionDescription at:description="(nothing)" at:languageId="EN" at:national="0"/></dutyExpression>
+		<dutyExpression at:dutyExpressionId="99" at:national="0" at:dateStart="1972-01-01"><dutyExpressionDescription at:description="Supplementary unit" at:languageId="EN" at:national="0"/></dutyExpression>
+		<dutyExpression at:dutyExpressionId="AA" at:national="1" at:dateStart="1972-01-01"><dutyExpressionDescription at:description="Excise on beer (358)" at:languageId="EN" at:national="1"/></dutyExpression>
+	</items>
+</export>

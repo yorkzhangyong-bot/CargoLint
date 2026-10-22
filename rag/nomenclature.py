@@ -25,6 +25,7 @@ RDF_ABOUT = "{%s}about" % NS["rdf"]
 RDF_RESOURCE = "{%s}resource" % NS["rdf"]
 _DASHES = re.compile(r"^[\s\-–—]+")
 _LEADING_CODE = re.compile(r"^\s*(\d{2,4}(?:\s\d{2})*)\s*")
+_CN8_LINE = re.compile(r"^CN (\d{4}) (\d{2}) (\d{2})\b", re.M)
 
 
 @dataclass
@@ -232,6 +233,10 @@ class NomenclatureIndex:
 
     def chapter_of(self, code: str) -> str:
         return code[:2]
+
+    def cn8_codes(self) -> frozenset[str]:
+        """The 8-digit codes of the `CN dddd dd dd` lines in all chunk texts (TARIC reconciliation, feature 002)."""
+        return frozenset("".join(m) for ch in self.chunks for m in _CN8_LINE.findall(ch.text))
 
     @property
     def edition_year(self) -> int | None:

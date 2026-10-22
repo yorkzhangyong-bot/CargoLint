@@ -18,6 +18,8 @@ ALLOWED_HOSTS = {
     "circabc.europa.eu",                               # loader downloads (documented in data/SOURCES.md)
     "www.w3.org", "purl.org", "rdf-vocabulary.ddialliance.org",  # RDF namespaces, never fetched
     "showvoc.op.europa.eu",
+    "distr.tullverket.se",                             # TARIC source in data/SOURCES.md; the operator downloads the files
+    "www.arcticgroup.se",                              # TARIC export XML namespace, never fetched
 }
 
 

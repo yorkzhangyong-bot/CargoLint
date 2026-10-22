@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<export xmlns="http://www.arcticgroup.se/tariff/arctictariff/export" xmlns:at="http://www.arcticgroup.se/tariff/arctictariff/export">
+	<id>11111111-2222-4333-8444-555555555555</id>
+	<exportType>MeasureObject</exportType>
+	<parameters>
+		<queryDateStart>2014-01-01</queryDateStart>
+	</parameters>
+	<items>
+		<measure at:additionalCodeId="001" at:additionalCodeType="C" at:geographicalAreaId="CN" at:goodsNomenclatureCode="7318155810" at:measureType="552" at:national="0" at:regulationId="R2201910" at:regulationRoleType="3" at:SID="1002" at:dateStart="2020-01-01" at:stoppedFlag="0" at:changeType="U"><measureComponent at:dutyAmount="22.0" at:dutyExpressionId="01" at:national="0"/><measureCondition at:actionCode="04" at:certificateCode="999" at:certificateType="Y" at:conditionCodeId="B" at:national="0" at:sequenceNumber="001"></measureCondition><measureFootnoteAssociation at:footnoteId="001" at:footnoteType="CD" at:national="0"/><measurePartialTemporaryStop at:dateStart="2014-01-20" at:dateEnd="2014-04-22" at:national="0" at:regulationId="R1400420"/></measure>
+		<measure at:additionalCodeId="001" at:additionalCodeType="C" at:geographicalAreaId="CN" at:goodsNomenclatureCode="7318155810" at:measureType="552" at:national="0" at:regulationId="R2201910" at:regulationRoleType="3" at:SID="1002" at:dateStart="2020-01-01" at:stoppedFlag="0" at:changeType="U"><measureComponent at:dutyAmount="23.0" at:dutyExpressionId="01" at:national="0"/><measureCondition at:actionCode="04" at:certificateCode="999" at:certificateType="Y" at:conditionCodeId="B" at:national="0" at:sequenceNumber="001"></measureCondition><measureFootnoteAssociation at:footnoteId="001" at:footnoteType="CD" at:national="0"/><measurePartialTemporaryStop at:dateStart="2014-01-20" at:dateEnd="2014-04-22" at:national="0" at:regulationId="R1400420"/></measure>
+	</items>
+</export>

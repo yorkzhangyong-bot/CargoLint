@@ -86,9 +86,8 @@ organised.
 
 ### V. Single-Purpose, Schema-Typed Tools
 
-- The agent exposes exactly five tools in the MVP: `parse_packing_list`, `check_description`,
-  `classify_hs6`, `lookup_precedent` and `apply_shipper_reply`. Adding, removing or renaming a
-  tool needs a justification in the plan's Complexity Tracking table.
+- The agent exposes a small set of single-purpose tools. Each feature's plan lists the tools it
+  adds or changes, with a one-line justification for every addition.
 - Every tool MUST do one job, declare Pydantic input and output schemas, and wrap plain Python
   functions that can be tested without an LLM and without a running Streamlit session.
 - A failure on one line MUST NOT abort the shipment. The line is surfaced as needing action
@@ -173,8 +172,7 @@ These MUST NOT be built, and the UI MUST NOT imply they exist:
 - drafting the bilingual query to the shipper (the assistant tells the clerk what to ask, the
   clerk writes the message);
 - a line version-history UI (versions are stored, only the current version is shown);
-- CN-8 and TARIC-10 codes, duty rates, anti-dumping measures, and any "Import declaration
-  (ATLAS)" flow: ICS2 house (ENS) is the only supported filing type;
+- any "Import declaration (ATLAS)" flow: ICS2 house (ENS) is the only supported filing type;
 - sending anything to a shipper or to a customs system;
 - persistence beyond the Streamlit session, accounts and multi-user access (SQLite is roadmap).
 
@@ -219,7 +217,9 @@ EU Combined Nomenclature 2026 (Commission Implementing Regulation (EU) 2025/1926
 full HS 2022 six-digit structure plus EU eight-digit codes); EBTI rulings for chapters 39, 42,
 61–64, 73, 84, 85, 94, 95 and 96; the ICS2 guidance on acceptable goods descriptions and the
 updated ICS2 stop-word list; the firm stop-word list (hand-written, 32 terms in the demo);
-shipper history (synthetic demo data). Download locations are listed in the intro, section 10.
+shipper history (synthetic demo data); the EU TARIC from the Swedish Customs Tariff File
+Distribution (distr.tullverket.se/tulltaxan), used only for digits 9 to 10 and measures, never
+embedded or indexed. Download locations are listed in the intro, section 10.
 
 ### UI Design Contract
 
@@ -312,4 +312,4 @@ the spec, plan or tasks change. Each feature is closed against the Definition of
 **Keywords**: MUST and MUST NOT are mandatory; SHOULD is a default that needs a recorded reason
 to depart from; MAY is optional.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-14
+**Version**: 1.1.1 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-22

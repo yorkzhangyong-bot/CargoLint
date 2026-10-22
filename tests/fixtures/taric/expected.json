@@ -1,0 +1,17 @@
+{
+  "batch_id": "11111111-2222-4333-8444-555555555555",
+  "snapshot_date": "2026-10-01",
+  "suffix80_codes": 11,
+  "declarable_codes": 5,
+  "measure_records": 12,
+  "cn8_mismatches": 1,
+  "dropped_meursing": 3,
+  "dropped_national_code": 1,
+  "cn2026_cn8": [
+    "73181558",
+    "73181595",
+    "96170000"
+  ],
+  "fixture_key_fingerprint": "6B6E1545A4CF5FA085D04D4DC760D63C177D6568",
+  "other_key_fingerprint": "E510A34F56F044D71E5913C03550E846B9D93049"
+}
