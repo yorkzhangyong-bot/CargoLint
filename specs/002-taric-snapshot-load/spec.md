@@ -185,6 +185,13 @@ The sidebar shows one caption: the TARIC snapshot date and the number of CN-8 mi
 - **SC-006**: A full load finishes in under 30 minutes on the author's machine.
 - **SC-007**: With a snapshot present, app startup takes at most 10 seconds longer than without one, and a lookup answers in under 1 second.
 
+### Acceptance findings (SC-001, 2026-10-22)
+
+The 20 acceptance codes were compared with EZT-online for 01.10.2026 and origin CN (tests/eval/taric_acceptance.md). Subdivisions match for 20 of 20 codes, and every CN and erga omnes measure that EZT-online lists is returned. The author's manual spot checks of 7318155810 (the conditions of additional code C767) and 7318152000 (the 1008 rows for measure types 763 and 775) agree. Two findings remain:
+
+- **Group gap confirmed**: on live fastener codes EZT-online lists measures for group 1008 (all third countries), import control 763 and the Carbon Border Adjustment Mechanism 775, on every 7318 15 code checked, and veterinary control 410 under 3926 90 97. The lookup does not return them, as the known limitation predicts. A follow-up feature, Spec 1b, covering measures for EU country groups that contain China and erga omnes measures that exclude it, is required before Spec 2 shows measures to the clerk.
+- **Measure type 566**: TARIC holds measure type 566 (anti-dumping/countervailing statistic), and the lookup returns it as an erga omnes measure on six of the 20 codes, but EZT-online does not show it. It is to be filtered from display.
+
 ## Assumptions
 
 - The operator downloads the per-object files of one batch by hand. The Swedish Customs public key, published on the distribution page, is kept as a copy in the project; it is public, so keeping it in the repository is safe, and no secret is needed to load the extract.
@@ -192,8 +199,9 @@ The sidebar shows one caption: the TARIC snapshot date and the number of CN-8 mi
 - Measures apply downwards: a measure recorded against a CN-8, subheading, heading or chapter applies to every subdivision beneath it, as in the published tariff.
 - Lookups answer an import question, so export-only measures such as export controls are never returned (FR-018). Confirmed by the author on 2026-10-22.
 - The loader keeps EU records only, dropping the Swedish national records in the Swedish Customs export (FR-005). Confirmed by the author on 2026-10-22.
-- Known limitation: measures for country groups that contain the origin, and erga omnes measures that exclude it, are not handled; the company behind an additional code is not named; and full temporary stops are not applied (research R-04: the extract holds 37, dated 1995 to 2025; they do link to the regulations they stop, but none of them stops a measure in force on the 2026-10-01 extract). If one of the 20 codes for SC-001 is affected, the comparison shows a mismatch for it, and the author decides whether to pick another code or extend the lookup in a later feature.
+- Known limitation: measures for country groups that contain the origin, and erga omnes measures that exclude it, are not handled; the company behind an additional code is not named; and full temporary stops are not applied (research R-04: the extract holds 37, dated 1995 to 2025; they do link to the regulations they stop, but none of them stops a measure in force on the 2026-10-01 extract). If one of the 20 codes for SC-001 is affected, the comparison shows a mismatch for it, and the author decides whether to pick another code or extend the lookup in a later feature. Decided on 2026-10-22: Spec 1b extends it (see Acceptance findings).
 - Known limitation: Meursing agricultural components and sugar and flour additional duties are not represented, so composite agricultural goods show the base duty only. The loader drops these Meursing-table measures (measure types 672, 673 and 674, which carry no goods code) and logs their count (research R-14). Decided by the author on 2026-10-22.
+- Known limitation: app startup with the snapshot takes 9.6 to 10.1 s, 4.3 to 4.4 s more than without it (measured 2026-10-22, T037). SC-007 allows 10 s more, but the absolute time is close to 10 s, so Spec 1b should reduce the TaricStore load time.
 - The labelled test set holds HS-6 codes. The author picks the 20 CN-8 codes for SC-001 beneath those subheadings, including codes with anti-dumping measures, and records the EZT-online result for each by hand; EZT-online offers no machine access.
 - The CN 2026 nomenclature lists its CN-8 codes inside the subheading texts; the reconciliation reads them from the `CN dddd dd dd` lines of those texts (research R-09).
 - The snapshot file is not kept in the repository. The loader regenerates it from the signed extract, it runs to about 57 MB (2026-10-01 extract), and it is listed in .gitignore.

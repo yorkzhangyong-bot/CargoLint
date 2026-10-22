@@ -59,6 +59,10 @@ Two rules shape the data: only EU records are kept (the Swedish national records
 and a lookup for an origin returns only import measures, those for the origin itself and erga omnes, recorded
 on the code or on any level above it.
 
+Measured on 2026-10-22 with the 2026-10-01 extract: a full load takes 20 to 42 s, depending on machine load
+(SC-006 allows 30 minutes). With the snapshot the knowledge base opens 4.3 to 4.4 s later at app start, 9.6 to
+10.1 s against 5.2 to 5.9 s without it (SC-007 allows 10 s more), and a lookup takes under 1 ms (SC-007: under 1 s).
+
 ## What the clerk sees
 
 **Start screen**: a grouped sidebar — uploader (XLSX/CSV/PDF/JPG/PNG, 20 MB), shipment reference and
