@@ -18,7 +18,8 @@ pip install -e ".[dev]"
 set OPENROUTER_API_KEY=sk-or-...                           # or put it in .env (see .env.example)
 python -m rag.loader --demo                               # builds the knowledge base (≈ 10 min, ≈ $0.02)
 python -m rag.loader                                      # full EBTI rulings index for precedent-driven retrieval (74k rulings, ≈ 90 min, ≈ $0.3, 1.8 GB on disk)
-pytest -q                                                 # 229 offline tests, no key needed
+python -m rag.loader --taric                              # one-time TARIC snapshot for digits 9–10 and measures (needs gpg, see below)
+pytest -q                                                 # 389 offline tests, no key needed
 streamlit run app.py
 ```
 
@@ -28,6 +29,35 @@ and the 192-ruling demo subset through OpenRouter. `python -m rag.bti --make-dem
 subset; `python -m rag.loader --bti-chapters 39,42,61-64,73,84,85,94,95,96` builds the full
 73,899-ruling subset and its own vector index (`store/chroma-bti`), which the precedent leg of the classifier
 searches (see below). Data provenance and licences: `data/SOURCES.md`.
+
+## TARIC snapshot (digits 9 to 10 and measures)
+
+CargoLint can hold one EU TARIC snapshot for the last two digits of a code and the measures on it (feature
+002, `specs/002-taric-snapshot-load/`). TARIC is used only for digits 9 to 10 and measures: CN 2026 stays the
+only source for digits 1 to 8, and TARIC is never embedded or indexed. The lookup
+(`TaricStore.lookup_taric(cn8, origin="CN")` in `rag/taric.py`) is not yet connected to the assistant or the
+review screen; that is the next feature.
+
+1. Download the six object files of one batch (GoodsNomenclature, Measure, MeasureType, GeographicalArea,
+   DutyExpression and Regulation) from https://distr.tullverket.se/tulltaxan/xml/tot/ into `data/raw/taric/`,
+   keeping their original names (`ObjectName_batchId_YYMMDD.xml.gz.pgp`).
+2. Make gpg available: it ships with Git for Windows (`usr/bin/gpg.exe`); otherwise put it on `PATH` or set
+   `CARGOLINT_GPG` to its full path.
+3. Run `python -m rag.loader --taric` (or `--taric <folder>`). The loader verifies every file against the
+   pinned Swedish Customs key (`data/Tulltaxan_Fildistribution.asc`, fingerprint
+   `4101 60CE 25CE C2FF 3227 84E7 302A C3C1 D0E3 E1C9`), keeps the records valid on the snapshot date and
+   writes `data/taric.jsonl` (git-ignored). Running it again on the same extract changes nothing; add
+   `--force` to rewrite the file. A refused extract writes nothing and leaves the previous snapshot as it was.
+   It never touches the search indexes.
+
+The sidebar's knowledge-base expander shows `TARIC snapshot <date> · <n> CN-8 mismatches`, or
+`TARIC not loaded` when there is no snapshot; the app works the same either way. Mismatches are CN-8 prefixes
+that CN 2026 does not have (special codes in chapters 98 and 99), listed in
+`store/logs/taric-cn8-mismatches-<date>.txt`.
+
+Two rules shape the data: only EU records are kept (the Swedish national records in the export are dropped),
+and a lookup for an origin returns only import measures, those for the origin itself and erga omnes, recorded
+on the code or on any level above it.
 
 ## What the clerk sees
 
@@ -197,6 +227,12 @@ open with Chinese text intact.
   not read from photos.
 - State lives in the Streamlit session: nothing persists across restarts; one user, one shipment.
 - The chat model is reached through OpenRouter; a 402 (credits) stops checks with a clear message.
+- TARIC snapshot: measures for country groups that contain the origin are not returned and erga omnes
+  measures that exclude it are returned as if they applied (for China on the 2026-10-01 extract, 1,549 and
+  1,238 import measures); full temporary stops are not applied; the companies behind additional codes are not
+  named; Meursing agricultural components and sugar and flour additional duties are not represented, so
+  composite agricultural goods show the base duty only; and duties that depend on conditions, such as most
+  company-specific anti-dumping rates, have no duty text. The snapshot is loaded by hand, with no daily updates.
 
 Roadmap, in order of customer value: drafted bilingual shipper queries with send tracking; line version
 history and audit export; CN-8 classification; TARIC-10 lookup (duty, anti-dumping, certificates);
@@ -208,7 +244,7 @@ SQLite persistence and multi-user access.
 app.py          Streamlit entry point        ui/        sidebar, upload, chat, jobs (worker turns), replies, review, detail
 agent/          config, schemas, routing, prompts, llm (client factory + cost), agent (loop + guard), store
 tools/          the five tools, parsers, ocr, common (context + per-line runner)
-rag/            loader (CLI), nomenclature (SKOS), bti (EBTI), rules (ICS2 PDFs), embeddings, retriever, translate
+rag/            loader (CLI), nomenclature (SKOS), bti (EBTI), rules (ICS2 PDFs), embeddings, retriever, translate, taric + taric_extract + pgp (TARIC snapshot)
 data/           processed knowledge base, rule lists, shipper history (synthetic), sample lists (xlsx, gbk csv, text pdf, photo), labelled set, SOURCES.md
 store/          Chroma vectors (nomenclature in chroma/, rulings in chroma-bti/), BM25 pickle, BTI document store (git-ignored; rebuilt by the loader)
 tests/          unit, integration, adversarial, live, eval (run_eval.py, make_big_list.py), fixtures
@@ -218,5 +254,7 @@ tests/          unit, integration, adversarial, live, eval (run_eval.py, make_bi
 
 EU Combined Nomenclature 2026 (Publications Office / Eurostat) and the EBTI public extract are reused
 under the Commission reuse policy (Decision 2011/833/EU, CC BY 4.0) — © European Union. ICS2 guidance
-documents © European Commission. Shipper history, the firm stop-word list and the sample packing list are
+documents © European Commission. The TARIC snapshot comes from the Swedish Customs Tariff File Distribution
+(free of charge, no formal licence published); the underlying data is EU TARIC from the European Commission.
+Shipper history, the firm stop-word list and the sample packing list are
 synthetic demo data.

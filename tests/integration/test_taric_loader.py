@@ -1,6 +1,7 @@
 """`python -m rag.loader --taric`: first load, register row, refusals, usage errors and index isolation
 (feature 002, contracts/loader-cli.md, FR-001 to FR-013, FR-022, FR-023, FR-025). Loads need gpg and skip without it."""
 import json
+import os
 import re
 import shutil
 from pathlib import Path
@@ -9,6 +10,7 @@ from types import SimpleNamespace
 import pytest
 
 import rag.loader as loader
+import rag.taric_extract as taric_extract
 from rag.pgp import GpgNotFound, find_gpg
 from rag.taric import TaricSnapshotRecord, record_to_line
 
@@ -117,6 +119,66 @@ class TestFirstLoad:
         taric.raw.rename(other)
         assert loader.main(["--taric", str(other)]) == 0
         assert json.loads(taric.snapshot.read_text(encoding="utf-8").splitlines()[0])["batch_id"] == BATCH
+
+
+@needs_gpg
+class TestReruns:
+    def test_the_same_extract_is_skipped_without_checking_any_signature(self, taric, capsys, monkeypatch):
+        assert loader.main(["--taric"]) == 0
+        before = taric.snapshot.read_bytes()
+        capsys.readouterr()
+        monkeypatch.setattr(taric_extract, "verify_signed", _forbidden("verify_signed"))
+        assert loader.main(["--taric"]) == 0
+        out = capsys.readouterr().out
+        assert "TARIC snapshot 2026-10-01 is already loaded in " in out and "nothing changed. Use --force to rewrite it." in out
+        assert taric.snapshot.read_bytes() == before
+
+    def test_force_rewrites_the_same_records_with_a_new_load_time(self, taric):
+        assert loader.main(["--taric"]) == 0
+        before = taric.snapshot.read_text(encoding="utf-8").splitlines()
+        assert loader.main(["--taric", "--force"]) == 0
+        after = taric.snapshot.read_text(encoding="utf-8").splitlines()
+        assert after[1:] == before[1:]
+        first_before, first_after = json.loads(before[0]), json.loads(after[0])
+        first_before.pop("loaded_at"), first_after.pop("loaded_at")
+        assert first_after == first_before
+
+    def test_an_extract_with_another_date_replaces_the_snapshot_and_its_register_row(self, taric, tmp_path, capsys):
+        assert loader.main(["--taric"]) == 0
+        later = tmp_path / "later"
+        later.mkdir()
+        for f in taric.raw.iterdir():
+            shutil.copy(f, later / f.name.replace("_261001.", "_261101."))
+        capsys.readouterr()
+        assert loader.main(["--taric", str(later)]) == 0
+        out = capsys.readouterr().out
+        assert "TARIC snapshot 2026-11-01 · " in out and "replaced snapshot 2026-10-01" in out
+        assert json.loads(taric.snapshot.read_text(encoding="utf-8").splitlines()[0])["snapshot_date"] == "2026-11-01"
+        rows = [line for line in taric.sources.read_text(encoding="utf-8").splitlines() if line.startswith(TARIC_ROW)]
+        assert len(rows) == 1 and "| snapshot 2026-11-01, batch " in rows[0]
+
+    def test_a_failed_rewrite_leaves_the_old_file_untouched(self, taric, monkeypatch):
+        assert loader.main(["--taric"]) == 0
+        before = (taric.snapshot.read_bytes(), taric.sources.read_bytes())
+
+        def fail(*args, **kwargs):
+            raise OSError("disk full")
+
+        monkeypatch.setattr(os, "replace", fail)
+        with pytest.raises(OSError):
+            loader.main(["--taric", "--force"])
+        assert (taric.snapshot.read_bytes(), taric.sources.read_bytes()) == before
+        assert not list(taric.snapshot.parent.glob("*.tmp"))
+
+    def test_no_record_appears_twice_after_any_sequence_of_runs(self, taric):
+        for argv in (["--taric"], ["--taric", "--force"], ["--taric"], ["--taric", "--force"]):
+            assert loader.main(argv) == 0
+        records = [json.loads(line) for line in taric.snapshot.read_text(encoding="utf-8").splitlines()]
+        codes = [r["code"] for r in records if r["kind"] == "goods_nomenclature"]
+        sids = [r["sid"] for r in records if r["kind"] == "measure"]
+        assert len(codes) == len(set(codes)) and len(sids) == len(set(sids))
+        assert [r["kind"] for r in records].count("snapshot") == 1
+        assert (records[0]["goods_records"], records[0]["measure_records"]) == (len(codes), len(sids))
 
 
 def _replace(variant: str):

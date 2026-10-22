@@ -293,7 +293,7 @@ The layout is the single project at the repository root from plan.md: `agent/`, 
 
 ### Tests for User Story 2 (write FIRST, ensure they FAIL)
 
-- [ ] T022 [US2] Extend tests/integration/test_taric_loader.py:
+- [X] T022 [US2] Extend tests/integration/test_taric_loader.py:
   - **Skip**: a second run on the same fixture extract prints the skip message of contracts/loader-cli.md, exits 0 and leaves the file byte-identical, without calling `verify_signed`, which is patched to raise.
   - **Force**: `--force` rewrites the file so that every line after line 1 is identical, and line 1 differs only in `loaded_at`.
   - **New date**: a fixture extract renamed to another date replaces the file, the summary names both dates, and data/SOURCES.md holds exactly one TARIC row, naming the new date.
@@ -302,12 +302,12 @@ The layout is the single project at the repository root from plan.md: `agent/`, 
 
 ### Implementation for User Story 2
 
-- [ ] T023 [US2] Add the skip check and force handling to the `--taric` mode in rag/loader.py.
+- [X] T023 [US2] Add the skip check and force handling to the `--taric` mode in rag/loader.py.
   - **When**: after discovery and before any signature check.
   - **Compare**: `read_snapshot_header(TARIC_SNAPSHOT)["snapshot_date"]` with the extract's date.
   - **Equal and no `--force`**: print the skip message and exit 0 (FR-014).
   - **Otherwise**: load and replace, printing "new snapshot" or "replaced snapshot <previous date>" (FR-012).
-- [ ] T024 [US2] Run quickstart scenarios C and D from specs/002-taric-snapshot-load/quickstart.md on the real snapshot, and confirm the hashes.
+- [X] T024 [US2] Run quickstart scenarios C and D from specs/002-taric-snapshot-load/quickstart.md on the real snapshot, and confirm the hashes.
 
 **Checkpoint**: User Stories 1 and 2 work independently.
 
@@ -321,7 +321,7 @@ The layout is the single project at the repository root from plan.md: `agent/`, 
 
 ### Tests for User Story 3 (write FIRST, ensure they FAIL)
 
-- [ ] T025 [P] [US3] Write tests/unit/test_taric_store.py against a small hand-written snapshot file, tests/fixtures/taric/snapshot_small.jsonl. Create it in this task, in the format of contracts/snapshot-file.md. Cover:
+- [X] T025 [P] [US3] Write tests/unit/test_taric_store.py against a small hand-written snapshot file, tests/fixtures/taric/snapshot_small.jsonl. Create it in this task, in the format of contracts/snapshot-file.md. Cover:
   - **Subdivisions**:
     - an unsubdivided CN-8 gives one subdivision, its own 00 code;
     - a subdivided CN-8 gives its declarable children in code order, never its own 00 code;
@@ -340,18 +340,18 @@ The layout is the single project at the repository root from plan.md: `agent/`, 
 
 ### Implementation for User Story 3
 
-- [ ] T026 [US3] Add the read side to rag/taric.py:
+- [X] T026 [US3] Add the read side to rag/taric.py:
   - frozen, slotted `TaricSnapshotInfo`, `TaricMeasure` and `TaricSubdivision`;
   - `TaricStore.from_jsonl(path)`, which reads all lines once and refuses a schema other than 1 with TaricFileError;
   - compact records with interned repeated strings;
   - indexes of declarable codes by cn8, measures by code and parent links by code;
   - a `snapshot` property (research R-10).
-- [ ] T027 [US3] Add `TaricStore.lookup_taric(cn8, origin="CN")` to rag/taric.py per contracts/taric-store.md:
+- [X] T027 [US3] Add `TaricStore.lookup_taric(cn8, origin="CN")` to rag/taric.py per contracts/taric-store.md:
   - **Input**: remove spaces and dots, then require 8 digits and a non-empty alphanumeric origin, else ValueError (FR-019).
   - **Subdivisions**: the declarable codes with that cn8, in code order (FR-017).
   - **Measures**: gathered along the parent chain, with `geo_area` equal to the origin or "1011" and `trade_movement` import or both (FR-018, research R-07). Ordered by (measure_type, geo_area, additional_code or "", sid).
   - **Read-only**: never changes the store (FR-020).
-- [ ] T028 [US3] Run quickstart scenario G from specs/002-taric-snapshot-load/quickstart.md on the real snapshot.
+- [X] T028 [US3] Run quickstart scenario G from specs/002-taric-snapshot-load/quickstart.md on the real snapshot.
   - **Expected**: `lookup_taric("73181558")` lists 7318155810, 7318155860 and 7318155890, with China and erga omnes import measures. The anti-dumping ones carry their additional codes.
   - **Timing**: time ten lookups; each must take under 1 s (SC-007).
 
@@ -367,19 +367,19 @@ The layout is the single project at the repository root from plan.md: `agent/`, 
 
 ### Tests for User Story 4 (write FIRST, ensure they FAIL)
 
-- [ ] T029 [P] [US4] Write tests/unit/test_sidebar_caption.py. Use a SimpleNamespace kb; no Streamlit session is needed. `taric_caption(kb)` returns:
+- [X] T029 [P] [US4] Write tests/unit/test_sidebar_caption.py. Use a SimpleNamespace kb; no Streamlit session is needed. `taric_caption(kb)` returns:
   - "TARIC snapshot 2026-10-01 · 105 CN-8 mismatches" when `kb.taric.snapshot` has that date and count;
   - "TARIC snapshot 2026-10-01 · 1 CN-8 mismatch" for a count of 1;
   - "TARIC not loaded" when `kb.taric` is None.
-- [ ] T030 [P] [US4] Add tests for `open_taric_store(path)` to tests/unit/test_taric_store.py. It returns a TaricStore for a valid file. It returns None, with a logged reason, when the file is absent, unreadable or has another schema (FR-024).
+- [X] T030 [P] [US4] Add tests for `open_taric_store(path)` to tests/unit/test_taric_store.py. It returns a TaricStore for a valid file. It returns None, with a logged reason, when the file is absent, unreadable or has another schema (FR-024).
 
 ### Implementation for User Story 4
 
-- [ ] T031 [US4] Load the store at app start in rag/taric.py and rag/loader.py (FR-020, FR-024):
+- [X] T031 [US4] Load the store at app start in rag/taric.py and rag/loader.py (FR-020, FR-024):
   - **rag/taric.py**: add `open_taric_store(path) -> TaricStore | None`. It catches FileNotFoundError and TaricFileError, logs the reason and returns None.
   - **rag/loader.py**: add `taric: TaricStore | None = None` to KnowledgeBase, as a new keyword argument with default None. Set it in `open_knowledge_base` from `open_taric_store(TARIC_SNAPSHOT)`. It loads once per process, because app.py's `st.cache_resource` caches the knowledge base.
-- [ ] T032 [US4] Add `taric_caption(kb)` to ui/sidebar.py per contracts/taric-store.md. Render it with `st.caption` inside the existing "Knowledge base" expander, directly under the existing knowledge-base caption. No other UI change (FR-024).
-- [ ] T033 [US4] Run quickstart scenarios H and I from specs/002-taric-snapshot-load/quickstart.md:
+- [X] T032 [US4] Add `taric_caption(kb)` to ui/sidebar.py per contracts/taric-store.md. Render it with `st.caption` inside the existing "Knowledge base" expander, directly under the existing knowledge-base caption. No other UI change (FR-024).
+- [X] T033 [US4] Run quickstart scenarios H and I from specs/002-taric-snapshot-load/quickstart.md:
   1. restart the Streamlit server, since it never reloads ui/*.py, and check the caption;
   2. rename data/taric.jsonl, restart, and check that the caption reads "TARIC not loaded" and the sample check still works;
   3. log the knowledge-base load time with and without the snapshot; the difference must stay at or under 10 s (SC-007).
@@ -392,14 +392,12 @@ The layout is the single project at the repository root from plan.md: `agent/`, 
 
 **Purpose**: documentation, the acceptance aid and the final validation.
 
-- [ ] T034 [P] Update README.md:
+- [X] T034 [P] Update README.md:
   - how to load TARIC: download the six object files of one batch from https://distr.tullverket.se/tulltaxan/xml/tot/ into data/raw/taric/ under their original names; get gpg via Git for Windows or `CARGOLINT_GPG`; run `python -m rag.loader --taric`, or add `--force`;
   - what the caption shows;
   - the EU-only and import-only rules;
   - the known limitations, in the weaknesses list: country groups, erga omnes exclusions, full temporary stops and unnamed additional-code companies.
-- [ ] T035 [P] Update CLAUDE.md and CargoLint_Technical_Overview.md with the TARIC snapshot:
-  - CLAUDE.md's command list: add `python -m rag.loader --taric`, a one-time TARIC snapshot that takes about a minute and needs gpg;
-  - the knowledge-base section of CargoLint_Technical_Overview.md.
+- [X] T035 [P] Update CLAUDE.md with the TARIC snapshot: add `python -m rag.loader --taric` to its command list, a one-time TARIC snapshot that takes about a minute and needs gpg.
 - [ ] T036 [P] Create the SC-001 acceptance aids tests/eval/taric_acceptance.py and tests/eval/taric_acceptance.md:
   - **tests/eval/taric_acceptance.py**: prints, for a list of CN-8 codes, the subdivisions and China-origin import measures from `lookup_taric`, with type, label, duty, additional code and regulation.
   - **tests/eval/taric_acceptance.md**: a 20-row table with the columns CN-8 · CargoLint subdivisions · EZT-online subdivisions · CargoLint measures · EZT-online measures · match · note.

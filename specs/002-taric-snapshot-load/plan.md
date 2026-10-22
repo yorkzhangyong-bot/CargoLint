@@ -133,7 +133,7 @@ tests/
 .gitignore                        # + data/taric.jsonl
 ```
 
-**Structure Decision**: the existing single-project layout from feature 001 is kept. The three new modules in `rag/` follow `rag/bti.py`'s extraction-plus-store pattern, split so that the security-relevant signature check and the large streaming parser can be tested on their own. Documentation to update with the code: `README.md` (how to load TARIC), `CLAUDE.md` (command list), `data/SOURCES.md` (generated row) and `CargoLint_Technical_Overview.md` (knowledge-base section).
+**Structure Decision**: the existing single-project layout from feature 001 is kept. The three new modules in `rag/` follow `rag/bti.py`'s extraction-plus-store pattern, split so that the security-relevant signature check and the large streaming parser can be tested on their own. Documentation to update with the code: `README.md` (how to load TARIC), `CLAUDE.md` (command list) and `data/SOURCES.md` (generated row).
 
 ## Design notes (how the pieces fit)
 

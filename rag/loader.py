@@ -28,7 +28,7 @@ from rag.nomenclature import NomenclatureIndex, build_chunks, parse_skos, write_
 from rag.pgp import GpgNotFound, SignatureError, check_key_copy, find_gpg
 from rag.retriever import BM25Index, ChromaVectorSearch, HybridRetriever, load_index_meta, verify_index_meta, write_index_meta
 from rag.rules import RuleSet
-from rag.taric import TaricFileError, read_snapshot_header
+from rag.taric import TaricFileError, TaricStore, open_taric_store, read_snapshot_header
 from rag.taric_extract import ExtractError, discover_extract, load_extract, write_snapshot
 
 RAW_DIR = DATA_DIR / "raw"
@@ -281,9 +281,9 @@ def _shown(path: Path) -> str:
     return path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else str(path)
 
 
-def load_taric(folder: Path) -> int:
+def load_taric(folder: Path, force: bool = False) -> int:
     """`--taric`: verify, parse and write the TARIC snapshot only (contracts/loader-cli.md); never builds or reads a
-    search index or the index metadata (FR-022, FR-023, FR-025). Exit 0 written, 1 refused, 2 setup error."""
+    search index or the index metadata (FR-022, FR-023, FR-025). Exit 0 written or skipped, 1 refused, 2 setup error."""
     t0 = time.time()
     try:
         find_gpg()
@@ -296,6 +296,18 @@ def load_taric(folder: Path) -> int:
         return 2
     try:
         extract = discover_extract(folder)
+    except ExtractError as exc:
+        print(f"TARIC load refused: {exc}. Nothing was written.", file=sys.stderr)
+        return 1
+    try:
+        previous = read_snapshot_header(TARIC_SNAPSHOT)
+    except TaricFileError:
+        previous = {"snapshot_date": "(unreadable file)"}
+    if previous and previous["snapshot_date"] == extract.snapshot_date.isoformat() and not force:   # FR-014
+        print(f"TARIC snapshot {previous['snapshot_date']} is already loaded in {_shown(TARIC_SNAPSHOT)}; nothing changed. "
+              "Use --force to rewrite it.")
+        return 0
+    try:
         log(f"taric: verifying and parsing the {len(extract.files)} files of batch {extract.batch_id} …")
         snapshot = load_extract(extract, TARIC_KEY, TARIC_KEY_FINGERPRINT, cn2026_cn8, TARIC_LOG_DIR)
     except ExtractError as exc:
@@ -304,10 +316,6 @@ def load_taric(folder: Path) -> int:
     log(f"taric: parsed in {time.time() - t0:.0f} s; {len(snapshot.geo_areas)} EU geographical areas")
     for reason, n in snapshot.dropped.items():
         log(f"taric: dropped {n:,} measure{'' if n == 1 else 's'} ({reason})")
-    try:
-        previous = read_snapshot_header(TARIC_SNAPSHOT)
-    except TaricFileError:
-        previous = {"snapshot_date": "(unreadable file)"}
     register_tmp = SOURCES_MD.with_name(SOURCES_MD.name + ".tmp")   # built from the new record before the swap (FR-013)
     register_tmp.write_text(_register_with_taric_row(taric_sources_row(asdict(snapshot.header), folder)), encoding="utf-8")
     try:
@@ -330,7 +338,8 @@ def load_taric(folder: Path) -> int:
 # --------------------------------------------------------------------------- runtime opener
 class KnowledgeBase:
     def __init__(self, index: NomenclatureIndex, retriever: HybridRetriever, bti: bti_mod.BTIStore, rules: RuleSet,
-                 meta: dict[str, Any], embeddings: Any, shippers: list | None = None, bti_vectors: Any = None) -> None:
+                 meta: dict[str, Any], embeddings: Any, shippers: list | None = None, bti_vectors: Any = None,
+                 taric: TaricStore | None = None) -> None:
         self.bti_vectors = bti_vectors  # Chroma collection of ruling texts for precedent-driven retrieval; None when empty
         self.index = index
         self.retriever = retriever
@@ -339,6 +348,7 @@ class KnowledgeBase:
         self.meta = meta
         self.embeddings = embeddings
         self.shippers = shippers if shippers is not None else []
+        self.taric = taric              # TARIC snapshot for digits 9-10 and measures; None when not loaded (FR-024)
 
     @property
     def updated(self) -> str:
@@ -365,7 +375,8 @@ def open_knowledge_base(settings: Settings | None = None, usage_sink: Any = None
         bti_vectors = None
     from rag.rules import load_shippers
 
-    return KnowledgeBase(index, retriever, bti_store, rules, meta, emb, shippers=load_shippers(), bti_vectors=bti_vectors)
+    return KnowledgeBase(index, retriever, bti_store, rules, meta, emb, shippers=load_shippers(), bti_vectors=bti_vectors,
+                         taric=open_taric_store(TARIC_SNAPSHOT))
 
 
 # --------------------------------------------------------------------------- CLI
@@ -390,7 +401,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--demo", action="store_true", help="use data/bti_demo.jsonl instead of the full EBTI extract")
     ap.add_argument("--bti-chapters", default=None)
     ap.add_argument("--chapters", default=None, help="nomenclature chapters to index (default: all)")
-    ap.add_argument("--force", action="store_true", help="rebuild processed files and vectors")
+    ap.add_argument("--force", action="store_true", help="rebuild processed files and vectors; with --taric, rewrite data/taric.jsonl")
     ap.add_argument("--no-embed", action="store_true", help="skip embedding (BM25 + metadata only)")
     ap.add_argument("--taric", nargs="?", const=str(TARIC_RAW_DIR), metavar="DIR",
                     help="load only the TARIC snapshot from DIR (default: data/raw/taric/)")
@@ -401,7 +412,7 @@ def main(argv: list[str] | None = None) -> int:
         if clash:
             print(f"--taric cannot be combined with {', '.join(clash)}", file=sys.stderr)
             return 2
-        return load_taric(Path(args.taric))
+        return load_taric(Path(args.taric), force=args.force)
     settings = get_settings()
     if not args.no_embed and not settings.api_key:
         print("OPENROUTER_API_KEY is not set; use --no-embed to build without vectors", file=sys.stderr)
