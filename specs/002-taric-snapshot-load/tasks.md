@@ -400,9 +400,11 @@ The layout is the single project at the repository root from plan.md: `agent/`, 
   - the EU-only and import-only rules;
   - the known limitations, in the weaknesses list: country groups, erga omnes exclusions, full temporary stops and unnamed additional-code companies.
 - [X] T035 [P] Update CLAUDE.md with the TARIC snapshot: add `python -m rag.loader --taric` to its command list, a one-time TARIC snapshot that takes about a minute and needs gpg.
-- [ ] T036 [P] Create the SC-001 acceptance aids tests/eval/taric_acceptance.py and tests/eval/taric_acceptance.md:
-  - **tests/eval/taric_acceptance.py**: prints, for a list of CN-8 codes, the subdivisions and China-origin import measures from `lookup_taric`, with type, label, duty, additional code and regulation.
-  - **tests/eval/taric_acceptance.md**: a 20-row table with the columns CN-8 · CargoLint subdivisions · EZT-online subdivisions · CargoLint measures · EZT-online measures · match · note.
+- [X] T036 [P] Create the SC-001 acceptance aids tests/eval/taric_acceptance.py and tests/eval/taric_acceptance.md:
+  - **tests/eval/taric_acceptance.py**: prints, for the 20 acceptance codes, the subdivisions and China-origin import measures from `lookup_taric`, with type, label, duty, additional code and regulation, plus the measures for EU groups that contain China, which the lookup leaves out (the known gap). `--markdown <file>` writes the table.
+  - **Selection** (author, 2026-10-22): at least 5 subdivided codes (12), 5 with anti-dumping or countervailing measures for China (6), 3 unsubdivided (8) and 2 with measures for EU groups that contain China (7).
+  - **tests/eval/taric_acceptance.md**: the EZT-online search steps, checked live on 2026-10-22 (the site has no stable per-code links), then a 20-row table with the columns # · CN-8 · Covers · EZT-online: enter · CargoLint subdivisions · CargoLint measures for China · Finding, and an appendix listing every anti-dumping additional code with its duty text.
+  - **EZT-online check** (author's request, 2026-10-22): every query used maßgeb. Zeitpunkt 01.10.2026 and Ursprungsland CN; subdivisions compare the first 10 digits of the 11-digit German code; the 1011 and 1008 rows are kept apart from the CN rows; four conditional anti-dumping rates were read from the Bedingungen page. Raw rows in tests/eval/taric_acceptance_ezt.json; the comparison is rendered by tests/eval/taric_acceptance.py.
     - Rows hold codes beneath 3924.90, 3926.90, 4202.21, 6109.10, 6203.42, 6404.11, 7318.15, 8452.90, 8518.30, 9405.21, 9503.00 and 9617.00.
     - The author fills in the EZT-online columns.
 - [ ] T037 Run the full validation from specs/002-taric-snapshot-load/quickstart.md: `pytest -q` green offline, then scenarios A to J. Record the SC-006 and SC-007 timings in README.md's TARIC section.
