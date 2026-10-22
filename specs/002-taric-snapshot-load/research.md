@@ -163,7 +163,15 @@ All figures come from read-only runs on 2026-10-22 against the real extract in `
 - **Percentage**: "%" when there is no monetary unit, for example `22 %`.
 - **Specific duty**: `{amount} {currency} / {unit}`. The unit labels are DTN = 100 kg, KGM = kg, TNE = 1000 kg, LTR = l, HLT = hl, MTQ = m³, MTK = m² and NAR = p/st; an unknown unit or qualifier code is kept as the code.
 - **Components without an amount** use the short forms of their English description, for example `+ EA` for "+ agricultural component".
-- **Measures without components**, such as import controls, get an empty duty text. Conditions are not rendered; FR-009 asks for the duty expression only.
+- **Conditional duties** follow the components, as display text that is never evaluated. Each measure condition that carries a duty becomes a clause, in sequence order:
+  - with a document: `<duty> with <condition in words> <document code>`, for example `39.6 % with anti-dumping/countervailing document D008; otherwise 86.5 %`. Condition A reads "anti-dumping/countervailing document"; B and C read "certificate, licence or document". The document code (certificate type and code, such as D008) stays a code, because the Certificate object file is not read;
+  - with a price threshold above zero: `<duty> if <price in words> is at least <threshold>`; V is the import price (entry prices), F the net free-at-frontier price, L the CIF price and M the declared price;
+  - otherwise, the fallback: `otherwise <duty>`, placed last. A threshold of zero counts as the fallback;
+  - action 11 reads `the difference to <duty>` (the difference to a minimum price), for example `0 EUR / 1000 kg if the net free-at-frontier price is at least 1316 EUR / 1000 kg; otherwise the difference to 1316 EUR / 1000 kg`;
+  - conditions without a duty, such as licence requirements, add nothing. Clauses are joined by "; ".
+- **Measures without components or conditional duties**, such as import controls, get an empty duty text.
+- **Evidence (D)**: 17,292 measures carry their duty only in conditions, chiefly 13,734 definitive anti-dumping (552) and 2,576 countervailing (554) measures, where the company-specific rate applies with the commercial invoice (document D008). After this rule no anti-dumping or countervailing measure in the snapshot has an empty duty text (T028 follow-up, 2026-10-22).
+- **Known gap**: duty expression 36 ("minus % CIF") has no prefix, so the 5 conditions that use it (type 652, eggs) read like `105.846 EUR / 100 kg 50 %`.
 
 **Other fields**:
 - **Measure type label**: the English `measureTypeDescription`.
@@ -175,7 +183,7 @@ All figures come from read-only runs on 2026-10-22 against the real extract in `
 
 **Alternatives considered**:
 - Storing raw components only: rejected, because FR-009 asks for the duty as text built from its components.
-- Rendering conditions: deferred to the duty features after Spec 2.
+- Evaluating conditions, that is, choosing the rate that applies: rejected. The text shows every conditional rate; the clerk, or a later feature, decides which applies.
 
 ## R-09 Reconciliation against CN 2026
 
@@ -197,7 +205,7 @@ All figures come from read-only runs on 2026-10-22 against the real extract in `
 - **Order**: line 1 is the snapshot record, then code records sorted by code, then measure records sorted by (code, measure SID). Keys always appear in the same order.
 - **Write**: to `data/taric.jsonl.tmp`, then `os.replace`, so a failed run leaves the old file untouched (FR-013).
 - **Skip check**: reads only the first line (FR-014).
-- **Git**: the file is added to `.gitignore`. It is regenerated from the downloaded files and measured 55.8 MB on the 2026-10-01 extract (1 + 22,361 + 161,959 lines).
+- **Git**: the file is added to `.gitignore`. It is regenerated from the downloaded files and measured 57.3 MB on the 2026-10-01 extract (1 + 22,361 + 161,959 lines).
 - **In memory**: `TaricStore` keeps compact records (dataclasses with `__slots__`, repeated strings interned), indexed by CN-8 for declarable codes and by code for measures.
 
 **Rationale**: this follows the existing `data/*.jsonl` and `BTIStore` pattern (author's constraint). Byte-identical output for the same extract, apart from the load time, makes SC-002 and FR-015 directly testable.

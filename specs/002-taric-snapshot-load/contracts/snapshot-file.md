@@ -27,7 +27,7 @@ Values are illustrative; angle brackets mark placeholders.
 {"kind": "goods_nomenclature", "code": "7318155800", "cn8": "73181558", "description": "", "valid_from": "<date>", "valid_to": null, "declarable": false, "parent": "<parent code>"}
 {"kind": "goods_nomenclature", "code": "7318155810", "cn8": "73181558", "description": "<English TARIC description>", "valid_from": "<date>", "valid_to": null, "declarable": true, "parent": "7318155800"}
 {"kind": "measure", "sid": 1234567, "code": "7318155800", "measure_type": "103", "measure_type_label": "Third country duty", "trade_movement": "import", "geo_area": "1011", "additional_code": null, "duty": "<duty text>", "regulation_id": "<regulation id>", "regulation_ref": "OJ <journal>, p. <page> (<published>)", "valid_from": "<date>", "valid_to": null}
-{"kind": "measure", "sid": 2345678, "code": "7318155810", "measure_type": "552", "measure_type_label": "Definitive anti-dumping duty", "trade_movement": "import", "geo_area": "CN", "additional_code": "C999", "duty": "<duty text>", "regulation_id": "<regulation id>", "regulation_ref": "OJ <journal>, p. <page> (<published>)", "valid_from": "<date>", "valid_to": null}
+{"kind": "measure", "sid": 2345678, "code": "7318155810", "measure_type": "552", "measure_type_label": "Definitive anti-dumping duty", "trade_movement": "import", "geo_area": "CN", "additional_code": "C767", "duty": "39.6 % with anti-dumping/countervailing document D008; otherwise 86.5 %", "regulation_id": "<regulation id>", "regulation_ref": "OJ <journal>, p. <page> (<published>)", "valid_from": "<date>", "valid_to": null}
 ```
 
 ## Invariants a reader may rely on
@@ -38,3 +38,4 @@ Values are illustrative; angle brackets mark placeholders.
 - Every record is valid on `snapshot_date`; no record is national.
 - `trade_movement` is one of `import`, `export`, `both`.
 - `description` is empty for every code whose digits 9–10 are `00`.
+- `duty` is display text only: the duty components, then the conditional duties (`<duty> with <document>`, `<duty> if <price> is at least <threshold>`, and `otherwise <duty>` last). A reader must not parse it to decide which rate applies.

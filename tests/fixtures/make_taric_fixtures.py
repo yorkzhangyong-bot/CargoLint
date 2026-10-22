@@ -95,17 +95,29 @@ def comp(expr: str, amount: str | None = None, money: str | None = None, unit: s
     return {"dutyAmount": amount, "dutyExpressionId": expr, "monetaryUnitCode": money, "measurementUnitCode": unit}
 
 
+def cond(seq: str, code: str, components: tuple = (), doc: tuple[str, str] | None = None, action: str = "01",
+         threshold: tuple[str, str, str] | None = None, national: str = "0") -> str:
+    """A measure condition: document (type, code), price threshold (amount, currency, unit) and its duty components."""
+    head = _attrs(actionCode=action, certificateCode=doc[1] if doc else None, certificateType=doc[0] if doc else None,
+                  conditionCodeId=code, dutyAmount=threshold[0] if threshold else None,
+                  monetaryUnitCode=threshold[1] if threshold else None, measurementUnitCode=threshold[2] if threshold else None,
+                  national=national, sequenceNumber=seq)
+    inner = "".join(f"<measureConditionComponent {_attrs(**c, national=national)}/>" for c in components)
+    return f"<measureCondition {head}>{inner}</measureCondition>"
+
+
 def measure(sid: str, code: str | None, mtype: str, geo: str, reg: tuple[str, str] = ("R8726580", "1"), start: str = "2020-01-01",
             end: str | None = None, addl: tuple[str, str] | None = None, components: tuple = (),
-            stops: tuple[tuple[str, str | None], ...] = (), national: str = "0", extras: bool = False) -> str:
+            stops: tuple[tuple[str, str | None], ...] = (), national: str = "0", extras: bool = False,
+            conditions: tuple[str, ...] = ()) -> str:
     head = _attrs(additionalCodeId=addl[1] if addl else None, additionalCodeType=addl[0] if addl else None, dateEnd=end,
                   geographicalAreaId=geo, goodsNomenclatureCode=code, measureType=mtype, national=national, regulationId=reg[0],
                   regulationRoleType=reg[1], SID=sid, dateStart=start, stoppedFlag="0", changeType="U")
     inner = "".join(f"<measureComponent {_attrs(**c, national=national)}/>" for c in components)
-    if extras:   # condition components and footnotes must never be read as duty components
-        inner += (f"<measureCondition {_attrs(actionCode='01', conditionCodeId='B', national=national, sequenceNumber='001')}>"
-                  f"<measureConditionComponent {_attrs(dutyAmount='99.0', dutyExpressionId='01', national=national)}/></measureCondition>"
-                  f"<measureFootnoteAssociation {_attrs(footnoteId='001', footnoteType='CD', national=national)}/>")
+    inner += "".join(conditions)
+    if extras:   # a condition without a duty component and a footnote: neither changes the duty text
+        inner += (cond("001", "B", doc=("Y", "999"), action="04", national=national)
+                  + f"<measureFootnoteAssociation {_attrs(footnoteId='001', footnoteType='CD', national=national)}/>")
     inner += "".join(f"<measurePartialTemporaryStop {_attrs(dateStart=s, dateEnd=e, national=national, regulationId='R1400420')}/>"
                      for s, e in stops)
     return f"<measure {head}>{inner}</measure>"
@@ -115,7 +127,7 @@ AD = ("R2201910", "3")          # definitive anti-dumping regulation, effective 
 ENDED = ("R9000010", "1")       # base regulation whose effective end date (2026-06-30) is before D
 M2 = measure("1002", "7318155810", "552", "CN", reg=AD, addl=("C", "001"), components=(comp("01", "22.0"),),
              stops=(("2014-01-20", "2014-04-22"),), extras=True)
-# Kept (10): 1001-1008, 1015, 1016. Dropped: 1009 (partial stop covering D), 1010 (open-ended, regulation ended),
+# Kept (12): 1001-1008, 1015, 1016, and 1021-1022, whose duties sit in conditions (research R-08). Dropped: 1009 (partial stop covering D), 1010 (open-ended, regulation ended),
 # 1013 (ended before D), 1014 (starts after D), -2001 (national). 1002 appears twice, identical: kept once.
 # Parsed, then dropped and counted by the snapshot: 1017-1019 (Meursing table, no goods code) and 1020 (an EU measure
 # on 7318155899, a code held only as a national record).
@@ -141,6 +153,11 @@ MEASURES = [
     measure("1018", None, "672", "1011", addl=("7", "040"), components=(comp("01", "3.34", "EUR", "DTN"),)),
     measure("1019", None, "673", "1011", addl=("7", "040"), components=(comp("01", "0.0", "EUR", "DTN"),)),
     measure("1020", "7318155899", "103", "1011", components=(comp("01", "5.0"),)),
+    measure("1021", "7318155890", "552", "CN", reg=AD, addl=("C", "767"), conditions=(
+        cond("002", "A", (comp("01", "86.5"),)), cond("001", "A", (comp("01", "39.6"),), doc=("D", "008")))),
+    measure("1022", "7318159500", "552", "CN", reg=AD, addl=("C", "123"), conditions=(
+        cond("001", "F", (comp("01", "0.0", "EUR", "MIL"),), threshold=("325.0", "EUR", "MIL")),
+        cond("002", "F", (comp("01", "325.0", "EUR", "MIL"),), action="11", threshold=("0.0", "EUR", "MIL")))),
     M2,
 ]
 CONFLICT = [M2, M2.replace('dutyAmount="22.0"', 'dutyAmount="23.0"')]
@@ -296,7 +313,7 @@ def main() -> int:
         print(f"WARNING: {REAL_SIGNED} is missing; the real-file signature test will fail", file=sys.stderr)
 
     expected = {
-        "batch_id": BATCH, "snapshot_date": "2026-10-01", "suffix80_codes": 11, "declarable_codes": 5, "measure_records": 10,
+        "batch_id": BATCH, "snapshot_date": "2026-10-01", "suffix80_codes": 11, "declarable_codes": 5, "measure_records": 12,
         "cn8_mismatches": 1, "dropped_meursing": 3, "dropped_national_code": 1, "cn2026_cn8": CN2026_CN8,
         "fixture_key_fingerprint": fixture_fpr, "other_key_fingerprint": other_fpr,
     }

@@ -153,7 +153,7 @@ class TestMeasures:
         # The Meursing measures 1017-1019 and 1020 (on a national-only code) are parsed here and dropped by the snapshot.
         assert [(m.code, m.sid) for m in measure_list] == sorted((m.code, m.sid) for m in measure_list)
         assert sorted(m.sid for m in measure_list) == [1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1015, 1016,
-                                                       1017, 1018, 1019, 1020]
+                                                       1017, 1018, 1019, 1020, 1021, 1022]
 
     def test_all_fields(self, measures):
         assert measures[1003] == TaricMeasureRecord(
@@ -170,7 +170,16 @@ class TestMeasures:
         (1007, "6.7 % MIN 1.2 EUR / 100 kg MAX 2.4 EUR / 100 kg"), (1005, ""),
     ])
     def test_duty_text_from_components(self, measures, sid, duty):
+        assert measures[sid].duty == duty            # 1002's condition carries no duty, so it adds nothing
+
+    @pytest.mark.parametrize("sid, duty", [
+        (1021, "39.6 % with anti-dumping/countervailing document D008; otherwise 86.5 %"),
+        (1022, "0 EUR / MIL if the net free-at-frontier price is at least 325 EUR / MIL; "
+               "otherwise the difference to 325 EUR / MIL"),
+    ])
+    def test_conditional_anti_dumping_duties_are_display_text_never_evaluated(self, measures, sid, duty):
         assert measures[sid].duty == duty
+        assert measures[sid].additional_code in ("C767", "C123")
 
     def test_regulation_references(self, measures):
         assert measures[1001].regulation_ref == "OJ L 256, p. 1 (1987-09-07)"       # base regulation
@@ -195,7 +204,7 @@ class TestUnusableMeasures:
         snap = snapshot(tmp_path)
         assert snap.dropped == {"Meursing table, measure types 672, 673, 674": 3, "on a code held only as a national record": 1}
         assert not {1017, 1018, 1019, 1020} & {m.sid for m in snap.measures}
-        assert snap.header.measure_records == len(snap.measures) == 10
+        assert snap.header.measure_records == len(snap.measures) == 12
 
 
 class TestReconciliation:
@@ -217,7 +226,7 @@ class TestReconciliation:
         h = snap.header
         assert (h.schema, h.snapshot_date, h.batch_id, h.export_id) == (1, "2026-10-01", BATCH, BATCH)
         assert h.source_files == tuple(name(o) for o in OBJECTS)
-        assert (h.goods_records, h.measure_records, h.cn8_mismatches) == (11, 10, 1)
+        assert (h.goods_records, h.measure_records, h.cn8_mismatches) == (11, 12, 1)
         assert re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", h.loaded_at)
         assert snap.log_path == tmp_path / "taric-cn8-mismatches-2026-10-01.txt"
         assert snap.log_path.read_text(encoding="utf-8") == "73181599 7318159910\n"

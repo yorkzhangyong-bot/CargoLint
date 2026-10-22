@@ -62,6 +62,7 @@ The layout is the single project at the repository root from plan.md: `agent/`, 
       - an open-ended measure whose base regulation's `effectiveEndDate` is before D;
       - an identical duplicate measure SID;
       - a measure without components;
+      - a conditional anti-dumping measure (39.6 % with document D008, otherwise 86.5 %) and a minimum-price measure (a price threshold, then the difference to the minimum price);
       - three Meursing-table measures (types 672, 673, 674) without a goods code;
       - an EU measure on 7318155899, a code held only as a national record.
     - **Duty components**: 01 percent (22.0), 01 specific (EUR, DTN), 15 MIN, 17 MAX, and 12 agricultural component.
@@ -145,7 +146,7 @@ The layout is the single project at the repository root from plan.md: `agent/`, 
     - only those valid on D, excluding one covered by a partial temporary stop and one whose base regulation has ended (research R-04);
     - `trade_movement` comes from the measure type;
     - `additional_code` is "C001" or "C999", and null when absent.
-  - **Duty text** per research R-08: "22 %", "<amount> EUR / 100 kg", "MIN …", "MAX …", "+ EA", and "" when there are no components.
+  - **Duty text** per research R-08: "22 %", "<amount> EUR / 100 kg", "MIN …", "MAX …", "+ EA", "" when there are no components, and conditional duties as display text: "39.6 % with anti-dumping/countervailing document D008; otherwise 86.5 %" and "0 EUR / MIL if the net free-at-frontier price is at least 325 EUR / MIL; otherwise the difference to 325 EUR / MIL".
   - **Regulation reference**: in the style "OJ L 299, p. 1 (2007-11-16)", and "" when the regulation is unknown.
   - **Duplicates and inconsistencies**:
     - an identical duplicate SID is kept once;
@@ -225,7 +226,8 @@ The layout is the single project at the repository root from plan.md: `agent/`, 
     - "%" when there is no monetary unit;
     - otherwise "{amount} {currency} / {unit}", with DTN=100 kg, KGM=kg, TNE=1000 kg, LTR=l, HLT=hl, MTQ=m³, MTK=m², NAR=p/st, and unknown codes kept as codes;
     - components without an amount by their EN short form;
-    - "" when there are no components.
+    - "" when there are no components or conditional duties;
+    - conditional duties after the components, as display text never evaluated (research R-08): `<duty> with <condition in words> <document>`, `<duty> if <price in words> is at least <threshold>`, and the fallback last as `otherwise <duty>`; action 11 reads `the difference to <duty>`.
   - **Duplicates**: an identical duplicate SID is kept once. A conflicting SID or an unknown measure type raises ExtractError naming it.
 - [X] T017 [US1] Add `load_extract(extract, key_path, fingerprint, cn2026_cn8, log_dir)` to rag/taric_extract.py; after the signature checks it hands the payloads to `build_snapshot`. In order:
   1. run `check_key_copy`;

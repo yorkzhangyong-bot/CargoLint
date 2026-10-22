@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from typing import Any, Callable, Iterable, Iterator
+from typing import Any, Callable, Iterable, Iterator, NamedTuple
 
 from lxml import etree
 
@@ -30,6 +30,11 @@ _MOVEMENT = {"0": "import", "1": "export", "2": "both"}
 _PREFIX = {"01": "", "02": "−", "04": "+", "19": "+", "20": "+", "15": "MIN", "17": "MAX", "35": "MAX"}
 _SHORT = {"12": "+ EA", "14": "+ EAR", "21": "+ ADSZ", "25": "+ ADSZR", "27": "+ ADFM", "29": "+ ADFMR"}
 _UNITS = {"DTN": "100 kg", "KGM": "kg", "TNE": "1000 kg", "LTR": "l", "HLT": "hl", "MTQ": "m³", "MTK": "m²", "NAR": "p/st"}
+# conditional duties, display text only (research R-08): condition codes in words
+_CONDITION_DOCUMENT = {"A": "anti-dumping/countervailing document", "B": "certificate, licence or document",
+                       "C": "certificate, licence or document"}
+_CONDITION_PRICE = {"F": "the net free-at-frontier price", "L": "the CIF price", "M": "the declared price",
+                    "V": "the import price"}
 _REGULATIONS = {  # record element: (id attribute, role type attribute), as measures name their regulation
     "baseRegulation": ("regulationId", "regulationRoleType"),
     "modificationRegulation": ("modificationRegulationId", "modificationRegulationRoleType"),
@@ -59,6 +64,15 @@ class ExtractSet:
     batch_id: str
     snapshot_date: date
     files: tuple[ExtractFile, ...]          # one per object, in TARIC_OBJECTS order
+
+
+class Condition(NamedTuple):
+    sequence: str
+    code: str                                # condition code, for example "A"
+    document: str | None                     # certificate type and code, for example "D008"
+    action: str
+    threshold: tuple[str, str | None, str | None, str | None] | None   # (amount, currency, unit, qualifier)
+    components: list[tuple[str | None, ...]]
 
 
 @dataclass(frozen=True)
@@ -260,19 +274,61 @@ def _number(amount: str) -> str:
         raise ExtractError(f"the duty amount {amount!r} is not a number") from exc
 
 
+def _unit_text(unit: str | None, qualifier: str | None) -> str:
+    return " ".join(x for x in (_UNITS.get(unit, unit) if unit else None, qualifier) if x)
+
+
+def _value(amount: str, money: str | None, unit: str | None, qualifier: str | None) -> str:
+    """"22 %" without a currency, else "{amount} {currency} / {unit}"."""
+    unit_text = _unit_text(unit, qualifier)
+    value = f"{_number(amount)} {money}" if money else f"{_number(amount)} %"
+    return f"{value} / {unit_text}" if money and unit_text else value
+
+
 def render_duty(components: Iterable[tuple[str | None, ...]], expressions: dict[str, str]) -> str:
     """Duty text from (expression, amount, currency, unit, qualifier) components in ascending expression order (research R-08)."""
     parts: list[str] = []
     for expr, amount, money, unit, qualifier in sorted(components, key=lambda c: c[0] or ""):
-        unit_text = " ".join(x for x in (_UNITS.get(unit, unit) if unit else None, qualifier) if x)
         if amount is None:
-            parts.append(unit_text or _SHORT.get(expr or "") or expressions.get(expr or "", expr or ""))
-            continue
-        value = f"{_number(amount)} {money}" if money else f"{_number(amount)} %"
-        if money and unit_text:
-            value += f" / {unit_text}"
-        parts.append(f"{_PREFIX.get(expr or '', '')} {value}".strip())
+            parts.append(_unit_text(unit, qualifier) or _SHORT.get(expr or "") or expressions.get(expr or "", expr or ""))
+        else:
+            parts.append(f"{_PREFIX.get(expr or '', '')} {_value(amount, money, unit, qualifier)}".strip())
     return " ".join(parts)
+
+
+def render_conditions(conditions: Iterable[Condition], expressions: dict[str, str]) -> str:
+    """Conditional duties as display text, never evaluated (research R-08), for example "39.6 % with
+    anti-dumping/countervailing document D008; otherwise 86.5 %". A condition with neither a document nor a price
+    threshold above zero is the fallback and comes last as "otherwise"; conditions without a duty add nothing."""
+    clauses: list[str] = []
+    fallbacks: list[str] = []
+    for c in sorted(conditions, key=lambda c: c.sequence):
+        if not c.components:
+            continue
+        duty = render_duty(c.components, expressions)
+        if c.action == "11":                                    # apply the difference to the minimum price
+            duty = f"the difference to {duty}"
+        if c.document:
+            clauses.append(f"{duty} with {_CONDITION_DOCUMENT.get(c.code, f'the condition {c.code} document')} {c.document}")
+        elif c.threshold and _number(c.threshold[0]) != "0":
+            clauses.append(f"{duty} if {_CONDITION_PRICE.get(c.code, f'the condition {c.code} value')} is at least "
+                           f"{_value(*c.threshold)}")
+        else:
+            fallbacks.append(f"otherwise {duty}")
+    return "; ".join(clauses + fallbacks)
+
+
+def _component(el: Any) -> tuple[str | None, ...]:
+    return (_a(el, "dutyExpressionId"), _a(el, "dutyAmount"), _a(el, "monetaryUnitCode"), _a(el, "measurementUnitCode"),
+            _a(el, "measurementUnitQualifierCode"))
+
+
+def _condition(el: Any) -> Condition:
+    document = f"{_a(el, 'certificateType') or ''}{_a(el, 'certificateCode')}" if _a(el, "certificateCode") else None
+    threshold = ((_a(el, "dutyAmount") or "", _a(el, "monetaryUnitCode"), _a(el, "measurementUnitCode"),
+                  _a(el, "measurementUnitQualifierCode")) if _a(el, "dutyAmount") is not None else None)
+    return Condition(_a(el, "sequenceNumber") or "", _a(el, "conditionCodeId") or "", document, _a(el, "actionCode") or "",
+                     threshold, [_component(x) for x in el.iterfind(NS + "measureConditionComponent")])
 
 
 def parse_measures(payload: bytes, d: date, types: dict[str, tuple[str, str]], expressions: dict[str, str],
@@ -295,13 +351,14 @@ def parse_measures(payload: bytes, d: date, types: dict[str, tuple[str, str]], e
             raise ExtractError(f"measure {sid} has the measure type {mtype}, which MeasureType does not define")
         label, movement = types[mtype]
         addl = _a(el, "additionalCodeId")
-        components = [(_a(c, "dutyExpressionId"), _a(c, "dutyAmount"), _a(c, "monetaryUnitCode"), _a(c, "measurementUnitCode"),
-                       _a(c, "measurementUnitQualifierCode")) for c in el.iterfind(NS + "measureComponent")]
+        components = [_component(c) for c in el.iterfind(NS + "measureComponent")]
+        conditions = [_condition(c) for c in el.iterfind(NS + "measureCondition")]
+        duty = "; ".join(x for x in (render_duty(components, expressions), render_conditions(conditions, expressions)) if x)
         record = TaricMeasureRecord(
             sid=sid, code=_a(el, "goodsNomenclatureCode") or "", measure_type=mtype, measure_type_label=label,
             trade_movement=movement, geo_area=_a(el, "geographicalAreaId") or "",
             additional_code=f"{_a(el, 'additionalCodeType') or ''}{addl}" if addl else None,
-            duty=render_duty(components, expressions), regulation_id=reg_id, regulation_ref=reg.ref if reg else "",
+            duty=duty, regulation_id=reg_id, regulation_ref=reg.ref if reg else "",
             valid_from=start or "", valid_to=end)
         if kept.setdefault(sid, record) != record:
             raise ExtractError(f"measure SID {sid} appears twice with different content")

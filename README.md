@@ -19,7 +19,7 @@ set OPENROUTER_API_KEY=sk-or-...                           # or put it in .env (
 python -m rag.loader --demo                               # builds the knowledge base (≈ 10 min, ≈ $0.02)
 python -m rag.loader                                      # full EBTI rulings index for precedent-driven retrieval (74k rulings, ≈ 90 min, ≈ $0.3, 1.8 GB on disk)
 python -m rag.loader --taric                              # one-time TARIC snapshot for digits 9–10 and measures (needs gpg, see below)
-pytest -q                                                 # 389 offline tests, no key needed
+pytest -q                                                 # 391 offline tests, no key needed
 streamlit run app.py
 ```
 
@@ -231,8 +231,9 @@ open with Chinese text intact.
   measures that exclude it are returned as if they applied (for China on the 2026-10-01 extract, 1,549 and
   1,238 import measures); full temporary stops are not applied; the companies behind additional codes are not
   named; Meursing agricultural components and sugar and flour additional duties are not represented, so
-  composite agricultural goods show the base duty only; and duties that depend on conditions, such as most
-  company-specific anti-dumping rates, have no duty text. The snapshot is loaded by hand, with no daily updates.
+  composite agricultural goods show the base duty only; and conditional duties, such as company-specific
+  anti-dumping rates, are shown as text but never evaluated, so the clerk decides which rate applies. The
+  snapshot is loaded by hand, with no daily updates.
 
 Roadmap, in order of customer value: drafted bilingual shipper queries with send tracking; line version
 history and audit export; CN-8 classification; TARIC-10 lookup (duty, anti-dumping, certificates);

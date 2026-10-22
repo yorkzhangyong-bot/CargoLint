@@ -29,7 +29,7 @@ Measured on the 2026-10-01 extract, the full load takes about 20 s. The result i
 
 **Primary Dependencies**: `lxml` (already a dependency) for streaming XML; standard library `gzip`, `json`, `subprocess`, `tempfile`, `re`; the GnuPG 2.4 command-line tool, which ships with Git for Windows, for signature checks — a new system dependency (Complexity Tracking #1). No new Python package.
 
-**Storage**: input `data/raw/taric/` (six `*.xml.gz.pgp` files, git-ignored); output `data/taric.jsonl` (generated, about 56 MB, git-ignored, replaced atomically); public key copy `data/Tulltaxan_Fildistribution.asc` (committed); mismatch log `store/logs/taric-cn8-mismatches-<date>.txt`. No change to `store/chroma`, `store/chroma-bti`, `store/bm25.pkl` or `data/nomenclature_2026.jsonl`.
+**Storage**: input `data/raw/taric/` (six `*.xml.gz.pgp` files, git-ignored); output `data/taric.jsonl` (generated, about 57 MB, git-ignored, replaced atomically); public key copy `data/Tulltaxan_Fildistribution.asc` (committed); mismatch log `store/logs/taric-cn8-mismatches-<date>.txt`. No change to `store/chroma`, `store/chroma-bti`, `store/bm25.pkl` or `data/nomenclature_2026.jsonl`.
 
 **Testing**: pytest, offline.
 - **Parser tests** use plain fixture XML.

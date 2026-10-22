@@ -3,7 +3,7 @@
   "snapshot_date": "2026-10-01",
   "suffix80_codes": 11,
   "declarable_codes": 5,
-  "measure_records": 10,
+  "measure_records": 12,
   "cn8_mismatches": 1,
   "dropped_meursing": 3,
   "dropped_national_code": 1,
@@ -12,6 +12,6 @@
     "73181595",
     "96170000"
   ],
-  "fixture_key_fingerprint": "F09BA50A37B92B454487D6658CBC0D5EDE2C0531",
-  "other_key_fingerprint": "F16C5FF4AF545513BB554E3739292127CE4B796F"
+  "fixture_key_fingerprint": "6B6E1545A4CF5FA085D04D4DC760D63C177D6568",
+  "other_key_fingerprint": "E510A34F56F044D71E5913C03550E846B9D93049"
 }

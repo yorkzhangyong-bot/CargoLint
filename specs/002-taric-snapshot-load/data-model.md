@@ -61,7 +61,7 @@ A non-national measure valid on D, not suspended by a partial temporary stop cov
 | trade_movement | `import`, `export` or `both` | from the measure type (research R-07) |
 | geo_area | string | geographical area id, for example `CN`, `1011` |
 | additional_code | string or null | additional code type + id, for example `C999`; null when the measure has none (FR-009, clarification Q1) |
-| duty | string | rendered duty expression (research R-08); `""` when the measure has no components |
+| duty | string | display text, never evaluated (research R-08): the duty components, then any conditional duties, for example `39.6 % with anti-dumping/countervailing document D008; otherwise 86.5 %`; `""` when the measure has neither |
 | regulation_id | string | generating regulation id |
 | regulation_ref | string | `OJ {journal}, p. {page} ({published})`; `""` when the regulation file has no such record |
 | valid_from | date | measure start date |
@@ -123,4 +123,4 @@ App (per server process): at start `kb.taric` becomes a TaricStore, or `None` wh
 | Ended by their regulation (open-ended, research R-04), not stored | 103,738 |
 | Dropped: Meursing table / on a national-only code (research R-14) | 23,184 / 1 |
 | CN-8 mismatches | 105 (chapters 98 and 99) |
-| File size and lines | 55.8 MB, 184,321 lines |
+| File size and lines | 57.3 MB, 184,321 lines |
