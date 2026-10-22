@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<export xmlns="http://www.arcticgroup.se/tariff/arctictariff/export" xmlns:at="http://www.arcticgroup.se/tariff/arctictariff/export">
+	<id>11111111-2222-4333-8444-555555555555</id>
+	<exportType>MeasureTypeObject</exportType>
+	<parameters>
+		<queryDateStart>2014-01-01</queryDateStart>
+	</parameters>
+	<items>
+		<measureType at:national="0" at:dateStart="1972-01-01" at:tradeMovementCode="0" at:measureType="103"><measureTypeDescription at:description="Third country duty" at:languageId="EN" at:national="0"/><measureTypeDescription at:description="Svensk text" at:languageId="SV" at:national="0"/></measureType>
+		<measureType at:national="0" at:dateStart="1972-01-01" at:tradeMovementCode="0" at:measureType="142"><measureTypeDescription at:description="Tariff preference" at:languageId="EN" at:national="0"/><measureTypeDescription at:description="Svensk text" at:languageId="SV" at:national="0"/></measureType>
+		<measureType at:national="0" at:dateStart="1972-01-01" at:tradeMovementCode="0" at:measureType="552"><measureTypeDescription at:description="Definitive anti-dumping duty" at:languageId="EN" at:national="0"/><measureTypeDescription at:description="Svensk text" at:languageId="SV" at:national="0"/></measureType>
+		<measureType at:national="0" at:dateStart="1972-01-01" at:tradeMovementCode="1" at:measureType="478"><measureTypeDescription at:description="Export authorization (Dual use)" at:languageId="EN" at:national="0"/><measureTypeDescription at:description="Svensk text" at:languageId="SV" at:national="0"/></measureType>
+		<measureType at:national="0" at:dateStart="1972-01-01" at:tradeMovementCode="0" at:measureType="760"><measureTypeDescription at:description="Import control" at:languageId="EN" at:national="0"/><measureTypeDescription at:description="Svensk text" at:languageId="SV" at:national="0"/></measureType>
+		<measureType at:national="0" at:dateStart="1972-01-01" at:tradeMovementCode="2" at:measureType="483"><measureTypeDescription at:description="Declaration of subheading submitted to legal restrictions (unit price)" at:languageId="EN" at:national="0"/><measureTypeDescription at:description="Svensk text" at:languageId="SV" at:national="0"/></measureType>
+		<measureType at:national="0" at:dateStart="1972-01-01" at:tradeMovementCode="0" at:measureType="672"><measureTypeDescription at:description="Amount of additional duty on sugar" at:languageId="EN" at:national="0"/><measureTypeDescription at:description="Svensk text" at:languageId="SV" at:national="0"/></measureType>
+		<measureType at:national="0" at:dateStart="1972-01-01" at:tradeMovementCode="0" at:measureType="673"><measureTypeDescription at:description="Amount of additional duty on flour" at:languageId="EN" at:national="0"/><measureTypeDescription at:description="Svensk text" at:languageId="SV" at:national="0"/></measureType>
+		<measureType at:national="0" at:dateStart="1972-01-01" at:tradeMovementCode="0" at:measureType="674"><measureTypeDescription at:description="Agricultural component" at:languageId="EN" at:national="0"/><measureTypeDescription at:description="Svensk text" at:languageId="SV" at:national="0"/></measureType>
+		<measureType at:national="1" at:dateStart="1972-01-01" at:tradeMovementCode="0" at:measureType="SEALK"><measureTypeDescription at:description="Alkoholskatt" at:languageId="EN" at:national="1"/><measureTypeDescription at:description="Svensk text" at:languageId="SV" at:national="1"/></measureType>
+	</items>
+</export>

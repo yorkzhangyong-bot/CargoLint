@@ -42,6 +42,16 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 RETRIEVAL_K = 6
 RRF_K = 60
 
+# TARIC snapshot (feature 002): digits 9-10 and measures, never embedded or indexed
+TARIC_RAW_DIR = DATA_DIR / "raw" / "taric"
+TARIC_SNAPSHOT = DATA_DIR / "taric.jsonl"
+TARIC_KEY = DATA_DIR / "Tulltaxan_Fildistribution.asc"
+TARIC_KEY_FINGERPRINT = "410160CE25CEC2FF322784E7302AC3C1D0E3E1C9"   # Swedish Customs "Taric Fildistribution" key
+TARIC_OBJECTS = ("GoodsNomenclature", "Measure", "MeasureType", "GeographicalArea", "DutyExpression", "Regulation")
+TARIC_SCHEMA = 1
+TARIC_LOG_DIR = STORE_DIR / "logs"
+GPG_ENV = "CARGOLINT_GPG"            # optional full path to gpg
+
 
 @dataclass(frozen=True)
 class Settings:

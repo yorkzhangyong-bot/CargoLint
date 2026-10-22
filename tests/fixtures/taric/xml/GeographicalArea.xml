@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<export xmlns="http://www.arcticgroup.se/tariff/arctictariff/export" xmlns:at="http://www.arcticgroup.se/tariff/arctictariff/export">
+	<id>11111111-2222-4333-8444-555555555555</id>
+	<exportType>GeographicalAreaObject</exportType>
+	<parameters>
+		<queryDateStart>2014-01-01</queryDateStart>
+	</parameters>
+	<items>
+		<geographicalArea at:geographicalAreaId="1011" at:national="0" at:SID="400" at:dateStart="1984-01-01"/>
+		<geographicalArea at:geographicalAreaId="CN" at:national="0" at:SID="439" at:dateStart="1984-01-01"/>
+		<geographicalArea at:geographicalAreaId="US" at:national="0" at:SID="103" at:dateStart="1984-01-01"/>
+		<geographicalArea at:geographicalAreaId="SE-NAT" at:national="1" at:SID="-10013" at:dateStart="1984-01-01"/>
+	</items>
+</export>

@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<export xmlns="http://www.arcticgroup.se/tariff/arctictariff/export" xmlns:at="http://www.arcticgroup.se/tariff/arctictariff/export">
+	<id>11111111-2222-4333-8444-555555555555</id>
+	<exportType>RegulationObject</exportType>
+	<parameters>
+		<queryDateStart>2014-01-01</queryDateStart>
+	</parameters>
+	<items>
+		<baseRegulation at:datePublished="1987-09-07" at:officialJournalId="L 256" at:journalPage="1" at:regulationId="R8726580" at:regulationRoleType="1" at:national="0" at:dateStart="1988-01-01"/>
+		<baseRegulation at:datePublished="2022-02-17" at:effectiveEndDate="2027-02-17" at:officialJournalId="L 36" at:journalPage="1" at:regulationId="R2201910" at:regulationRoleType="3" at:national="0" at:dateStart="2022-02-18"/>
+		<baseRegulation at:datePublished="2021-01-01" at:effectiveEndDate="2026-06-30" at:officialJournalId="L 1" at:journalPage="1" at:regulationId="R9000010" at:regulationRoleType="1" at:national="0" at:dateStart="2021-01-01"/>
+		<modificationRegulation at:baseRegulationId="R8726580" at:baseRegulationRoleType="1" at:modificationRegulationId="R2400010" at:modificationRegulationRoleType="4" at:datePublished="2024-01-15" at:officialJournalId="L 100" at:journalPage="5" at:national="0" at:dateStart="2024-01-16"/>
+		<fullTemporaryStopRegulation at:officialJournalId="L 297" at:journalPage="1" at:ftsRegulationId="R9500010" at:ftsRegulationRoleType="8" at:national="0" at:datePublished="1995-12-09" at:dateStart="1995-11-22"><fullTemporaryStopRegulationAction at:stoppedRegulationId="R9000020" at:stoppedRegulationRoleType="1" at:national="0"/></fullTemporaryStopRegulation>
+		<baseRegulation at:regulationId="22156ALK" at:regulationRoleType="1" at:national="1" at:dateStart="2022-01-01"/>
+	</items>
+</export>
