@@ -245,7 +245,7 @@ def write_sources_md(meta: dict[str, Any], rules: RuleSet, demo: bool) -> None:
               f"- Nomenclature chunks: {meta.get('nomenclature_chunks')}; BTI rulings in the document store: {meta.get('bti_rulings')}"
               + (" (demo subset)" if demo else "") + ".", "",
               "EU data reused under the Commission reuse policy (Decision 2011/833/EU, CC BY 4.0). Source: European Commission."]
-    SOURCES_MD.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    SOURCES_MD.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     log(f"wrote {SOURCES_MD.name}")
 
 
@@ -301,8 +301,9 @@ def load_taric(folder: Path, force: bool = False) -> int:
         return 1
     try:
         previous = read_snapshot_header(TARIC_SNAPSHOT)
-    except TaricFileError:
-        previous = {"snapshot_date": "(unreadable file)"}
+    except TaricFileError as exc:                                     # an older format or a broken file: never a skip
+        log(f"taric: {_shown(TARIC_SNAPSHOT)} will be rewritten: {exc}")
+        previous = {"snapshot_date": "(older format or unreadable)"}
     if previous and previous["snapshot_date"] == extract.snapshot_date.isoformat() and not force:   # FR-014
         print(f"TARIC snapshot {previous['snapshot_date']} is already loaded in {_shown(TARIC_SNAPSHOT)}; nothing changed. "
               "Use --force to rewrite it.")
@@ -313,11 +314,12 @@ def load_taric(folder: Path, force: bool = False) -> int:
     except ExtractError as exc:
         print(f"TARIC load refused: {exc}. Nothing was written.", file=sys.stderr)
         return 1
-    log(f"taric: parsed in {time.time() - t0:.0f} s; {len(snapshot.geo_areas)} EU geographical areas")
+    log(f"taric: parsed in {time.time() - t0:.0f} s; {len(snapshot.areas)} EU geographical areas")
     for reason, n in snapshot.dropped.items():
         log(f"taric: dropped {n:,} measure{'' if n == 1 else 's'} ({reason})")
     register_tmp = SOURCES_MD.with_name(SOURCES_MD.name + ".tmp")   # built from the new record before the swap (FR-013)
-    register_tmp.write_text(_register_with_taric_row(taric_sources_row(asdict(snapshot.header), folder)), encoding="utf-8")
+    register_tmp.write_text(_register_with_taric_row(taric_sources_row(asdict(snapshot.header), folder)), encoding="utf-8",
+                            newline="\n")
     try:
         write_snapshot(snapshot, TARIC_SNAPSHOT)
     except BaseException:
@@ -329,6 +331,9 @@ def load_taric(folder: Path, force: bool = False) -> int:
     print(f"TARIC snapshot {h.snapshot_date} · batch {h.batch_id} · export {h.export_id}")
     print(f"{len(h.source_files)} files verified with key {TARIC_KEY_FINGERPRINT}: {', '.join(h.source_files)}")
     print(f"code records {h.goods_records:,} ({declarable:,} declarable) · measure records {h.measure_records:,}")
+    print(f"area names {sum(1 for a in snapshot.areas if a.name):,} · "                      # feature 003, FR-004
+          f"group memberships {sum(len(a.member_of) for a in snapshot.areas):,} · "
+          f"measures with excluded areas {sum(1 for m in snapshot.measures if m.excluded_areas):,}")
     print(f"CN-8 mismatches {h.cn8_mismatches:,} → {_shown(snapshot.log_path)}")
     print(f"replaced snapshot {previous['snapshot_date']}" if previous else "new snapshot")
     print(f"wrote {_shown(TARIC_SNAPSHOT)} ({TARIC_SNAPSHOT.stat().st_size / 1e6:.1f} MB) in {time.time() - t0:.0f} s")

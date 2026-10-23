@@ -42,7 +42,9 @@ streamlit run app.py           # http://localhost:8501
 - Tests first for guardrail code; unit tests must run offline. Keep `pytest -q` green after every change.
 - Commit and push only when asked.
 - Dev loop: the running Streamlit server does not reload edits to `ui/*.py`; restart it before verifying
-  in the browser. Source files use CRLF line endings.
+  in the browser. Most files use LF line endings; `app.py`, `tools/parse_packing_list.py`, `ui/chat.py`,
+  `ui/detail.py`, `ui/review.py`, `ui/upload.py` and some test, fixture and data files use CRLF. Keep each
+  file's line endings when editing.
 
 ## Working guidelines
 

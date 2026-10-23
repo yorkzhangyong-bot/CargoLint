@@ -1,12 +1,14 @@
-"""SC-001 acceptance aid (feature 002, task T036): what `lookup_taric` returns for the 20 acceptance codes, to compare
-by hand with EZT-online on the snapshot date.
+"""SC-001 acceptance aid (feature 002, task T036; updated by feature 003, task T028): what `lookup_taric` returns for
+the 20 acceptance codes, to compare by hand with EZT-online on the snapshot date.
 
     python tests/eval/taric_acceptance.py                                            # full detail per code
     python tests/eval/taric_acceptance.py --markdown tests/eval/taric_acceptance.md  # (re)write the fill-in table
+    python tests/eval/taric_acceptance.py --counts                                   # feature 003's real-data checks
 
-Measures the lookup leaves out by design (measures for EU country groups that contain China, research R-13) are read
-straight from data/taric.jsonl and listed separately, so the comparison can mark them as the known gap.
-Rewriting the Markdown file overwrites any findings already filled in.
+The lookup returns the import measures for China, for every EU country group that contains China, and erga omnes,
+leaving out measures that exclude China and measure type 566 (feature 003). The EZT-online check runs offline against
+the rows stored in taric_acceptance_ezt.json and compares every geographical area found on either side, so a new
+mismatch is listed, not hidden. Rewriting the Markdown file overwrites any findings already filled in.
 """
 from __future__ import annotations
 
@@ -19,27 +21,20 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-from rag.taric import TaricMeasure, TaricStore, TaricSubdivision  # noqa: E402
+from rag.taric import (TaricAreaRecord, TaricCodeRecord, TaricMeasure, TaricMeasureRecord, TaricStore,  # noqa: E402
+                       TaricSubdivision, line_to_record)
 
 SNAPSHOT = ROOT / "data" / "taric.jsonl"
 AD_TYPES = {"551", "552", "553", "554", "555"}
-# EU country groups that contain China on 2026-10-01 (GeographicalArea memberships, research R-13)
-CHINA_GROUPS = {
-    "1005": "statistical surveillance", "1008": "all third countries", "1030": "GSP eligible countries",
-    "2500": "WTO members", "3100": "export restriction, protective equipment", "3200": "export restrictions, SARS-CoV",
-    "3300": "export restrictions, SARS-CoV", "4002": "phytosanitary G014", "4003": "phytosanitary G016",
-    "4011": "phytosanitary, Asia", "4013": "phytosanitary CN, KR, KP, RU, TW, VN", "5001": "safeguard measures",
-    "5005": "safeguard measures", "5007": "safeguard, ferro-alloying elements", "5009": "safeguard, GOES",
-}
 # (CN-8, what the row covers): 12 subdivided, 6 with anti-dumping for China, 8 unsubdivided, 7 with group measures
 # for China; every labelled subheading has at least one row.
 CODES = [
     ("39249000", "subdivided · anti-dumping CN"), ("39269050", "unsubdivided"),
-    ("39269097", "subdivided · group gap"), ("42022100", "subdivided"), ("61091000", "subdivided"),
-    ("62034231", "unsubdivided"), ("64041100", "unsubdivided"), ("73181520", "unsubdivided · group gap"),
-    ("73181542", "subdivided · anti-dumping CN · group gap"), ("73181558", "subdivided · anti-dumping CN · group gap"),
-    ("73181568", "subdivided · anti-dumping CN · group gap"), ("73181582", "subdivided · anti-dumping CN · group gap"),
-    ("73181595", "subdivided · anti-dumping CN · group gap"), ("84529000", "unsubdivided"), ("85183000", "subdivided"),
+    ("39269097", "subdivided · group 1008"), ("42022100", "subdivided"), ("61091000", "subdivided"),
+    ("62034231", "unsubdivided"), ("64041100", "unsubdivided"), ("73181520", "unsubdivided · group 1008"),
+    ("73181542", "subdivided · anti-dumping CN · group 1008"), ("73181558", "subdivided · anti-dumping CN · group 1008"),
+    ("73181568", "subdivided · anti-dumping CN · group 1008"), ("73181582", "subdivided · anti-dumping CN · group 1008"),
+    ("73181595", "subdivided · anti-dumping CN · group 1008"), ("84529000", "unsubdivided"), ("85183000", "subdivided"),
     ("94052140", "unsubdivided"), ("94052190", "subdivided"), ("95030075", "unsubdivided"),
     ("95030095", "subdivided"), ("96170000", "unsubdivided"),
 ]
@@ -49,38 +44,15 @@ def spaced(code: str) -> str:
     return " ".join([code[:4], code[4:6], code[6:8]] + ([code[8:]] if len(code) > 8 else []))
 
 
-def load_raw() -> tuple[dict[str, str | None], dict[str, list[dict]]]:
-    parent: dict[str, str | None] = {}
-    measures: dict[str, list[dict]] = defaultdict(list)
-    with SNAPSHOT.open(encoding="utf-8") as f:
-        next(f)
-        for line in f:
-            r = json.loads(line)
-            if r["kind"] == "goods_nomenclature":
-                parent[r["code"]] = r["parent"]
-            else:
-                measures[r["code"]].append(r)
-    return parent, measures
-
-
-def group_gap(code: str, parent: dict[str, str | None], measures: dict[str, list[dict]]) -> list[str]:
-    """Import measures for EU groups that contain China, recorded on the code or above it: not returned by the lookup."""
-    found, c = set(), code
-    while c:
-        found |= {f"{m['measure_type']} {m['measure_type_label']} · {m['geo_area']}" for m in measures.get(c, ())
-                  if m["geo_area"] in CHINA_GROUPS and m["trade_movement"] in ("import", "both")}
-        c = parent.get(c)
-    return sorted(found)
-
-
 def short(text: str, limit: int = 90) -> str:
     text = " ".join(text.split())
     return text if len(text) <= limit else text[:limit - 1].rstrip() + "…"
 
 
 def measure_line(m: TaricMeasure) -> str:
+    area = f"{m.geo_area} {m.geo_area_name}" if m.geo_area_name else m.geo_area
     code = f" · {m.additional_code}" if m.additional_code else ""
-    return f"{m.measure_type} {m.measure_type_label} · {m.geo_area}{code} · {m.duty or 'no duty'}"
+    return f"{m.measure_type} {m.measure_type_label} · {area}{code} · {m.duty or 'no duty'}"
 
 
 def by_scope(subs: list[TaricSubdivision], items: list[set[str]]) -> list[tuple[str, list[str]]]:
@@ -92,7 +64,7 @@ def by_scope(subs: list[TaricSubdivision], items: list[set[str]]) -> list[tuple[
     return scopes + [(f"…{s.code[8:]}", sorted(own - common)) for s, own in zip(subs, items) if own - common]
 
 
-def measure_cell(subs: list[TaricSubdivision], gaps: list[set[str]]) -> str:
+def measure_cell(subs: list[TaricSubdivision]) -> str:
     def lines(s: TaricSubdivision) -> set[str]:
         plain = {measure_line(m) for m in s.measures if m.measure_type not in AD_TYPES}
         ad = defaultdict(int)
@@ -103,10 +75,6 @@ def measure_cell(subs: list[TaricSubdivision], gaps: list[set[str]]) -> str:
     out = []
     for scope, items in by_scope(subs, [lines(s) for s in subs]):
         out += ([f"*{scope}*"] if scope else []) + [f"· {i}" for i in items]
-    gap = by_scope(subs, gaps) if any(gaps) else []
-    if gap:
-        out.append("**not returned, group gap:**")
-        out += [f"· {i}" + (f" ({scope})" if scope not in ("", "all") else "") for scope, items in gap for i in items]
     return "<br>".join(out).replace("|", "/")
 
 
@@ -114,6 +82,7 @@ def measure_cell(subs: list[TaricSubdivision], gaps: list[set[str]]) -> str:
 EZT = Path(__file__).with_name("taric_acceptance_ezt.json")
 UNIT_CODES = {"100 kg": "DTN", "kg": "KGM", "1000 kg": "TNE", "l": "LTR", "hl": "HLT", "m³": "MTQ", "m²": "MTK", "p/st": "NAR"}
 COND = "conditions"
+SHOWN_AREAS = ("CN", "1011", "1008")                # areas with a column of their own; any other area goes in the last
 
 
 def norm_ours(duty: str) -> str:
@@ -179,18 +148,17 @@ def ezt_check(store: TaricStore, ezt: dict) -> tuple[list[str], dict[tuple[str, 
                 "only in EZT-online: " + ", ".join(sorted(set(theirs10) - set(ours10))) if set(theirs10) - set(ours10) else "",
                 "only in CargoLint: " + ", ".join(sorted(set(ours10) - set(theirs10))) if set(ours10) - set(theirs10) else "") if x)
         per = {s.code: entry["measures"].get(s.code, {"rows": []})["rows"] for s in subs}
-        cn = [compare(s.measures, per[s.code], "CN") for s in subs]
-        eo = [compare(s.measures, per[s.code], "1011") for s in subs]
-        g1008 = sorted({f"{r['mn']} {r['type']}" for rs in per.values() for r in rs if r["geo"] == "1008"})
+        areas = {m.geo_area for s in subs for m in s.measures} | {r["geo"] for rs in per.values() for r in rs}
+        results = {a: [compare(s.measures, per[s.code], a) for s in subs] for a in sorted(areas | set(SHOWN_AREAS))}
         for rs in per.values():
             for r in rs:
                 if r["geo"] == "CN" and r["zc"] != "-":
                     company = re.sub(r"^[\d.,]+\s*%\s*", "", r["duty"].replace("Weitere Informationen siehe Bedingungen", "").strip())
                     companies[(r["mn"], r["zc"])] = "Andere (other companies)" if company == "Andere" else company
-        clean = theirs10 == ours10 and not any(r["only_ours"] or r["only_ezt"] or r["differs"] for r in cn + eo)
-        rows.append(f"| {i} | {spaced(cn8)} | {sub_cell} | {area_cell(cn)} | {area_cell(eo)} | "
-                    f"{'<br>'.join(g1008) + '<br>(not in CargoLint: known gap)' if g1008 else 'none'} | "
-                    f"{'match' + (' apart from the 1008 gap' if g1008 else '') if clean else 'differences, see row'} |")
+        others = "<br>".join(f"{a}: {area_cell(results[a])}" for a in sorted(areas - set(SHOWN_AREAS))) or "none"
+        clean = theirs10 == ours10 and not any(r["only_ours"] or r["only_ezt"] or r["differs"] for rs in results.values() for r in rs)
+        rows.append(f"| {i} | {spaced(cn8)} | {sub_cell} | " + " | ".join(area_cell(results[a]) for a in SHOWN_AREAS) +
+                    f" | {others} | {'match' if clean else 'differences, see row'} |")
     return rows, companies
 
 
@@ -214,7 +182,53 @@ def sample_rows(samples: list[dict]) -> list[str]:
     return out
 
 
-def details(store: TaricStore, parent, measures) -> None:
+# --------------------------------------------------------------------------- feature 003's real-data checks
+def counts(store: TaricStore, origin: str = "CN") -> None:
+    """The groups containing the origin with their member counts (research R-05), and the measures that the lookup must
+    never return for it: erga omnes and group measures that exclude it, and type 566 (FR-006, FR-007, research R-09)."""
+    member_of: dict[str, tuple[str, ...]] = {}
+    names: dict[str, str] = {}
+    measures: list[TaricMeasureRecord] = []
+    cn8s: set[str] = set()
+    with SNAPSHOT.open(encoding="utf-8") as f:
+        next(f)
+        for line in f:
+            r = line_to_record(line)
+            if isinstance(r, TaricAreaRecord):
+                member_of[r.geo_area], names[r.geo_area] = r.member_of, r.name
+            elif isinstance(r, TaricCodeRecord):
+                if r.declarable:
+                    cn8s.add(r.cn8)
+            else:
+                measures.append(r)
+    groups: set[str] = set()
+    todo = [origin]
+    while todo:
+        for g in member_of.get(todo.pop(), ()):
+            if g not in groups:
+                groups.add(g)
+                todo.append(g)
+    members: dict[str, int] = defaultdict(int)
+    for area_groups in member_of.values():
+        for g in area_groups:
+            members[g] += 1
+    returned = {m.sid for cn8 in cn8s for s in store.lookup_taric(cn8, origin) for m in s.measures}
+    imports = [m for m in measures if m.trade_movement != "export"]
+    erga = {m.sid for m in imports if m.geo_area == "1011" and origin in m.excluded_areas}
+    grouped = {m.sid for m in imports if m.geo_area in groups - {"1011"} and origin in m.excluded_areas}
+    statistic = {m.sid for m in measures if m.measure_type == "566"}
+    print(f"Groups containing {origin} on {store.snapshot.snapshot_date}: {len(groups - {'1011'})} besides erga omnes, "
+          f"{len(groups)} with 1011")
+    for g in sorted(groups):
+        print(f"  {g}  {members[g]:4} members  {names.get(g, '')}")
+    print(f"Erga omnes measures (import or both) excluding {origin}: {len(erga):,} · returned by the lookup: "
+          f"{len(erga & returned)}")
+    print(f"Measures of groups containing {origin} (import or both) excluding {origin}: {len(grouped):,} · returned by the "
+          f"lookup: {len(grouped & returned)}")
+    print(f"Type-566 records in the file: {len(statistic):,} · returned by the lookup for {origin}: {len(statistic & returned)}")
+
+
+def details(store: TaricStore) -> None:
     for cn8, covers in CODES:
         subs = store.lookup_taric(cn8)
         print(f"\n=== {spaced(cn8)} · {covers}")
@@ -222,31 +236,30 @@ def details(store: TaricStore, parent, measures) -> None:
             print(f"  {s.code}  {s.description or '(the CN-8 line itself)'}")
             for m in s.measures:
                 print(f"      {measure_line(m)}  [on {m.recorded_on}; {m.regulation_ref or m.regulation_id}]")
-            for g in group_gap(s.code, parent, measures):
-                print(f"      not returned (group gap): {g} ({CHINA_GROUPS[g.rsplit(' · ', 1)[1]]})")
 
 
-def markdown(store: TaricStore, parent, measures) -> str:
+def markdown(store: TaricStore) -> str:
     head = store.snapshot
     rows = []
     appendix: dict[tuple[str, str, str, str], dict[str | None, set[str]]] = defaultdict(lambda: defaultdict(set))
     for i, (cn8, covers) in enumerate(CODES, 1):
         subs = store.lookup_taric(cn8)
-        gaps = [set(group_gap(s.code, parent, measures)) for s in subs]
         for s in subs:
             for m in s.measures:
                 if m.measure_type in AD_TYPES:
                     appendix[(m.regulation_id, m.regulation_ref, m.measure_type, m.measure_type_label)][m.additional_code].add(m.duty)
         enter = f"A: `{cn8}`<br>B: " + ", ".join(f"`{s.code}`" for s in subs)
         subdivisions = "<br>".join(f"{s.code} {short(s.description) or '(the CN-8 line itself)'}" for s in subs).replace("|", "/")
-        rows.append(f"| {i} | {spaced(cn8)} | {covers} | {enter} | {subdivisions} | {measure_cell(subs, gaps)} |  |")
+        rows.append(f"| {i} | {spaced(cn8)} | {covers} | {enter} | {subdivisions} | {measure_cell(subs)} |  |")
     out = [
         "# SC-001 acceptance: TARIC lookup against EZT-online",
         "",
         f"Snapshot {head.snapshot_date}, batch `{head.batch_id}`. Generated by `python tests/eval/taric_acceptance.py --markdown "
         "tests/eval/taric_acceptance.md`; regenerating overwrites the findings. CargoLint shows only what "
-        "`lookup_taric(cn8, origin=\"CN\")` returns: import measures for China (CN) and erga omnes (1011), recorded on the "
-        "subdivision or any level above it. Duty texts are display text; conditions are shown, never evaluated.",
+        "`lookup_taric(cn8, origin=\"CN\")` returns: import measures for China (CN), for every EU country group that "
+        "contains China (such as 1008, all third countries) and erga omnes (1011), recorded on the subdivision or any level "
+        "above it; measures that exclude China and measure type 566 are left out (feature 003). Duty texts are display "
+        "text; conditions are shown, never evaluated.",
         "",
         "## EZT-online steps (the site works in sessions, so there are no stable per-code links)",
         "",
@@ -266,13 +279,13 @@ def markdown(store: TaricStore, parent, measures) -> str:
         "is the measure type and **ZC** the additional code;",
         "   - where the duty reads \"Weitere Informationen siehe Bedingungen\", open **Bedingungen** (company-specific "
         "anti-dumping rates with document D008);",
-        "   - mark the `1008` (all third countries) rows separately too. They and the other groups that contain China (`1005`, `1030`, `2500`, `4002`, `4003`, `4011`, `4013`, "
-        "`5001`, `5005`, `5007`, `5009`, `3100`, `3200`, `3300`) are the known gap: expected in EZT-online, missing in "
-        "CargoLint;",
+        "   - mark the `1008` (all third countries) rows separately too, and the rows of any other group that contains "
+        "China (`1005`, `1030`, `2500`, `4002`, `4003`, `4011`, `4013`, `5001`, `5005`, `5007`, `5009`, `3100`, `3200`, "
+        "`3300`); CargoLint returns them as well;",
         "   - rows for other countries and groups, such as preferences 142 or 106 for TR, AD and SM, are outside the "
         "lookup.",
         "",
-        "In **Finding**, write `match`, `mismatch: <what differs>` or `gap: <the expected known-limitation row>`.",
+        "In **Finding**, write `match` or `mismatch: <what differs>`.",
         "",
         "| # | CN-8 | Covers | EZT-online: enter | CargoLint subdivisions | CargoLint measures for China (type · area · duty) | Finding |",
         "|---|---|---|---|---|---|---|",
@@ -293,11 +306,12 @@ def markdown(store: TaricStore, parent, measures) -> str:
             f"Each query used maßgeb. Zeitpunkt {ezt['date']} and Ursprungsland {ezt['origin']}. Subdivisions compare the first "
             "10 digits of EZT-online's 11-digit end lines. Measures compare type, additional code and duty; a duty shown as "
             "\"Weitere Informationen siehe Bedingungen\" counts as a match for a CargoLint conditional duty or a control without a "
-            "duty, but its rates are not compared. The `1011` (erga omnes) and `1008` (all third countries) rows are kept "
-            "apart from the `CN` rows. Raw rows: `tests/eval/taric_acceptance_ezt.json`.",
+            "duty, but its rates are not compared. Rows are compared per geographical area: `CN`, `1011` (erga omnes), "
+            "`1008` (all third countries), and any other area found on either side in the last area column. The stored rows "
+            "are compared offline with the snapshot above. Raw rows: `tests/eval/taric_acceptance_ezt.json`.",
             "",
-            "| # | CN-8 | Subdivisions (first 10 digits) | CN rows | 1011 rows (erga omnes) | 1008 rows (all third countries) | Result |",
-            "|---|---|---|---|---|---|---|",
+            "| # | CN-8 | Subdivisions (first 10 digits) | CN rows | 1011 rows (erga omnes) | 1008 rows (all third countries) | Other areas | Result |",
+            "|---|---|---|---|---|---|---|---|",
             *check,
             "",
             "Sample conditions, read from EZT-online's **Bedingungen** page and rewritten in CargoLint's wording:",
@@ -319,16 +333,18 @@ def markdown(store: TaricStore, parent, measures) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser(description="SC-001 acceptance aid: lookup_taric results for the 20 acceptance codes")
     ap.add_argument("--markdown", type=Path, help="write the fill-in table to this file")
+    ap.add_argument("--counts", action="store_true", help="print feature 003's real-data checks for China")
     args = ap.parse_args()
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     store = TaricStore.from_jsonl(SNAPSHOT)
-    parent, measures = load_raw()
-    if args.markdown:
-        args.markdown.write_text(markdown(store, parent, measures), encoding="utf-8", newline="\n")
+    if args.counts:
+        counts(store)
+    elif args.markdown:
+        args.markdown.write_text(markdown(store), encoding="utf-8", newline="\n")
         print(f"wrote {args.markdown}")
     else:
-        details(store, parent, measures)
+        details(store)
     return 0
 
 

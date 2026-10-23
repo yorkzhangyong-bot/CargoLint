@@ -12,6 +12,10 @@
     "73181595",
     "96170000"
   ],
-  "fixture_key_fingerprint": "6B6E1545A4CF5FA085D04D4DC760D63C177D6568",
-  "other_key_fingerprint": "E510A34F56F044D71E5913C03550E846B9D93049"
+  "area_records": 9,
+  "area_names": 8,
+  "membership_records": 6,
+  "measures_with_exclusions": 2,
+  "fixture_key_fingerprint": "5286DF310BBE52DA37244824728FF9A1BA1483E2",
+  "other_key_fingerprint": "16C31153A87E4B807CA9497DAB69865159141BDC"
 }

@@ -1,5 +1,7 @@
-"""TARIC extract: file set, parsing, hierarchy, duty text and reconciliation (feature 002, research R-01 to R-09). No gpg needed."""
+"""TARIC extract: file set, parsing, hierarchy, duty text and reconciliation (feature 002, research R-01 to R-09); areas,
+names and memberships (feature 003, research R-01, R-02). No gpg needed."""
 import gzip
+import json
 import re
 from datetime import date
 from pathlib import Path
@@ -10,8 +12,8 @@ from agent.schemas import NomenclatureChunk
 from rag.nomenclature import NomenclatureIndex
 from rag.taric import TaricMeasureRecord
 from rag.taric_extract import (ExtractError, ExtractFile, ExtractSet, build_snapshot, check_export_ids, discover_extract,
-                               national_only_codes, parse_duty_expressions, parse_goods, parse_measure_types, parse_measures,
-                               parse_regulations, reconcile)
+                               national_only_codes, parse_duty_expressions, parse_geographical_areas, parse_goods,
+                               parse_measure_types, parse_measures, parse_regulations, reconcile)
 
 pytestmark = pytest.mark.unit
 
@@ -22,10 +24,16 @@ BATCH = "11111111-2222-4333-8444-555555555555"
 OTHER = "22222222-2222-4333-8444-555555555555"
 OBJECTS = ("GoodsNomenclature", "Measure", "MeasureType", "GeographicalArea", "DutyExpression", "Regulation")
 CN2026 = frozenset({"73181558", "73181595", "96170000"})
+EXPECTED = json.loads((FIX / "expected.json").read_text(encoding="utf-8"))
 
 
 def payload(obj: str, folder: str = "xml") -> bytes:
     return gzip.compress((FIX / folder / f"{obj}.xml").read_bytes())
+
+
+def document(*items: str) -> bytes:
+    """A gzipped export document holding the given record elements."""
+    return gzip.compress(f'<export xmlns="{NS}" xmlns:at="{NS}"><id>x</id><items>{"".join(items)}</items></export>'.encode())
 
 
 def name(obj: str, batch: str = BATCH, yymmdd: str = "261001") -> str:
@@ -61,6 +69,16 @@ def measure_list(ref):
 @pytest.fixture(scope="module")
 def measures(measure_list):
     return {m.sid: m for m in measure_list}
+
+
+@pytest.fixture(scope="module")
+def area_list():
+    return parse_geographical_areas(payload("GeographicalArea"), D)
+
+
+@pytest.fixture(scope="module")
+def areas(area_list):
+    return {a.geo_area: a for a in area_list}
 
 
 class TestDiscover:
@@ -113,6 +131,40 @@ class TestReferenceObjects:
     def test_a_payload_that_is_not_gzip_is_named(self):
         with pytest.raises(ExtractError, match="MeasureType"):
             check_export_ids({"MeasureType": (FIX / "xml" / "MeasureType.xml").read_bytes()})
+
+
+class TestGeographicalAreas:
+    def test_eu_areas_valid_on_d_are_kept_in_id_order(self, area_list):
+        # not stored: AN (ended before D) and SE-NAT (national)
+        assert [a.geo_area for a in area_list] == ["1008", "1011", "4000", "4013", "5001", "5002", "CN", "US", "XK"]
+
+    def test_the_english_name_of_the_description_period_valid_on_d(self, areas):
+        assert (areas["CN"].name, areas["1008"].name, areas["XK"].name) == ("China", "All third countries", "")
+
+    def test_only_eu_memberships_valid_on_d_are_kept_as_sorted_group_ids(self, areas):
+        # not kept: CN in 5001 (ended before D), in 5002 (starts after D) and in 4000 (a national membership)
+        assert areas["CN"].member_of == ("1008", "1011", "4013")
+        assert areas["US"].member_of == ("1008", "1011")
+        assert areas["4013"].member_of == ("4000",)
+        assert areas["1011"].member_of == ()
+
+    def test_a_membership_naming_no_eu_area_is_refused(self):
+        member = ('<geographicalArea at:geographicalAreaId="CN" at:national="0" at:SID="439" at:dateStart="1984-01-01">'
+                  '<geographicalAreaMembership at:SIDGeographicalAreaGroup="999" at:dateStart="2000-01-01" at:national="0"/>'
+                  '</geographicalArea>')
+        with pytest.raises(ExtractError, match=r"CN.*999"):
+            parse_geographical_areas(document(member), D)
+
+    def test_a_membership_of_a_group_not_valid_on_d_is_not_kept(self):
+        group = ('<geographicalArea at:geographicalAreaId="5000" at:national="0" at:SID="1" at:dateStart="1984-01-01" '
+                 'at:dateEnd="2020-12-31"/>')
+        member = ('<geographicalArea at:geographicalAreaId="CN" at:national="0" at:SID="2" at:dateStart="1984-01-01">'
+                  '<geographicalAreaMembership at:SIDGeographicalAreaGroup="1" at:dateStart="2000-01-01" at:national="0"/>'
+                  '</geographicalArea>')
+        assert [(a.geo_area, a.member_of) for a in parse_geographical_areas(document(group, member), D)] == [("CN", ())]
+
+    def test_the_snapshot_holds_the_areas(self, tmp_path):
+        assert len(snapshot(tmp_path).areas) == EXPECTED["area_records"]
 
 
 class TestGoods:
@@ -196,6 +248,20 @@ class TestMeasures:
             parse_measures(payload("Measure"), D, types, ref["expressions"], ref["regulations"])
 
 
+class TestExclusions:
+    """Feature 003, FR-002, research R-03: each measure's EU excluded areas, sorted and once each."""
+
+    def test_eu_excluded_areas_are_sorted_and_kept_once(self, measures):
+        assert measures[1001].excluded_areas == ("US",)            # its national exclusion of SE-NAT is ignored
+        assert measures[1006].excluded_areas == ("CN", "US")       # listed as US, CN and CN again
+
+    def test_measures_without_exclusions_get_an_empty_tuple(self, measures):
+        assert all(m.excluded_areas == () for sid, m in measures.items() if sid not in (1001, 1006))
+
+    def test_the_snapshot_counts_the_measures_with_exclusions(self, tmp_path):
+        assert sum(bool(m.excluded_areas) for m in snapshot(tmp_path).measures) == EXPECTED["measures_with_exclusions"]
+
+
 class TestUnusableMeasures:
     def test_codes_held_only_as_national_records(self):
         assert national_only_codes(payload("GoodsNomenclature")) == frozenset({"7318155899"})
@@ -224,7 +290,7 @@ class TestReconciliation:
     def test_the_count_goes_into_the_snapshot_record_and_the_log(self, tmp_path):
         snap = snapshot(tmp_path)
         h = snap.header
-        assert (h.schema, h.snapshot_date, h.batch_id, h.export_id) == (1, "2026-10-01", BATCH, BATCH)
+        assert (h.schema, h.snapshot_date, h.batch_id, h.export_id) == (2, "2026-10-01", BATCH, BATCH)
         assert h.source_files == tuple(name(o) for o in OBJECTS)
         assert (h.goods_records, h.measure_records, h.cn8_mismatches) == (11, 12, 1)
         assert re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", h.loaded_at)

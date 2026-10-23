@@ -11,8 +11,10 @@ import pytest
 
 import rag.loader as loader
 import rag.taric_extract as taric_extract
+from agent.config import TARIC_SCHEMA
 from rag.pgp import GpgNotFound, find_gpg
-from rag.taric import TaricSnapshotRecord, record_to_line
+from rag.taric import (TaricAreaRecord, TaricCodeRecord, TaricMeasureRecord, TaricSnapshotRecord, line_to_record,
+                       record_to_line)
 
 pytestmark = pytest.mark.integration
 
@@ -70,17 +72,19 @@ def taric(tmp_path, monkeypatch):
 class TestFirstLoad:
     def test_writes_the_snapshot_the_log_the_register_row_and_the_summary(self, taric, capsys):
         assert loader.main(["--taric"]) == 0
-        records = [json.loads(line) for line in taric.snapshot.read_text(encoding="utf-8").splitlines()]
-        header = records[0]
-        goods = [r for r in records if r["kind"] == "goods_nomenclature"]
-        measures = [r for r in records if r["kind"] == "measure"]
+        lines = taric.snapshot.read_text(encoding="utf-8").splitlines()
+        header = json.loads(lines[0])
+        records = [line_to_record(line) for line in lines[1:]]
+        areas = [r for r in records if isinstance(r, TaricAreaRecord)]
+        goods = [r for r in records if isinstance(r, TaricCodeRecord)]
+        measures = [r for r in records if isinstance(r, TaricMeasureRecord)]
         assert (header["kind"], header["snapshot_date"], header["batch_id"], header["export_id"]) == ("snapshot", "2026-10-01", BATCH, BATCH)
         assert header["source_files"] == [name(o) for o in OBJECTS]
         assert header["goods_records"] == len(goods) == EXPECTED["suffix80_codes"]       # all suffix-80 codes, parents included
-        assert sum(r["declarable"] for r in goods) == EXPECTED["declarable_codes"]
+        assert sum(r.declarable for r in goods) == EXPECTED["declarable_codes"]
         assert header["measure_records"] == len(measures) == EXPECTED["measure_records"]
         assert header["cn8_mismatches"] == EXPECTED["cn8_mismatches"]
-        assert len(records) == 1 + len(goods) + len(measures)
+        assert len(lines) == 1 + len(areas) + len(goods) + len(measures)
 
         out = capsys.readouterr().out
         assert f"TARIC snapshot 2026-10-01 · batch {BATCH} · export {BATCH}" in out
@@ -100,6 +104,31 @@ class TestFirstLoad:
         assert row.endswith(" | https://distr.tullverket.se/tulltaxan/ |")
         assert register[:7] + register[8:] == REGISTER.splitlines()
         assert not list(taric.snapshot.parent.glob("*.tmp"))
+
+    def test_the_areas_come_first_in_id_order_with_their_groups(self, taric, capsys):
+        """Feature 003, FR-001: the EU areas valid on D, right after the snapshot record and before the codes."""
+        assert loader.main(["--taric"]) == 0
+        records = [line_to_record(line) for line in taric.snapshot.read_text(encoding="utf-8").splitlines()[1:]]
+        n = EXPECTED["area_records"]
+        areas = records[:n]
+        assert all(isinstance(r, TaricAreaRecord) for r in areas) and isinstance(records[n], TaricCodeRecord)
+        assert [a.geo_area for a in areas] == sorted(a.geo_area for a in areas)
+        assert next(a for a in areas if a.geo_area == "CN").member_of == ("1008", "1011", "4013")
+        assert f"; {n} EU geographical areas" in capsys.readouterr().out
+
+    def test_measures_carry_their_exclusions_and_the_summary_counts_the_new_data(self, taric, capsys):
+        """Feature 003, FR-002 and FR-004."""
+        assert loader.main(["--taric"]) == 0
+        records = [line_to_record(line) for line in taric.snapshot.read_text(encoding="utf-8").splitlines()[1:]]
+        excluded = {r.sid: r.excluded_areas for r in records if isinstance(r, TaricMeasureRecord) and r.excluded_areas}
+        assert excluded == {1001: ("US",), 1006: ("CN", "US")}
+        assert (f"area names {EXPECTED['area_names']} · group memberships {EXPECTED['membership_records']} · "
+                f"measures with excluded areas {EXPECTED['measures_with_exclusions']}") in capsys.readouterr().out
+
+    def test_the_register_is_written_with_lf_line_endings(self, taric):
+        """Feature 003, T033: `write_text` would write CRLF on Windows."""
+        assert loader.main(["--taric"]) == 0
+        assert b"\r" not in taric.sources.read_bytes()
 
     def test_works_without_index_metadata_or_register(self, taric, tmp_path, monkeypatch):
         store = tmp_path / "empty-store"
@@ -157,6 +186,18 @@ class TestReruns:
         rows = [line for line in taric.sources.read_text(encoding="utf-8").splitlines() if line.startswith(TARIC_ROW)]
         assert len(rows) == 1 and "| snapshot 2026-11-01, batch " in rows[0]
 
+    def test_a_schema_1_snapshot_of_the_same_date_is_rewritten_without_force(self, taric, capsys):
+        """Feature 003, FR-003: an older format never causes a skip, and the run says why it rewrites the file."""
+        old = TaricSnapshotRecord(schema=1, snapshot_date="2026-10-01", batch_id=BATCH, export_id=BATCH,
+                                  source_files=tuple(name(o) for o in OBJECTS), loaded_at="2026-10-22T14:05:31Z",
+                                  goods_records=0, measure_records=0, cn8_mismatches=0)
+        taric.snapshot.write_text(record_to_line(old) + "\n", encoding="utf-8")
+        assert loader.main(["--taric"]) == 0
+        out = capsys.readouterr().out
+        assert "taric.jsonl will be rewritten: schema 1 is not supported (expected 2)" in out
+        assert "replaced snapshot (older format or unreadable)" in out
+        assert json.loads(taric.snapshot.read_text(encoding="utf-8").splitlines()[0])["schema"] == TARIC_SCHEMA
+
     def test_a_failed_rewrite_leaves_the_old_file_untouched(self, taric, monkeypatch):
         assert loader.main(["--taric"]) == 0
         before = (taric.snapshot.read_bytes(), taric.sources.read_bytes())
@@ -173,12 +214,12 @@ class TestReruns:
     def test_no_record_appears_twice_after_any_sequence_of_runs(self, taric):
         for argv in (["--taric"], ["--taric", "--force"], ["--taric"], ["--taric", "--force"]):
             assert loader.main(argv) == 0
-        records = [json.loads(line) for line in taric.snapshot.read_text(encoding="utf-8").splitlines()]
-        codes = [r["code"] for r in records if r["kind"] == "goods_nomenclature"]
-        sids = [r["sid"] for r in records if r["kind"] == "measure"]
+        records = [line_to_record(line) for line in taric.snapshot.read_text(encoding="utf-8").splitlines()]
+        codes = [r.code for r in records if isinstance(r, TaricCodeRecord)]
+        sids = [r.sid for r in records if isinstance(r, TaricMeasureRecord)]
         assert len(codes) == len(set(codes)) and len(sids) == len(set(sids))
-        assert [r["kind"] for r in records].count("snapshot") == 1
-        assert (records[0]["goods_records"], records[0]["measure_records"]) == (len(codes), len(sids))
+        assert [isinstance(r, TaricSnapshotRecord) for r in records].count(True) == 1
+        assert (records[0].goods_records, records[0].measure_records) == (len(codes), len(sids))
 
 
 def _replace(variant: str):
@@ -226,10 +267,11 @@ def test_a_missing_or_wrong_key_copy_stops_before_any_file_is_read(taric, monkey
 
 
 def test_the_full_build_register_gets_the_taric_row(taric, rules):
-    header = TaricSnapshotRecord(schema=1, snapshot_date="2026-10-01", batch_id=BATCH, export_id=BATCH,
+    header = TaricSnapshotRecord(schema=TARIC_SCHEMA, snapshot_date="2026-10-01", batch_id=BATCH, export_id=BATCH,
                                  source_files=tuple(name(o) for o in OBJECTS), loaded_at="2026-10-22T14:05:31Z",
                                  goods_records=11, measure_records=10, cn8_mismatches=1)
     taric.snapshot.write_text(record_to_line(header) + "\n", encoding="utf-8")
     loader.write_sources_md({"embedding_model": "m", "dimension": 16, "built_at": "2026-10-14"}, rules, demo=True)
     rows = [line for line in taric.sources.read_text(encoding="utf-8").splitlines() if line.startswith(TARIC_ROW)]
     assert len(rows) == 1 and f"snapshot 2026-10-01, batch {BATCH}" in rows[0]
+    assert b"\r" not in taric.sources.read_bytes()                       # feature 003, T033: LF line endings

@@ -19,7 +19,7 @@ set OPENROUTER_API_KEY=sk-or-...                           # or put it in .env (
 python -m rag.loader --demo                               # builds the knowledge base (≈ 10 min, ≈ $0.02)
 python -m rag.loader                                      # full EBTI rulings index for precedent-driven retrieval (74k rulings, ≈ 90 min, ≈ $0.3, 1.8 GB on disk)
 python -m rag.loader --taric                              # one-time TARIC snapshot for digits 9–10 and measures (needs gpg, see below)
-pytest -q                                                 # 391 offline tests, no key needed
+pytest -q                                                 # 431 offline tests, no key needed
 streamlit run app.py
 ```
 
@@ -32,9 +32,10 @@ searches (see below). Data provenance and licences: `data/SOURCES.md`.
 
 ## TARIC snapshot (digits 9 to 10 and measures)
 
-CargoLint can hold one EU TARIC snapshot for the last two digits of a code and the measures on it (feature
-002, `specs/002-taric-snapshot-load/`). TARIC is used only for digits 9 to 10 and measures: CN 2026 stays the
-only source for digits 1 to 8, and TARIC is never embedded or indexed. The lookup
+CargoLint can hold one EU TARIC snapshot for the last two digits of a code and the measures on it (features
+002 and 003, `specs/002-taric-snapshot-load/` and `specs/003-taric-groups-exclusions/`). TARIC is used only for
+digits 9 to 10 and measures: CN 2026 stays the only source for digits 1 to 8, and TARIC is never embedded or
+indexed. The lookup
 (`TaricStore.lookup_taric(cn8, origin="CN")` in `rag/taric.py`) is not yet connected to the assistant or the
 review screen; that is the next feature.
 
@@ -47,7 +48,8 @@ review screen; that is the next feature.
    pinned Swedish Customs key (`data/Tulltaxan_Fildistribution.asc`, fingerprint
    `4101 60CE 25CE C2FF 3227 84E7 302A C3C1 D0E3 E1C9`), keeps the records valid on the snapshot date and
    writes `data/taric.jsonl` (git-ignored). Running it again on the same extract changes nothing; add
-   `--force` to rewrite the file. A refused extract writes nothing and leaves the previous snapshot as it was.
+   `--force` to rewrite the file. A snapshot written in an older format is rewritten even for the same extract,
+   and the run says why. A refused extract writes nothing and leaves the previous snapshot as it was.
    It never touches the search indexes.
 
 The sidebar's knowledge-base expander shows `TARIC snapshot <date> · <n> CN-8 mismatches`, or
@@ -56,12 +58,17 @@ that CN 2026 does not have (special codes in chapters 98 and 99), listed in
 `store/logs/taric-cn8-mismatches-<date>.txt`.
 
 Two rules shape the data: only EU records are kept (the Swedish national records in the export are dropped),
-and a lookup for an origin returns only import measures, those for the origin itself and erga omnes, recorded
-on the code or on any level above it.
+and a lookup for an origin returns only import measures, those for the origin itself, for every EU country
+group that contains it (for example 1008, all third countries) and erga omnes, recorded on the code or on any
+level above it. A measure that excludes the origin, or a group that contains it, is left out, and the
+anti-dumping/countervailing statistic (measure type 566), which EZT-online does not show, is never returned.
+Each measure carries the English name of its area, so `1008` reads "All third countries".
 
-Measured on 2026-10-22 with the 2026-10-01 extract: a full load takes 20 to 42 s, depending on machine load
-(SC-006 allows 30 minutes). With the snapshot the knowledge base opens 4.3 to 4.4 s later at app start, 9.6 to
-10.1 s against 5.2 to 5.9 s without it (SC-007 allows 10 s more), and a lookup takes under 1 ms (SC-007: under 1 s).
+Measured on 2026-10-23 with the 2026-10-01 extract (a 29.3 MB snapshot): a full load takes 24 to 32 s (SC-006 of
+feature 002 allows 30 minutes). With the snapshot the knowledge base opens 0.7 to 0.9 s later at app start, 5.5 to
+5.6 s against 4.6 to 4.9 s without it (feature 003 allows 2 s more); the store alone loads in about 0.5 s, and a
+lookup takes under 1 ms. For China, the 2026-10-01 snapshot gives 1,512 group measures that used to be missing,
+and leaves out 1,238 erga omnes measures and 37 group measures that exclude China.
 
 ## What the clerk sees
 
@@ -231,9 +238,7 @@ open with Chinese text intact.
   not read from photos.
 - State lives in the Streamlit session: nothing persists across restarts; one user, one shipment.
 - The chat model is reached through OpenRouter; a 402 (credits) stops checks with a clear message.
-- TARIC snapshot: measures for country groups that contain the origin are not returned and erga omnes
-  measures that exclude it are returned as if they applied (for China on the 2026-10-01 extract, 1,549 and
-  1,238 import measures); full temporary stops are not applied; the companies behind additional codes are not
+- TARIC snapshot: full temporary stops are not applied; the companies behind additional codes are not
   named; Meursing agricultural components and sugar and flour additional duties are not represented, so
   composite agricultural goods show the base duty only; and conditional duties, such as company-specific
   anti-dumping rates, are shown as text but never evaluated, so the clerk decides which rate applies. The
