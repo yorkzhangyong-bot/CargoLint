@@ -33,7 +33,8 @@ def table_rows(store) -> list[dict]:
             "flag": FLAG_LABEL[flag], "hs6": v.top_code or ("…" if pending else "—"), "confidence": (v.top_confidence or 0) / 100.0,
             "route": ROUTE_LABEL.get(route, route), "needs_action": (not pending) and store.needs_action(line),
             "pending": pending, "version": v.version_no,
-            "markers": ["CN-8 to confirm"] if not pending and store.cn8_pending(line) else [],   # feature 004
+            "markers": [] if pending else (["CN-8 to confirm"] if store.cn8_pending(line) else [])   # feature 004
+                                          + (["TARIC-10 to confirm"] if store.taric_pending(line) else []),
         })
     rows.sort(key=lambda r: (0 if r["needs_action"] else (1 if not r["pending"] else 2), r["line_no"]))
     return rows

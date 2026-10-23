@@ -278,7 +278,7 @@ description: "Task list for CN-8 and TARIC-10 classification in the agent and th
 
 ### Tests for User Story 2 (write FIRST, ensure they FAIL)
 
-- [ ] T031 [P] [US2] Create tests/unit/test_taric_rules.py, with `TaricSubdivision` and `TaricMeasure` objects built in the test:
+- [X] T031 [P] [US2] Create tests/unit/test_taric_rules.py, with `TaricSubdivision` and `TaricMeasure` objects built in the test:
   - **`taric_rule`**:
     - `not_loaded` when `snapshot_loaded` is false;
     - `not_available` for `[]`;
@@ -288,8 +288,8 @@ description: "Task list for CN-8 and TARIC-10 classification in the agent and th
     - a single subdivision whose only trade-defence types are 561, 564 or 565 is `auto_completed`.
   - **`code_to_write`**: it returns the code only for `auto_completed` with `cn8_written=True`. It returns None for `auto_completed` with `cn8_written=False`, and for every other rule.
   - **`TRADE_DEFENCE_CONFIRM`** equals `{"551", "552", "553", "554", "555", "570"}`.
-- [ ] T032 [P] [US2] Add `validate_taric10(code, subdivisions)` tests to tests/unit/test_validate.py: True only for a 10-digit string among the subdivisions.
-- [ ] T033 [P] [US2] Create tests/integration/test_lookup_taric.py. It uses `TaricStore.from_jsonl` on tests/fixtures/taric/snapshot_small.jsonl, the T001 index and `FakeRawClient`:
+- [X] T032 [P] [US2] Add `validate_taric10(code, subdivisions)` tests to tests/unit/test_validate.py: True only for a 10-digit string among the subdivisions.
+- [X] T033 [P] [US2] Create tests/integration/test_lookup_taric.py. It uses `TaricStore.from_jsonl` on tests/fixtures/taric/snapshot_small.jsonl, the T001 index and `FakeRawClient`:
   - **73181595, CN**: `auto_completed`.
     - With a written CN-8, `taric10` is 7318159500, written by rule, with the audit note "auto-completed, single TARIC subdivision, snapshot 2026-10-01".
     - With a suggested CN-8, nothing is written.
@@ -304,7 +304,7 @@ description: "Task list for CN-8 and TARIC-10 classification in the agent and th
   - **`kb.taric` None**: `not_loaded`, "TARIC not loaded".
   - **No suggestion call** is made for one subdivision or none.
   - **Adversarial** (T015's line): with its CN-8 73181558 written and origin US, the recorded suggestion 7318155810 stays a suggestion and is never written. The rule stays `choose`, and the line text reaches the `SubdivisionOut` prompt only inside its data block.
-- [ ] T034 [P] [US2] Add a TARIC class to tests/unit/test_store.py:
+- [X] T034 [P] [US2] Add a TARIC class to tests/unit/test_store.py:
   - **`set_taric_result`** records `taric_written`, `taric_pending` or `taric_not_available`, with the snapshot date and origin in the note. A kept suggestion sets `taric10` on the decided candidate.
   - **`confirm_taric10`** sets `Decision.decided_taric10`, creating T012's auto-accept Decision when there is none, and records `taric_written` "confirmed by the clerk".
   - **`confirm_taric10` refusals**: a code outside the subdivisions raises UnknownCodeError. A line whose CN-8 is not written, or whose HS-6 is not decided, raises LockedError.
@@ -312,7 +312,7 @@ description: "Task list for CN-8 and TARIC-10 classification in the agent and th
   - **`counts()["taric_to_confirm"]`** counts "lines with a written CN-8 whose rule is `choose` or `trade_defence`, whose TARIC-10 is not written, and which the clerk has not sent to the shipper".
   - **Write on CN-8 confirmation**: confirming the CN-8 of a line whose stored rule is `auto_completed` writes the TARIC-10 by rule.
   - **Threshold**: a CN-8 falling below the threshold withdraws a rule-written TARIC-10, with an audit record. Rising above writes it again.
-- [ ] T035 [P] [US2] Update the agent flow tests in tests/integration/test_agent_check_flow.py and tests/integration/test_upload_flow.py, with the helper in tests/fakes.py:
+- [X] T035 [P] [US2] Update the agent flow tests in tests/integration/test_agent_check_flow.py and tests/integration/test_upload_flow.py, with the helper in tests/fakes.py:
   - **tests/integration/test_agent_check_flow.py**:
     - `SYSTEM_PROMPT` lists "7. lookup_taric";
     - `_finalize` runs `lookup_taric` after `classify_cn8`, for lines with a CN-8 choice and no outcome for the current origin;
@@ -321,17 +321,17 @@ description: "Task list for CN-8 and TARIC-10 classification in the agent and th
     - the scripted agent also calls `lookup_taric`;
     - both counts dicts gain `"taric_to_confirm": 0`. This KB has no snapshot, so every line is `not_loaded`.
   - **SC-005**: `assert_no_unconfirmed_writes` gains the TARIC-10 part: no TARIC-10 is written where several subdivisions exist, a confirm type applies, or the CN-8 is not written. Both flow tests call it after the check.
-- [ ] T036 [P] [US2] Add to tests/unit/test_review_table.py: a line counted in `taric_to_confirm` carries the marker "TARIC-10 to confirm".
+- [X] T036 [P] [US2] Add to tests/unit/test_review_table.py: a line counted in `taric_to_confirm` carries the marker "TARIC-10 to confirm".
 
 ### Implementation for User Story 2
 
-- [ ] T037 [P] [US2] Create agent/taric_rules.py (research R-06), a pure module with no model, store or Streamlit import, holding `TRADE_DEFENCE_CONFIRM`, `taric_rule(subdivisions, snapshot_loaded)` and `code_to_write(rule, subdivisions, cn8_written)`.
-- [ ] T038 [P] [US2] Add `validate_taric10` to agent/routing.py.
-- [ ] T039 [P] [US2] In agent/prompts.py:
+- [X] T037 [P] [US2] Create agent/taric_rules.py (research R-06), a pure module with no model, store or Streamlit import, holding `TRADE_DEFENCE_CONFIRM`, `taric_rule(subdivisions, snapshot_loaded)` and `code_to_write(rule, subdivisions, cn8_written)`.
+- [X] T038 [P] [US2] Add `validate_taric10` to agent/routing.py.
+- [X] T039 [P] [US2] In agent/prompts.py:
   - **Subdivision prompt**: add `SUBDIVISION_SYSTEM` and `subdivision_user(line, cn8, subdivisions)`, with the fenced line text first and the codes and descriptions as data. The prompt asks which subdivision the text supports and whether the separating attribute is stated.
   - **`SYSTEM_PROMPT`**: add "7. lookup_taric - looks up the TARIC subdivisions and measures and applies the rules", and make the check order "2, 3, 4, 6 and 7".
   - **`build_context`**: each line gains its TARIC-10, rule and pending markers.
-- [ ] T040 [US2] Create tools/lookup_taric.py (contracts/tools.md §1.7; depends on T037 to T039):
+- [X] T040 [US2] Create tools/lookup_taric.py (contracts/tools.md §1.7; depends on T037 to T039):
   - **`taric_outcome(line, cn8, cn8_written, origin, kb, client) -> TaricOutcome`**:
     - calls `kb.taric.lookup_taric(cn8, origin)`, or gives `not_loaded` when `kb.taric` is None;
     - applies `taric_rule` and `code_to_write`;
@@ -340,14 +340,14 @@ description: "Task list for CN-8 and TARIC-10 classification in the agent and th
     - takes `snapshot_date` from `kb.taric.snapshot.snapshot_date`.
   - **`lookup_taric_lines(inp: TaricInput, kb, client) -> list[TaricResult]`** runs `taric_outcome` through `run_per_line`. Its `on_error` is reached only by the per-line timeout. It rebuilds the outcome from the lookup, without a suggestion and with `suggestion_error` set, so no `TaricResult` is a failure.
   - **The `lookup_taric` tool**: its args are `line_nos`; omitted, it takes every line with a CN-8 choice and no outcome for the shipment's `taric_origin`. It writes through `set_taric_result`. Call `register` on it.
-- [ ] T041 [US2] In agent/store.py (T034):
+- [X] T041 [US2] In agent/store.py (T034):
   - add `set_taric_result`, `confirm_taric10`, `ask_shipper_for_taric`, `decided_taric10` and `counts()["taric_to_confirm"]`;
   - re-apply `code_to_write` in `confirm_cn8` and `set_threshold`.
   Audit notes carry the rule text, the snapshot date and the origin (data-model §5).
-- [ ] T042 [US2] In agent/agent.py:
+- [X] T042 [US2] In agent/agent.py:
   - `_finalize` runs `lookup_taric` after `classify_cn8`;
   - `after_hs6_decision` runs the TARIC step after the CN-8 step, and gains `taric_only: bool = False` for CN-8 confirmations.
-- [ ] T043 [US2] In ui/detail.py, add the TARIC part of the section once a CN-8 exists (contracts/ui.md):
+- [X] T043 [US2] In ui/detail.py, add the TARIC part of the section once a CN-8 exists (contracts/ui.md):
   - **Header**: the caption "TARIC snapshot <date> · origin <code>", or "TARIC not loaded". Then the rule note, one of:
     - "Auto-completed: single TARIC subdivision";
     - "Choose a subdivision";
@@ -357,7 +357,7 @@ description: "Task list for CN-8 and TARIC-10 classification in the agent and th
   - **Confirming**: a radio and "Confirm TARIC-10", which calls `confirm_taric10`. It is disabled, with the reason, while the CN-8 is not written or the HS-6 is not decided.
   - **Asking the shipper**: a text input prefilled from the subdivision descriptions, and an "Ask the shipper" button that calls `ask_shipper_for_taric`. Afterwards the card shows "Sent to the shipper: <question>".
   - **"Confirm CN-8"** now also queues a `finer_codes` job with `taric_only=True`.
-- [ ] T044 [US2] Show the TARIC-10 count and marker in ui/chat.py, ui/review.py and ui/jobs.py:
+- [X] T044 [US2] Show the TARIC-10 count and marker in ui/chat.py, ui/review.py and ui/jobs.py:
   - **ui/chat.py**: `_render_counts` adds a "TARIC-10 to confirm" metric after "CN-8 to confirm", and `queue_finer_codes` gains `taric_only`.
   - **ui/review.py**: the "TARIC-10 to confirm" marker.
   - **ui/jobs.py**: passes `taric_only` through.
@@ -374,7 +374,7 @@ description: "Task list for CN-8 and TARIC-10 classification in the agent and th
 
 ### Tests for User Story 3 (write FIRST, ensure they FAIL)
 
-- [ ] T045 [P] [US3] Add to tests/unit/test_taric_rules.py and tests/integration/test_lookup_taric.py:
+- [X] T045 [P] [US3] Add to tests/unit/test_taric_rules.py and tests/integration/test_lookup_taric.py:
   - **`measure_group`**:
     - every type in research R-07's duties list gives `duties`;
     - 551–555, 561, 564, 565 and 570 give `trade_defence`;
@@ -389,7 +389,7 @@ description: "Task list for CN-8 and TARIC-10 classification in the agent and th
 
 ### Implementation for User Story 3
 
-- [ ] T046 [US3] Add to agent/taric_rules.py: the fixed `MEASURE_GROUPS` table of research R-07, `measure_group`, `taric_view` (grouping only), `eu_taric_url` and `EZT_ONLINE_URL`. Add `line_taric_view(store, kb, line_no)` to agent/agent.py: it looks up the line's CN-8 for the shipment's origin and returns `taric_view`, or None without a CN-8.
+- [X] T046 [US3] Add to agent/taric_rules.py: the fixed `MEASURE_GROUPS` table of research R-07, `measure_group`, `taric_view` (grouping only), `eu_taric_url` and `EZT_ONLINE_URL`. Add `line_taric_view(store, kb, line_no)` to agent/agent.py: it looks up the line's CN-8 for the shipment's origin and returns `taric_view`, or None without a CN-8.
 - [ ] T047 [US3] In ui/detail.py, fill each subdivision expander from the agent's `line_taric_view`; the UI never reads `kb.taric` itself (contracts/ui.md):
   - **Tables**: Duties, Trade defence and Requirements, each a fixed-height `st.dataframe`, because a trade-defence group can hold about 94 rows (7318 15 58 for China).
     - Columns: type and label, area code and name, additional code (trade defence only), duty text and regulation reference.

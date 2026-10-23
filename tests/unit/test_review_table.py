@@ -110,3 +110,14 @@ class TestFinerCodeMarkers:
         assert rows[1]["markers"] == [] and rows[3]["markers"] == []
         assert set(rows[2]) == {"line_no", "description", "text_zh", "text_en", "qty", "flag", "hs6", "confidence", "route",
                                 "needs_action", "pending", "version", "markers"}
+
+    def test_a_taric10_waiting_for_the_clerk_marks_its_row(self, populated):
+        from agent.schemas import Cn8Choice, TaricOutcome, TaricRule, WrittenBy
+
+        populated.set_decision(2, Decision(route=DecisionRoute.accepted, decided_code="9405.21"))
+        populated.set_cn8_result(2, Cn8Choice(hs6="9405.21", options=populated.index.cn8_lines("9405.21"), cn8="94052140",
+                                              confidence=95, written_by=WrittenBy.rule))
+        populated.set_taric_result(2, TaricOutcome(origin="CN", rule=TaricRule.choose, subdivisions=["9405214010", "9405214090"]))
+        assert {r["line_no"]: r for r in table_rows(populated)}[2]["markers"] == ["TARIC-10 to confirm"]
+        populated.confirm_taric10(2, "9405214010")
+        assert {r["line_no"]: r for r in table_rows(populated)}[2]["markers"] == []

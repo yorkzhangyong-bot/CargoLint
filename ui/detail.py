@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import streamlit as st
 
+from agent.agent import line_taric_view
 from agent.schemas import Decision, DecisionRoute
 from agent.store import LockedError, UnknownCodeError
 from ui.chat import FLAG_BADGE, ROUTE_BADGE, ROUTE_LABEL, queue_finer_codes
@@ -88,7 +89,7 @@ def render(store, kb) -> None:
         st.caption("Confidence is a model estimate, not a calibrated probability.")
 
         _route_control(store, line, kb)
-        _cn8_section(store, line)
+        _cn8_section(store, line, kb)
 
         if v.flag and v.flag.kind.value != "ok":
             rule = f" — {v.flag.rule_source.value.replace('_', ' ')}: “{v.flag.matched_term}”" if v.flag.rule_source and v.flag.matched_term else ""
@@ -157,11 +158,12 @@ def _spaced(code: str) -> str:
 def _cn8_running(line_no: int) -> bool:
     job = st.session_state.get("job")
     return (job is not None and job.kind == "finer_codes" and job.line_no == line_no) or \
-        line_no in (st.session_state.get("finer_codes_queue") or [])
+        any(n == line_no for n, _ in st.session_state.get("finer_codes_queue") or [])
 
 
-def _cn8_section(store, line) -> None:
-    """Feature 004 (contracts/ui.md): the CN-8 under the decided HS-6, its evidence and ruling, and its state."""
+def _cn8_section(store, line, kb) -> None:
+    """Feature 004 (contracts/ui.md): the CN-8 under the decided HS-6, its evidence and ruling, and its state; then the
+    TARIC subdivisions of a chosen CN-8."""
     v = line.current
     c = v.cn8
     st.markdown("**CN-8 and TARIC-10**")
@@ -192,21 +194,23 @@ def _cn8_section(store, line) -> None:
             st.caption("Single CN-8 line.")
         else:
             st.caption(f"Written by rule (confidence {c.confidence} ≥ {store.shipment.threshold}).")
-        return
-    if c.error:
-        st.error(f"CN-8 step failed: {c.error}. The line is in review; choose the CN-8.", icon="⚠️")
-    elif c.question:
-        st.warning(c.question, icon="❓")
-    elif c.precedent is not None and c.precedent.code[:8] != c.cn8:
-        st.info(f"CN-8 to confirm: the cited ruling {c.precedent.reference} classifies under {_spaced(c.precedent.code[:8])}, "
-                "not this CN-8.")
     else:
-        st.info(f"CN-8 to confirm: its confidence ({c.confidence}) is below the auto-accept threshold "
-                f"({store.shipment.threshold}).")
-    _cn8_confirm(store, line)
+        if c.error:
+            st.error(f"CN-8 step failed: {c.error}. The line is in review; choose the CN-8.", icon="⚠️")
+        elif c.question:
+            st.warning(c.question, icon="❓")
+        elif c.precedent is not None and c.precedent.code[:8] != c.cn8:
+            st.info(f"CN-8 to confirm: the cited ruling {c.precedent.reference} classifies under "
+                    f"{_spaced(c.precedent.code[:8])}, not this CN-8.")
+        else:
+            st.info(f"CN-8 to confirm: its confidence ({c.confidence}) is below the auto-accept threshold "
+                    f"({store.shipment.threshold}).")
+        _cn8_confirm(store, line, kb)
+    if c.cn8 and not (c.question or c.error):
+        _taric_section(store, line, kb)
 
 
-def _cn8_confirm(store, line) -> None:
+def _cn8_confirm(store, line, kb) -> None:
     v = line.current
     c = v.cn8
     codes = [code for code, _ in c.options]
@@ -223,5 +227,94 @@ def _cn8_confirm(store, line) -> None:
             store.confirm_cn8(line.line_no, codes[texts.index(pick)])
         except (LockedError, UnknownCodeError) as exc:
             st.error(f"Not confirmed: {exc}")
+            return
+        queue_finer_codes(line.line_no, store, kb, taric_only=True)   # the TARIC step for the written CN-8
+        st.rerun()
+
+
+TARIC_NOTES = {"auto_completed": "Auto-completed: single TARIC subdivision", "choose": "Choose a subdivision",
+               "trade_defence": "Trade-defence measures: confirm the subdivision",
+               "not_available": "TARIC not available — the line stops at 8 digits"}
+
+
+def _taric_section(store, line, kb) -> None:
+    """Feature 004 (contracts/ui.md): the subdivisions of the CN-8 for the shipment's origin, from the agent's
+    `line_taric_view` (the UI never reads the snapshot itself), the rule that applied, and the clerk's confirmation or
+    question."""
+    view = line_taric_view(store, kb, line.line_no)
+    if view is None:
+        return
+    if view.snapshot_date is None:
+        st.caption("TARIC not loaded")
+        return
+    st.caption(f"TARIC snapshot {view.snapshot_date} · origin {view.origin}")
+    t = line.current.taric
+    if t is None or t.origin != view.origin:
+        st.caption("Looking up TARIC…" if _cn8_running(line.line_no) else "TARIC is not looked up for this origin yet.")
+        return
+    rule = view.rule.value
+    if rule == "not_available":
+        st.info(TARIC_NOTES[rule], icon="ℹ️")
+        return
+    pending = rule == "auto_completed" and not t.taric10
+    st.markdown(f"**{TARIC_NOTES[rule]}**" + (" — written once the CN-8 is written" if pending else ""))
+    if view.suggestion_error:
+        st.caption(f"Suggestion unavailable: {view.suggestion_error}")
+    for sv in view.subdivisions:
+        _subdivision_card(sv, view, t)
+    if t.taric10:
+        who = "Confirmed by you" if t.written_by is not None and t.written_by.value == "clerk" else "Auto-completed"
+        st.success(f"{who} · TARIC-10 `{_spaced(t.taric10)}`", icon="✅")
+    elif t.question:
+        st.info(f"Sent to the shipper: {t.question}", icon="✉️")
+    elif rule in ("choose", "trade_defence"):
+        _taric_controls(store, line, view)
+
+
+def _sub_text(sv) -> str:
+    """A subdivision's TARIC text; a code ending in 00 has none of its own (feature 002)."""
+    return sv.description or ("the whole CN-8" if sv.code.endswith("00") else "no description")
+
+
+def _subdivision_card(sv, view, t) -> None:
+    suggested = view.suggestion is not None and view.suggestion.code == sv.code
+    badges = ([f":blue-badge[Suggested · {view.suggestion.confidence} %]"] if suggested else []) \
+        + ([":orange-badge[Trade defence]"] if sv.trade_defence else []) + ([":green-badge[Written]"] if t.taric10 == sv.code else [])
+    label = f"`{_spaced(sv.code)}` {_short(_sub_text(sv), 64)} " + " ".join(badges)
+    with st.expander(label, expanded=t.taric10 == sv.code or (suggested and not t.taric10)):
+        st.markdown(_sub_text(sv))
+        if suggested:
+            st.caption("Suggested: a model estimate; it is never written without your confirmation.")
+        if sv.trade_defence:
+            st.caption(f"Trade-defence measures {', '.join(sv.confirm_types)} apply: confirm the subdivision.")
+
+
+def _taric_controls(store, line, view) -> None:
+    """Confirm a subdivision or ask the shipper; the guardrails are shown, not hidden (Principle VI)."""
+    codes = [sv.code for sv in view.subdivisions]
+    texts = [f"{_spaced(sv.code)} — {_short(_sub_text(sv), 70)}" for sv in view.subdivisions]
+    first = codes.index(view.suggestion.code) if view.suggestion is not None and view.suggestion.code in codes else 0
+    v = line.current
+    pick = st.radio("TARIC-10", texts, index=first, key=f"taric_pick_{line.line_no}_{v.version_no}_{view.origin}",
+                    label_visibility="collapsed")
+    hs6, _ = store.decided_code(line)
+    reason = "Decide the HS-6 first" if not hs6 else (None if store.decided_cn8(line) else "Confirm the CN-8 first")
+    if st.button("Confirm TARIC-10", key=f"taric_confirm_{line.line_no}_{v.version_no}", type="primary",
+                 disabled=reason is not None, help=reason):
+        try:
+            store.confirm_taric10(line.line_no, codes[texts.index(pick)])
+        except (LockedError, UnknownCodeError) as exc:
+            st.error(f"Not confirmed: {exc}")
+            return
+        st.rerun()
+    if reason:
+        st.caption(f"🔒 {reason}.")
+    prefill = "Which of these describes the goods: " + "; ".join(sv.description or sv.code for sv in view.subdivisions) + "?"
+    question = st.text_input("Ask the shipper", value=prefill, key=f"taric_ask_{line.line_no}_{v.version_no}")
+    if st.button("Ask the shipper", key=f"taric_ask_btn_{line.line_no}_{v.version_no}"):
+        try:
+            store.ask_shipper_for_taric(line.line_no, question)
+        except ValueError as exc:
+            st.error(f"Not sent: {exc}")
             return
         st.rerun()

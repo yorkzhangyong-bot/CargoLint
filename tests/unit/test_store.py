@@ -348,3 +348,176 @@ class TestCn8:
                                       precedent=Precedent(reference="DE-FORK-1", code="8714913000")))
         s.set_threshold(80)
         assert s.get_line(2).current.cn8.written_by is None and s.cn8_pending(s.get_line(2))
+
+
+# --------------------------------------------------------------------------- feature 004: the TARIC outcome in the store
+from datetime import date  # noqa: E402
+
+from agent.schemas import TaricOutcome, TaricRule, TaricSuggestion  # noqa: E402
+
+SNAP = date(2026, 10, 1)
+PAIR = ["7318155810", "7318155890"]
+
+
+def _outcome(rule, subdivisions=(), origin="CN", trade_defence=(), types=(), suggestion=None):
+    return TaricOutcome(origin=origin, snapshot_date=None if rule == TaricRule.not_loaded else SNAP, rule=rule,
+                        subdivisions=list(subdivisions), trade_defence=list(trade_defence), trade_defence_types=list(types),
+                        suggestion=suggestion)
+
+
+def _defence(origin="CN"):
+    return _outcome(TaricRule.trade_defence, PAIR, origin, trade_defence=PAIR, types=["552"])
+
+
+@pytest.fixture
+def taric_store(memory_store):
+    s = memory_store
+    s.add_lines([_parsed(1, "内六角螺钉", "Steel screws with hexagon socket heads"),   # ok 95 -> auto
+                 _parsed(2, "十字槽螺钉", "Steel screws with cross-recessed heads"),     # ok 95 -> auto
+                 _parsed(3, "螺钉", "Steel screws")], CreatedBy.paste)                  # ok 70 -> review
+    for n, conf in ((1, 95), (2, 95), (3, 70)):
+        _checked_line(s, n, FlagKind.ok, [("7318.15", conf)])
+    return s
+
+
+class TestTaric:
+    def test_each_rule_is_recorded_with_the_snapshot_date_and_origin(self, taric_store):
+        s = taric_store
+        s.set_cn8_result(1, _cn8(s, "7318.15", "73181595", 95, WrittenBy.rule))
+        s.set_taric_result(1, _outcome(TaricRule.auto_completed, ["7318159500"]))
+        t = s.get_line(1).current.taric
+        assert (t.taric10, t.written_by) == ("7318159500", WrittenBy.rule)
+        rec = _last(s, ChangeKind.taric_written, 1)
+        assert (rec.actor, rec.new) == (Actor.routing_rule, "7318159500")
+        assert rec.note == "auto-completed, single TARIC subdivision, snapshot 2026-10-01; origin CN"
+        s.set_cn8_result(2, _cn8(s, "7318.15", "73181558", 95, WrittenBy.rule))
+        s.set_taric_result(2, _defence())
+        assert _last(s, ChangeKind.taric_pending, 2).note == "trade-defence measure 552; snapshot 2026-10-01; origin CN"
+        s.set_taric_result(2, _outcome(TaricRule.choose, PAIR, "US"))
+        assert _last(s, ChangeKind.taric_pending, 2).note == "several subdivisions (2); snapshot 2026-10-01; origin US"
+        s.set_taric_result(2, _outcome(TaricRule.not_available))
+        assert _last(s, ChangeKind.taric_not_available, 2).note == "TARIC not available; snapshot 2026-10-01; origin CN"
+        s.set_taric_result(2, _outcome(TaricRule.not_loaded))
+        assert _last(s, ChangeKind.taric_not_available, 2).note == "TARIC not loaded; origin CN"
+
+    def test_the_store_writes_only_what_the_rules_allow(self, taric_store):
+        s = taric_store
+        s.set_cn8_result(2, _cn8(s, "7318.15", "73181558", 95, WrittenBy.rule))
+        forced = _outcome(TaricRule.choose, PAIR).model_copy(update={"taric10": PAIR[0], "written_by": WrittenBy.rule})
+        s.set_taric_result(2, forced)
+        assert s.get_line(2).current.taric.taric10 is None          # re-derived with code_to_write
+        s.set_cn8_result(1, _cn8(s, "7318.15", "73181595", 70))     # a CN-8 suggestion
+        s.set_taric_result(1, _outcome(TaricRule.auto_completed, ["7318159500"]))
+        assert s.get_line(1).current.taric.taric10 is None
+        assert _last(s, ChangeKind.taric_pending, 1).note.startswith("single TARIC subdivision, written once the CN-8 is")
+
+    def test_a_kept_suggestion_marks_the_decided_candidate(self, taric_store):
+        s = taric_store
+        s.set_cn8_result(2, _cn8(s, "7318.15", "73181558", 95, WrittenBy.rule))
+        s.set_taric_result(2, _outcome(TaricRule.choose, PAIR, suggestion=TaricSuggestion(code=PAIR[0], confidence=88)))
+        v = s.get_line(2).current
+        assert v.candidates[0].taric10 == PAIR[0] and v.taric.taric10 is None
+
+    def test_confirming_on_an_auto_accepted_line(self, taric_store):
+        s = taric_store
+        s.set_cn8_result(2, _cn8(s, "7318.15", "73181558", 95, WrittenBy.rule))
+        s.set_taric_result(2, _defence())
+        s.confirm_taric10(2, PAIR[0])
+        line = s.get_line(2)
+        d = line.current.decision
+        assert (d.route, d.decided_code, d.chosen_how, d.decided_cn8, d.decided_taric10) == (
+            DecisionRoute.accepted, "7318.15", ChosenHow.auto, None, PAIR[0])
+        assert (line.current.taric.taric10, line.current.taric.written_by) == (PAIR[0], WrittenBy.clerk)
+        rec = _last(s, ChangeKind.taric_written, 2)
+        assert (rec.actor, rec.new) == (Actor.clerk, PAIR[0])
+        assert rec.note == "confirmed by the clerk; snapshot 2026-10-01; origin CN"
+        assert s.decided_taric10(line) == PAIR[0] and s.effective_route(line) == "accepted"
+        assert s.decided_code(line) == ("7318.15", "auto") and s.decided_cn8(line) == "73181558"
+
+    def test_confirm_refusals(self, taric_store):
+        s = taric_store
+        s.set_cn8_result(2, _cn8(s, "7318.15", "73181558", 95, WrittenBy.rule))
+        s.set_taric_result(2, _defence())
+        with pytest.raises(UnknownCodeError):
+            s.confirm_taric10(2, "7318159500")                      # not one of the subdivisions
+        s.set_cn8_result(1, _cn8(s, "7318.15", "73181558", 70))     # the CN-8 is a suggestion
+        s.set_taric_result(1, _defence())
+        with pytest.raises(LockedError):
+            s.confirm_taric10(1, PAIR[0])
+        s.set_decision(2, Decision(route=DecisionRoute.review))     # the HS-6 is no longer decided
+        with pytest.raises(LockedError):
+            s.confirm_taric10(2, PAIR[0])
+        assert s.get_line(1).current.taric.taric10 is None and s.get_line(2).current.taric.taric10 is None
+
+    def test_asking_the_shipper_instead_of_confirming(self, taric_store):
+        s = taric_store
+        s.set_cn8_result(2, _cn8(s, "7318.15", "73181558", 95, WrittenBy.rule))
+        s.set_taric_result(2, _defence())
+        s.ask_shipper_for_taric(2, "Are the screws self-locking?")
+        line = s.get_line(2)
+        assert line.current.decision.route == DecisionRoute.ask_shipper
+        assert (line.current.taric.question, line.current.taric.taric10) == ("Are the screws self-locking?", None)
+        assert s.effective_route(line) == "ask_shipper" and s.decided_taric10(line) is None
+        rec = _last(s, ChangeKind.taric_question, 2)
+        assert rec.actor == Actor.clerk
+        assert rec.note == "Ask the shipper for: Are the screws self-locking?; snapshot 2026-10-01; origin CN"
+        assert s.counts()["taric_to_confirm"] == 0
+        with pytest.raises(ValueError):
+            s.ask_shipper_for_taric(2, "   ")
+
+    def test_counts_taric_to_confirm(self, taric_store):
+        s = taric_store
+        s.set_cn8_result(1, _cn8(s, "7318.15", "73181558", 95, WrittenBy.rule))
+        s.set_taric_result(1, _defence())                                       # counted
+        s.set_cn8_result(2, _cn8(s, "7318.15", "73181558", 70))                 # the CN-8 is a suggestion: not counted
+        s.set_taric_result(2, _defence())
+        routes = {k: v for k, v in s.counts().items() if not k.endswith("_to_confirm")}
+        assert s.counts()["taric_to_confirm"] == 1
+        s.set_taric_result(1, _outcome(TaricRule.choose, PAIR, "US"))             # choose is counted too
+        assert s.counts()["taric_to_confirm"] == 1
+        assert {k: v for k, v in s.counts().items() if not k.endswith("_to_confirm")} == routes   # never a route
+        s.confirm_taric10(1, PAIR[1])
+        assert s.counts()["taric_to_confirm"] == 0
+
+    def test_confirming_the_cn8_writes_an_auto_completed_taric10(self, taric_store):
+        s = taric_store
+        s.set_cn8_result(1, _cn8(s, "7318.15", "73181595", 70))
+        s.set_taric_result(1, _outcome(TaricRule.auto_completed, ["7318159500"]))
+        s.confirm_cn8(1, "73181595")
+        t = s.get_line(1).current.taric
+        assert (t.taric10, t.written_by) == ("7318159500", WrittenBy.rule)
+        rec = _last(s, ChangeKind.taric_written, 1)
+        assert rec.note.startswith("auto-completed, single TARIC subdivision, snapshot 2026-10-01")
+        assert rec.actor == Actor.routing_rule                        # a rule outcome, set off by the clerk's CN-8
+
+    def test_confirming_another_cn8_drops_the_taric_outcome(self, taric_store):
+        s = taric_store
+        s.set_cn8_result(1, _cn8(s, "7318.15", "73181595", 70))
+        s.set_taric_result(1, _outcome(TaricRule.auto_completed, ["7318159500"]))
+        s.confirm_cn8(1, "73181558")
+        assert s.get_line(1).current.taric is None                  # the TARIC step runs again for the new CN-8
+
+    def test_the_threshold_withdraws_and_rewrites_a_rule_written_taric10(self, taric_store):
+        s = taric_store
+        s.set_cn8_result(1, _cn8(s, "7318.15", "73181595", 90, WrittenBy.rule))
+        s.set_taric_result(1, _outcome(TaricRule.auto_completed, ["7318159500"]))
+        s.set_cn8_result(2, _cn8(s, "7318.15", "73181558", 90, WrittenBy.rule))
+        s.set_taric_result(2, _defence())
+        s.confirm_taric10(2, PAIR[0])
+        s.set_threshold(95)
+        t = s.get_line(1).current.taric
+        assert (t.taric10, t.written_by) == (None, None)
+        rec = _last(s, ChangeKind.threshold_recomputed, 1)
+        assert (rec.previous, rec.actor) == ("7318159500", Actor.threshold_change) and "withdrawn" in rec.note
+        assert s.get_line(2).current.taric.taric10 == PAIR[0]       # confirmed by the clerk: stays
+        s.set_threshold(90)
+        t = s.get_line(1).current.taric
+        assert (t.taric10, t.written_by) == ("7318159500", WrittenBy.rule)
+        assert _last(s, ChangeKind.taric_written, 1).actor == Actor.threshold_change
+
+    def test_a_new_cn8_result_drops_the_taric_outcome(self, taric_store):
+        s = taric_store
+        s.set_cn8_result(1, _cn8(s, "7318.15", "73181595", 95, WrittenBy.rule))
+        s.set_taric_result(1, _outcome(TaricRule.auto_completed, ["7318159500"]))
+        s.set_cn8_result(1, _cn8(s, "7318.15", "73181558", 95, WrittenBy.rule))
+        assert s.get_line(1).current.taric is None

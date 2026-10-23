@@ -272,3 +272,26 @@ class TestValidateCn8:
         from agent.routing import validate_cn8
 
         assert validate_cn8("95030095", []) is False
+
+
+class TestValidateTaric10:
+    """FR-012: a TARIC-10 is confirmed only when it is one of the snapshot's subdivisions for the written CN-8."""
+
+    SUBDIVISIONS = ["7318155810", "7318155890"]
+
+    def test_a_code_among_the_subdivisions_passes(self):
+        from agent.routing import validate_taric10
+
+        assert validate_taric10("7318155810", self.SUBDIVISIONS) is True
+
+    @pytest.mark.parametrize("bad", ["7318155800", "73181558", "731815581", "73181558100", "7318.15.58.10", None,
+                                     7318155810, ""])
+    def test_anything_else_fails(self, bad):
+        from agent.routing import validate_taric10
+
+        assert validate_taric10(bad, self.SUBDIVISIONS) is False
+
+    def test_no_subdivisions_means_no_valid_code(self):
+        from agent.routing import validate_taric10
+
+        assert validate_taric10("7318155810", []) is False

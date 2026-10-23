@@ -56,6 +56,7 @@ FULL_SCRIPT = [
     ai_tool_call("classify_hs6", {"line_nos": [1, 2, 3]}, "c2"),
     ai_tool_call("lookup_precedent", {"line_nos": [1, 2, 3]}, "c3"),
     ai_tool_call("classify_cn8", {}, "c4"),
+    ai_tool_call("lookup_taric", {}, "c5"),
     AIMessage(content="All 3 lines checked."),
 ]
 
@@ -65,12 +66,12 @@ def test_tools_run_in_order_with_progress_and_counts_from_the_store(fake_llm, kb
     events = []
     result = run_turn("Check lines 1–3", store_with_lines, kb, on_progress=events.append)
     starts = [e.tool for e in events if e.phase == "start"]
-    assert starts == ["check_description", "classify_hs6", "lookup_precedent", "classify_cn8"]
+    assert starts == ["check_description", "classify_hs6", "lookup_precedent", "classify_cn8", "lookup_taric"]
     assert [e.tool for e in events if e.phase == "end"] == starts
     assert result.text == "All 3 lines checked."
     assert result.counts == store_with_lines.counts()
     assert result.counts == {"auto_accept": 1, "review": 0, "ask_shipper": 2, "needs_action": 2, "accepted": 1,
-                             "cn8_to_confirm": 0}
+                             "cn8_to_confirm": 0, "taric_to_confirm": 0}
     assert all(line.current.status == LineStatus.checked for line in store_with_lines.lines)
     assert [s.tool for s in result.check_run.steps] == starts and all(s.run_by == "agent" for s in result.check_run.steps)
     assert store_with_lines.get_line(2).current.candidates[0].precedent.reference == "DE-FLASK"
@@ -139,25 +140,40 @@ def test_a_reply_turn_offers_only_the_reply_tool():
 
     load_all()
     assert [t.name for t in turn_tools(reply_ref="r1")] == ["apply_shipper_reply"]   # apply re-checks the line itself
-    assert len(turn_tools(reply_ref=None)) == 6   # feature 004 adds classify_cn8
+    assert len(turn_tools(reply_ref=None)) == 7   # feature 004 adds classify_cn8 and lookup_taric
 
 
 # --------------------------------------------------------------------------- feature 004: the CN-8 step
 def test_the_system_prompt_lists_classify_cn8_and_the_ask_rule():
     from agent.prompts import SYSTEM_PROMPT
 
-    assert "6. classify_cn8" in SYSTEM_PROMPT
+    assert "6. classify_cn8" in SYSTEM_PROMPT and "7. lookup_taric" in SYSTEM_PROMPT
+    assert "call 2, 3, 4, 6 and 7" in SYSTEM_PROMPT
     assert "open CN-8 question" in SYSTEM_PROMPT
 
 
 def test_the_guard_runs_classify_cn8_when_the_agent_skips_it(fake_llm, kb, store_with_lines, scripted):
     scripted(FULL_SCRIPT[:3] + [AIMessage(content="Done.")])
     result = run_turn("Check lines 1–3", store_with_lines, kb)
-    assert ("classify_cn8", "app") in [(s.tool, s.run_by) for s in result.check_run.steps]
+    assert [(s.tool, s.run_by) for s in result.check_run.steps][-2:] == [("classify_cn8", "app"), ("lookup_taric", "app")]
     flask = store_with_lines.get_line(2).current
     assert flask.cn8.cn8 == "96170000" and flask.cn8.written_by.value == "rule"
+    assert flask.taric.rule.value == "not_loaded" and flask.taric.origin == "CN"   # this knowledge base has no snapshot
     assert store_with_lines.get_line(1).current.cn8 is None and store_with_lines.get_line(3).current.cn8 is None
+    assert store_with_lines.get_line(1).current.taric is None and store_with_lines.get_line(3).current.taric is None
     assert_no_unconfirmed_writes(store_with_lines)
+
+
+def test_the_guard_runs_lookup_taric_for_lines_without_an_outcome_for_the_origin(fake_llm, kb, store_with_lines, scripted):
+    scripted(FULL_SCRIPT[:4] + [AIMessage(content="Done.")])          # the agent skipped lookup_taric
+    result = run_turn("Check lines 1–3", store_with_lines, kb)
+    assert [(s.tool, s.run_by) for s in result.check_run.steps][-1] == ("lookup_taric", "app")
+    assert store_with_lines.get_line(2).current.taric.origin == "CN"
+    store_with_lines.shipment.taric_origin = "US"
+    scripted([AIMessage(content="Done.")])
+    result = run_turn("Check again", store_with_lines, kb, is_check=True)
+    assert [(s.tool, s.run_by) for s in result.check_run.steps] == [("lookup_taric", "app")]   # only the origin changed
+    assert store_with_lines.get_line(2).current.taric.origin == "US"
 
 
 def test_no_app_step_when_the_agent_calls_classify_cn8(fake_llm, kb, store_with_lines, scripted):
@@ -184,5 +200,24 @@ def test_after_hs6_decision_runs_the_cn8_step_for_that_line_only(fake_llm, kb, m
     calls_before = s.shipment.usage.calls
     after_hs6_decision(s, kb, 1)
     assert s.get_line(1).current.cn8.cn8 == "87149110" and s.get_line(2).current.cn8 is None
+    assert s.get_line(1).current.taric is not None and s.get_line(2).current.taric is None   # the TARIC step ran after it
     assert s.shipment.usage.calls > calls_before          # the call went through the usage-recording client
+    assert_no_unconfirmed_writes(s)
+
+
+def test_after_a_cn8_confirmation_only_the_taric_step_runs(fake_llm, kb, memory_store):
+    from agent.agent import after_hs6_decision
+    from agent.schemas import Cn8Choice
+
+    s = memory_store
+    s.add_lines([ParsedLine(text_zh="塑料玩具车", text_en="Plastic toy cars")], CreatedBy.paste)
+    _decided(s, 1, "9503.00", 93)
+    s.set_cn8_result(1, Cn8Choice(hs6="9503.00", options=s.index.cn8_lines("9503.00"), question="Ask the shipper for: a motor",
+                                  deciding_attribute="a motor"))
+    s.confirm_cn8(1, "95030095")
+    cn8_calls = len(fake_llm.prompts_for("Cn8Out"))
+    after_hs6_decision(s, kb, 1, taric_only=True)
+    assert len(fake_llm.prompts_for("Cn8Out")) == cn8_calls          # no CN-8 call
+    v = s.get_line(1).current
+    assert v.cn8.cn8 == "95030095" and v.taric is not None and v.taric.rule.value == "not_loaded"
     assert_no_unconfirmed_writes(s)

@@ -50,22 +50,26 @@ def test_upload_flow_end_to_end(fake_llm, kb, memory_store, scripted):
         ai_tool_call("classify_hs6", {"all_pending": True}, "c3"),
         ai_tool_call("lookup_precedent", {"all_pending": True}, "c4"),
         ai_tool_call("classify_cn8", {}, "c5"),
+        ai_tool_call("lookup_taric", {}, "c6"),
         AIMessage(content="All 12 lines checked."),
     ])
     events = []
     result = run_turn("Check the packing list for HF-0472.", store, kb, on_progress=events.append, file_ref=file_ref)
     assert [e.tool for e in events if e.phase == "start"] == ["parse_packing_list", "check_description", "classify_hs6", "lookup_precedent",
-                                                             "classify_cn8"]
+                                                             "classify_cn8", "lookup_taric"]
     assert len(store.lines) == 12 and all(l.current.status == LineStatus.checked for l in store.lines)
     assert store.shipment.shipper.name == "Yiwu Hengfa Trading" and store.shipment.shipper.known is True
     assert store.shipment.origin == "Shanghai" and store.shipment.mode == "LCL"
     # feature 004, decision 3: "Plastic toy cars" (line 6) now asks the shipper whether a motor is fitted
-    assert result.counts == {"auto_accept": 6, "review": 2, "ask_shipper": 4, "needs_action": 6, "accepted": 6, "cn8_to_confirm": 0}
+    assert result.counts == {"auto_accept": 6, "review": 2, "ask_shipper": 4, "needs_action": 6, "accepted": 6, "cn8_to_confirm": 0,
+                             "taric_to_confirm": 0}   # no snapshot in this knowledge base: every line is not_loaded
     toys = store.get_line(6)
     assert toys.current.cn8.question == "Ask the shipper for: whether the toy cars incorporate a motor"
     assert store.effective_route(toys) == "ask_shipper" and "motor" in toys.current.route_reason
     assert store.get_line(10).current.cn8.cn8 == "87149110" and store.get_line(12).current.cn8.cn8 == "39269097"
     assert not store.cn8_pending(store.get_line(10)) and not store.cn8_pending(store.get_line(12))   # no ruling offline: written at 95
+    assert {store.get_line(n).current.taric.rule.value for n in (10, 12)} == {"not_loaded"}
+    assert store.get_line(6).current.taric is None                     # an open CN-8 question: no CN-8, no TARIC step
     assert_no_unconfirmed_writes(store)
     assert store.get_line(1).current.candidates[0].history_only is True  # shipper history used for "Parts"
     assert all(s.run_by == "agent" for s in result.check_run.steps)
@@ -74,7 +78,8 @@ def test_upload_flow_end_to_end(fake_llm, kb, memory_store, scripted):
 
     store.set_decision(2, Decision(route=DecisionRoute.accepted, decided_code="9405.21"))
     assert store.get_line(2).current.decision.chosen_how == ChosenHow.top
-    assert store.counts() == {"auto_accept": 6, "review": 1, "ask_shipper": 4, "needs_action": 5, "accepted": 7, "cn8_to_confirm": 0}
+    assert store.counts() == {"auto_accept": 6, "review": 1, "ask_shipper": 4, "needs_action": 5, "accepted": 7, "cn8_to_confirm": 0,
+                              "taric_to_confirm": 0}
 
 
 def test_parsed_file_starts_a_shipment_with_detected_fields(memory_store):

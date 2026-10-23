@@ -269,6 +269,7 @@ class TaricOutcome(BaseModel):
     rule: TaricRule
     subdivisions: list[Taric10Code] = Field(default_factory=list)
     trade_defence: list[Taric10Code] = Field(default_factory=list)
+    trade_defence_types: list[str] = Field(default_factory=list)   # the confirm types found (551-555, 570), for the audit note
     suggestion: TaricSuggestion | None = None                   # several subdivisions only; never written
     suggestion_error: str | None = None                         # the suggestion call failed; nothing else changes
     taric10: str | None = Field(default=None, pattern=TARIC10_PATTERN)

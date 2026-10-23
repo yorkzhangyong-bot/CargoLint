@@ -24,6 +24,7 @@ from agent.routing import (
     route_line,
     validate_cn8,
     validate_code,
+    validate_taric10,
 )
 from agent.schemas import (
     Actor,
@@ -46,9 +47,12 @@ from agent.schemas import (
     Source,
     SourceFile,
     SourceKind,
+    TaricOutcome,
+    TaricRule,
     Usage,
     WrittenBy,
 )
+from agent.taric_rules import code_to_write
 
 
 class LockedError(Exception):
@@ -234,8 +238,13 @@ class LineStore:
                 v.cn8, v.taric = None, None
                 for c in v.candidates:
                     c.cn8, c.taric10 = None, None
-            elif v.cn8 is not None and v.cn8.written_by == WrittenBy.clerk:
-                decision = decision.model_copy(update={"decided_cn8": v.cn8.cn8})
+            else:   # the same HS-6 again: the clerk's own CN-8 and TARIC-10 confirmations come back with it
+                kept = {}
+                if v.cn8 is not None and v.cn8.written_by == WrittenBy.clerk:
+                    kept["decided_cn8"] = v.cn8.cn8
+                if v.taric is not None and v.taric.written_by == WrittenBy.clerk:
+                    kept["decided_taric10"] = v.taric.taric10
+                decision = decision.model_copy(update=kept)
         else:
             decision = decision.model_copy(update={"decided_code": None, "chosen_how": None, "at": self._clock()})
         v.decision = decision
@@ -279,8 +288,9 @@ class LineStore:
             if v.decision is not None or v.flag is None or v.flag.kind.value != "ok":
                 continue
             self._recompute(line, Actor.threshold_change, ChangeKind.threshold_recomputed)
-        for line in s.lines:   # feature 004: CN-8 codes the clerk has not confirmed follow the threshold too
-            self._reevaluate_cn8(line, value)
+        for line in s.lines:   # feature 004: CN-8 codes the clerk has not confirmed follow the threshold too, and with them
+            self._reevaluate_cn8(line, value)   # any TARIC-10 auto-completed from them
+            self._reapply_taric(line, Actor.threshold_change)
 
     def set_hybrid(self, value: bool) -> None:
         self.shipment.hybrid_search = bool(value)
@@ -350,15 +360,15 @@ class LineStore:
         """Store the CN-8 step's result on the current version, record it and recompute the route (data-model §3, §5)."""
         line = self.get_line(line_no)
         v = line.current
-        v.cn8 = choice
+        v.cn8, v.taric = choice, None   # a new CN-8 result: the TARIC step runs again for it
         for c in v.candidates:   # only the decided HS-6 candidate carries a CN-8
-            c.cn8 = choice.cn8 if c.code == choice.hs6 else None
+            c.cn8, c.taric10 = (choice.cn8 if c.code == choice.hs6 else None), None
         if choice.question:
-            self._record_cn8(line, ChangeKind.cn8_question, None, Actor.routing_rule, choice.question)
+            self._record_code(line, ChangeKind.cn8_question, None, Actor.routing_rule, choice.question)
         elif choice.cn8 and choice.written_by == WrittenBy.rule:
             note = ("single CN-8 line" if len(choice.options) == 1
                     else f"written by rule (confidence {choice.confidence} ≥ threshold {self.shipment.threshold})")
-            self._record_cn8(line, ChangeKind.cn8_written, choice.cn8, Actor.routing_rule, note)
+            self._record_code(line, ChangeKind.cn8_written, choice.cn8, Actor.routing_rule, note)
         self._recompute(line, Actor.routing_rule)
 
     def confirm_cn8(self, line_no: int, cn8: str) -> None:
@@ -377,8 +387,11 @@ class LineStore:
         previous_route = self.effective_route(line)
         base = v.cn8 if same else Cn8Choice(hs6=hs6, options=options)
         v.cn8 = base.model_copy(update={"cn8": cn8, "written_by": WrittenBy.clerk, "question": None, "error": None})
+        if previous_cn8 != cn8:   # another CN-8: its TARIC outcome no longer applies; the TARIC step runs again
+            v.taric = None
         for c in v.candidates:
             c.cn8 = cn8 if c.code == hs6 else None
+            c.taric10 = c.taric10 if v.taric is not None else None
         if v.decision is None:
             v.decision = Decision(route=DecisionRoute.accepted, decided_code=hs6, chosen_how=ChosenHow(how or "auto"),
                                   decided_cn8=cn8, at=self._clock())
@@ -387,7 +400,8 @@ class LineStore:
                                        note="CN-8 confirmed on an auto-accepted line"))
         else:
             v.decision = v.decision.model_copy(update={"decided_cn8": cn8})
-        self._record_cn8(line, ChangeKind.cn8_written, cn8, Actor.clerk, "confirmed by the clerk", previous=previous_cn8)
+        self._record_code(line, ChangeKind.cn8_written, cn8, Actor.clerk, "confirmed by the clerk", previous=previous_cn8)
+        self._reapply_taric(line, Actor.routing_rule)   # a single subdivision is written now that the CN-8 is
         self._recompute(line, Actor.clerk)
 
     def decided_cn8(self, line: Line) -> str | None:
@@ -413,18 +427,132 @@ class LineStore:
                                       precedent_conflict=cn8_precedent_conflict(c.cn8, c.precedent.code if c.precedent else None))
         if written and c.written_by is None:
             line.current.cn8 = c.model_copy(update={"written_by": WrittenBy.rule})
-            self._record_cn8(line, ChangeKind.cn8_written, c.cn8, Actor.threshold_change,
+            self._record_code(line, ChangeKind.cn8_written, c.cn8, Actor.threshold_change,
                              f"written by rule (confidence {c.confidence} ≥ threshold {threshold})")
         elif not written and c.written_by == WrittenBy.rule:
             line.current.cn8 = c.model_copy(update={"written_by": None})
-            self._record_cn8(line, ChangeKind.threshold_recomputed, None, Actor.threshold_change,
+            self._record_code(line, ChangeKind.threshold_recomputed, None, Actor.threshold_change,
                              f"CN-8 {c.cn8} back to a suggestion (confidence {c.confidence} < threshold {threshold})",
                              previous=c.cn8)
 
-    def _record_cn8(self, line: Line, change: ChangeKind, new: str | None, actor: Actor, note: str,
-                    previous: str | None = None) -> None:
+    def _record_code(self, line: Line, change: ChangeKind, new: str | None, actor: Actor, note: str,
+                     previous: str | None = None) -> None:
         self.record(DecisionRecord(at=self._clock(), line_no=line.line_no, version_no=line.current.version_no, change=change,
                                    previous=previous, new=new, actor=actor, note=note))
+
+    # ------------------------------------------------------------------ feature 004: the TARIC outcome
+    def set_taric_result(self, line_no: int, outcome: TaricOutcome) -> None:
+        """Store the TARIC step's outcome for the shipment's origin and record which rule applied (data-model §4, §5).
+        What is written is re-derived here with `code_to_write`. A TARIC-10 the clerk confirmed, or a question sent to
+        the shipper, stays while the subdivisions are the same: they do not depend on the origin (FR-018)."""
+        line = self.get_line(line_no)
+        v = line.current
+        prev = v.taric
+        same = prev is not None and prev.subdivisions == outcome.subdivisions
+        if same and prev.written_by == WrittenBy.clerk:
+            outcome = outcome.model_copy(update={"taric10": prev.taric10, "written_by": WrittenBy.clerk, "question": None})
+        else:
+            code = code_to_write(outcome.rule, outcome.subdivisions, self.decided_cn8(line) is not None)
+            outcome = outcome.model_copy(update={"taric10": code, "written_by": WrittenBy.rule if code else None,
+                                                 "question": prev.question if same else None})
+        v.taric = outcome
+        hs6 = v.cn8.hs6 if v.cn8 is not None else None
+        for c in v.candidates:   # the highlighted subdivision rides on the decided HS-6 candidate; it is never written
+            c.taric10 = outcome.suggestion.code if outcome.suggestion is not None and c.code == hs6 else None
+        change, note = self._taric_rule_note(outcome)
+        if outcome.written_by == WrittenBy.clerk:
+            change, note = ChangeKind.taric_written, f"confirmed by the clerk, kept; {note}"
+        previous = prev.taric10 if prev is not None and prev.taric10 != outcome.taric10 else None
+        self._record_code(line, change, outcome.taric10, Actor.routing_rule, note, previous=previous)
+
+    @staticmethod
+    def _taric_where(t: TaricOutcome) -> str:
+        return (f"snapshot {t.snapshot_date}; " if t.snapshot_date else "") + f"origin {t.origin}"
+
+    def _taric_rule_note(self, t: TaricOutcome) -> tuple[ChangeKind, str]:
+        """The audit kind and note for the rule that applied (data-model §5)."""
+        where = self._taric_where(t)
+        if t.rule == TaricRule.auto_completed:
+            if t.taric10:
+                return ChangeKind.taric_written, f"auto-completed, single TARIC subdivision, {where}"
+            return ChangeKind.taric_pending, f"single TARIC subdivision, written once the CN-8 is written; {where}"
+        if t.rule == TaricRule.trade_defence:
+            return ChangeKind.taric_pending, f"trade-defence measure {', '.join(t.trade_defence_types)}; {where}"
+        if t.rule == TaricRule.choose:
+            return ChangeKind.taric_pending, f"several subdivisions ({len(t.subdivisions)}); {where}"
+        text = "TARIC not available" if t.rule == TaricRule.not_available else "TARIC not loaded"
+        return ChangeKind.taric_not_available, f"{text}; {where}"
+
+    def confirm_taric10(self, line_no: int, code: str) -> None:
+        """The clerk writes a TARIC-10 among the subdivisions (FR-012). It needs a decided HS-6 and a written CN-8. On
+        an auto-accepted line it records the clerk's acceptance of the auto HS-6 (research R-09)."""
+        line = self.get_line(line_no)
+        v = line.current
+        hs6, how = self.decided_code(line)
+        if not hs6:
+            raise LockedError(f"line {line_no}: the HS-6 is not decided, so a TARIC-10 cannot be confirmed yet")
+        if self.decided_cn8(line) is None:
+            raise LockedError(f"line {line_no}: the CN-8 is not written, so a TARIC-10 cannot be confirmed yet")
+        t = v.taric
+        if t is None or not validate_taric10(code, t.subdivisions):
+            raise UnknownCodeError(f"TARIC-10 {code!r} is not a subdivision of CN-8 {v.cn8.cn8} in the loaded snapshot")
+        previous_route = self.effective_route(line)
+        v.taric = t.model_copy(update={"taric10": code, "written_by": WrittenBy.clerk, "question": None})
+        if v.decision is None:
+            v.decision = Decision(route=DecisionRoute.accepted, decided_code=hs6, chosen_how=ChosenHow(how or "auto"),
+                                  decided_taric10=code, at=self._clock())
+            self.record(DecisionRecord(at=self._clock(), line_no=line_no, version_no=v.version_no, change=ChangeKind.clerk_decision,
+                                       previous=previous_route, new=DecisionRoute.accepted.value, actor=Actor.clerk,
+                                       note="TARIC-10 confirmed on an auto-accepted line"))
+        else:
+            v.decision = v.decision.model_copy(update={"decided_taric10": code})
+        self._record_code(line, ChangeKind.taric_written, code, Actor.clerk, f"confirmed by the clerk; {self._taric_where(t)}",
+                          previous=t.taric10)
+        self._recompute(line, Actor.clerk)
+
+    def ask_shipper_for_taric(self, line_no: int, question: str) -> None:
+        """Instead of confirming a subdivision, the clerk sends the line to the shipper (FR-009): feature 001's
+        ask-shipper decision, with the question stored on the outcome. Nothing is written."""
+        line = self.get_line(line_no)
+        question = (question or "").strip()
+        if not question:
+            raise ValueError("write what to ask the shipper")
+        t = line.current.taric
+        if t is None or t.rule not in (TaricRule.choose, TaricRule.trade_defence):
+            raise ValueError(f"line {line_no}: no TARIC subdivision is left to the clerk")
+        self.set_decision(line_no, Decision(route=DecisionRoute.ask_shipper))
+        line.current.taric = t.model_copy(update={"question": question})
+        self._record_code(line, ChangeKind.taric_question, None, Actor.clerk,
+                          f"Ask the shipper for: {question}; {self._taric_where(t)}")
+
+    def decided_taric10(self, line: Line) -> str | None:
+        """The written TARIC-10 while the CN-8 is written and decided (data-model §6, top-down); None otherwise."""
+        t = line.current.taric
+        if self.decided_cn8(line) is None or t is None or not t.taric10 or t.written_by is None:
+            return None
+        return t.taric10
+
+    def taric_pending(self, line: Line) -> bool:
+        """A TARIC-10 left to the clerk: a written CN-8, rule choose or trade defence, nothing written, no question sent."""
+        t = line.current.taric
+        return bool(t is not None and self.decided_cn8(line) is not None and t.rule in (TaricRule.choose, TaricRule.trade_defence)
+                    and not t.taric10 and not t.question)
+
+    def _reapply_taric(self, line: Line, actor: Actor) -> None:
+        """Re-apply `code_to_write` after the CN-8's written state changed; a clerk-confirmed TARIC-10 stays."""
+        t = line.current.taric
+        if t is None or t.written_by == WrittenBy.clerk:
+            return
+        code = code_to_write(t.rule, t.subdivisions, self.decided_cn8(line) is not None)
+        if code == t.taric10:
+            return
+        line.current.taric = t.model_copy(update={"taric10": code, "written_by": WrittenBy.rule if code else None})
+        where = self._taric_where(t)
+        if code:
+            self._record_code(line, ChangeKind.taric_written, code, actor, f"auto-completed, single TARIC subdivision, {where}")
+        else:
+            self._record_code(line, ChangeKind.threshold_recomputed, None, actor,
+                              f"TARIC-10 {t.taric10} withdrawn: its CN-8 is no longer written; {where}", previous=t.taric10)
 
     def counts(self) -> dict[str, int]:
         c = {"auto_accept": 0, "review": 0, "ask_shipper": 0, "needs_action": 0, "accepted": 0}
@@ -442,6 +570,7 @@ class LineStore:
                 c["ask_shipper"] += 1
                 c["needs_action"] += 1
         c["cn8_to_confirm"] = sum(1 for line in self.shipment.lines if self.cn8_pending(line))   # feature 004
+        c["taric_to_confirm"] = sum(1 for line in self.shipment.lines if self.taric_pending(line))
         return c
 
     # ------------------------------------------------------------------ audit / usage / registries

@@ -11,9 +11,10 @@ from typing import Any
 from pydantic import ValidationError
 
 from agent.config import THRESHOLD_MAX, THRESHOLD_MIN
-from agent.schemas import CN8_PATTERN, CODE_RE, Candidate, FlagKind, LineStatus, RankOut, Route
+from agent.schemas import CN8_PATTERN, CODE_RE, TARIC10_PATTERN, Candidate, FlagKind, LineStatus, RankOut, Route
 
 _CN8_RE = re.compile(CN8_PATTERN)
+_TARIC10_RE = re.compile(TARIC10_PATTERN)
 _PUNCT = re.compile(r"[^\w\s]")
 _CJK = re.compile(r"[\u3400-\u9fff\uf900-\ufaff]")   # CJK ideographs
 
@@ -121,6 +122,13 @@ def validate_cn8(code: Any, options: list[tuple[str, str]]) -> bool:
     if not isinstance(code, str) or _CN8_RE.match(code) is None:
         return False
     return code in {c for c, _ in options}
+
+
+def validate_taric10(code: Any, subdivisions: list[str]) -> bool:
+    """Feature 004, FR-012: a ten-digit code that is one of the snapshot's subdivisions for the written CN-8."""
+    if not isinstance(code, str) or _TARIC10_RE.match(code) is None:
+        return False
+    return code in set(subdivisions)
 
 
 def effective_route_of(v: Any) -> str:

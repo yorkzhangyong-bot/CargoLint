@@ -20,6 +20,7 @@ ALLOWED_HOSTS = {
     "showvoc.op.europa.eu",
     "distr.tullverket.se",                             # TARIC source in data/SOURCES.md; the operator downloads the files
     "www.arcticgroup.se",                              # TARIC export XML namespace, never fetched
+    "auskunft.ezt-online.de",                          # feature 004: a link shown to the clerk, never fetched (research R-08)
 }
 
 

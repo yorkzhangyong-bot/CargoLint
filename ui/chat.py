@@ -126,28 +126,35 @@ def _en(line: str) -> str:
     return "" if re.search(r"[一-鿿]", parts[0]) else parts[0].strip()
 
 
-def queue_finer_codes(line_no: int, store, kb) -> None:
-    """Feature 004: run the CN-8 step for a line after the clerk's HS-6 decision, in the background. Behind a running
-    job the line waits in a queue that `_finish_job` works through."""
+def queue_finer_codes(line_no: int, store, kb, taric_only: bool = False) -> None:
+    """Feature 004: run the CN-8 and TARIC steps for a line after the clerk's HS-6 decision, or the TARIC step alone
+    after a CN-8 confirmation, in the background. Behind a running job the line waits in a queue of
+    (line_no, taric_only) that `_finish_job` works through."""
     if st.session_state.get("job") is not None:
         queue = st.session_state.setdefault("finer_codes_queue", [])
-        if line_no not in queue:
-            queue.append(line_no)
+        queued = next((i for i, (n, _) in enumerate(queue) if n == line_no), None)
+        if queued is None:
+            queue.append((line_no, taric_only))
+        elif not taric_only:
+            queue[queued] = (line_no, False)   # the full run includes the TARIC step
         return
-    st.session_state["job"] = jobs.start(jobs.Job(kind="finer_codes", message="", is_check=False, line_no=line_no), store, kb)
+    st.session_state["job"] = jobs.start(jobs.Job(kind="finer_codes", message="", is_check=False, line_no=line_no,
+                                                  taric_only=taric_only), store, kb)
 
 
 def _start_queued_finer_codes(store, kb) -> None:
     queue = st.session_state.get("finer_codes_queue") or []
     if queue and st.session_state.get("job") is None:
-        queue_finer_codes(queue.pop(0), store, kb)
+        line_no, taric_only = queue.pop(0)
+        queue_finer_codes(line_no, store, kb, taric_only)
 
 
 def _finish_job(store, kb) -> None:
     job = st.session_state.pop("job")
     if job.kind == "finer_codes":   # no chat message; only an unexpected failure is reported
         if job.error:
-            st.session_state["chat"].append({"role": "assistant", "content": f"I could not finish the CN-8 step for line "
+            step = "TARIC step" if job.taric_only else "CN-8 and TARIC steps"
+            st.session_state["chat"].append({"role": "assistant", "content": f"I could not finish the {step} for line "
                                              f"{job.line_no}: {job.error}", "kind": job.kind, "error": True})
         _start_queued_finer_codes(store, kb)
         st.rerun()
@@ -207,11 +214,12 @@ def _welcome(store, kb, compact: bool) -> None:
 
 
 def _render_counts(counts: dict) -> None:
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("Auto-accept", counts.get("auto_accept", 0))
     c2.metric("Human review", counts.get("review", 0))
     c3.metric("Ask the shipper", counts.get("ask_shipper", 0))
     c4.metric("CN-8 to confirm", counts.get("cn8_to_confirm", 0), help="Confirmations waiting for you, not a route")
+    c5.metric("TARIC-10 to confirm", counts.get("taric_to_confirm", 0), help="Confirmations waiting for you, not a route")
 
 
 def _needs_action_list(store) -> None:
