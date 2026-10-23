@@ -14,6 +14,8 @@ from agent.config import THRESHOLD_MAX, THRESHOLD_MIN
 from agent.schemas import CN8_PATTERN, CODE_RE, Candidate, FlagKind, LineStatus, RankOut, Route
 
 _CN8_RE = re.compile(CN8_PATTERN)
+CN8_UNSUPPORTED_CAP = 84   # iteration 2: without words of the line and an agreeing precedent, no CN-8 reaches 85
+_QUOTES = re.compile(r"[\"'“”‘’`]")
 
 
 class SchemaError(ValueError):
@@ -87,10 +89,38 @@ def hs6_auto_decided(flag_kind: FlagKind | str | None, top_confidence: int | Non
     return route_line(flag_kind, top_confidence, status, ever_flagged, threshold, ask_floor)[0] == Route.auto_accept
 
 
-def cn8_written_by_rule(confidence: int, threshold: int, single_line: bool) -> bool:
+def cn8_written_by_rule(confidence: int, threshold: int, single_line: bool, precedent_conflict: bool = False) -> bool:
     """Feature 004, clarification Q4: a CN-8 is written by rule when it is the only line, or its confidence meets the
-    auto-accept threshold (at the threshold counts, as for HS-6 auto-accept)."""
-    return bool(single_line) or int(confidence) >= int(threshold)
+    auto-accept threshold (at the threshold counts, as for HS-6 auto-accept). Iteration 2: a cited ruling at another
+    CN-8 keeps the choice to confirm, whatever the confidence."""
+    if single_line:
+        return True
+    return not precedent_conflict and int(confidence) >= int(threshold)
+
+
+def _plain(text: str) -> str:
+    return " ".join(_QUOTES.sub("", text or "").lower().split())
+
+
+def evidence_in_line(evidence: str, line_text: str) -> bool:
+    """Iteration 2: the evidence must be words of the line. Every fragment (separated by ';' or '...') must occur in
+    the line text, ignoring case, quotes and spacing; empty evidence is no evidence."""
+    text = _plain(line_text)
+    fragments = [_plain(f).strip(" .,:;!?") for f in re.split(r";|…|\.\.\.", evidence or "")]
+    fragments = [f for f in fragments if f]
+    return bool(fragments) and all(f in text for f in fragments)
+
+
+def cn8_precedent_conflict(cn8: str | None, precedent_code: str | None) -> bool:
+    """Iteration 2: a cited ruling conflicts when its CN code is not at the chosen CN-8."""
+    return bool(cn8 and precedent_code and precedent_code[:8] != cn8)
+
+
+def cn8_confidence(confidence: int, evidence_in_the_line: bool, precedent_agrees: bool) -> int:
+    """Iteration 2: 85 and above needs the deciding words in the line and a cited ruling at the chosen CN-8; anything
+    else is capped at 84 (the prompt puts inferred choices at 70-84)."""
+    c = int(confidence)
+    return c if (evidence_in_the_line and precedent_agrees) else min(c, CN8_UNSUPPORTED_CAP)
 
 
 def validate_cn8(code: Any, options: list[tuple[str, str]]) -> bool:

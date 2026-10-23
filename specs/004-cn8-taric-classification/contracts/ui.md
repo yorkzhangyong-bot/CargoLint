@@ -33,7 +33,7 @@ that it reads "Decide the HS-6 first."
 - the EBTI ruling in a popover: reference, member state, validity, description, "Open ruling".
 - **State**, exactly one of:
   - **written**: "Written by rule (confidence N ≥ T)", "Single CN-8 line" or "Confirmed by you";
-  - **to confirm**: a radio of all CN-8 lines with the chosen one preselected, and a "Confirm CN-8" button;
+  - **to confirm**: the reason (below the threshold, or the cited ruling is at another CN-8), a radio of all CN-8 lines with the chosen one preselected, and a "Confirm CN-8" button;
   - **question open**: the warning "Ask the shipper for: <attribute>", plus the same radio and button for the clerk who knows the answer;
   - **failed**: the error, with the route reading review (data-model §6), plus the same radio and button.
 

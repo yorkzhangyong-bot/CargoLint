@@ -17,6 +17,7 @@ from uuid import uuid4
 from agent.config import ASK_FLOOR, DEFAULT_THRESHOLD, THRESHOLD_MAX, THRESHOLD_MIN
 from agent.routing import (
     can_accept,
+    cn8_precedent_conflict,
     cn8_written_by_rule,
     effective_route_of,
     hs6_auto_decided,
@@ -408,7 +409,8 @@ class LineStore:
         c = line.current.cn8
         if c is None or not c.cn8 or c.written_by == WrittenBy.clerk or c.question or c.error:
             return
-        written = cn8_written_by_rule(c.confidence, threshold, len(c.options) == 1)
+        written = cn8_written_by_rule(c.confidence, threshold, len(c.options) == 1,
+                                      precedent_conflict=cn8_precedent_conflict(c.cn8, c.precedent.code if c.precedent else None))
         if written and c.written_by is None:
             line.current.cn8 = c.model_copy(update={"written_by": WrittenBy.rule})
             self._record_cn8(line, ChangeKind.cn8_written, c.cn8, Actor.threshold_change,

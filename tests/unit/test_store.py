@@ -339,3 +339,12 @@ class TestCn8:
         s.set_decision(3, Decision(route=DecisionRoute.accepted, decided_code="9617.00"))
         v = s.get_line(3).current
         assert v.cn8 is None and v.taric is None
+
+    def test_a_threshold_change_never_writes_a_choice_whose_precedent_conflicts(self, cn8_store):
+        from agent.schemas import Precedent
+
+        s = cn8_store
+        s.set_cn8_result(2, Cn8Choice(hs6="8714.91", options=s.index.cn8_lines("8714.91"), cn8="87149110", confidence=84,
+                                      precedent=Precedent(reference="DE-FORK-1", code="8714913000")))
+        s.set_threshold(80)
+        assert s.get_line(2).current.cn8.written_by is None and s.cn8_pending(s.get_line(2))

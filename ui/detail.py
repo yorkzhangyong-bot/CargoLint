@@ -197,8 +197,12 @@ def _cn8_section(store, line) -> None:
         st.error(f"CN-8 step failed: {c.error}. The line is in review; choose the CN-8.", icon="⚠️")
     elif c.question:
         st.warning(c.question, icon="❓")
+    elif c.precedent is not None and c.precedent.code[:8] != c.cn8:
+        st.info(f"CN-8 to confirm: the cited ruling {c.precedent.reference} classifies under {_spaced(c.precedent.code[:8])}, "
+                "not this CN-8.")
     else:
-        st.info("CN-8 to confirm: its confidence is below the auto-accept threshold.")
+        st.info(f"CN-8 to confirm: its confidence ({c.confidence}) is below the auto-accept threshold "
+                f"({store.shipment.threshold}).")
     _cn8_confirm(store, line)
 
 

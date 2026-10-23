@@ -129,3 +129,5 @@ def assert_no_unconfirmed_writes(store) -> None:
         assert c.cn8 in [code for code, _ in c.options], f"line {line.line_no}: written CN-8 {c.cn8} is not one of its options"
         if c.written_by.value == "rule":
             assert len(c.options) == 1 or c.confidence >= threshold, f"line {line.line_no}: CN-8 written below the threshold"
+            assert len(c.options) == 1 or not (c.precedent and c.precedent.code[:8] != c.cn8), \
+                f"line {line.line_no}: CN-8 written although its cited ruling is at another CN-8"

@@ -55,9 +55,9 @@ def fake_client():
     set_client_factory(None)
 
 
-def out(cn8, confidence=95, visible=True, attribute="the deciding attribute", precedent=None):
+def out(cn8, confidence=95, visible=True, attribute="the deciding attribute", precedent=None, evidence=""):
     return {"cn8": cn8, "confidence": confidence, "deciding_attribute": attribute, "attribute_visible": visible,
-            "evidence": "the words", "rationale": "because", "precedent": precedent}
+            "evidence": evidence, "rationale": "because", "precedent": precedent}
 
 
 def key(line):
@@ -73,14 +73,33 @@ class TestChooseCn8:
         assert choice.question is None and choice.error is None
         assert fake_llm.prompts_for("Cn8Out") == []
 
-    def test_written_by_rule_at_or_above_the_threshold_else_a_suggestion(self, fake_llm, make_kb):
+    def test_written_by_rule_with_evidence_an_agreeing_precedent_and_the_threshold(self, fake_client, make_kb):
         from tools.classify_cn8 import choose_cn8
 
-        written = choose_cn8(FRAMES, "8714.91", make_kb(), get_client(), 85, AS_OF)
+        kb = make_kb([ruling("DE-FRAME-1", "8714911000")])
+        client, _ = fake_client({key(FRAMES): out("87149110", precedent="DE-FRAME-1", evidence="bicycle frames")})
+        written = choose_cn8(FRAMES, "8714.91", kb, client, 85, AS_OF)
         assert (written.cn8, written.confidence, written.written_by) == ("87149110", 95, WrittenBy.rule)
-        suggested = choose_cn8(FRAMES, "8714.91", make_kb(), get_client(), 99, AS_OF)
+        assert written.precedent.reference == "DE-FRAME-1"
+        suggested = choose_cn8(FRAMES, "8714.91", kb, client, 99, AS_OF)
         assert suggested.cn8 == "87149110" and suggested.written_by is None
         assert [c for c, _ in written.options] == ["87149110", "87149130", "87149190"]
+
+    def test_without_an_agreeing_precedent_the_confidence_is_capped_at_84(self, fake_llm, make_kb):
+        from tools.classify_cn8 import choose_cn8
+
+        choice = choose_cn8(FRAMES, "8714.91", make_kb(), get_client(), 85, AS_OF)   # recorded: 95, no precedent
+        assert (choice.cn8, choice.confidence, choice.written_by) == ("87149110", 84, None)
+        assert choose_cn8(FRAMES, "8714.91", make_kb(), get_client(), 80, AS_OF).written_by == WrittenBy.rule
+
+    @pytest.mark.parametrize("evidence", ["", "the goods are frames for bicycles", "carbon fibre frames"])
+    def test_without_words_of_the_line_as_evidence_the_step_asks_the_shipper(self, fake_client, make_kb, evidence):
+        from tools.classify_cn8 import choose_cn8
+
+        client, _ = fake_client({key(FRAMES): out("87149110", attribute="frame, fork or other part", evidence=evidence)})
+        choice = choose_cn8(FRAMES, "8714.91", make_kb(), client, 85, AS_OF)
+        assert choice.cn8 is None and choice.written_by is None
+        assert choice.question == "Ask the shipper for: frame, fork or other part"
 
     def test_a_missing_attribute_gives_a_question_and_no_cn8(self, fake_llm, make_kb):
         from tools.classify_cn8 import choose_cn8
@@ -100,7 +119,7 @@ class TestChooseCn8:
     def test_a_code_outside_the_options_is_discarded(self, fake_client, make_kb):
         from tools.classify_cn8 import choose_cn8
 
-        client, _ = fake_client({key(TOYS): out("95039999")})
+        client, _ = fake_client({key(TOYS): out("95039999", evidence="toy cars")})
         choice = choose_cn8(TOYS, "9503.00", make_kb(), client, 85, AS_OF)
         assert choice.cn8 is None and choice.written_by is None and choice.question is None
         assert "95039999" in choice.error and "9503.00" in choice.error
@@ -108,7 +127,8 @@ class TestChooseCn8:
     def test_invalid_output_is_retried_once_then_the_step_fails(self, fake_client, make_kb):
         from tools.classify_cn8 import choose_cn8
 
-        client, fake = fake_client({key(FRAMES): out("87149110")}, invalid_first={("Cn8Out", key(FRAMES)): 2})
+        client, fake = fake_client({key(FRAMES): out("87149110", evidence="bicycle frames")},
+                                   invalid_first={("Cn8Out", key(FRAMES)): 2})
         choice = choose_cn8(FRAMES, "8714.91", make_kb(), client, 85, AS_OF)
         assert choice.cn8 is None and choice.error and choice.written_by is None
         assert len(fake.prompts_for("Cn8Out")) == 2   # the first call and one retry
@@ -116,19 +136,28 @@ class TestChooseCn8:
     def test_one_invalid_answer_is_recovered_by_the_retry(self, fake_client, make_kb):
         from tools.classify_cn8 import choose_cn8
 
-        client, _ = fake_client({key(FRAMES): out("87149110")}, invalid_first={("Cn8Out", key(FRAMES)): 1})
+        client, _ = fake_client({key(FRAMES): out("87149110", evidence="bicycle frames")},
+                                invalid_first={("Cn8Out", key(FRAMES)): 1})
         assert choose_cn8(FRAMES, "8714.91", make_kb(), client, 85, AS_OF).cn8 == "87149110"
 
-    def test_a_cited_ruling_must_have_been_sent_and_match_the_cn8(self, fake_client, make_kb):
+    def test_a_cited_ruling_must_have_been_sent(self, fake_client, make_kb):
+        from tools.classify_cn8 import choose_cn8
+
+        kb = make_kb([ruling("DE-FRAME-1", "8714911000")])
+        client, _ = fake_client({key(FRAMES): out("87149110", precedent="XX-NEVER-SENT", evidence="bicycle frames")})
+        choice = choose_cn8(FRAMES, "8714.91", kb, client, 85, AS_OF)
+        assert choice.precedent is None and choice.cn8 == "87149110"
+        assert choice.confidence == 84 and choice.written_by is None   # no agreeing precedent
+
+    def test_a_cited_ruling_at_another_cn8_keeps_the_choice_to_confirm(self, fake_client, make_kb):
         from tools.classify_cn8 import choose_cn8
 
         kb = make_kb([ruling("DE-FRAME-1", "8714911000"), ruling("DE-FORK-1", "8714913000")])
-        client, _ = fake_client({key(FRAMES): out("87149110", precedent="DE-FRAME-1")})
-        assert choose_cn8(FRAMES, "8714.91", kb, client, 85, AS_OF).precedent.reference == "DE-FRAME-1"
-        for cited in ("XX-NEVER-SENT", "DE-FORK-1"):   # unknown, or a ruling at another CN-8
-            client, _ = fake_client({key(FRAMES): out("87149110", precedent=cited)})
-            choice = choose_cn8(FRAMES, "8714.91", kb, client, 85, AS_OF)
-            assert choice.precedent is None and choice.cn8 == "87149110"
+        client, _ = fake_client({key(FRAMES): out("87149110", 98, precedent="DE-FORK-1", evidence="bicycle frames")})
+        for threshold in (85, 60):
+            choice = choose_cn8(FRAMES, "8714.91", kb, client, threshold, AS_OF)
+            assert choice.cn8 == "87149110" and choice.written_by is None and choice.confidence <= 84
+            assert choice.precedent.reference == "DE-FORK-1"   # shown, so the clerk sees the disagreement
 
     def test_at_most_two_rulings_per_cn8_line_and_eight_in_all(self, fake_client, make_kb):
         from tools.classify_cn8 import choose_cn8
@@ -161,7 +190,7 @@ class TestClassifyCn8Lines:
     def test_one_result_per_line_and_a_failure_stays_on_its_line(self, fake_client, make_kb):
         from tools.classify_cn8 import classify_cn8_lines
 
-        client, _ = fake_client({key(FRAMES): out("87149110")}, fail_on={key(TOYS)})
+        client, _ = fake_client({key(FRAMES): out("87149110", evidence="bicycle frames")}, fail_on={key(TOYS)})
         inp = Cn8Input(lines=[{**TOYS.model_dump(include={"line_no", "text_zh", "text_en"}), "hs6": "9503.00"},
                               {**FRAMES.model_dump(include={"line_no", "text_zh", "text_en"}), "hs6": "8714.91"}],
                        as_of=AS_OF, threshold=85)

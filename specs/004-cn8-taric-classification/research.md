@@ -68,6 +68,17 @@ So a model judgement is needed for a third of the decided subheadings.
   - judge whether the deciding attribute is stated in the text and never infer it from typical goods;
   - set confidence by the same bands (85–98 when the text states the attribute, 60–84 when it implies it, below 60 when guessing).
 
+**Iteration 2 (2026-10-23, the author's decision after the first evaluation)**: the first run wrote 119 of 120 CN-8
+codes by rule, 19 of them wrong, because the model answered 85 almost every time. Three rules now hold in code:
+- **Evidence**: it must be words of the line. Every fragment must occur in the line text, ignoring case, quotes and
+  spacing. Without such words the attribute counts as not visible, and the step asks the shipper (`evidence_in_line`).
+- **Precedent agreement**: a cited ruling whose CN code is at another CN-8 keeps the choice "CN-8 to confirm",
+  whatever the confidence or the threshold (`cn8_precedent_conflict`).
+- **Bands**: 85 and above needs that evidence and a cited ruling at the chosen CN-8. Anything else is capped at 84
+  (`cn8_confidence`). The prompt puts inferred choices at 70-84.
+
+Results of both iterations against the fixed set are in `tests/eval/cn8_eval.md`.
+
 **Alternatives considered**:
 - **Choosing the CN-8 inside `classify_hs6`**: changes the HS-6 path, which FR-021 forbids.
 - **A rule-based keyword matcher**: CN-8 labels differ by material, dimensions, use and form, so keyword rules miss most of them.

@@ -60,11 +60,12 @@ def test_upload_flow_end_to_end(fake_llm, kb, memory_store, scripted):
     assert store.shipment.shipper.name == "Yiwu Hengfa Trading" and store.shipment.shipper.known is True
     assert store.shipment.origin == "Shanghai" and store.shipment.mode == "LCL"
     # feature 004, decision 3: "Plastic toy cars" (line 6) now asks the shipper whether a motor is fitted
-    assert result.counts == {"auto_accept": 6, "review": 2, "ask_shipper": 4, "needs_action": 6, "accepted": 6, "cn8_to_confirm": 0}
+    assert result.counts == {"auto_accept": 6, "review": 2, "ask_shipper": 4, "needs_action": 6, "accepted": 6, "cn8_to_confirm": 2}
     toys = store.get_line(6)
     assert toys.current.cn8.question == "Ask the shipper for: whether the toy cars incorporate a motor"
     assert store.effective_route(toys) == "ask_shipper" and "motor" in toys.current.route_reason
     assert store.get_line(10).current.cn8.cn8 == "87149110" and store.get_line(12).current.cn8.cn8 == "39269097"
+    assert store.cn8_pending(store.get_line(10)) and store.cn8_pending(store.get_line(12))   # no agreeing precedent offline
     assert_no_unconfirmed_writes(store)
     assert store.get_line(1).current.candidates[0].history_only is True  # shipper history used for "Parts"
     assert all(s.run_by == "agent" for s in result.check_run.steps)
@@ -73,7 +74,7 @@ def test_upload_flow_end_to_end(fake_llm, kb, memory_store, scripted):
 
     store.set_decision(2, Decision(route=DecisionRoute.accepted, decided_code="9405.21"))
     assert store.get_line(2).current.decision.chosen_how == ChosenHow.top
-    assert store.counts() == {"auto_accept": 6, "review": 1, "ask_shipper": 4, "needs_action": 5, "accepted": 7, "cn8_to_confirm": 0}
+    assert store.counts() == {"auto_accept": 6, "review": 1, "ask_shipper": 4, "needs_action": 5, "accepted": 7, "cn8_to_confirm": 2}
 
 
 def test_parsed_file_starts_a_shipment_with_detected_fields(memory_store):

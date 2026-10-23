@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 
 from agent.llm import StructuredCaller
 from agent.prompts import CN8_SYSTEM, cn8_user
-from agent.routing import cn8_written_by_rule, validate_cn8
+from agent.routing import cn8_confidence, cn8_precedent_conflict, cn8_written_by_rule, evidence_in_line, validate_cn8
 from agent.schemas import Cn8Choice, Cn8Input, Cn8Line, Cn8Out, Cn8Result, Precedent, WrittenBy
 from tools import register
 from tools.common import get_context, run_per_line
@@ -84,18 +84,21 @@ def choose_cn8(line: Any, hs6: str, kb: Any, client: StructuredCaller | None, th
         log.warning("CN-8 step failed for line %s: %s", line.line_no, type(exc).__name__)
         return Cn8Choice(hs6=hs6, options=options, error=_error(exc))
     attribute = out.deciding_attribute.strip()
-    if not out.attribute_visible or out.cn8 is None:   # FR-003: decide nothing, ask the shipper
+    ex = getattr(line, "extracted", None)
+    words = text if ex is None else f"{text} / {ex.material} {ex.part_name} {ex.use}"   # what the shipper confirmed counts too
+    if not out.attribute_visible or out.cn8 is None or not evidence_in_line(out.evidence, words):
+        # FR-003: decide nothing and ask the shipper; without words of the line as evidence the attribute is not visible
         attribute = attribute or "the attribute that separates the CN-8 lines"
         return Cn8Choice(hs6=hs6, options=options, deciding_attribute=attribute, question=f"Ask the shipper for: {attribute}",
                          evidence=out.evidence, rationale=out.rationale)
     if not validate_cn8(out.cn8, options):              # FR-002: discarded, never shown
         return Cn8Choice(hs6=hs6, options=options, deciding_attribute=attribute,
                          error=f"the model chose {out.cn8}, which is not a CN-8 line of {hs6}")
-    precedent = {p.reference: p for p in rulings}.get(out.precedent or "")
-    if precedent is not None and not precedent.code.startswith(out.cn8):   # cited, but at another CN-8 line
-        precedent = None
-    written = cn8_written_by_rule(out.confidence, threshold, single_line=False)
-    return Cn8Choice(hs6=hs6, options=options, cn8=out.cn8, confidence=out.confidence, evidence=out.evidence,
+    precedent = {p.reference: p for p in rulings}.get(out.precedent or "")   # a citation counts only if it was sent
+    conflict = cn8_precedent_conflict(out.cn8, precedent.code if precedent else None)
+    confidence = cn8_confidence(out.confidence, True, precedent is not None and not conflict)   # evidence checked above
+    written = cn8_written_by_rule(confidence, threshold, single_line=False, precedent_conflict=conflict)
+    return Cn8Choice(hs6=hs6, options=options, cn8=out.cn8, confidence=confidence, evidence=out.evidence,
                      rationale=out.rationale, deciding_attribute=attribute, precedent=precedent,
                      written_by=WrittenBy.rule if written else None)
 

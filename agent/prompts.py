@@ -164,13 +164,18 @@ Rules:
 - Choose only one of the listed CN-8 codes, written as eight digits. Never invent a code.
 - deciding_attribute: name what separates the listed lines, for example the material, whether a motor is fitted, or
   the use.
+- evidence: copy the exact words of the description that decide between the listed lines (several fragments may be
+  separated by ";"). Never paraphrase. If no words of the description decide it, set attribute_visible to false and
+  cn8 to null: the clerk will ask the shipper.
 - attribute_visible: true only when the description states that attribute or clearly implies it. Never infer it from
-  what such goods usually are. When the description gives no basis for it, set attribute_visible to false and cn8 to
-  null: the clerk will ask the shipper.
-- confidence: 85-98 when the description states the attribute, 60-84 when it only implies it, below 60 when guessing.
-  It is a model estimate, not a probability.
-- evidence: the words of the description that decide. rationale: one or two sentences a customs clerk can check.
-- precedent: the reference of one listed ruling at your chosen CN-8 that supports it, or null. Cite only listed rulings.
+  what such goods usually are.
+- precedent: the reference of one listed ruling at your chosen CN-8 that supports your choice, or null. Cite only
+  listed rulings, and only a ruling at the CN-8 you chose.
+- confidence: 85-98 only when the evidence words state the deciding attribute and a listed ruling at your chosen
+  CN-8 supports the choice; 70-84 when the choice is inferred (the attribute is only implied, or no listed ruling at
+  your CN-8 supports it); below 70, prefer attribute_visible false and cn8 null. It is a model estimate, not a
+  probability.
+- rationale: one or two sentences a customs clerk can check.
 """
 
 
