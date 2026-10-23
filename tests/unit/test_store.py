@@ -521,3 +521,18 @@ class TestTaric:
         s.set_taric_result(1, _outcome(TaricRule.auto_completed, ["7318159500"]))
         s.set_cn8_result(1, _cn8(s, "7318.15", "73181558", 95, WrittenBy.rule))
         assert s.get_line(1).current.taric is None
+
+
+class TestTaricOrigin:
+    """US4 (FR-017): the goods' origin for TARIC, per invoice; CN by default."""
+
+    def test_two_letters_upper_cased_and_anything_else_refused(self, memory_store):
+        s = memory_store
+        assert s.shipment.taric_origin == "CN"
+        assert s.set_taric_origin("us") == "US" and s.shipment.taric_origin == "US"
+        assert s.set_taric_origin(" cn ") == "CN"
+        s.set_taric_origin("US")
+        for bad in ("C1", "CHN", "", "  ", None):
+            with pytest.raises(ValueError):
+                s.set_taric_origin(bad)
+            assert s.shipment.taric_origin == "US"   # the previous origin stays

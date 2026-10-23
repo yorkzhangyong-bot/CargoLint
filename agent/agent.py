@@ -298,6 +298,28 @@ def after_hs6_decision(store: Any, kb: Any, line_no: int, taric_only: bool = Fal
     return "; ".join(parts)
 
 
+def apply_taric_origin(store: Any, kb: Any, code: str) -> str:
+    """Feature 004 (FR-017, FR-018, contracts/tools.md §4): set the shipment's TARIC origin, then re-apply the lookup
+    and the rules to every line with a CN-8 and a TARIC outcome. Subdivision codes do not depend on the origin, so the
+    stored suggestions are reused and no model is called; the store keeps the TARIC-10 codes the clerk confirmed. A
+    line whose TARIC step has not run yet is left to it. A refused origin raises ValueError and changes nothing."""
+    from tools.lookup_taric import rule_outcome
+
+    before = store.shipment.taric_origin
+    origin = store.set_taric_origin(code)
+    n = 0
+    for line in store.lines if origin != before else []:
+        c, prev = line.current.cn8, line.current.taric
+        if c is None or not c.cn8 or c.question or c.error or prev is None:
+            continue
+        outcome, _ = rule_outcome(c.cn8, store.decided_cn8(line) is not None, origin, kb)
+        if prev.subdivisions == outcome.subdivisions:
+            outcome = outcome.model_copy(update={"suggestion": prev.suggestion, "suggestion_error": prev.suggestion_error})
+        store.set_taric_result(line.line_no, outcome)
+        n += 1
+    return f"Origin {origin}: the TARIC rules re-applied to {n} line{'s' if n != 1 else ''}"
+
+
 def line_taric_view(store: Any, kb: Any, line_no: int) -> Any:
     """Feature 004 (contracts/tools.md §4, Display): the line's CN-8 looked up for the shipment's origin, as
     `taric_view` groups it; None without a CN-8. The UI calls this and never reads `kb.taric` itself. Measures are

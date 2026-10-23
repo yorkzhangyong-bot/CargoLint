@@ -412,8 +412,8 @@ description: "Task list for CN-8 and TARIC-10 classification in the agent and th
 
 ### Tests for User Story 4 (write FIRST, ensure they FAIL)
 
-- [ ] T049 [P] [US4] Add to tests/unit/test_store.py: `set_taric_origin("us")` stores and returns "US". "C1", "CHN" and "" raise ValueError, and the previous origin stays.
-- [ ] T050 [P] [US4] Add tests for `apply_taric_origin(store, kb, "US")` to tests/integration/test_lookup_taric.py:
+- [X] T049 [P] [US4] Add to tests/unit/test_store.py: `set_taric_origin("us")` stores and returns "US". "C1", "CHN" and "" raise ValueError, and the previous origin stays.
+- [X] T050 [P] [US4] Add tests for `apply_taric_origin(store, kb, "US")` to tests/integration/test_lookup_taric.py:
   - 73181558 moves from `trade_defence` to `choose` with no new `SubdivisionOut` call; the stored suggestion is reused;
   - a clerk-confirmed TARIC-10 stays (FR-018);
   - 7318159500, auto-completed for CN, becomes `trade_defence` for US, so it is withdrawn and waits for confirmation (US4 scenario 3);
@@ -422,8 +422,8 @@ description: "Task list for CN-8 and TARIC-10 classification in the agent and th
 
 ### Implementation for User Story 4
 
-- [ ] T051 [US4] Add `set_taric_origin` to agent/store.py, and `apply_taric_origin(store, kb, code)` to agent/agent.py (contracts/tools.md §3, §4).
-- [ ] T052 [US4] In ui/upload.py, `render_shipment_fields` gains an "Origin (TARIC)" text input:
+- [X] T051 [US4] Add `set_taric_origin` to agent/store.py, and `apply_taric_origin(store, kb, code)` to agent/agent.py (contracts/tools.md §3, §4).
+- [X] T052 [US4] In ui/upload.py, `render_shipment_fields` gains an "Origin (TARIC)" text input:
   - two characters, defaulting to the shipment's `taric_origin`;
   - `on_change` calls `apply_taric_origin`;
   - a ValueError shows `st.error` and puts the previous origin back.

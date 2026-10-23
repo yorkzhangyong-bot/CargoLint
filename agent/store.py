@@ -9,6 +9,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import re
 from collections.abc import Callable, MutableMapping
 from datetime import datetime, timezone
 from typing import Any
@@ -27,6 +28,7 @@ from agent.routing import (
     validate_taric10,
 )
 from agent.schemas import (
+    ORIGIN_PATTERN,
     Actor,
     ChangeKind,
     ChosenHow,
@@ -294,6 +296,15 @@ class LineStore:
 
     def set_hybrid(self, value: bool) -> None:
         self.shipment.hybrid_search = bool(value)
+
+    def set_taric_origin(self, code: str | None) -> str:
+        """Feature 004 (FR-017): the goods' origin for TARIC, two letters after upper-casing. Anything else raises
+        ValueError and the previous origin stays. The agent's apply_taric_origin re-applies the rules after it."""
+        value = (code or "").strip().upper()
+        if re.fullmatch(ORIGIN_PATTERN, value) is None:
+            raise ValueError(f"the origin must be two letters, such as CN or US, not {code!r}")
+        self.shipment.taric_origin = value
+        return value
 
     def recompute_routes(self) -> None:
         for line in self.shipment.lines:

@@ -288,3 +288,61 @@ class TestLineTaricView:
         n = screw_line(s, "73181558")
         view = line_taric_view(s, make_kb(taric=False), n)
         assert view.subdivisions == () and view.snapshot_date is None
+
+
+class TestOrigin:
+    """US4 (FR-017, FR-018): a new origin re-applies the lookup and the rules, with no model call."""
+
+    def test_a_new_origin_reapplies_the_rules_and_keeps_the_clerks_codes(self, fake_client, make_kb, memory_store):
+        from agent.agent import apply_taric_origin
+        from tools.lookup_taric import run_taric_step
+
+        client, fake = fake_client({key(): suggestion("7318155810")})
+        s = memory_store
+        bolts = screw_line(s, "73181558")        # CN: trade defence on both subdivisions, with a suggestion
+        single = screw_line(s, "73181595")       # CN: auto-completed and written by rule
+        confirmed = screw_line(s, "73181568")    # CN: trade defence (570); the clerk confirms it
+        s.add_lines([ParsedLine(text_zh="配件", text_en="Parts")], CreatedBy.paste)   # no CN-8
+        kb = make_kb()
+        run_taric_step(s, kb, client)
+        s.confirm_taric10(confirmed, "7318156800")
+        calls, before = len(fake.prompts_for("SubdivisionOut")), len(s.shipment.audit)
+        assert apply_taric_origin(s, kb, "us") == "Origin US: the TARIC rules re-applied to 3 lines"
+        assert s.shipment.taric_origin == "US"
+        t = s.get_line(bolts).current.taric
+        assert (t.rule, t.origin, t.suggestion.code) == (TaricRule.choose, "US", "7318155810")   # the stored suggestion
+        assert len(fake.prompts_for("SubdivisionOut")) == calls                                 # no model call
+        t = s.get_line(single).current.taric
+        assert (t.rule, t.taric10, t.written_by) == (TaricRule.trade_defence, None, None)   # 552 erga omnes applies to the US
+        assert s.taric_pending(s.get_line(single))
+        t = s.get_line(confirmed).current.taric
+        assert (t.rule, t.taric10, t.written_by) == (TaricRule.auto_completed, "7318156800", WrittenBy.clerk)   # FR-018
+        new = [r for r in s.shipment.audit[before:] if r.change.value.startswith("taric_")]
+        assert {r.line_no for r in new} == {bolts, single, confirmed}
+        assert all(r.note.endswith("origin US") for r in new)
+        assert last(s, ChangeKind.taric_pending, single).previous == "7318159500"     # the withdrawn code
+        assert s.get_line(4).current.taric is None
+
+    def test_a_refused_origin_changes_nothing(self, fake_client, make_kb, memory_store):
+        from agent.agent import apply_taric_origin
+        from tools.lookup_taric import run_taric_step
+
+        client, _ = fake_client()
+        s = memory_store
+        n = screw_line(s, "73181595")
+        kb = make_kb()
+        run_taric_step(s, kb, client)
+        before = len(s.shipment.audit)
+        with pytest.raises(ValueError):
+            apply_taric_origin(s, kb, "C1")
+        assert s.shipment.taric_origin == "CN" and len(s.shipment.audit) == before
+        assert s.get_line(n).current.taric.origin == "CN"
+
+    def test_a_line_whose_taric_step_has_not_run_waits_for_it(self, fake_client, make_kb, memory_store):
+        from agent.agent import apply_taric_origin
+        from tools.lookup_taric import needs_taric
+
+        s = memory_store
+        n = screw_line(s, "73181558")
+        assert apply_taric_origin(s, make_kb(), "US") == "Origin US: the TARIC rules re-applied to 0 lines"
+        assert s.get_line(n).current.taric is None and needs_taric(s, s.get_line(n)) == "73181558"
