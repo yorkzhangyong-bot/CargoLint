@@ -40,7 +40,7 @@ creates `Decision(route=accepted, decided_code=<the auto-decided HS-6>, chosen_h
 | question | string or null | "Ask the shipper for: <deciding_attribute>" when the attribute is not visible; this is the routing input (§6) |
 | precedent | Precedent or null | a valid EBTI ruling sent in this run whose code starts with `cn8` |
 | written_by | `rule`, `clerk` or null | `rule` when `confidence` ≥ the shipment threshold (or a single line); `clerk` after a confirmation; null while it is a suggestion |
-| error | string or null | why the step failed for this line: invalid output after one retry, or an API error. There is then no CN-8 and no question; the line keeps its HS-6 route and waits for the clerk's choice (§6) |
+| error | string or null | why the step failed for this line: invalid output after one retry, or an API error. There is then no CN-8 and no question. The line routes to review with the error, as feature 001's failed status does (§6), and the clerk can still choose the CN-8 |
 
 ## 4. TARIC Outcome (new; `LineVersion.taric`)
 
@@ -82,23 +82,26 @@ always equals the snapshot (FR-013, SC-004).
 
 ## 6. Routing and the effective route (001 §9, changed)
 
-**Routing** is `route_line(flag_kind, top_confidence, status, ever_flagged, threshold, ask_floor, cn8_question)`. The
-new last input applies only to a checked line whose flag is OK and whose HS-6 is decided:
+**Routing** is `route_line(flag_kind, top_confidence, status, ever_flagged, threshold, ask_floor, cn8_question,
+cn8_error)`. The two new inputs apply only to a checked line whose flag is OK and whose HS-6 is decided. A failed CN-8
+step is passed like feature 001's failed status (Principle V):
 
 | Condition | Route | Reason |
 |---|---|---|
 | `cn8_question` set | `ask_shipper` | "the CN-8 depends on <attribute>, which the description does not state — ask the shipper" |
+| `cn8_error` set | `review` | "CN-8 step failed: <error> — needs a human look" |
 | otherwise | as in feature 001 | unchanged |
 
 **HS-6 decided**: the clerk has accepted an HS-6, or, with no clerk decision, `hs6_auto_decided(flag_kind,
 top_confidence, status, ever_flagged, threshold, ask_floor)` is true. That helper is true exactly when `route_line`
-without a CN-8 question returns `auto_accept`, the condition feature 001 auto-accepts on. It does not depend on the
-CN-8 question, so `decided_code()` and the HS-6 export columns keep their values (FR-021).
+without a CN-8 question or error returns `auto_accept`, the condition feature 001 auto-accepts on. It does not depend
+on the CN-8 question or a CN-8 failure, so `decided_code()` and the HS-6 export columns keep their values (FR-021).
 
 **Effective route** precedence:
-1. an open CN-8 question gives the computed `ask_shipper`, even over a clerk's HS-6 acceptance;
+1. an open CN-8 question gives the computed `ask_shipper`, and a failed CN-8 step the computed `review`, even over a
+   clerk's HS-6 acceptance;
 2. otherwise, as before: the clerk's decision, or the computed route. A clerk's review or ask-shipper choice therefore
-   still applies while a CN-8 question is open.
+   still applies while a CN-8 question is open or a CN-8 step has failed.
 
 **Written codes are top-down**: the export and the counts read the CN-8 only while the line's HS-6 is decided, and the
 TARIC-10 only while its CN-8 is. A clerk who sends a line to review or to the shipper empties its decided HS-6, as in
@@ -106,7 +109,7 @@ feature 001, and with it the CN-8 and TARIC-10 columns. The stored choices stay 
 HS-6 again brings them back.
 
 **Pending confirmations** never change a route (clarifications Q1 and Q4). They are counted separately:
-- `cn8_to_confirm`: lines with a decided HS-6 whose CN-8 is not written and has no open question, that is, a suggestion or a failed step;
+- `cn8_to_confirm`: lines with a decided HS-6 whose CN-8 is a suggestion: chosen but not written, with no open question and no failure;
 - `taric_to_confirm`: lines with a written CN-8 whose rule is `choose` or `trade_defence`, whose TARIC-10 is not written,
   and which the clerk has not sent to the shipper.
 
@@ -118,7 +121,8 @@ HS-6 decided ──► CN-8 step
    ├─ attribute missing ─────────────► question open (route ask_shipper)
    │       └─ clerk chooses a CN-8 / shipper reply re-runs ─► CN-8 written (clerk) or a new choice
    ├─ confidence ≥ threshold ────────► CN-8 written (rule) ──► TARIC step
-   └─ confidence < threshold ────────► CN-8 to confirm ──clerk confirms──► CN-8 written (clerk) ──► TARIC step
+   ├─ confidence < threshold ────────► CN-8 to confirm ──clerk confirms──► CN-8 written (clerk) ──► TARIC step
+   └─ step fails ────────────────────► review with the error ──clerk chooses a CN-8──► CN-8 written (clerk)
 
 TARIC step (lookup for CN-8 and origin; no model call except the subdivision suggestion)
    ├─ not_loaded / not_available ────► stops at 8 digits (shown as such)

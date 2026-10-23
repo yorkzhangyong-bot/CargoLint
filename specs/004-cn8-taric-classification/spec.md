@@ -76,7 +76,7 @@ For each subdivision the assistant shows the measures exactly as the snapshot re
 - trade defence: anti-dumping and countervailing measures with their additional codes and duty text, including conditional text such as "39.6 % with document D008; otherwise 86.5 %";
 - requirements: controls, CBAM, licences and other obligations.
 
-Each measure shows its type label, its geographical area code and name, and its regulation reference. The snapshot date and a link for checking the code in EZT-online are shown with them.
+Each measure shows its type label, its geographical area code and name, and its regulation reference. The snapshot date and two links for checking the code are shown with them: EZT-online's start page and the EU TARIC consultation page.
 
 **Why this priority**: the clerk confirms a subdivision because of its measures; without them the confirmation rules of User Story 2 cannot be followed.
 
@@ -118,7 +118,7 @@ The export gains a CN-8 column and a TARIC-10 column. Each is filled only once t
 
 **Acceptance Scenarios**:
 
-1. **Given** a checked invoice, **When** it is exported to CSV or JSON, **Then** the existing columns and values are unchanged, and a CN-8 and a TARIC-10 column are added.
+1. **Given** a checked invoice, **When** it is exported to CSV or JSON, **Then** the existing columns and values are unchanged, and a CN-8 and a TARIC-10 column are added. The one exception is the route, and who set it, of a line re-routed by FR-003, by a failed CN-8 step or by a clerk action.
 2. **Given** a line whose CN-8 or TARIC-10 waits for confirmation, or whose TARIC-10 is not available, **When** it is exported, **Then** the column of each code not yet written is empty.
 3. **Given** any CN-8 or TARIC-10 outcome, **When** the audit trail is read, **Then** it shows the time, the line and version, the rule that applied, the snapshot date and the origin. The rules are: CN-8 written by the threshold rule, auto-completed, confirmed by the clerk, sent to ask the shipper, not available, and trade-defence confirmation.
 
@@ -129,6 +129,7 @@ The export gains a CN-8 column and a TARIC-10 column. Each is filled only once t
 - **Decided HS-6 with a single CN-8 line** (CN-8 ending in 00): taken without a model judgement (User Story 1, scenario 3).
 - **CN-8 without a TARIC subdivision**: "TARIC not available"; the line stops at 8 digits (FR-010). On the 2026-10-01 snapshot every CN-8 line of CN 2026 has at least one subdivision, so this rule is proven by fixture tests only. Feature 002's 105 CN-8 mismatches are TARIC codes that CN 2026 lacks, which the CN-8 step never chooses.
 - **No TARIC snapshot loaded**: the CN-8 step still runs from CN 2026; the TARIC step shows "TARIC not loaded" and the line stops at 8 digits.
+- **CN-8 step failure** (invalid model output after one retry, or an API error): the line routes to review with the error shown, as a failed check does (constitution Principle V). The clerk can still choose the CN-8.
 - **Trade defence recorded at the CN-8 level or above**: it applies to every subdivision beneath, so each of them needs confirmation.
 - **Shipper reply**: re-runs the CN-8 and TARIC steps for that line only, after its HS-6 is decided again.
 - **HS-6 changed by the clerk after a TARIC-10 was written**: the new version starts without a CN-8 and TARIC-10; the CN-8 step runs again.
@@ -155,7 +156,7 @@ The export gains a CN-8 column and a TARIC-10 column. Each is filled only once t
 - **FR-005**: A chosen CN-8 MUST be shown with:
   - its confidence (0–100);
   - the evidence from the line text;
-  - the EBTI rulings used as precedent, each with its reference, description and validity.
+  - the ruling cited as precedent, with its reference, description and validity, or "no ruling".
 
   Expired rulings MUST be filtered out (Principle III).
 - **FR-006**: When the clerk decides a different HS-6, or a shipper reply updates the line, the CN-8 step and the TARIC step MUST run again for that line only.
@@ -200,7 +201,7 @@ The export gains a CN-8 column and a TARIC-10 column. Each is filled only once t
   - the time, the line and version;
   - the rule that applied, and the actor (the rule or the clerk);
   - the snapshot date and the origin.
-- **FR-021**: The HS-6 path MUST stay unchanged: candidates, confidence, flags, HS-6 routing, the HS-6 code format, results and existing export columns.
+- **FR-021**: The HS-6 path MUST stay unchanged: candidates, confidence, flags, HS-6 routing, the HS-6 code format, results and existing export columns. The one exception is the route, and who set it, of a line re-routed by FR-003, by a failed CN-8 step or by a clerk action.
 - **FR-022**: The CSV and JSON exports MUST gain a CN-8 and a TARIC-10 column, each filled only when its code is written. The CN-8 is written by the threshold rule or the clerk's confirmation, and the TARIC-10 by auto-completion or the clerk's confirmation.
 - **FR-023**: Nothing MUST be sent to a shipper or a customs system. "Asking the shipper" means routing the line to ask-shipper with the question for the clerk (constitution, out of scope).
 

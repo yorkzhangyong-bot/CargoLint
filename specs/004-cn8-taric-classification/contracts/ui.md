@@ -34,7 +34,8 @@ that it reads "Decide the HS-6 first."
 - **State**, exactly one of:
   - **written**: "Written by rule (confidence N ≥ T)", "Single CN-8 line" or "Confirmed by you";
   - **to confirm**: a radio of all CN-8 lines with the chosen one preselected, and a "Confirm CN-8" button;
-  - **question open**: the warning "Ask the shipper for: <attribute>", plus the same radio and button for the clerk who knows the answer.
+  - **question open**: the warning "Ask the shipper for: <attribute>", plus the same radio and button for the clerk who knows the answer;
+  - **failed**: the error, with the route reading review (data-model §6), plus the same radio and button.
 
 **TARIC-10**, once a CN-8 exists:
 - **Caption**: "TARIC snapshot <date> · origin <code>", or "TARIC not loaded".
@@ -45,7 +46,7 @@ that it reads "Decide the HS-6 first."
   - "TARIC not available — the line stops at 8 digits".
 - **One expander per subdivision**, holding:
   - its code and description;
-  - a "Suggested · N %" badge on the highlighted one;
+  - a "Suggested · N %" badge on the highlighted one, captioned "model estimate";
   - a "Trade defence" badge where types 551–555 or 570 apply;
   - three tables, Duties, Trade defence and Requirements. Each row shows type label, area code and name, additional code (trade defence only), duty text and regulation reference. They are `st.dataframe` tables of fixed height, because a group can be long: each subdivision of 7318 15 58 has about 94 anti-dumping rows for China, one per additional code.
 - **Controls** when the rule leaves the code to the clerk:
@@ -57,7 +58,7 @@ that it reads "Decide the HS-6 first."
   - a link button "EZT-online" to the start page;
   - the code and origin in a copyable code block.
 
-The measures shown come from `taric_view` over `lookup_taric`'s output: no measure is added, dropped or altered, and
+The measures shown come from the agent's `line_taric_view`, which applies `taric_view` to `lookup_taric`'s output: no measure is added, dropped or altered, and
 each appears in exactly one group (FR-013, FR-014). Conditional duty text is shown as text.
 
 ## "What I can and cannot do" panel (`ui/chat.py`)

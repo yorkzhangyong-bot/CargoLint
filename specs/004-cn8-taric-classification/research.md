@@ -74,7 +74,8 @@ So a model judgement is needed for a third of the decided subheadings.
 
 ## R-04 Routing with the CN-8 question
 
-**Decision**: the routing function `agent.routing.route_line` gains one input, `cn8_question: str | None`, as constitution v1.2.0 Principle I now names.
+**Decision**: the routing function `agent.routing.route_line` gains the input `cn8_question: str | None`, as constitution v1.2.0 Principle I now names, and `cn8_error: str | None`.
+- **Failed CN-8 step**: it routes the line to review with the error, as feature 001's failed status does (Principle V). This was the author's decision after `/speckit-analyze` on 2026-10-23.
 - **Routing rule**: when it is set on a checked, unflagged line whose HS-6 is decided, the route is `ask_shipper`, with the reason "the CN-8 depends on <attribute>, which the description does not state — ask the shipper". The rest of the routing table is unchanged.
 - **Effective route**: `LineStore.effective_route` returns that computed `ask_shipper` while the CN-8 question is open, even over a clerk's HS-6 acceptance, because a later step found information missing. The question closes when:
   - the clerk chooses a CN-8 from the list, or
@@ -241,7 +242,7 @@ The measure table is filled by the page's script, so it needs a browser, which t
 
 **Decision**: tests first, offline, for every guardrail:
 - `route_line` with `cn8_question`, and `hs6_auto_decided`;
-- `taric_rule` for all five rules, including a single subdivision with type 555 or 570, and a CN-8 not yet written;
+- `taric_rule` for the four rules and "TARIC not loaded", including a single subdivision with type 555 or 570, and a CN-8 not yet written;
 - the measure-group table, including an unknown type going to requirements;
 - validation that a CN-8 is among the subheading's lines and a TARIC-10 among the subdivisions;
 - the threshold write rule and its re-evaluation;

@@ -15,14 +15,15 @@ Purpose: the CN-8 under each decided HS-6, with confidence, evidence and EBTI pr
 shipper about (FR-001 to FR-006).
 
 ```text
-Input  Cn8Input                       # function input
+Input  Cn8Input                       # function input; Pydantic, agent/schemas.py
   lines: [{line_no, text_zh, text_en, extracted|None, hs6}]      # only lines whose HS-6 is decided
   as_of: date
   threshold: int                      # the shipment's auto-accept threshold, applied in code
 Agent-facing wrapper args: line_nos: [int]|None (omit → every line with a decided HS-6 and no CN-8 choice yet)
-Output [Cn8Result]                    # one per input line
+Output [Cn8Result]                    # one per input line; Pydantic, agent/schemas.py
   line_no
-  choice: Cn8Choice                   # data-model §3; on failure it carries `error` and no CN-8
+  choice: Cn8Choice                   # data-model §3; on failure it carries `error` and no CN-8,
+                                      # and the line routes to review (data-model §6)
   status: checked|failed, error_reason
 Structured model output Cn8Out        # validated before use; invalid → one retry, then the line fails this step
   cn8: "########"|null, confidence: 0-100, deciding_attribute: str, attribute_visible: bool,
@@ -45,11 +46,11 @@ Purpose: the TARIC subdivisions and measures for each line's CN-8 and the shipme
 (FR-007 to FR-012). The only model call is the optional subdivision suggestion.
 
 ```text
-Input  TaricInput                     # function input
+Input  TaricInput                     # function input; Pydantic, agent/schemas.py
   lines: [{line_no, text_zh, text_en, cn8, cn8_written: bool}]
   origin: str                         # Shipment.taric_origin
 Agent-facing wrapper args: line_nos: [int]|None (omit → every line with a CN-8 and no TARIC outcome for the current origin)
-Output [TaricResult]
+Output [TaricResult]                  # one per input line; Pydantic, agent/schemas.py
   line_no
   outcome: TaricOutcome               # data-model §4
   status: checked|failed, error_reason
@@ -74,9 +75,9 @@ that line only (Principle V).
 
 ```text
 route_line(flag_kind, top_confidence, status, ever_flagged, threshold, ask_floor,
-           cn8_question: str|None = None) -> (Route, reason)            # data-model §6
+           cn8_question: str|None = None, cn8_error: str|None = None) -> (Route, reason)   # data-model §6
 hs6_auto_decided(flag_kind, top_confidence, status, ever_flagged, threshold, ask_floor) -> bool
-                                                # route_line without cn8_question returns auto_accept
+                                                # route_line without cn8_question or cn8_error returns auto_accept
 cn8_written_by_rule(confidence: int, threshold: int, single_line: bool) -> bool   # confidence >= threshold, or single
 validate_cn8(code, options) -> bool             # ^\d{8}$ and among the CN-8 lines of the decided HS-6
 validate_taric10(code, subdivisions) -> bool    # ^\d{10}$ and among the subdivisions
@@ -124,4 +125,5 @@ not decided or, for a TARIC-10, when its CN-8 is not written. Feature 001's lock
 - **`turn_tools`**: a reply turn still offers only `apply_shipper_reply`; the two steps run once the clerk accepts the new version's HS-6.
 - **Clerk actions**: an app-level function `after_hs6_decision(store, kb, line_no)` runs the two steps for one line. The UI starts it as a background job after the clerk accepts or chooses an HS-6, and after a CN-8 confirmation (TARIC step only). The UI never calls the model or retrieval itself.
 - **Origin change**: an app-level function `apply_taric_origin(store, kb, code)` calls `set_taric_origin`, then re-runs the lookup and the rules for every line with a CN-8. Subdivision codes do not depend on the origin, so stored suggestions are reused and no model is called (FR-018). Each lookup takes under 1 ms, so it runs synchronously.
+- **Display**: `line_taric_view(store, kb, line_no)` looks up the line's CN-8 for the shipment's origin and returns `taric_view`, or None without a CN-8. The UI calls it and never reads `kb.taric` itself (architecture invariant).
 - **Context block**: `build_context` gains each line's CN-8, TARIC-10, rule and pending markers, so follow-up answers come from stored results (Principle III).
