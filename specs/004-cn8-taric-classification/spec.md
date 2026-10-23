@@ -31,7 +31,7 @@ Today the clerk gets a decided HS-6 subheading for each line and nothing finer. 
 
 **Acceptance Scenarios**:
 
-1. **Given** a line whose HS-6 is decided and whose text shows the attribute that separates the CN-8 lines under it, **When** the CN-8 step runs, **Then** one CN-8 under that HS-6 is chosen and shown with its confidence (0–100), the evidence from the line text, and any valid EBTI ruling at that CN-8 as precedent (reference, description and validity). It is written to the line when its confidence meets the auto-accept threshold.
+1. **Given** a line whose HS-6 is decided and whose text shows the attribute that separates the CN-8 lines under it, **When** the CN-8 step runs, **Then** one CN-8 under that HS-6 is chosen and shown with its confidence (0–100), the evidence from the line text, and the ruling cited as precedent (reference, description and validity), or "no ruling". It is written to the line when its confidence meets the auto-accept threshold.
 2. **Given** a line whose text does not show that attribute, **When** the CN-8 step runs, **Then** no CN-8 is decided and the line routes to ask the shipper with a question naming the missing attribute.
 3. **Given** a decided HS-6 with a single CN-8 line in CN 2026, **When** the CN-8 step runs, **Then** that CN-8 is taken without a model judgement.
 4. **Given** a line whose HS-6 is not decided, for example a flagged line or one in review, **When** the check runs, **Then** no CN-8 step runs for it until its HS-6 is decided.
@@ -130,6 +130,7 @@ The export gains a CN-8 column and a TARIC-10 column. Each is filled only once t
 - **CN-8 without a TARIC subdivision**: "TARIC not available"; the line stops at 8 digits (FR-010). On the 2026-10-01 snapshot every CN-8 line of CN 2026 has at least one subdivision, so this rule is proven by fixture tests only. Feature 002's 105 CN-8 mismatches are TARIC codes that CN 2026 lacks, which the CN-8 step never chooses.
 - **No TARIC snapshot loaded**: the CN-8 step still runs from CN 2026; the TARIC step shows "TARIC not loaded" and the line stops at 8 digits.
 - **CN-8 step failure** (invalid model output after one retry, or an API error): the line routes to review with the error shown, as a failed check does (constitution Principle V). The clerk can still choose the CN-8.
+- **TARIC suggestion failure** (invalid model output after one retry, an API error or a timeout): the rule and the subdivisions are unchanged, the suggestion is shown as unavailable with the error, nothing is written, and the route is unchanged.
 - **Trade defence recorded at the CN-8 level or above**: it applies to every subdivision beneath, so each of them needs confirmation.
 - **Shipper reply**: re-runs the CN-8 and TARIC steps for that line only, after its HS-6 is decided again.
 - **HS-6 changed by the clerk after a TARIC-10 was written**: the new version starts without a CN-8 and TARIC-10; the CN-8 step runs again.
@@ -232,7 +233,7 @@ The export gains a CN-8 column and a TARIC-10 column. Each is filled only once t
 - **SC-002**: On the EBTI-based CN-8 evaluation set (120 rulings, 10 from each of the 12 target chapters, all under subheadings with at least two CN-8 lines), the chosen CN-8 equals the ruling's CN-8 for at least 60 of the 120.
 - **SC-003**: The auto-complete, choose-with-suggestion, not-available and trade-defence-confirmation rules are each covered by an automated test that passes offline.
 - **SC-004**: For the 20 acceptance codes of feature 002, the subdivisions and measures shown equal the snapshot lookup's output for the same CN-8 and origin: 20 of 20.
-- **SC-005**: Across the tests, the labelled set and the bundled sample, nothing is written without the clerk's confirmation where a rule requires it:
+- **SC-005**: Across the tests and the bundled sample, nothing is written without the clerk's confirmation where a rule requires it:
   - zero TARIC-10 codes when several subdivisions exist, a measure of type 551 to 555 or 570 applies, or the CN-8 is not yet written;
   - zero CN-8 codes whose confidence is below the auto-accept threshold.
 - **SC-006**: Zero CN-8 or TARIC-10 codes are shown that do not exist in CN 2026 under the decided HS-6, or among the snapshot's subdivisions for that CN-8.

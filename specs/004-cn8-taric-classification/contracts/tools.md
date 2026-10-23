@@ -52,16 +52,18 @@ Input  TaricInput                     # function input; Pydantic, agent/schemas.
 Agent-facing wrapper args: line_nos: [int]|None (omit → every line with a CN-8 and no TARIC outcome for the current origin)
 Output [TaricResult]                  # one per input line; Pydantic, agent/schemas.py
   line_no
-  outcome: TaricOutcome               # data-model §4
-  status: checked|failed, error_reason
-Structured model output SubdivisionOut   # only for rule "choose"; validated; never written
+  outcome: TaricOutcome               # data-model §4; never a failure: step 3 absorbs suggestion failures
+Structured model output SubdivisionOut   # only for several subdivisions; validated; never written
   code: "##########"|null, confidence: 0-100, attribute_visible: bool, rationale: str
 ```
 
 The steps:
 1. **Lookup**: `kb.taric.lookup_taric(cn8, origin)` (feature 003, unchanged). With no snapshot loaded, the rule is `not_loaded`.
 2. **Rule**: `taric_rule(subdivisions, snapshot_loaded)` chooses the rule, and `code_to_write(...)` decides what is written.
-3. **Suggestion**: for `choose`, a suggestion is kept only when `attribute_visible` is true and `code` is among the subdivisions.
+3. **Suggestion**: for several subdivisions, a suggestion is kept only when `attribute_visible` is true and `code` is among the subdivisions.
+   - **Failures are absorbed**: invalid output after one retry, an API error, or the per-line timeout.
+   - **Unchanged**: the rule and the subdivisions stay as looked up, nothing is written, and the route is unchanged.
+   - **Shown**: `suggestion_error` holds the error, and the suggestion is shown as unavailable.
 4. **Audit**: every outcome is recorded (data-model §5).
 
 ### 1.5 `apply_shipper_reply` (behaviour unchanged)
@@ -107,7 +109,7 @@ decided_code(line) (changed): with no clerk decision, it uses hs6_auto_decided (
 decided_cn8(line) -> str|None, decided_taric10(line) -> str|None   # written codes, top-down (data-model §6)
 counts() gains "cn8_to_confirm" and "taric_to_confirm"     # never added to the route counts
 set_threshold(value) also re-evaluates CN-8 choices the clerk has not confirmed, and re-applies code_to_write (no model call)
-effective_route(line): an open CN-8 question takes precedence over an HS-6 acceptance (data-model §6)
+effective_route(line): an open CN-8 question or a failed CN-8 step takes precedence over an HS-6 acceptance (data-model §6)
 CSV_COLUMNS gains "cn8", "taric10" at the end; to_json_bytes gains "cn8", "taric10" per line
 ```
 

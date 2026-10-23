@@ -51,7 +51,8 @@ creates `Decision(route=accepted, decided_code=<the auto-decided HS-6>, chosen_h
 | rule | `auto_completed`, `choose`, `trade_defence`, `not_available`, `not_loaded` | exactly one, computed by `taric_rule` (research R-06) |
 | subdivisions | list of string, `^\d{10}$` | the codes `lookup_taric` returned for the CN-8 and origin, in code order |
 | trade_defence | list of string | the subdivisions whose measures include type 551, 552, 553, 554, 555 or 570 |
-| suggestion | (code, confidence) or null | only for `choose`, only when the separating attribute is stated; never written (FR-009) |
+| suggestion | (code, confidence) or null | only for several subdivisions, only when the separating attribute is stated; never written (FR-009) |
+| suggestion_error | string or null | why the suggestion call failed: invalid output after one retry, an API error or the per-line timeout. The suggestion is shown as unavailable with this error. The rule, the subdivisions and the route are unchanged, and nothing is written |
 | taric10 | string or null, `^\d{10}$` | the written code; one of `subdivisions` |
 | written_by | `rule`, `clerk` or null | `rule` only for `auto_completed` with a written CN-8; `clerk` after a confirmation |
 | question | string or null | what the clerk asked the shipper instead of confirming a subdivision (FR-009). The route comes from the clerk's ask-shipper decision (feature 001), not from this field |

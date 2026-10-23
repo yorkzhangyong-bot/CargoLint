@@ -97,7 +97,7 @@ description: "Task list for CN-8 and TARIC-10 classification in the agent and th
     - rule, "exactly one" of `auto_completed`, `choose`, `trade_defence`, `not_available` and `not_loaded`;
     - subdivisions, each `^\d{10}$`, and trade_defence;
     - suggestion, a code `^\d{10}$` with a confidence 0–100, or null;
-    - taric10, written_by and question.
+    - taric10, written_by, question and suggestion_error.
   - **`LineVersion`**: `cn8` and `taric` default to None.
   - **`Shipment.taric_origin`**: "`^[A-Z]{2}$` after upper-casing; `"CN"` by default". "us" is stored as "US"; "C1", "CHN" and "" are refused.
   - **`ChangeKind`** gains `cn8_written`, `cn8_question`, `taric_written`, `taric_pending`, `taric_question` and `taric_not_available`.
@@ -105,7 +105,7 @@ description: "Task list for CN-8 and TARIC-10 classification in the agent and th
     - `Cn8Input`: lines with line_no, text_zh, text_en, extracted and an `hs6` matching `CODE_PATTERN`; `as_of`; `threshold` 60–99;
     - `Cn8Result`: line_no, choice (`Cn8Choice`), status `checked` or `failed`, and error_reason;
     - `TaricInput`: lines with line_no, text_zh, text_en, a `cn8` matching `^\d{8}$` and `cn8_written`; `origin` matching `^[A-Z]{2}$`;
-    - `TaricResult`: line_no, outcome (`TaricOutcome`), status and error_reason.
+    - `TaricResult`: line_no and outcome (`TaricOutcome`). It has no failed status, because the TARIC step absorbs suggestion failures.
 
 ### Implementation for the foundation
 
@@ -297,7 +297,8 @@ description: "Task list for CN-8 and TARIC-10 classification in the agent and th
   - **73181558, US**: `choose`.
     - One `SubdivisionOut` call is made.
     - Its suggestion is kept only when `attribute_visible` is true and the code is one of the subdivisions.
-    - A code outside the subdivisions, or a failed call, leaves no suggestion and the rule unchanged.
+    - A code outside the subdivisions leaves no suggestion.
+    - A failed call (invalid output after the retry, an API error, or `fail_on`) leaves the rule and the subdivisions unchanged and sets `suggestion_error`. It writes nothing, and the route is unchanged.
   - **73181568, CN** (T002): `trade_defence`, although single (570). For US it is `auto_completed`.
   - **73181520**: `not_available`, "TARIC not available". This is the fixture-only proof of research R-16.
   - **`kb.taric` None**: `not_loaded`, "TARIC not loaded".
@@ -334,9 +335,10 @@ description: "Task list for CN-8 and TARIC-10 classification in the agent and th
   - **`taric_outcome(line, cn8, cn8_written, origin, kb, client) -> TaricOutcome`**:
     - calls `kb.taric.lookup_taric(cn8, origin)`, or gives `not_loaded` when `kb.taric` is None;
     - applies `taric_rule` and `code_to_write`;
-    - makes the `SubdivisionOut` call only for several subdivisions, validated, with one retry; a failure leaves no suggestion;
+    - makes the `SubdivisionOut` call only for several subdivisions, validated, with one retry;
+    - absorbs every failure of that call: invalid output after the retry, an API error, or the per-line timeout. The rule and the subdivisions stay as looked up, `suggestion_error` holds the error, nothing is written, and the route is unchanged;
     - takes `snapshot_date` from `kb.taric.snapshot.snapshot_date`.
-  - **`lookup_taric_lines(inp: TaricInput, kb, client) -> list[TaricResult]`** runs `taric_outcome` through `run_per_line`.
+  - **`lookup_taric_lines(inp: TaricInput, kb, client) -> list[TaricResult]`** runs `taric_outcome` through `run_per_line`. Its `on_error` is reached only by the per-line timeout. It rebuilds the outcome from the lookup, without a suggestion and with `suggestion_error` set, so no `TaricResult` is a failure.
   - **The `lookup_taric` tool**: its args are `line_nos`; omitted, it takes every line with a CN-8 choice and no outcome for the shipment's `taric_origin`. It writes through `set_taric_result`. Call `register` on it.
 - [ ] T041 [US2] In agent/store.py (T034):
   - add `set_taric_result`, `confirm_taric10`, `ask_shipper_for_taric`, `decided_taric10` and `counts()["taric_to_confirm"]`;
@@ -351,7 +353,7 @@ description: "Task list for CN-8 and TARIC-10 classification in the agent and th
     - "Choose a subdivision";
     - "Trade-defence measures: confirm the subdivision";
     - "TARIC not available — the line stops at 8 digits".
-  - **Subdivisions**: one expander each, with its code and description, a "Suggested · N %" badge captioned "model estimate", and a "Trade defence" badge.
+  - **Subdivisions**: one expander each, with its code and description, a "Suggested · N %" badge captioned "model estimate", and a "Trade defence" badge. When the suggestion call failed, the card shows "Suggestion unavailable: <error>" instead of the suggestion badge.
   - **Confirming**: a radio and "Confirm TARIC-10", which calls `confirm_taric10`. It is disabled, with the reason, while the CN-8 is not written or the HS-6 is not decided.
   - **Asking the shipper**: a text input prefilled from the subdivision descriptions, and an "Ask the shipper" button that calls `ask_shipper_for_taric`. Afterwards the card shows "Sent to the shipper: <question>".
   - **"Confirm CN-8"** now also queues a `finer_codes` job with `taric_only=True`.
@@ -451,7 +453,8 @@ description: "Task list for CN-8 and TARIC-10 classification in the agent and th
   - `taric_written`, auto-completed and by the clerk;
   - `taric_pending`, for choose and for trade defence;
   - `taric_question`;
-  - `taric_not_available`, both not available and not loaded.
+  - `taric_not_available`, both not available and not loaded;
+  - a failed CN-8 step, whose `route_computed` record carries the reason "CN-8 step failed: <error> — needs a human look".
   Each record has the time, the line and version, the change kind, the actor (`routing_rule` or `clerk`) and a note with the rule text. TARIC records also carry the snapshot date and the origin.
 
 ### Implementation for User Story 5
@@ -498,7 +501,9 @@ description: "Task list for CN-8 and TARIC-10 classification in the agent and th
 - **Foundational (Phase 2)**: after Setup. T005 and T007 can run together; T006 follows T005. It BLOCKS all user stories.
 - **US1 (Phase 3)**: after Foundational.
 - **US2 (Phase 4)**: after US1. It needs CN-8 choices, their written state and `after_hs6_decision`.
-- **US3 (Phase 5)**: after US2 for the UI (T047), because the subdivision expanders come from T043. The pure parts (T045, T046) and the parity script (T048) can start after Foundational.
+- **US3 (Phase 5)**: after US2 for the UI (T047), because the subdivision expanders come from T043.
+  - **Can start after Foundational**: the parts of T045 and T046 in agent/taric_rules.py and tests/unit/test_taric_rules.py, and the parity script (T048).
+  - **Follow US2**: the `line_taric_view` parts of T045 and T046.
 - **US4 (Phase 6)**: after US2, since it re-applies the rules. It can run alongside US3 and US5.
 - **US5 (Phase 7)**: after US2, since it exports both codes. It can run alongside US3 and US4.
 - **Polish (Phase 8)**: after all stories. T060 runs only when the author asks, after T059, and T062 comes last.

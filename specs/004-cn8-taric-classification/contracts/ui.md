@@ -46,7 +46,7 @@ that it reads "Decide the HS-6 first."
   - "TARIC not available — the line stops at 8 digits".
 - **One expander per subdivision**, holding:
   - its code and description;
-  - a "Suggested · N %" badge on the highlighted one, captioned "model estimate";
+  - a "Suggested · N %" badge on the highlighted one, captioned "model estimate", or "Suggestion unavailable: <error>" when the suggestion call failed;
   - a "Trade defence" badge where types 551–555 or 570 apply;
   - three tables, Duties, Trade defence and Requirements. Each row shows type label, area code and name, additional code (trade defence only), duty text and regulation reference. They are `st.dataframe` tables of fixed height, because a group can be long: each subdivision of 7318 15 58 has about 94 anti-dumping rows for China, one per additional code.
 - **Controls** when the rule leaves the code to the clerk:

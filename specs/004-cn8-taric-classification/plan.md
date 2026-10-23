@@ -31,10 +31,11 @@ Technical approach, from [research.md](research.md):
 - **Judgement (R-03)**: one structured call `Cn8Out` per line with several CN-8 lines.
   - Code checks the code, the citation and the attribute.
   - The CN-8 is written only at or above the auto-accept threshold (clarification Q4).
-- **Routing (R-04)**: `route_line` gains two inputs.
-  - The CN-8 question (constitution v1.2.0).
-  - A failed CN-8 step, which routes to review like feature 001's failed status.
-  - `hs6_auto_decided` keeps the decided HS-6 and its export values unchanged.
+- **Routing (R-04)**: `route_line` gains two inputs:
+  - the CN-8 question (constitution v1.2.0);
+  - a failed CN-8 step, which routes to review like feature 001's failed status.
+
+  `hs6_auto_decided` keeps the decided HS-6 and its export values unchanged.
 - **TARIC rules (R-06, R-07)**: a pure module `agent/taric_rules.py` holds the rule, the write decision, the confirm set (551–555 and 570) and the measure-group table.
 - **Origin (R-10)**: `Shipment.taric_origin`, CN by default. A change re-applies the rules without a model call.
 - **Export (R-11)**: `cn8` and `taric10` appended after `note`.
