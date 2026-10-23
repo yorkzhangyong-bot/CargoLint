@@ -1,4 +1,5 @@
-"""Builds the TARIC fixture extract in tests/fixtures/taric/ (feature 002, task T003, research R-12). Needs gpg.
+"""Builds the TARIC fixture extract in tests/fixtures/taric/ (feature 002, task T003, research R-12; areas, memberships
+and exclusions added by feature 003, task T002). Needs gpg.
 
     python tests/fixtures/make_taric_fixtures.py
 
@@ -109,12 +110,15 @@ def cond(seq: str, code: str, components: tuple = (), doc: tuple[str, str] | Non
 def measure(sid: str, code: str | None, mtype: str, geo: str, reg: tuple[str, str] = ("R8726580", "1"), start: str = "2020-01-01",
             end: str | None = None, addl: tuple[str, str] | None = None, components: tuple = (),
             stops: tuple[tuple[str, str | None], ...] = (), national: str = "0", extras: bool = False,
-            conditions: tuple[str, ...] = ()) -> str:
+            conditions: tuple[str, ...] = (), excluded: tuple[tuple[str, str, str], ...] = ()) -> str:
+    """`excluded` lists (area id, area SID, national) for the measure's excluded geographical areas."""
     head = _attrs(additionalCodeId=addl[1] if addl else None, additionalCodeType=addl[0] if addl else None, dateEnd=end,
                   geographicalAreaId=geo, goodsNomenclatureCode=code, measureType=mtype, national=national, regulationId=reg[0],
                   regulationRoleType=reg[1], SID=sid, dateStart=start, stoppedFlag="0", changeType="U")
     inner = "".join(f"<measureComponent {_attrs(**c, national=national)}/>" for c in components)
     inner += "".join(conditions)
+    inner += "".join(f"<measureExcludedGeographicalArea {_attrs(geographicalAreaId=a, national=n, SIDGeographicalArea=s)}/>"
+                     for a, s, n in excluded)
     if extras:   # a condition without a duty component and a footnote: neither changes the duty text
         inner += (cond("001", "B", doc=("Y", "999"), action="04", national=national)
                   + f"<measureFootnoteAssociation {_attrs(footnoteId='001', footnoteType='CD', national=national)}/>")
@@ -131,13 +135,17 @@ M2 = measure("1002", "7318155810", "552", "CN", reg=AD, addl=("C", "001"), compo
 # 1013 (ended before D), 1014 (starts after D), -2001 (national). 1002 appears twice, identical: kept once.
 # Parsed, then dropped and counted by the snapshot: 1017-1019 (Meursing table, no goods code) and 1020 (an EU measure
 # on 7318155899, a code held only as a national record).
+# Exclusions (feature 003): 1001 excludes US, plus a national exclusion that is ignored; 1006 lists US, CN and CN again,
+# stored as CN, US.
 MEASURES = [
-    measure("1001", "7318150000", "103", "1011", components=(comp("01", "3.7"),)),
+    measure("1001", "7318150000", "103", "1011", components=(comp("01", "3.7"),),
+            excluded=(("US", "103", "0"), ("SE-NAT", "-10013", "1"))),
     M2,
     measure("1003", "7318155810", "552", "CN", reg=AD, addl=("C", "999"), end="2030-06-30", components=(comp("01", "85.0"),)),
     measure("1004", "7318159500", "142", "US", reg=("R2400010", "4"), components=(comp("01", "0.0"),)),
     measure("1005", "7318000000", "478", "1011"),
-    measure("1006", "7318155890", "760", "1011", reg=("X9999999", "1")),
+    measure("1006", "7318155890", "760", "1011", reg=("X9999999", "1"),
+            excluded=(("US", "103", "0"), ("CN", "439", "0"), ("CN", "439", "0"))),
     measure("1007", "9617000000", "103", "1011", components=(comp("17", "2.4", "EUR", "DTN"), comp("01", "6.7"),
                                                              comp("15", "1.2", "EUR", "DTN"))),
     measure("1008", "7318159910", "103", "1011", components=(comp("12"), comp("01", "4.20", "EUR", "DTN"))),
@@ -200,9 +208,47 @@ REGULATIONS = [
     f"<baseRegulation {_attrs(regulationId='22156ALK', regulationRoleType='1', national='1', dateStart='2022-01-01')}/>",
 ]
 
+def geo(area: str, sid: str, code: str, names: list[tuple[str, str | None, dict[str, str]]],
+        members: tuple[tuple[str, str, str | None, str], ...] = (), end: str | None = None, national: str = "0") -> str:
+    """An area with its description periods (start, end, texts by language) and the groups it belongs to (group SID,
+    start, end, national); as in the real export, memberships sit in the member's record."""
+    inner = ""
+    for i, (ds, de, texts) in enumerate(names):
+        descs = "".join(f"<geographicalAreaDescription {_attrs(description=t, languageId=lang, national=national)}/>"
+                        for lang, t in texts.items())
+        inner += (f"<geographicalAreaDescriptionPeriod {_attrs(national=national, SID=f'{sid}{i}', dateStart=ds, dateEnd=de)}>"
+                  f"{descs}</geographicalAreaDescriptionPeriod>")
+    inner += "".join(f"<geographicalAreaMembership {_attrs(SIDGeographicalAreaGroup=g, dateStart=ms, dateEnd=me, national=mn)}/>"
+                     for g, ms, me, mn in members)
+    head = _attrs(geographicalAreaId=area, national=national, SID=sid, dateStart="1984-01-01", dateEnd=end,
+                  geographicalAreaCode=code, changeType="U")
+    return f"<geographicalArea {head}>{inner}</geographicalArea>"
+
+
+def named(en: str | None, sv: str = "Svensk text") -> list[tuple[str, None, dict[str, str]]]:
+    return [("1984-01-01", None, {"EN": en, "SV": sv} if en else {"SV": sv})]
+
+
+# Stored (EU, valid on D), in id order: 1008, 1011, 4000, 4013, 5001, 5002, CN, US, XK (no English name). Not stored:
+# AN (ended before D) and SE-NAT (national). Memberships kept (6): CN in 1008, 1011 and 4013; US in 1008 and 1011; 4013
+# in 4000. Not kept: CN in 5001 (ended before D), in 5002 (starts after D) and in 4000 (a national membership).
 GEO_AREAS = [
-    f"<geographicalArea {_attrs(geographicalAreaId=i, national=n, SID=s, dateStart='1984-01-01')}/>"
-    for i, n, s in (("1011", "0", "400"), ("CN", "0", "439"), ("US", "0", "103"), ("SE-NAT", "1", "-10013"))
+    geo("1011", "400", "1", named("ERGA OMNES", "ERGA OMNES")),
+    geo("1008", "68", "1", named("All third countries", "Samtliga tredjeländer")),
+    geo("4000", "500", "1", named("Fixture outer group")),
+    geo("4013", "501", "1", named("Fixture inner group"), members=(("500", "2020-01-01", None, "0"),)),
+    geo("5001", "510", "1", named("Fixture group, membership ended")),
+    geo("5002", "511", "1", named("Fixture group, membership not yet started")),
+    geo("CN", "439", "0", [("1984-01-01", "2019-12-31", {"EN": "Old name", "SV": "Gammalt namn"}),
+                           ("2020-01-01", None, {"EN": "China", "SV": "Kina"})],
+        members=(("400", "1984-01-01", None, "0"), ("68", "2007-01-01", None, "0"), ("501", "2020-01-01", None, "0"),
+                 ("510", "2010-01-01", "2025-12-31", "0"), ("511", "2027-01-01", None, "0"),
+                 ("500", "2020-01-01", None, "1"))),
+    geo("US", "103", "0", named("United States", "USA"),
+        members=(("400", "1984-01-01", None, "0"), ("68", "2007-01-01", None, "0"))),
+    geo("XK", "300", "0", named(None, "Kosovo")),
+    geo("AN", "301", "0", named("Netherlands Antilles", "Nederländska Antillerna"), end="2010-12-31"),
+    geo("SE-NAT", "-10013", "0", named("Swedish national area"), national="1"),
 ]
 
 DOCUMENTS = {
@@ -315,6 +361,7 @@ def main() -> int:
     expected = {
         "batch_id": BATCH, "snapshot_date": "2026-10-01", "suffix80_codes": 11, "declarable_codes": 5, "measure_records": 12,
         "cn8_mismatches": 1, "dropped_meursing": 3, "dropped_national_code": 1, "cn2026_cn8": CN2026_CN8,
+        "area_records": 9, "area_names": 8, "membership_records": 6, "measures_with_exclusions": 2,
         "fixture_key_fingerprint": fixture_fpr, "other_key_fingerprint": other_fpr,
     }
     (OUT / "expected.json").write_text(json.dumps(expected, indent=2) + "\n", encoding="utf-8", newline="\n")

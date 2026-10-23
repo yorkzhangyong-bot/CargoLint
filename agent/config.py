@@ -48,7 +48,7 @@ TARIC_SNAPSHOT = DATA_DIR / "taric.jsonl"
 TARIC_KEY = DATA_DIR / "Tulltaxan_Fildistribution.asc"
 TARIC_KEY_FINGERPRINT = "410160CE25CEC2FF322784E7302AC3C1D0E3E1C9"   # Swedish Customs "Taric Fildistribution" key
 TARIC_OBJECTS = ("GoodsNomenclature", "Measure", "MeasureType", "GeographicalArea", "DutyExpression", "Regulation")
-TARIC_SCHEMA = 1
+TARIC_SCHEMA = 2
 TARIC_LOG_DIR = STORE_DIR / "logs"
 GPG_ENV = "CARGOLINT_GPG"            # optional full path to gpg
 

@@ -1,16 +1,36 @@
-{"kind":"snapshot","schema":1,"snapshot_date":"2026-10-01","batch_id":"small","export_id":"small","source_files":["GoodsNomenclature_small_261001.xml.gz.pgp","Measure_small_261001.xml.gz.pgp","MeasureType_small_261001.xml.gz.pgp","GeographicalArea_small_261001.xml.gz.pgp","DutyExpression_small_261001.xml.gz.pgp","Regulation_small_261001.xml.gz.pgp"],"loaded_at":"2026-10-22T14:05:31Z","goods_records":7,"measure_records":8,"cn8_mismatches":0}
-{"kind":"goods_nomenclature","code":"7300000000","cn8":"73000000","description":"","valid_from":"1972-01-01","valid_to":null,"declarable":false,"parent":null}
-{"kind":"goods_nomenclature","code":"7318000000","cn8":"73180000","description":"","valid_from":"1972-01-01","valid_to":null,"declarable":false,"parent":"7300000000"}
-{"kind":"goods_nomenclature","code":"7318150000","cn8":"73181500","description":"","valid_from":"1972-01-01","valid_to":null,"declarable":false,"parent":"7318000000"}
-{"kind":"goods_nomenclature","code":"7318155800","cn8":"73181558","description":"","valid_from":"2007-01-01","valid_to":null,"declarable":false,"parent":"7318150000"}
-{"kind":"goods_nomenclature","code":"7318155810","cn8":"73181558","description":"Self-locking bolts and nuts","valid_from":"2022-02-18","valid_to":null,"declarable":true,"parent":"7318155800"}
-{"kind":"goods_nomenclature","code":"7318155890","cn8":"73181558","description":"Other","valid_from":"2022-02-18","valid_to":"2027-12-31","declarable":true,"parent":"7318155800"}
-{"kind":"goods_nomenclature","code":"7318159500","cn8":"73181595","description":"","valid_from":"2007-01-01","valid_to":null,"declarable":true,"parent":"7318150000"}
-{"kind":"measure","sid":1,"code":"7300000000","measure_type":"750","measure_type_label":"Import control of organic products","trade_movement":"import","geo_area":"1011","additional_code":null,"duty":"","regulation_id":"R1808480","regulation_ref":"OJ L 150, p. 1 (2018-06-14)","valid_from":"2022-01-01","valid_to":null}
-{"kind":"measure","sid":2,"code":"7318000000","measure_type":"760","measure_type_label":"Import control","trade_movement":"import","geo_area":"1011","additional_code":null,"duty":"","regulation_id":"R2400010","regulation_ref":"OJ L 100, p. 5 (2024-01-15)","valid_from":"2024-01-16","valid_to":null}
-{"kind":"measure","sid":3,"code":"7318150000","measure_type":"103","measure_type_label":"Third country duty","trade_movement":"import","geo_area":"1011","additional_code":null,"duty":"3.7 %","regulation_id":"R8726580","regulation_ref":"OJ L 256, p. 1 (1987-09-07)","valid_from":"2026-01-01","valid_to":null}
-{"kind":"measure","sid":7,"code":"7318150000","measure_type":"478","measure_type_label":"Export authorization (Dual use)","trade_movement":"export","geo_area":"1011","additional_code":null,"duty":"","regulation_id":"R2108210","regulation_ref":"OJ L 206, p. 1 (2021-06-11)","valid_from":"2021-09-09","valid_to":null}
-{"kind":"measure","sid":4,"code":"7318155800","measure_type":"552","measure_type_label":"Definitive anti-dumping duty","trade_movement":"import","geo_area":"CN","additional_code":"C999","duty":"85 %","regulation_id":"R2201910","regulation_ref":"OJ L 36, p. 1 (2022-02-17)","valid_from":"2022-02-18","valid_to":"2027-02-17"}
-{"kind":"measure","sid":5,"code":"7318155810","measure_type":"552","measure_type_label":"Definitive anti-dumping duty","trade_movement":"import","geo_area":"CN","additional_code":"C001","duty":"22 %","regulation_id":"R2201910","regulation_ref":"OJ L 36, p. 1 (2022-02-17)","valid_from":"2022-02-18","valid_to":"2027-02-17"}
-{"kind":"measure","sid":6,"code":"7318155810","measure_type":"142","measure_type_label":"Tariff preference","trade_movement":"import","geo_area":"US","additional_code":null,"duty":"0 %","regulation_id":"R2400010","regulation_ref":"OJ L 100, p. 5 (2024-01-15)","valid_from":"2024-01-16","valid_to":null}
-{"kind":"measure","sid":8,"code":"7318155890","measure_type":"483","measure_type_label":"Declaration of subheading submitted to legal restrictions (unit price)","trade_movement":"both","geo_area":"1011","additional_code":null,"duty":"","regulation_id":"R1302880","regulation_ref":"OJ L 90, p. 10 (2013-03-28)","valid_from":"2013-04-01","valid_to":null}
+{"kind":"snapshot","schema":2,"snapshot_date":"2026-10-01","batch_id":"small","export_id":"small","source_files":["GoodsNomenclature_small_261001.xml.gz.pgp","Measure_small_261001.xml.gz.pgp","MeasureType_small_261001.xml.gz.pgp","GeographicalArea_small_261001.xml.gz.pgp","DutyExpression_small_261001.xml.gz.pgp","Regulation_small_261001.xml.gz.pgp"],"loaded_at":"2026-10-22T14:05:31Z","goods_records":7,"measure_records":18,"cn8_mismatches":0}
+["geographical_area","1008","All third countries",[]]
+["geographical_area","1011","ERGA OMNES",[]]
+["geographical_area","4000","Fixture outer group",[]]
+["geographical_area","4013","Fixture inner group",["4000"]]
+["geographical_area","9001","Fixture cycle group A",["9002"]]
+["geographical_area","9002","Fixture cycle group B",["9001"]]
+["geographical_area","9999","",[]]
+["geographical_area","CN","China",["1008","1011","4000","4013"]]
+["geographical_area","US","United States",["1008","1011"]]
+["geographical_area","ZZ","Fixture area in a cycle",["9001","9999"]]
+["goods_nomenclature","7300000000","73000000","","1972-01-01",null,false,null]
+["goods_nomenclature","7318000000","73180000","","1972-01-01",null,false,"7300000000"]
+["goods_nomenclature","7318150000","73181500","","1972-01-01",null,false,"7318000000"]
+["goods_nomenclature","7318155800","73181558","","2007-01-01",null,false,"7318150000"]
+["goods_nomenclature","7318155810","73181558","Self-locking bolts and nuts","2022-02-18",null,true,"7318155800"]
+["goods_nomenclature","7318155890","73181558","Other","2022-02-18","2027-12-31",true,"7318155800"]
+["goods_nomenclature","7318159500","73181595","","2007-01-01",null,true,"7318150000"]
+["measure",1,"7300000000","750","Import control of organic products","import","1011",null,"","R1808480","OJ L 150, p. 1 (2018-06-14)","2022-01-01",null,[]]
+["measure",2,"7318000000","760","Import control","import","1011",null,"","R2400010","OJ L 100, p. 5 (2024-01-15)","2024-01-16",null,[]]
+["measure",3,"7318150000","103","Third country duty","import","1011",null,"3.7 %","R8726580","OJ L 256, p. 1 (1987-09-07)","2026-01-01",null,[]]
+["measure",7,"7318150000","478","Export authorization (Dual use)","export","1011",null,"","R2108210","OJ L 206, p. 1 (2021-06-11)","2021-09-09",null,[]]
+["measure",9,"7318150000","763","Import control","import","1008",null,"","R2302330","OJ L 130, p. 1 (2023-05-16)","2023-05-17",null,[]]
+["measure",12,"7318150000","760","Import control","import","9002",null,"","R2400010","OJ L 100, p. 5 (2024-01-15)","2024-01-16",null,[]]
+["measure",4,"7318155800","552","Definitive anti-dumping duty","import","CN","C999","85 %","R2201910","OJ L 36, p. 1 (2022-02-17)","2022-02-18","2027-02-17",[]]
+["measure",10,"7318155800","410","Veterinary control","import","4000",null,"","R1906250","OJ L 131, p. 18 (2019-05-17)","2019-12-14",null,[]]
+["measure",11,"7318155800","760","Import control","import","9999",null,"","R2400010","OJ L 100, p. 5 (2024-01-15)","2024-01-16",null,[]]
+["measure",5,"7318155810","552","Definitive anti-dumping duty","import","CN","C001","22 %","R2201910","OJ L 36, p. 1 (2022-02-17)","2022-02-18","2027-02-17",[]]
+["measure",6,"7318155810","142","Tariff preference","import","US",null,"0 %","R2400010","OJ L 100, p. 5 (2024-01-15)","2024-01-16",null,[]]
+["measure",8,"7318155890","483","Declaration of subheading submitted to legal restrictions (unit price)","both","1011",null,"","R1302880","OJ L 90, p. 10 (2013-03-28)","2013-04-01",null,[]]
+["measure",13,"7318159500","552","Definitive anti-dumping duty","import","1011",null,"58.6 %","R2201910","OJ L 36, p. 1 (2022-02-17)","2022-02-18","2027-02-17",["CN","TW"]]
+["measure",14,"7318159500","122","Non preferential tariff quota","import","1011",null,"0 %","R2400010","OJ L 100, p. 5 (2024-01-15)","2024-01-16",null,["4013"]]
+["measure",15,"7318159500","122","Non preferential tariff quota","import","1008",null,"0 %","R2400010","OJ L 100, p. 5 (2024-01-15)","2024-01-16",null,["AR","CN"]]
+["measure",16,"7318159500","760","Import control","import","1011",null,"","R2400010","OJ L 100, p. 5 (2024-01-15)","2024-01-16",null,["JP"]]
+["measure",17,"7318159500","566","Anti-dumping/countervailing statistic","import","1011",null,"","R2201910","OJ L 36, p. 1 (2022-02-17)","2022-02-18",null,[]]
+["measure",18,"7318159500","566","Anti-dumping/countervailing statistic","import","CN",null,"","R2201910","OJ L 36, p. 1 (2022-02-17)","2022-02-18",null,[]]

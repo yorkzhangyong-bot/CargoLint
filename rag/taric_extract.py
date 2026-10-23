@@ -21,7 +21,7 @@ from lxml import etree
 
 from agent.config import TARIC_OBJECTS, TARIC_SCHEMA
 from rag.pgp import SignatureError, check_key_copy, verify_signed
-from rag.taric import TaricCodeRecord, TaricMeasureRecord, TaricSnapshotRecord, record_to_line
+from rag.taric import TaricAreaRecord, TaricCodeRecord, TaricMeasureRecord, TaricSnapshotRecord, record_to_line
 
 NS = "{http://www.arcticgroup.se/tariff/arctictariff/export}"
 _FILE = re.compile(rf"^(?P<object>{'|'.join(TARIC_OBJECTS)})_(?P<batch>[^_]+)_(?P<yymmdd>\d{{6}})\.xml\.gz\.pgp$")
@@ -88,7 +88,7 @@ class Snapshot:
     measures: list[TaricMeasureRecord]
     mismatches: list[tuple[str, str]]       # (CN-8 prefix that CN 2026 lacks, first declarable code under it)
     log_path: Path
-    geo_areas: frozenset[str]
+    areas: list[TaricAreaRecord]            # EU geographical areas valid on D, by id (feature 003)
     dropped: dict[str, int]                 # measures dropped by reason (research R-14)
 
 
@@ -205,8 +205,35 @@ def parse_regulations(payload: bytes) -> dict[tuple[str, str | None], Regulation
     return regs
 
 
-def parse_geographical_areas(payload: bytes) -> frozenset[str]:
-    return frozenset(_a(el, "geographicalAreaId") or "" for el in _records(payload, "geographicalArea") if _a(el, "national") == "0")
+def parse_geographical_areas(payload: bytes, d: date) -> list[TaricAreaRecord]:
+    """EU areas valid on D in id order, each with the English name of its description period valid on D and the ids of
+    the groups it belongs to on D; memberships sit in the member's record and name their group by SID (feature 003,
+    research R-01, R-02)."""
+    day = d.isoformat()
+    ids: dict[str, str] = {}                                 # SID → id of every EU area
+    valid: set[str] = set()                                  # SIDs of the EU areas valid on D
+    kept: list[tuple[str, str, list[str]]] = []              # (id, name, group SIDs of its memberships valid on D)
+    for el in _records(payload, "geographicalArea"):
+        if _a(el, "national") != "0":
+            continue
+        sid, area = _a(el, "SID") or "", _a(el, "geographicalAreaId") or ""
+        ids[sid] = area
+        if not _valid(_a(el, "dateStart"), _a(el, "dateEnd"), day):
+            continue
+        valid.add(sid)
+        periods = [(_a(p, "dateStart") or "", p) for p in el.iterfind(NS + "geographicalAreaDescriptionPeriod")
+                   if _a(p, "national") == "0" and _valid(_a(p, "dateStart"), _a(p, "dateEnd"), day)]
+        name = _english(max(periods, key=lambda t: t[0])[1], "geographicalAreaDescription") if periods else ""
+        groups = [_a(m, "SIDGeographicalAreaGroup") or "" for m in el.iterfind(NS + "geographicalAreaMembership")
+                  if _a(m, "national") == "0" and _valid(_a(m, "dateStart"), _a(m, "dateEnd"), day)]
+        kept.append((area, name, groups))
+    areas: list[TaricAreaRecord] = []
+    for area, name, groups in kept:
+        unknown = [g for g in groups if g not in ids]
+        if unknown:
+            raise ExtractError(f"geographical area {area} is a member of group SID {unknown[0]}, which is no EU geographical area")
+        areas.append(TaricAreaRecord(geo_area=area, name=name, member_of=tuple(sorted({ids[g] for g in groups if g in valid}))))
+    return sorted(areas, key=lambda a: a.geo_area)
 
 
 # --------------------------------------------------------------------------- goods and hierarchy
@@ -354,12 +381,14 @@ def parse_measures(payload: bytes, d: date, types: dict[str, tuple[str, str]], e
         components = [_component(c) for c in el.iterfind(NS + "measureComponent")]
         conditions = [_condition(c) for c in el.iterfind(NS + "measureCondition")]
         duty = "; ".join(x for x in (render_duty(components, expressions), render_conditions(conditions, expressions)) if x)
+        excluded = {_a(x, "geographicalAreaId") or "" for x in el.iterfind(NS + "measureExcludedGeographicalArea")
+                    if _a(x, "national") == "0"}                       # feature 003, research R-03
         record = TaricMeasureRecord(
             sid=sid, code=_a(el, "goodsNomenclatureCode") or "", measure_type=mtype, measure_type_label=label,
             trade_movement=movement, geo_area=_a(el, "geographicalAreaId") or "",
             additional_code=f"{_a(el, 'additionalCodeType') or ''}{addl}" if addl else None,
             duty=duty, regulation_id=reg_id, regulation_ref=reg.ref if reg else "",
-            valid_from=start or "", valid_to=end)
+            valid_from=start or "", valid_to=end, excluded_areas=tuple(sorted(excluded)))
         if kept.setdefault(sid, record) != record:
             raise ExtractError(f"measure SID {sid} appears twice with different content")
     return sorted(kept.values(), key=lambda m: (m.code, m.sid))
@@ -391,7 +420,7 @@ def build_snapshot(extract: ExtractSet, payloads: dict[str, bytes], cn2026_cn8: 
     types = _read(names["MeasureType"], parse_measure_types, payloads["MeasureType"])
     expressions = _read(names["DutyExpression"], parse_duty_expressions, payloads["DutyExpression"])
     regulations = _read(names["Regulation"], parse_regulations, payloads["Regulation"])
-    areas = _read(names["GeographicalArea"], parse_geographical_areas, payloads["GeographicalArea"])
+    areas = _read(names["GeographicalArea"], parse_geographical_areas, payloads["GeographicalArea"], d)
     codes = _read(names["GoodsNomenclature"], parse_goods, payloads["GoodsNomenclature"], d)
     measures = _read(names["Measure"], parse_measures, payloads["Measure"], d, types, expressions, regulations)
     national_only = _read(names["GoodsNomenclature"], national_only_codes, payloads["GoodsNomenclature"])
@@ -420,13 +449,14 @@ def load_extract(extract: ExtractSet, key_path: Path, fingerprint: str, cn2026_c
 
 
 def write_snapshot(snapshot: Snapshot, path: Path) -> None:
-    """Snapshot record, codes by code, measures by (code, SID); UTF-8 with LF, written to `<path>.tmp` and swapped in,
-    so a failed write leaves the previous file untouched (FR-013, FR-015)."""
+    """Snapshot record, areas by id, codes by code, measures by (code, SID); UTF-8 with LF, written to `<path>.tmp` and
+    swapped in, so a failed write leaves the previous file untouched (FR-013, FR-015)."""
     path = Path(path)
     tmp = path.with_name(path.name + ".tmp")
     try:
         with tmp.open("w", encoding="utf-8", newline="\n") as f:
             f.write(record_to_line(snapshot.header) + "\n")
+            f.writelines(record_to_line(r) + "\n" for r in sorted(snapshot.areas, key=lambda r: r.geo_area))
             f.writelines(record_to_line(r) + "\n" for r in sorted(snapshot.codes, key=lambda r: r.code))
             f.writelines(record_to_line(r) + "\n" for r in sorted(snapshot.measures, key=lambda r: (r.code, r.sid)))
         os.replace(tmp, path)
