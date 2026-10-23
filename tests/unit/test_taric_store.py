@@ -8,7 +8,8 @@ from pathlib import Path
 
 import pytest
 
-from rag.taric import TaricFileError, TaricSnapshotInfo, TaricStore, open_taric_store
+from rag.taric import (_FIELDS, TaricAreaRecord, TaricCodeRecord, TaricFileError, TaricMeasureRecord, TaricSnapshotInfo,
+                       TaricStore, line_to_record, open_taric_store, record_to_line)
 
 pytestmark = pytest.mark.unit
 
@@ -205,6 +206,30 @@ class TestOpenForTheApp:
         with caplog.at_level(logging.WARNING, logger="rag.taric"):
             assert open_taric_store(path) is None
         assert "TARIC not loaded" in caplog.text
+
+
+def test_the_fast_reader_keeps_to_the_contract_positions_and_agrees_with_line_to_record(tmp_path):
+    """Pins what TaricStore.from_jsonl reads by position (feature 003, research R-07). A measure line is
+    [kind, *fields], so trade_movement is r[5] and excluded_areas r[13]; and for every kind the fast reader decodes, it
+    stores what line_to_record reads from the same round-tripped fixture line."""
+    measure_fields = _FIELDS[TaricMeasureRecord]
+    assert (measure_fields.index("trade_movement"), measure_fields.index("excluded_areas")) == (4, 12)
+
+    records = [line_to_record(line) for line in SMALL.read_text(encoding="utf-8").splitlines()]
+    area = next(r for r in records if isinstance(r, TaricAreaRecord) and r.member_of)
+    code = next(r for r in records if isinstance(r, TaricCodeRecord) and r.declarable and r.parent)
+    measure = next(r for r in records if isinstance(r, TaricMeasureRecord) and r.excluded_areas
+                   and r.trade_movement != "export" and r.measure_type != "566")
+    path = tmp_path / "taric.jsonl"
+    path.write_text("".join(record_to_line(r) + "\n" for r in (records[0], area, code, measure)), encoding="utf-8")
+    store = TaricStore.from_jsonl(path)
+    assert (store._names, store._member_of) == ({area.geo_area: area.name}, {area.geo_area: area.member_of})
+    assert store._parent == {code.code: code.parent}
+    assert store._declarable == {code.cn8: [(code.code, code.description, code.valid_from, code.valid_to)]}
+    assert store._measures == {measure.code: [(
+        measure.sid, measure.measure_type, measure.measure_type_label, measure.geo_area, measure.additional_code,
+        measure.duty, measure.regulation_id, measure.regulation_ref, measure.valid_from, measure.valid_to,
+        measure.excluded_areas)]}
 
 
 def test_the_lookup_is_not_connected_to_the_assistant_or_the_screen():
