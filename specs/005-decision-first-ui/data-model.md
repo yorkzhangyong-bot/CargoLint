@@ -83,11 +83,11 @@ Built by `draft(store, kb, lang)`.
 | `pick_{line_no}_{version_no}_{kind}_{form}` | the code picked in an open row of kind (a) or (b); `{form}` is `hs6`, `cn8` or `taric10` |
 | `typed_{line_no}_{version_no}` | the code typed into "Other HS-6 code…" |
 | `change_level_{line_no}_{version_no}` | the form "Change" shows on a green row: HS-6, CN-8 or TARIC-10 |
-| `email_open`, `email_lang` | whether the email block is open, and EN or 中文 |
-| `more_line_open`, `open_file` | whether the "+ Check one more line" field and the "Open another file" drop zone are shown |
-| `origin_field` | the header's origin text, kept across pages (`persist_state="session"`): the shipment's `taric_origin`, or the origin every new shipment starts with |
-| `job`, `job_queue` | the running background job and the waiting entries: `(finer_codes, line_no, taric_only)`, `(recheck, line_no, text)` and typed lines as text; job kinds `check`, `reply`, `question`, `finer_codes` and new `recheck` |
-| `threshold`, `hybrid` | the Admin › Rules values, kept across pages (`persist_state="session"`); a new shipment starts with them |
+| `email_lang` | EN or 中文 |
+| `more_line_open`, `open_file`, `email_open` | plain flags for the "+ Check one more line" field, the "Open another file" drop zone and the email block; their buttons have their own keys (`more_line_button`, `open_file_button`, `email_button`) and toggle them |
+| `origin_field` | the header's origin text, kept across pages (`persist_state="session"`) and set before the field renders: the shipment's `taric_origin`, else CN; a valid value typed with no shipment open is the origin every new shipment starts with |
+| `job`, `job_queue` | the running background job and the waiting entries: `(finer_codes, line_no, taric_only)`, `(recheck, line_no, zh, en)` and typed lines as text; job kinds `check`, `reply`, `question`, `finer_codes` and new `recheck` |
+| `threshold`, `hybrid` | the Admin › Rules values, kept across pages (`persist_state="session"`) and set before the widgets render when missing: the shipment's values, else 85 and on; every new shipment starts with them |
 | `session_usage` | the session's tokens and cost from replaced shipments (Admin › Cost) |
 | `chat` | the agent chat's messages, shown only on the Admin page, including a record for each finished re-check |
 | `admin_section` | the Admin page's current section, kept across pages (`persist_state="session"`) |

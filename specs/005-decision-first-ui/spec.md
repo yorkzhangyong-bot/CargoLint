@@ -129,7 +129,7 @@ raw confidence numbers.
    reads "Update". A line flagged by the ICS2 term "spare parts" reads "____ __ __ __" and "Ask: what exactly is
    “spare parts”?".
 6. **Given** an invoice is open, **When** the clerk chooses "Open another file", **Then** the drop zone and "Try the
-   sample invoice" appear. While a check runs they are disabled, and opening a file asks before it replaces the open
+   sample invoice" appear. While a job runs they are disabled, and opening a file asks before it replaces the open
    invoice.
 
 ---
@@ -188,8 +188,8 @@ no model.
    **Then** kind (b) opens with the written TARIC-10 pre-selected. Confirming another subdivision takes effect at once,
    with no model call, and the row stays green with the new code.
 9. **Given** kind (a) or "Change", **When** the clerk types an HS-6 code into "Other HS-6 code…" and confirms it,
-   **Then** a code that exists in the loaded nomenclature is confirmed like a candidate, recorded as typed. Any other
-   code is refused with its reason, and nothing changes.
+   **Then** a code that exists in the loaded nomenclature is confirmed like a candidate, recorded as typed, or as the
+   candidate it equals. Any other code is refused with its reason, and nothing changes.
 10. **Given** kind (b), **When** the clerk chooses "None of these → ask shipper", **Then** the line turns red with
     "Ask: which TARIC subdivision applies?". The email asks the shipper which of the listed subdivisions applies.
 
@@ -371,7 +371,7 @@ re-routes the unconfirmed lines without a model call and leaves clerk-confirmed 
   - "CargoLint";
   - once a file is open, its name and line count ("sample_packing_list.xlsx · 12 lines");
   - the origin field (CN by default);
-  - once a file is open, "Open another file", disabled while a check runs;
+  - once a file is open, "Open another file", disabled while a job runs;
   - the link "Admin ⚙".
 - **FR-002**: The main page MUST NOT show any of these:
   - a chat;
@@ -464,8 +464,8 @@ re-routes the unconfirmed lines without a model call and leaves clerk-confirmed 
     - an HS-6 whose subheading has one CN-8 line shows that 8-digit code;
     - a last row, "Other HS-6 code…", takes a typed code, which the store checks against the loaded nomenclature
       (feature 001 FR-023).
-  - In its CN-8 form, the table MUST list every CN-8 line under the decided HS-6, the chosen one pre-selected. Only the
-    model's chosen CN-8 carries a confidence and a precedent.
+  - In its CN-8 form, the table MUST list every CN-8 line under the decided HS-6, each with its whole label path, the
+    chosen one pre-selected. Only the model's chosen CN-8 carries a confidence and a precedent.
   - It MUST offer "Confirm <code>" with the note "then TARIC-10 runs on this code". The click records the clerk's
     decision and returns at once, without waiting for the model. The CN-8 step and the TARIC step then run in the
     background, as today (clarification 3), and the line turns green or offers kind (b).

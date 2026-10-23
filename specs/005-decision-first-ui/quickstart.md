@@ -37,9 +37,9 @@ Expected:
 | `tests/unit/test_runner.py` | which lines a job covers, failure handling, and the queued re-check that touches the store only when it starts |
 | `tests/unit/test_store.py` (`TestClerkEdit`) | the clerk version, its audit record, the caps and the lock (contracts/backend.md §1) |
 | `tests/integration/test_recheck.py` | the single-line re-check, an ever-flagged and a never-flagged line, and its failures (contracts/backend.md §2) |
-| `tests/ui/test_main_page.py` | the page, offline with `AppTest` and a seeded store. Rows and states: empty state, "Open another file", the three kinds with the HS-6 candidates block, "Other HS-6 code…", kind (b)'s "ask the shipper", "Change" on a green row. Actions: batch accept, both emails, origin toast. Display: underscore codes, the disabled Accept control on every kind of red row, nothing from FR-002 on the page |
+| `tests/ui/test_main_page.py` | the page, offline with `AppTest` and a seeded store. Rows and states: empty state, the header's file name and line count, "Open another file", the three kinds with the HS-6 candidates block, "Other HS-6 code…", kind (b)'s "ask the shipper", "Change" on a green row. Actions: batch accept, both emails, origin toast. Display: underscore codes, the disabled Accept control on every kind of red row, nothing from FR-002 on the page |
 | `tests/ui/test_admin_page.py` | the five sections; values kept across a page switch; a threshold change re-routes unconfirmed lines only; the TARIC mismatch count; the audit export |
-| `tests/ui/test_app_navigation.py` | `app.py` with the loader patched: hidden navigation, "Admin ⚙" and "← Back to shipment", the header's file name and line count, and the missing-key message without `.env` |
+| `tests/ui/test_app_navigation.py` | `app.py` with the loader patched: hidden navigation, "Admin ⚙" and "← Back to shipment", and the missing-key message without `.env` |
 | `tests/ui/test_response_time.py` | each SC-002 action on the 12-line sample, including kind (b) and the TARIC-10 re-pick: under 1 s and zero model calls |
 
 ## 2. Scripted walkthrough and the timed run (SC-001)

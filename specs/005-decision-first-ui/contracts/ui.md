@@ -32,21 +32,27 @@ The clerk-facing elements of feature 005, with what each one shows and does. Tex
   "Typed lines · {N} lines";
 - **the origin field**:
   - an `st.text_input` labelled "Origin", two characters, upper-cased, with `persist_state="session"`;
+  - its value starts as the shipment's origin, else CN, set in session state before the field renders. Streamlit
+    would otherwise start it empty;
   - its help: "The goods' country of origin for TARIC, two letters; CN by default";
   - under it, the caption `view.snapshot_caption(kb)`: "TARIC snapshot {date}", or "TARIC not loaded". This shows the
     snapshot date for every TARIC-10 in the table (Principle I).
 - **"Open another file"**: once a shipment has lines, it shows the drop zone and "Try the sample invoice" under the
-  header (key `open_file`). It is disabled while a job runs, with the help "Wait for the running check".
+  header.
+  - Its button (key `open_file_button`) toggles the flag `open_file`. Streamlit does not let code set a button's
+    key, so the flag is a plain session value.
+  - It is disabled while any job runs, with the help "Wait for the running check".
 - "Admin ⚙", the link.
 
 **Changing the origin**:
 - With a shipment open, it calls `agent.apply_taric_origin(store, kb, value)` and shows
   `st.toast(view.origin_toast(message))`. There is no model call (FR-022).
 - A refused value shows "Origin not changed: {reason}", and the field returns to the shipment's origin.
-- With no shipment open, the value is kept. Every new shipment starts with it, through `store.set_taric_origin` right
-  after `new_shipment`. This holds whether it is opened by an upload, the sample or a typed line.
+- With no shipment open, a valid value is kept. An invalid one shows "Origin not changed: {reason}", and the field
+  returns to the kept origin, CN by default.
+- Every new shipment starts with the kept origin (`upload.open_shipment`, below).
 
-**Empty state**: shown when there is no shipment, or one with no lines, and no job is running.
+**Empty state**: shown when there is no shipment, or one with no lines. Its controls are disabled while any job runs.
 - **Drop zone**: an `st.file_uploader` labelled "Drop a packing list or invoice here", accepting XLSX, CSV, PDF, JPG
   and PNG.
   - Its caption reads "XLSX · CSV · PDF · JPG · PNG — up to 20 MB, one file per shipment".
@@ -56,18 +62,21 @@ The clerk-facing elements of feature 005, with what each one shows and does. Tex
   bicycle frames, aluminium" and at most `MAX_DESC_CHARS` characters. Enter checks it as a one-line shipment.
 - **The table**: its headers over "No lines yet — drop a file or type one description".
 
-While a file is being read, before any line exists, the page shows "Checking {file name}…" instead of the empty state.
-The drop zone, the sample button and "Check one line" are disabled while any job runs.
+While a file check runs and no line exists yet, the page shows "Checking {file name}…" instead of the empty state.
+"Check one line" never queues: it is disabled while a job runs. Only "+ Check one more line" queues (§7).
 
 **Opening a file or the sample** (`upload.begin`):
 - If a shipment with lines is open, the replacement question comes first, as today: "A checked shipment is open.
   Replace it with {name}? Results, counts and cost reset.", with "Replace" and "Cancel".
 - Otherwise:
-  1. add the old shipment's usage to `session_usage`;
-  2. open a new shipment with the Admin threshold and hybrid setting, the origin field's value, and the reference: the
-     bundled reference for the sample, or the file name without its extension;
-  3. register the file, and start a **check** job with that file reference (§6).
+  1. open the new shipment with `upload.open_shipment(store, reference)`. The reference is the bundled reference for
+     the sample, or the file name without its extension;
+  2. register the file, and start a **check** job with that file reference (§6).
 - The chat transcript is cleared, as today, because it belongs to the shipment.
+
+**Every new shipment** opens through `upload.open_shipment(store, reference="")`. It adds the old shipment's usage
+to `session_usage`, and starts the new shipment with the Admin threshold and hybrid values and the kept origin.
+Uploads, the sample, "Check one line" and the Admin chat's `_ensure_shipment` all use it.
 
 ## 3. Summary bar (`ui/main_page.py`)
 
@@ -183,16 +192,17 @@ Each row is an `st.columns` row built from `view.line_status` and `view.code_dis
   - its help reads "Original: '{current description}' — kept in the audit trail as 'description updated by clerk'".
     This is the text the audit records as `previous`.
 - **"Re-check line"** (primary), with the caption "All steps run again for this line, from the stop-word check.":
-  - **no job running**: split the text with `view.split_description`, call `store.update_description(n, zh, en)`
-    (contracts/backend.md §1), start a **recheck** job for the line, and close the row;
-  - **a job running** (any kind): queue `(recheck, line_no, text)`, show "Waits for the running check", and close the
-    row. The edit is stored only when the re-check starts (§6), so no new version appears while a worker reads the
-    store.
-- **Results and refusals**:
-  - the row shows grey "Queued: re-check" while it waits, "Running stop-word check…" once it starts, then its new
-    status;
-  - an empty field shows "Write the goods description first." and changes nothing;
-  - a language part over 300 characters shows "Not re-checked: {reason}" and changes nothing.
+  - **Checked at once**: the text is split with `view.split_description` and checked with `view.edit_problem(zh,
+    en)`. An empty text shows "Write the goods description first."; a language part over 300 characters shows
+    "Not re-checked: {reason}". Either changes nothing.
+  - **Then** `runner.start_recheck(store, kb, n, zh, en)` runs, and the row closes:
+    - **no job running**: it calls `store.update_description(n, zh, en)` (contracts/backend.md §1) and starts a
+      **recheck** job;
+    - **a job running** (any kind): it queues `(recheck, line_no, zh, en)` and shows "Waits for the running check".
+      The edit is stored only when the re-check starts (§6), so no new version appears while a worker reads the
+      store.
+- **Results**: the row shows grey "Queued: re-check" while it waits, "Running stop-word check…" once it starts,
+  then its new status.
 
 ### 5.4 Kind (a) on a green row: "Change"
 
@@ -211,7 +221,8 @@ switch also opens kind (b), to re-pick the TARIC-10.
 
   It is shown when it has more than one option.
 - **The table of the chosen form**:
-  - HS-6: as in §5.1, with "Other HS-6 code…" and the decided HS-6 pre-selected;
+  - HS-6: as in §5.1, with "Other HS-6 code…". The decided HS-6 is pre-selected; when it was typed and is not among
+    the candidates, "Other HS-6 code…" is pre-selected, holding it;
   - CN-8: as in §5.1, with the decided CN-8 pre-selected;
   - TARIC-10: kind (b) as in §5.2, with the written TARIC-10 pre-selected.
 - **"Confirm {picked code}"**: disabled while the pick is the decided code, with the help "This is the current code".
@@ -231,8 +242,9 @@ switch also opens kind (b), to re-pick the TARIC-10.
   - `question` and `reply`: from the Admin chat.
 - **Queued entries**: each waits as data, and touches the store only when its job starts, so nothing new appears while
   a worker reads the store:
-  - a re-check waits as `(recheck, line_no, text)`. When it starts, the runner calls `store.update_description`, then
-    starts the job;
+  - a re-check waits as `(recheck, line_no, zh, en)`. When it starts, the runner calls `store.update_description`,
+    then starts the job. If storing the edit fails then (`ValueError` or `KeyError`), the entry is dropped, and the
+    page shows "Line {n}: re-check not started: {reason}";
   - a typed line waits as text, with the caption "Waits for the running check". Its line is added when its check
     starts;
   - a `finer_codes` entry waits as `(finer_codes, line_no, taric_only)`.
@@ -262,8 +274,11 @@ One row of buttons:
 - **"Export CSV"**: `st.download_button` with `store.to_csv_bytes()` and `store.export_filename("csv")`;
 - **"Export JSON"**: `st.download_button` with `store.to_json_bytes(knowledge_base_updated=kb.updated)` and
   `store.export_filename("json")`;
-- **"Draft shipper email ({C} lines)"**: toggles `email_open`; disabled when C is 0;
-- **"+ Check one more line"**: toggles `more_line_open`.
+- **"Draft shipper email ({C} lines)"**: a button (key `email_button`) that toggles the flag `email_open`; disabled
+  when C is 0;
+- **"+ Check one more line"**: a button (key `more_line_button`) that toggles the flag `more_line_open`.
+
+Each button keeps its own key, and the flags are plain session values.
 
 The exports are disabled until a check has finished. Their bytes are unchanged from feature 004 (FR-019).
 
@@ -290,11 +305,14 @@ with `persist_state="session"`, and Rules is the default.
 
 **Rules**:
 - **Threshold**: `st.slider("Auto-accept threshold", 60, 99, key="threshold", format="%d %%",
-  persist_state="session")`, default 85.
+  persist_state="session")`.
+  - Before it renders, a missing `threshold` is set in session state: the shipment's threshold, else 85. The slider
+    would otherwise start at 60.
   - Its change calls `store.set_threshold`.
   - Caption: "Re-routes every unconfirmed line, no model call; clerk-confirmed lines are never touched."
-- **Hybrid search**: `st.toggle("Hybrid search (BM25 and vectors)", key="hybrid", persist_state="session")`, on by
-  default. Its change calls `store.set_hybrid`.
+- **Hybrid search**: `st.toggle("Hybrid search (BM25 and vectors)", key="hybrid", persist_state="session")`.
+  - Before it renders, a missing `hybrid` is set: the shipment's setting, else on.
+  - Its change calls `store.set_hybrid`.
 - New shipments start with both values, which survive a page switch.
 
 **Data**:
@@ -326,6 +344,7 @@ with `persist_state="session"`, and Rules is the default.
   the email to the shipper (you copy and send it)".
 - **The quick action "Which terms does customs reject?"** stays. The quick actions that check a description or open
   the sample move to the main page.
+- **New shipments**: its `_ensure_shipment` opens them through `upload.open_shipment`, like every other path.
 - **The rerun after a job**: the chat's live turn no longer reads `layout_has_lines`. When a job ends, it reruns the
   app through `runner.finish`, as the main page does.
 

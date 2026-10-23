@@ -83,7 +83,8 @@ No new dependency.
 - Native Streamlit only (Principle VI).
 - No route computed in the UI (Principle I).
 - The backend is frozen apart from the accepted addition.
-- Typed descriptions are capped at `MAX_DESC_CHARS` (300) per language.
+- Typed descriptions are capped at `MAX_DESC_CHARS` (300): "Check one line" and "+ Check one more line" cap the whole
+  entry; the kind (c) field takes up to 603 characters, and the store caps each language at 300.
 - No file in `ui/`, and not `app.py`, names the TARIC tool; tests/unit/test_taric_store.py checks this.
 - `app.py` keeps its CRLF line endings. Every other file edited here, and every new file, uses LF.
 
@@ -118,6 +119,12 @@ No item is left as NEEDS CLARIFICATION.
 | V. Single-purpose tools | No tool is added or changed; the seven stay. `recheck_line` is an agent function, like `after_hs6_decision`: it runs the existing tool functions for one line, and a failure fails that line only. Versions and the audit trail stay append-only. The clerk's edit is one audit record, and every click goes through a store method that records it. A finished re-check adds a chat record with its sources and steps. | PASS | PASS |
 | VI. Native UI that shows its work | Only native components are used, with no custom HTML, CSS or JavaScript, so nothing needs justifying. The main page has no sidebar, and shows per-line progress, the summary counts, the evidence in expanded rows and the exports. The Admin page holds the sources and steps, cost and the knowledge-base statement. Every locked Accept is shown disabled with its reason: red rows, including unreadable lines. Green rows add the action "Change"; the UI Design Contract lists a minimum inventory, so an added action needs no amendment. The summary's colour counts are the contract's own summary sentence. A later PATCH amendment can align the wording of Principle VI ("routing counts") and of the contract ("Choose" or "Update"). The table is read from the store. Chinese and English are shown together; the email may be Chinese. "What I can and cannot do" is updated and shown at all times. | PASS | PASS |
 | VII. Test-first | Tests come first for `update_description` (caps, lock, audit) and `recheck_line` (single-line scope, failures, injection). They also come first for the queued re-check (no version before its job starts) and for the status mapping (SC-004), including the unreadable lock, before the pages. All new tests run offline with fakes; the live walkthrough is marked `live`. | PASS | PASS |
+
+**Follow-ups for the author** are not violations, so they need no Complexity Tracking. A PATCH amendment can update
+the constitution's wording after this feature:
+- the UI Design Contract's Action column: "Choose" or "Update", plus "Change";
+- Principle VI's "routing counts": the summary's decision counts;
+- the sample's "6 needing action": the count under the new mapping, which depends on the TARIC snapshot.
 
 **Scope (out of scope for the MVP)**: PASS before and after design.
 - no version-history UI: kind (c) shows only the text being replaced, as a hint, as FR-016 requires;

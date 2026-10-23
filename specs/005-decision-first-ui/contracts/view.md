@@ -41,7 +41,7 @@ text below is exact, and `{…}` marks a value.
 | 5 | `v.unreadable` | red | "Ask: unreadable line" | Update | `c` | locked |
 | 6 | `route` is `ask_shipper` and `c.question` is set | red | §2.1 | Update | `c` | locked |
 | 7 | `route` is `ask_shipper` | red | §2.1 | Update | `c` | locked |
-| 8 | `c` is set and `c.error` is set | yellow | "Pick: CN-8, {n} lines" | Choose | `a_cn8` | none |
+| 8 | `c` is set, `c.error` is set and `c.hs6` is `hs6` | yellow | "Pick: CN-8, {n} lines" | Choose | `a_cn8` | none |
 | 9 | `route` is `review` | yellow | §2.2 | Choose | `a_hs6` | none |
 | 10 | `step` is "CN-8 step" | yellow | "Pick: CN-8, {n} lines" | Choose | `a_cn8` | none |
 | 11 | `store.cn8_pending(line)` | yellow | "Pick: CN-8, {n} lines" | Choose | `a_cn8` | none |
@@ -97,6 +97,9 @@ an ICS2 match the kind vague, and a firm-list match the kind stop word. The rule
 
 The full question of a red line is the English question of §7.3. It is shown in kind (c) and used in the English
 email.
+- `question(store, line, lang, kb) -> str | None` builds it in either language.
+- `kb` serves the TARIC question, whose subdivision texts come through `line_taric_view`.
+- For a TARIC question in English, it returns the stored question.
 
 ### 2.2 Yellow lines
 
@@ -180,13 +183,14 @@ a line with candidates shows it:
 
 **"Other HS-6 code…"**: the last Pick row of kind `a_hs6` and of the HS-6 form of `a_change` (feature 001 FR-023).
 - Picking it shows a text input with the placeholder "e.g. 8452.90" and at most 7 characters.
-- "Confirm" sends the typed code to `store.set_decision`. The store checks it against the loaded nomenclature, and the
-  decision records `chosen_how` typed.
+- "Confirm" sends the typed code to `store.set_decision`. The store checks it against the loaded nomenclature. The
+  decision records `chosen_how` typed, or the candidate the code equals.
 - It is never pre-selected.
 
 `cn8_rows(store, line) -> list[CandidateRow]`: every CN-8 line under the decided HS-6, in code order (FR-014's CN-8
 form).
-- **description**: the last part of the label path, after the last " > ";
+- **description**: the whole label path, its parts joined with " › ", wrapped. The last part alone repeats, as
+  "Of plastics" does three times under 9503.00;
 - **confidence and precedent**: only on the chosen CN-8, and only when it is a model estimate (`c.confidence > 0` and
   more than one option). The other rows show none.
 
@@ -194,7 +198,8 @@ form).
 - `a_hs6`: the top candidate;
 - `a_cn8`: `c.cn8` when set, else the first line;
 - `a_change`: the decided HS-6 in the HS-6 form, the decided CN-8 in the CN-8 form, and the written TARIC-10 in the
-  TARIC-10 form.
+  TARIC-10 form. When the decided HS-6 was typed and is not among the candidates, "Other HS-6 code…" is
+  pre-selected, holding it.
 
 **`a_change` has three forms**:
 - **HS-6**, the default: `hs6_rows` and "Other HS-6 code…";
@@ -258,6 +263,8 @@ The page shows the anti-dumping cell in red unless it reads "none".
 
 `explain_b(store, line, view) -> tuple[str, str]`:
 - "CN-8 is {CN-8} ({label}). {k} of {n} subdivisions carry anti-dumping or countervailing measures for {origin}.";
+  `{label}` is the last two parts of the CN-8's label path, joined with " › ": "Slotted or cross-recessed heads ›
+  Other", or "Frames" when the path has one part;
 - "Your pick confirms both the CN-8 and the TARIC-10.", followed by one of:
   - " CN-8 written by rule at {conf} %.";
   - " CN-8 confirmed by you.";
@@ -362,6 +369,10 @@ The TARIC question lists the stored outcome's subdivisions with their TARIC text
   terms, the shipper name, the uploaded file name and model text.
 - **`split_description(text) -> tuple[str, str]`**: splits an edited description into Chinese and English with
   `tools.parsers.split_mixed`, as today's chat does for pasted lines.
+- **`edit_problem(zh, en) -> str | None`**: "Write the goods description first." when both parts are empty;
+  "the Chinese text is over 300 characters" or "the English text is over 300 characters" for a part over
+  `MAX_DESC_CHARS`; else `None`. It mirrors `update_description`'s rule, so a queued re-check is checked when it is
+  clicked.
 - **`audit_csv(store) -> bytes`**: `shipment.audit` as UTF-8 CSV with a BOM, with the columns at, line_no, version_no,
   change, previous, new, actor and note.
 - **`quality_rows(history, results) -> list[dict]`**: the Admin › Quality table (contracts/ui.md §8); `[]` when both

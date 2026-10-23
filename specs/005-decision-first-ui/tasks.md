@@ -74,10 +74,13 @@ foundation is the view module's status mapping, the test harness and the job run
   (empty) and tests/ui/harness.py:
   - **The sample TARIC fixture** (research R-13):
     - tests/fixtures/make_taric_sample.py reads data/taric.jsonl. It writes tests/fixtures/taric/snapshot_sample.jsonl
-      in schema 2: the snapshot record, then for each CN-8 the offline sample reaches, its goods_nomenclature records
-      with their ancestors, and all their measures;
-    - the CN-8 codes are those the offline sample check chooses: run `sample_store` with the small fixture and list
-      the chosen CN-8s, for example 6109 10 00, 8518 30 00, 4016 93 00, 3926 90 97 and 8714 91 10;
+      in schema 2. The file holds, in this order:
+      - the snapshot record;
+      - every geographical_area record, which the lookup needs for country groups and area names;
+      - for each CN-8 below, its goods_nomenclature records with their ancestors, and all their measures;
+    - the CN-8 codes are every CN-8 under the HS-6 codes among the sample's candidates, after the offline check and
+      the walkthrough's answers. Among them are 6109 10 00, 8518 30 00, 4016 93 00, 3926 90 97, 8714 91 10,
+      9503 00 95 and 9617 00 00;
     - the fixture is committed, so the tests need no data/taric.jsonl. Feature 004's small fixture stays as it is.
   - **`make_kb(taric="small")`**: a `KnowledgeBase` like the `kb` fixture of tests/integration/test_agent_check_flow.py:
     - the small index (tests/fixtures/cn2026_excerpt.jsonl), with BM25 and in-memory vectors over `FakeEmbeddings(dim=16)`;
@@ -91,13 +94,16 @@ foundation is the view module's status mapping, the test harness and the job run
       `set_taric_result`, `confirm_taric10`, `ask_shipper_for_taric` and `mark_failed`.
     - **Flags**: they come from `check_descriptions` on the state's text with the fake client, so the rule engine sets
       them as the app does; no flag is built by hand. Each state's text is fixed, so tests can read it.
+    - **Recordings**: the fake client judges any unrecorded text as vague and ranks it with no candidate. So the
+      harness keeps its own recorded outputs for its texts: an OK judgement for each clear text, and candidates for
+      each text that needs them, including "Spare parts".
     - **Pending, failed and red**:
       - `pending` and `failed`;
       - `ics2_term`: "Spare parts", flagged vague with the ICS2 unacceptable term "spare parts";
       - `firm_stop_word`: "Gift", flagged as a stop word from the firm list;
       - `vague_close` (41/39/12) and `vague_apart` (40/10/5): a text no rule matches, flagged vague by the judgement,
         below the ask floor;
-      - `vague_review`: flagged vague, 62, at or above the ask floor;
+      - `vague_review`: flagged vague, 55, at or above the ask floor (vague confidence is capped at 59);
       - `unreadable`: a parsed line marked unreadable;
       - `cn8_question`: 9503.00, "whether the toy cars incorporate a motor";
       - `sent`: the clerk's ask-shipper decision;
@@ -171,6 +177,8 @@ foundation is the view module's status mapping, the test harness and the job run
       - kind `b`: "Pick: 10 or 90", "Pick: 9 options, 3 AD" and "Confirm: 7318 15 68 00";
     - **row 14**: green, "Ready" (selectable) or "Accepted", the action "Change" and the kind `a_change`;
     - **no step left**: a running activity on a line with nothing left to run shows the line's own status;
+    - **row 8**: it needs the failed CN-8 choice to sit under the decided HS-6. A failed choice under an HS-6 that a
+      threshold raise left undecided gives row 9 instead;
     - **values**: the kind is one of "`a_hs6`, `a_cn8`, `a_change`, `b`, `c`, `c_failed` or none", and the action one
       of "`Choose`, `Update`, `Change` or none" (data-model §1).
   - **SC-003**: no status text equals "Review" or "Needs action", or contains "to confirm". This holds on the harness
@@ -208,8 +216,9 @@ foundation is the view module's status mapping, the test harness and the job run
     tool;
   - `line_status`, including the unreadable row, with the red, yellow and running texts of §2 and the lock reasons.
     Only status texts are cut at 44 characters;
-  - `question(store, line, lang)`, with the English and Chinese texts of §7.3. For a TARIC question, the English text is
-    the stored question;
+  - `question(store, line, lang, kb)`, with the English and Chinese texts of §7.3. For a TARIC question, the English
+    text is the stored question, and the Chinese one lists the subdivisions through `line_taric_view`;
+  - `edit_problem(zh, en)`, the click-time check of contracts/view.md §8;
   - `code_display`, `md_escape` and the spaced-code helper;
   - `split_description`, with `tools.parsers.split_mixed`, as ui/chat.py's `_zh` and `_en` do.
 
@@ -296,17 +305,19 @@ It covers FR-001 to FR-013 without the expanded content, "+ Check one more line"
       summary reads "Checking 12 lines… · {n} s";
     - while a file is read, before any line exists, the page reads "Checking sample_packing_list.xlsx…" instead of the
       empty state;
-    - the drop zone, the sample button and "Check one line" are disabled while a job runs.
+    - the drop zone, the sample button and "Check one line" are disabled while any job runs. With no lines and a
+      non-check job running, the empty state shows, disabled.
   - **Summary** (FR-005): the sentence and the bar once the check has finished.
   - **The header**: "{file name} · {N} lines", with a file name such as "inv_[1].xlsx" shown escaped.
   - **Starting checks**:
     - "Try the sample invoice" starts one `check` job with the sample's file reference and the reference
       "HOL-2026-10-0472", and empties the chat;
     - "Check one line" adds one `CreatedBy.paste` line to a new shipment and starts its check;
-    - while a job runs, a typed line waits ("Waits for the running check") and is added only when its check starts;
-    - "+ Check one more line" shows its field and adds the line to the open shipment.
+    - "+ Check one more line" (button `more_line_button`) shows its field and adds the line to the open shipment;
+    - while a job runs, its line waits ("Waits for the running check") and is added only when its check starts.
   - **"Open another file"**:
-    - once lines exist, it shows the drop zone and "Try the sample invoice", and it is disabled while a job runs;
+    - once lines exist, its button (`open_file_button`) shows the drop zone and "Try the sample invoice"; it is
+      disabled while any job runs;
     - the sample asks "A checked shipment is open. Replace it with sample_packing_list.xlsx? Results, counts and cost
       reset.";
     - "Replace" adds the old shipment's usage to `session_usage`.
@@ -337,12 +348,14 @@ It covers FR-001 to FR-013 without the expanded content, "+ Check one more line"
     - "Try the sample invoice";
     - the replacement question with "Replace" and "Cancel";
     - all of them disabled while any job runs, so they work both in the empty state and under "Open another file".
+  - **`open_shipment(store, reference="")`**: the one way a new shipment opens (contracts/ui.md §2):
+    - it adds the old shipment's usage to `session_usage`;
+    - it opens the shipment with the Admin `threshold` and `hybrid` values (85 and on when missing) and the kept
+      origin.
   - **`begin(store, data, name, reference=None)`**:
-    1. add the old shipment's usage to `session_usage`;
-    2. open a shipment with the Admin `threshold` and `hybrid` values, and as reference `SAMPLE_REFERENCE` for the
-       sample, else the file name without its extension;
-    3. register the file, and start the check with `runner.start_check(file_ref=…)`;
-    4. empty `chat`, and set `selected_line_no` to None.
+    1. `open_shipment`, with `SAMPLE_REFERENCE` for the sample, else the file name without its extension;
+    2. register the file, and start the check with `runner.start_check(file_ref=…)`;
+    3. empty `chat`, and set `selected_line_no` to None.
   - **Remove**:
     - the shipment fields: reference, shipper and filing type (FR-002);
     - the compatibility `render`;
@@ -371,7 +384,8 @@ It covers FR-001 to FR-013 without the expanded content, "+ Check one more line"
       owns them (T011, T014);
     - keep the quick action "Which terms does customs reject?";
     - show "What I can and cannot do" at all times, not only before a check;
-    - its live turn no longer reads `layout_has_lines`, and reruns through `runner.finish`.
+    - its live turn no longer reads `layout_has_lines`, and reruns through `runner.finish`;
+    - its `_ensure_shipment` opens shipments through `upload.open_shipment`.
 
     Everything else stays.
 - [ ] T014 [US1] Create ui/main_page.py, with `render(store, kb, admin_page)` (contracts/ui.md §2, §3, §7):
@@ -380,17 +394,19 @@ It covers FR-001 to FR-013 without the expanded content, "+ Check one more line"
     - "{file name} · {N} lines" with the file name escaped, or "Typed lines · {N} lines";
     - the origin field, with `persist_state="session"`, showing the shipment's origin (T042 wires a change);
     - `view.snapshot_caption(kb)`;
-    - "Open another file", once lines exist (key `open_file`), disabled while a job runs; it shows `upload`'s drop zone
-      and sample button;
+    - "Open another file", once lines exist: a button (key `open_file_button`), disabled while any job runs, that
+      toggles the flag `open_file` and shows `upload`'s drop zone and sample button;
     - "Admin ⚙", when `admin_page` is given.
-  - **Empty state**: shown with no lines and no job running; while a file is read, "Checking {file name}…" instead.
+  - **Empty state**: shown with no lines. While a file check runs, "Checking {file name}…" shows instead. Its
+    controls are disabled while any job runs.
     - `upload` (T011);
-    - "Check one line": on Enter, open a shipment if none is open, add one `CreatedBy.paste` line, and call
-      `runner.start_check(line_nos=…)`. While a job runs, queue it instead, with "Waits for the running check".
+    - "Check one line": on Enter, open a shipment with `upload.open_shipment` if none is open, add one
+      `CreatedBy.paste` line, and call `runner.start_check(line_nos=…)`. It never queues.
   - **One fragment**, called with `run_every=1` while a job runs or waits:
     - the summary bar: "Checking {N} lines… · {elapsed} s" while a check runs, else `summary_text` and `split_bar`;
     - `table.render`;
-    - the button row under the table, with "+ Check one more line". T035 and T039 add the other buttons.
+    - the button row under the table, with "+ Check one more line" (button `more_line_button`, flag
+      `more_line_open`), which queues its line while a job runs. T035 and T039 add the other buttons.
   - **Finishing**: when the job is done, call `runner.finish` and rerun the app.
 
   T008 passes.
@@ -435,13 +451,16 @@ later steps run in the background.
     - three candidates in stored order, each with its rationale (cut at 150 characters, the full text kept for the
       help), `history_only` and its precedent or None;
     - a subheading with one CN-8 line shows that line ("9617 00 00").
-  - **`cn8_rows`** on 9503.00: 19 rows, each described by the last part of its label path. The confidence and the
-    precedent appear only on the chosen CN-8, and only for a model estimate.
+  - **`cn8_rows`** on 9503.00:
+    - 19 rows, each described by its whole label path joined with " › ", so 9503 00 75 reads "Other toys and
+      models, incorporating a motor › Of plastics";
+    - the confidence and the precedent appear only on the chosen CN-8, and only for a model estimate.
   - **Pre-selection**:
     - for `a_hs6`, `a_cn8` and `a_change`;
     - `a_change`: the decided HS-6 in the HS-6 form, the decided CN-8 in the CN-8 form, and the written TARIC-10 in the
       TARIC-10 form;
-    - "Other HS-6 code…" is never pre-selected;
+    - "Other HS-6 code…" is not pre-selected, except in the HS-6 form of `a_change` when the decided HS-6 was typed
+      and is not among the candidates; it then holds that code;
     - the CN-8 form exists only when the decided HS-6 has more than one CN-8 line, and the TARIC-10 form only when the
       stored TARIC outcome has more than one subdivision (`accepted_taric`, not `ready_taric`).
   - **`explain_a`**: every text of §5, including:
@@ -458,8 +477,8 @@ later steps run in the background.
     - 7318 15 68 for CN: "control";
     - a synthetic subdivision with the specific type-552 duty "172.2 EUR / 1000 kg I": "AD: 172.2 EUR / 1000 kg I";
     - a code ending in 00 with no text: "the whole CN-8".
-  - **`explain_b`**: "CN-8 is 7318 15 58 ({label}). 2 of 2 subdivisions carry anti-dumping or countervailing measures
-    for CN.", and the CN-8 sentence.
+  - **`explain_b`**: "CN-8 is 7318 15 58 (Slotted or cross-recessed heads › Other). 2 of 2 subdivisions carry
+    anti-dumping or countervailing measures for CN.", and the CN-8 sentence. 8714 91 10 reads "(Frames)".
   - **`taric_question`**: "Please state which of these TARIC subdivisions applies: 7318 15 58 10 (Self-locking bolts and
     nuts); 7318 15 58 90 (Other)."
 - [ ] T018 [P] [US2] Add the US2 tests to tests/ui/test_main_page.py:
@@ -477,7 +496,8 @@ later steps run in the background.
     - after `JobRecorder.run` with the recorded outputs, the row turns green or yellow.
   - **"Other HS-6 code…"** (feature 001 FR-023):
     - picking it shows the text input;
-    - a code in the loaded nomenclature is confirmed with `chosen_how` typed, and a `finer_codes` job is recorded;
+    - a code in the loaded nomenclature is confirmed with `chosen_how` typed, and a `finer_codes` job is recorded. A
+      typed code equal to a candidate is recorded as that candidate;
     - an unknown code, and an empty or malformed one, show "Not confirmed: {reason}" and change nothing;
     - on `no_candidate`, the typed code is the way to decide.
   - **"None of these → ask shipper"**: the decision is ask_shipper, and the row turns red with "Ask: what exactly are
@@ -499,7 +519,7 @@ later steps run in the background.
   - **"Change" on green rows** (`ready`, `ready_taric`, `accepted`, `accepted_taric`):
     - kind (a) opens with the "Decided: …" line, and the TARIC block for a TARIC-10;
     - the decided HS-6 is picked, with "Other HS-6 code…" offered, and "Confirm" is disabled with the help "This is the
-      current code";
+      current code". A typed decided HS-6 that is not a candidate pre-picks "Other HS-6 code…", holding it;
     - the switch offers "CN-8" only when the decided HS-6 has more than one CN-8 line, and "TARIC-10" only on
       `accepted_taric`, whose CN-8 has two subdivisions;
     - each form keeps its own pick: switching forms and back keeps the earlier pick;
@@ -594,7 +614,8 @@ It covers FR-011, FR-016 and FR-017, and contracts/backend.md.
   - **An ever-flagged line**: the `ics2_term` line, edited to a clear description, is checked, classified and given
     precedents by `recheck_line`. It routes to `review`, its HS-6 is not decided, and no CN-8 step runs (Principle I).
   - **A never-flagged line**: the `cn8_question` line, edited to state that the toy cars have no motor, is checked and
-    classified. Its HS-6 is auto-decided, and the CN-8 and TARIC steps run.
+    classified. Its HS-6 is auto-decided, and the CN-8 and TARIC steps run. The edited text has its own recorded OK
+    judgement and candidates.
   - **Single-line scope**: the other lines' versions, routes and audit records are unchanged, as for
     `apply_shipper_reply`.
   - **Failures**: a failing model call (`fail_on`) fails this line only, with its reason.
@@ -617,7 +638,9 @@ It covers FR-011, FR-016 and FR-017, and contracts/backend.md.
 - [ ] T025 [P] [US3] Add the re-check cases to tests/unit/test_runner.py:
   - `activity` gives "running" for a running `recheck` job's line, and "recheck_queued" for a queued re-check;
   - `fail_pending` on a `recheck` job with an error marks the line failed with "re-check failed: {error}", only while
-    the line is pending.
+    the line is pending;
+  - a queued re-check whose edit fails when it starts (`ValueError`, `KeyError`) is dropped, with "Line {n}: re-check
+    not started: {reason}".
 - [ ] T026 [P] [US3] Extend tests/ui/harness.py, and add the US3 tests to tests/ui/test_main_page.py:
   - **New harness states**: `edited_ever_flagged` and `edited_never_flagged`, built with `update_description` and an
     inline re-check.
@@ -634,12 +657,15 @@ It covers FR-011, FR-016 and FR-017, and contracts/backend.md.
       Chinese and 290 English characters is pre-filled whole, never cut;
     - the help "Original: '{current description}' — kept in the audit trail as 'description updated by clerk'";
     - a language part over 300 characters shows "Not re-checked: {reason}" and adds no version.
+  - **The top of the row** (FR-013): a line whose shipper reply contradicts the file shows its contradiction note,
+    and the fields extracted from the reply (material, part, use).
   - **"Re-check line" with no job running**:
+    - the text is checked at once with `view.edit_problem`;
     - it calls `update_description` with the split texts and records one `recheck` job;
     - the row closes and reads grey "Running stop-word check…", with no model call before the response;
     - an empty field shows "Write the goods description first." and adds no version.
   - **"Re-check line" while a job runs** (the race of contracts/ui.md §6):
-    - no version is added, and the row reads grey "Queued: re-check";
+    - no version is added, the queue holds `("recheck", n, zh, en)`, and the row reads grey "Queued: re-check";
     - when the running job finishes and the re-check starts, `update_description` runs first, then the `recheck` job
       starts.
   - **After `JobRecorder.run`**:
@@ -668,9 +694,11 @@ It covers FR-011, FR-016 and FR-017, and contracts/backend.md.
     - the worker runs `job.note = recheck_line(...)`;
     - the labels are "Re-checking line {n}… · {elapsed} s" and "Line {n} re-checked · {elapsed} s".
   - **ui/runner.py**:
-    - `start_recheck(store, kb, line_no, text)`:
+    - `start_recheck(store, kb, line_no, zh, en)`:
       - with no job running, it calls `store.update_description`, then starts the job;
-      - otherwise it queues `("recheck", line_no, text)`, which `start_next` stores and starts later;
+      - otherwise it queues `("recheck", line_no, zh, en)`, which `start_next` stores and starts later;
+    - in `start_next`, a queued edit that fails (`ValueError`, `KeyError`) drops the entry and shows "Line {n}:
+      re-check not started: {reason}";
     - `activity` gives "recheck_queued" for a queued re-check;
     - `finish` adds a chat record for a finished re-check: "Line {n} re-checked", with that line's sources and
       retrieval steps;
@@ -684,8 +712,8 @@ It covers FR-011, FR-016 and FR-017, and contracts/backend.md.
     - the box, except for a failed check;
     - the candidates line, the HS-6 candidates block (open) and the reason;
     - the text area of at most `2 × MAX_DESC_CHARS + 3` characters;
-    - "Re-check line": `view.split_description` then `runner.start_recheck(store, kb, line_no, text)`, then close the
-      row;
+    - "Re-check line": `view.split_description` and `view.edit_problem` at once, then
+      `runner.start_recheck(store, kb, line_no, zh, en)`, then close the row;
     - "Write the goods description first." and "Not re-checked: {reason}".
   - **ui/table.py**: on red rows, the disabled ✓ checkbox with the lock reason as its help, and the lock caption.
 
@@ -809,8 +837,10 @@ keeps its value across pages, and every new shipment starts with it.
     - the field reads "US", and `ModelGuard` counts 0;
     - a TARIC-10 the clerk confirmed stays.
   - **"C1"**: "Origin not changed: {reason}", and the field returns to "CN".
-  - **No shipment open**: "US" is kept, and every new shipment starts with origin US: an upload, the sample and a typed
-    line.
+  - **No shipment open**:
+    - "US" is kept, and every new shipment starts with origin US: an upload, the sample, a typed line and the Admin
+      chat's;
+    - "C1" shows "Origin not changed: {reason}", and the field returns to the kept origin.
   - **Across pages**: with `harness.app`, "US" stays after a switch to the Admin page and back.
 
 ### Implementation for User Story 6
@@ -819,10 +849,10 @@ keeps its value across pages, and every new shipment starts with it.
   - **ui/view.py**: add `origin_toast`;
   - **ui/main_page.py**:
     - the origin field's change calls `agent.apply_taric_origin` and shows `st.toast`, or the refusal message;
-    - before a shipment exists, the value is kept in `origin_field` (`persist_state="session"`);
-    - a typed line's new shipment starts with it;
-  - **ui/upload.py**: new shipments start with `origin_field`, through `store.set_taric_origin` right after
-    `new_shipment`.
+    - the field starts as the shipment's origin, else CN, set before it renders (`persist_state="session"`);
+    - with no shipment open, a valid value is kept in `origin_field`, and an invalid one is refused;
+  - **ui/upload.py**: `open_shipment` starts every new shipment with the kept origin, through
+    `store.set_taric_origin` right after `new_shipment`.
 
   T040 and T041 pass.
 
@@ -853,7 +883,9 @@ switch.
     - the header, the caption and "← Back to shipment";
     - the sidebar radio with Rules, Data, Cost, Quality and Ask the agent, Rules by default.
   - **Rules**:
-    - the threshold slider, "60–99, default 85" (data-model §3);
+    - the threshold slider, "60–99, default 85" (data-model §3). It starts at 85, not at the slider's minimum, even when
+      Admin is the first page opened;
+    - the hybrid toggle is on by default;
     - setting 90 makes `store.shipment.threshold` 90 and re-routes the unconfirmed lines, with `threshold_recomputed`
       records. A clerk-confirmed line is untouched, and no model is called;
     - the hybrid toggle sets `hybrid_search` to False;
@@ -884,7 +916,8 @@ switch.
   - **ui/admin.py**:
     - the left navigation, keyed `admin_section`, with `persist_state="session"`;
     - **Rules**: the `threshold` slider and the `hybrid` toggle, both with `persist_state="session"`, calling
-      `store.set_threshold` and `store.set_hybrid`;
+      `store.set_threshold` and `store.set_hybrid`. Missing values are set before they render: the shipment's, else
+      85 and on;
     - **Data**: built with `view.taric_statement` and `view.kb_statement`;
     - **Cost**, **Quality**, and **Ask the agent** (`chat.render`).
   - **ui/chat.py**: in "What I can and cannot do", the "Can" list adds "draft the email to the shipper (you copy and send

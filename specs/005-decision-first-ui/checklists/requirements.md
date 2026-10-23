@@ -35,7 +35,7 @@
   routing for new shippers is left out; and a confirm never waits for the model, while the background CN-8 and TARIC
   steps run as today. The Clarifications section records them, with the accepted backend addition, the replaced UI
   tests and the Chinese-email rule.
-- The spec was checked against the Claude Docs wireframes (read on 2026-10-23). Six deliberate differences are listed
+- The spec was checked against the Claude Docs wireframes (read on 2026-10-23). Nine deliberate differences are listed
   under Assumptions.
 - The framework appears only in the verbatim Input block ("Streamlit multipage"); the requirements avoid framework
   names. The Admin label "BM25 and vectors" is the wireframe's own wording.
