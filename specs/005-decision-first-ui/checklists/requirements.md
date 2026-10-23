@@ -43,3 +43,6 @@
   scenario 6, the Line status table and SC-007 add the disabled Accept control with its lock reason on red rows
   (Principle VI). The Q1–Q3 answers and the Chinese-template rule were already applied.
 - The spec is ready for `/speckit-clarify` or `/speckit-plan`.
+- Updated on 2026-10-23 after the author's plan review: green rows get "Change", which opens kind (a) (FR-011,
+  FR-014, User Story 2, the Line status table, SC-007). FR-005 and FR-016 take the accepted summary counts and the
+  10-point closeness rule. All items still pass.

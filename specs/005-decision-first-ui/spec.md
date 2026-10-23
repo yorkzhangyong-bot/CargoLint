@@ -63,6 +63,13 @@ Out of scope: user accounts, persistence across sessions, shipper memory, sendin
 - Q: 27 of today's 710 tests import the current UI package. → A: Replace them with tests of the new UI.
 - Q: How Chinese is the Chinese email? → A: All template text is Chinese: subject, greeting, introduction, numbering,
   closing and sign-off. Only a question written by the model may stay English.
+- Q: Are green rows read-only? → A: No. Each green row has a "Change" action that opens kind (a), and a code the
+  clerk chooses there follows the same confirm flow as a review line. The clerk signs the declaration and must be able
+  to override an auto-accepted code.
+- Q: Where does the summary count failed checks and lines still being checked? → A: Apart from the three counts, as
+  " · F check failed" and " · R updating", each shown only when above 0.
+- Q: When are a vague line's candidates "too close to call"? → A: When the top two confidences differ by at most 10
+  points. The rule only changes what kind (c) says; routing never reads it.
 - The first draft's decisions on colours, batch acceptance, close candidates and measures stand (see Assumptions).
 
 ## User Scenarios & Testing *(mandatory)*
@@ -104,21 +111,23 @@ raw confidence numbers.
 
 ---
 
-### User Story 2 - Resolve a yellow line by picking a code in place (Priority: P1)
+### User Story 2 - Resolve a yellow line, or change a green one, by picking a code in place (Priority: P1)
 
 The clerk chooses "Choose" on a yellow line. The row expands under itself (with "▲ close") and offers the choice the
 line needs:
 - the HS-6 or the CN-8, from the top candidates with their confidence and EBTI precedent;
 - or the TARIC-10, from the subdivisions with their duty and any anti-dumping duty.
 
-One option is pre-selected, and one "Confirm <code>" settles it.
+One option is pre-selected, and one "Confirm <code>" settles it. "Change" on a green line opens the same HS-6 or CN-8
+choice, so the clerk can override a code that was accepted automatically.
 
 **Why this priority**: yellow lines need the clerk's judgement most often, and today each one takes several panels
 and clicks.
 
 **Independent Test**: on a store holding a review line, a CN-8 to confirm and a TARIC-10 to confirm, each line
 expands into its kind (a) or (b). Confirming the pre-selected option writes the code and changes the status. No
-other line changes.
+other line changes. A green line's "Change" opens kind (a) with its decided HS-6 pre-selected, and confirming
+another code runs its later steps again.
 
 **Acceptance Scenarios**:
 
@@ -140,6 +149,12 @@ other line changes.
    - "Confirm <code>", an "All measures" expander and "Open in EU TARIC ↗" for the selected code.
 5. **Given** kind (b) is open, **When** the clerk confirms a subdivision, **Then** the TARIC-10 and the CN-8 it sits
    under are both confirmed by the clerk, and the row turns green.
+6. **Given** a green line, **When** the clerk chooses "Change", **Then** kind (a) opens under the row with:
+   - the decided codes and who decided them, and for a TARIC-10 its duty, anti-dumping duty and measures;
+   - the top candidates with the decided HS-6 pre-selected, and a switch to the CN-8 lines under it.
+7. **Given** kind (a) opened by "Change", **When** the clerk confirms another HS-6 or CN-8, **Then** the same flow as
+   for a review line follows: the click returns at once, the later steps run in the background, and the row turns
+   green or offers kind (b). The code already decided cannot be confirmed again there; the Accept control does that.
 
 ---
 
@@ -276,6 +291,8 @@ re-routes the unconfirmed lines without a model call and leaves clerk-confirmed 
   pick.
 - **A re-checked line that was ever flagged**: it never turns green by itself. It shows yellow "Confirm: <code>"
   until the clerk confirms (Principle I).
+- **An automatically accepted code the clerk disagrees with**: "Change" on the green row opens kind (a). A new HS-6 or
+  CN-8 runs the later steps again, as for a review line.
 - **Failures**:
   - A failed check shows red "Check failed" with "Re-check line" and no question.
   - A failed CN-8 step leaves the HS-6 decided and offers a yellow pick of the CN-8 lines.
@@ -327,7 +344,8 @@ re-routes the unconfirmed lines without a model call and leaves clerk-confirmed 
 #### Summary
 
 - **FR-005**: After a check, a summary MUST read "N lines checked in T s · A ready · B need a pick · C need the
-  shipper", with a bar split into green, yellow and red in those proportions.
+  shipper", with a bar split into green, yellow and red in those proportions. Failed checks and lines still being
+  checked are counted apart, as " · F check failed" and " · R updating", each shown only when above 0.
 - **FR-006**: "Accept all K ready" MUST confirm, in one action, every green line the clerk has not yet confirmed.
   - K counts those lines, and the action is absent when K is 0.
   - The clerk MAY tick Ready lines and accept only those.
@@ -356,8 +374,8 @@ re-routes the unconfirmed lines without a model call and leaves clerk-confirmed 
 - **FR-010**: The colour, text and expanded-row kind MUST derive only from the stored line, through the single mapping
   in Key Entities. The stored line means its route, flag, CN-8 and TARIC-10 states and the clerk's decisions. The
   page MUST NOT compute a route of its own (Principle I).
-- **FR-011**: Action MUST read "Choose" for yellow lines and "Update" for red lines. Green and in-progress lines show
-  none.
+- **FR-011**: Action MUST read "Choose" for yellow lines, "Update" for red lines and "Change" for green lines.
+  In-progress lines show none.
   - On a red row, the Accept control MUST also be shown, disabled, with the lock reason next to it (Principle VI).
   - The reason says what blocks acceptance and what unlocks it, built from the stored line:
     - a flagged description: "Locked: ICS2 stop word 'spare parts' — update the description and re-check";
@@ -385,6 +403,10 @@ re-routes the unconfirmed lines without a model call and leaves clerk-confirmed 
     decision and returns at once, without waiting for the model. The CN-8 step and the TARIC step then run in the
     background, as today (clarification 3), and the line turns green or offers kind (b).
   - "None of these → ask shipper" MUST send the line to the shipper (kind (c)).
+  - Opened by "Change" on a green line (clarification), it MUST also show the decided codes and who decided them,
+    with the TARIC-10's duty, anti-dumping duty and measures when there is one. The decided HS-6 is pre-selected, and
+    a switch offers the CN-8 lines under it, the decided one pre-selected. A code the clerk confirms there follows the
+    flow above. The code already decided cannot be confirmed again there.
 - **FR-015**: **Kind (b), choose the TARIC-10**:
   - It MUST explain the choice: the CN-8 with its label, how many of the subdivisions carry anti-dumping duty for the
     origin, that the pick confirms both the CN-8 and the TARIC-10, and the CN-8's confidence and precedent link.
@@ -400,10 +422,12 @@ re-routes the unconfirmed lines without a model call and leaves clerk-confirmed 
   - "Open in EU TARIC ↗" MUST link the selected code.
 - **FR-016**: **Kind (c), ask the shipper, then update and re-check**:
   - An "Ask the shipper" box MUST show the question, with "Copy question".
-  - For a vague line it MUST show the top candidates with their confidences ("Candidates: … — too close to call").
+  - For a vague line it MUST show the top candidates with their confidences. When the top two differ by at most 10
+    points, the line ends with "— too close to call" (clarification).
   - A "Reason" line MUST state the stored reason in plain words:
     - the matched ICS2 or firm stop word ("Reason: ICS2 stop word 'spare parts'");
-    - close candidates of a vague description ("Reason: candidates too close");
+    - for a vague line, "Reason: candidates too close" when its candidates are close as defined above, otherwise the
+      vagueness reason ("Reason: vague description — <reason>");
     - the missing CN-8 attribute;
     - or the clerk's own decision to ask.
   - It MUST show "Update the description with the shipper's answer", pre-filled with the current description, with
@@ -492,7 +516,7 @@ re-routes the unconfirmed lines without a model call and leaves clerk-confirmed 
 | Stored state of the line | Colour | Status text | Action | Expanded kind |
 |---|---|---|---|---|
 | Still being checked | grey, dashed | the running step ("Running TARIC step…") | none | none |
-| Nothing left to decide: the HS-6 decided, the CN-8 written, the TARIC-10 written or not available, nothing pending | green | "Ready", or "Accepted" once the clerk confirmed | none | summary, read only |
+| Nothing left to decide: the HS-6 decided, the CN-8 written, the TARIC-10 written or not available, nothing pending | green | "Ready", or "Accepted" once the clerk confirmed | Change | (a), on the decided codes |
 | Not flagged, routed to review below the threshold | yellow | "Pick: <n> candidates" | Choose | (a) HS-6 |
 | Ready to accept after an update | yellow | "Confirm: <code>" | Choose | (a) |
 | The HS-6 decided; the CN-8 to confirm, or the CN-8 step failed | yellow | "Pick: CN-8, <n> lines" | Choose | (a) CN-8 |
@@ -534,7 +558,8 @@ re-routes the unconfirmed lines without a model call and leaves clerk-confirmed 
   - the origin toast;
   - the underscore code rendering;
   - the clerk's description edit and its audit entry;
-  - the disabled Accept control and its lock reason on every kind of red row.
+  - the disabled Accept control and its lock reason on every kind of red row;
+  - "Change" on a green row and the override that follows.
 - **SC-008**: An origin change re-applies the rules to every line with a CN-8, reports that count, and makes no model
   call.
 
@@ -548,12 +573,13 @@ re-routes the unconfirmed lines without a model call and leaves clerk-confirmed 
     own rule is that underscores are what is still undecided;
   - a line whose top candidates are close keeps the colour its stored route gives. The wireframe sends it straight to
     kind (c), but the backend has no closeness rule. A vague line sent to the shipper shows its candidates'
-    confidences;
+    confidences, and says "too close to call" only when the top two are within 10 points (clarification);
   - the producer names in the kind (b) mockup are placeholders, and the descriptions come from TARIC;
   - after a re-check, a line that was ever flagged needs the clerk's confirmation (Principle I). A line never flagged
     may turn green, as the mockup shows;
   - a red row also shows the Accept control disabled with its lock reason (Principle VI), which the wireframes do not
-    draw.
+    draw;
+  - a green row offers "Change" (clarification), which the wireframes do not draw.
 - **Native components only** (Principle VI): the dots, the split bar and the expandable rows follow the wireframes as
   closely as native components allow, with no custom HTML, CSS or scripts.
 - **File types**: the drop zone accepts today's types (XLSX, CSV, PDF, JPG, PNG). The wireframe names the three main
