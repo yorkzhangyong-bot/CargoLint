@@ -234,6 +234,19 @@ class NomenclatureIndex:
     def chapter_of(self, code: str) -> str:
         return code[:2]
 
+    def cn8_lines(self, hs6: str) -> list[tuple[str, str]]:
+        """Feature 004: the (CN-8, label path) pairs of a subheading's `CN dddd dd dd — <path> > <label>` lines, in code
+        order; [] for an unknown subheading. Read-only; the loader is unchanged."""
+        ch = self._by_code.get(hs6)
+        if ch is None:
+            return []
+        out = []
+        for line in ch.text.splitlines():
+            m = _CN8_LINE.match(line)
+            if m:
+                out.append(("".join(m.groups()), line.split("—", 1)[1].strip() if "—" in line else ""))
+        return sorted(out)
+
     def cn8_codes(self) -> frozenset[str]:
         """The 8-digit codes of the `CN dddd dd dd` lines in all chunk texts (TARIC reconciliation, feature 002)."""
         return frozenset("".join(m) for ch in self.chunks for m in _CN8_LINE.findall(ch.text))

@@ -71,7 +71,8 @@ class BM25Index:
 class VectorSearch(Protocol):
     def search(self, query: str, k: int, chapter_filter: list[str] | None) -> list[tuple[str, float]]: ...
     def embed_queries(self, queries: list[str]) -> list[list[float]]: ...
-    def search_by_vector(self, vector: list[float], k: int, chapter_filter: list[str] | None) -> list[tuple[str, float]]: ...
+    def search_by_vector(self, vector: list[float], k: int, chapter_filter: list[str] | None,
+                         where: dict | None = None) -> list[tuple[str, float]]: ...
 
 
 def _embed_queries(embeddings: Any, queries: list[str]) -> list[list[float]]:
@@ -99,11 +100,15 @@ class InMemoryVectorSearch:
     def embed_queries(self, queries: list[str]) -> list[list[float]]:
         return _embed_queries(self.embeddings, queries)
 
-    def search_by_vector(self, vector: list[float], k: int, chapter_filter: list[str] | None = None) -> list[tuple[str, float]]:
+    def search_by_vector(self, vector: list[float], k: int, chapter_filter: list[str] | None = None,
+                         where: dict | None = None) -> list[tuple[str, float]]:
         q = self._norm(vector)
         scored = []
         for doc_id, vec in zip(self.ids, self.vectors):
-            if chapter_filter and self.meta.get(doc_id, {}).get("chapter") not in chapter_filter:
+            meta = self.meta.get(doc_id, {})
+            if chapter_filter and meta.get("chapter") not in chapter_filter:
+                continue
+            if where and any(meta.get(key) != value for key, value in where.items()):
                 continue
             scored.append((doc_id, sum(a * b for a, b in zip(q, vec))))
         scored.sort(key=lambda t: -t[1])
@@ -126,9 +131,11 @@ class ChromaVectorSearch:
     def embed_queries(self, queries: list[str]) -> list[list[float]]:
         return _embed_queries(self.embeddings, queries)
 
-    def search_by_vector(self, vector: list[float], k: int, chapter_filter: list[str] | None = None) -> list[tuple[str, float]]:
-        where = {"chapter": {"$in": list(chapter_filter)}} if chapter_filter else None
-        results = self.store.similarity_search_by_vector_with_relevance_scores(embedding=vector, k=k, filter=where)
+    def search_by_vector(self, vector: list[float], k: int, chapter_filter: list[str] | None = None,
+                         where: dict | None = None) -> list[tuple[str, float]]:
+        clauses = ([{"chapter": {"$in": list(chapter_filter)}}] if chapter_filter else []) + [{key: value} for key, value in (where or {}).items()]
+        flt = None if not clauses else clauses[0] if len(clauses) == 1 else {"$and": clauses}
+        results = self.store.similarity_search_by_vector_with_relevance_scores(embedding=vector, k=k, filter=flt)
         return [((getattr(doc, "id", None) or doc.metadata.get("id")), float(score)) for doc, score in results]
 
     def add(self, docs: list[tuple[str, str, dict]], batch_size: int = 256) -> int:

@@ -7,13 +7,13 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-from agent.agent import ProgressEvent, TurnResult, run_turn
+from agent.agent import ProgressEvent, TurnResult, after_hs6_decision, run_turn
 from agent.llm import classify_error
 
 
 @dataclass
 class Job:
-    kind: str                                  # check | reply | question
+    kind: str                                  # check | reply | question | finer_codes (feature 004)
     message: str
     is_check: bool
     file_ref: str | None = None
@@ -29,6 +29,7 @@ class Job:
     result: TurnResult | None = None
     error: str | None = None
     thread: threading.Thread | None = None
+    line_no: int | None = None                 # finer_codes: the line whose CN-8 step runs
 
     @property
     def elapsed(self) -> float:
@@ -57,6 +58,9 @@ class Job:
 def start(job: Job, store: Any, kb: Any) -> Job:
     def target() -> None:
         try:
+            if job.kind == "finer_codes":   # feature 004: no agent turn, just the step for one line
+                job.note = after_hs6_decision(store, kb, job.line_no)
+                return
             job.result = run_turn(job.message, store, kb, selected_line_no=job.selected_line_no, on_progress=job.events.append,
                                   file_ref=job.file_ref, reply_ref=job.reply_ref, history=job.history, is_check=job.is_check,
                                   reply_line_no=job.new_line_nos[0] if job.reply_ref and job.new_line_nos else None)
@@ -72,6 +76,8 @@ def start(job: Job, store: Any, kb: Any) -> Job:
 
 
 def finish_label(job: Job, store: Any) -> str:
+    if job.kind == "finer_codes":
+        return f"Line {job.line_no}: CN-8 updated · {job.elapsed:.0f} s"
     tools = job.result.tool_calls if job.result else sum(1 for e in job.events if e.phase in ("end", "error"))
     tools_txt = f"{tools} tool{'s' if tools != 1 else ''}"
     if job.is_check:
@@ -81,6 +87,8 @@ def finish_label(job: Job, store: Any) -> str:
 
 
 def running_label(job: Job, store: Any) -> str:
+    if job.kind == "finer_codes":
+        return f"Choosing the CN-8 for line {job.line_no}… · {job.elapsed:.0f} s"
     tool = job.current_tool
     if job.is_check:
         n = len(store.lines) if store.has_shipment() else 0

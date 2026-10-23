@@ -33,6 +33,7 @@ def table_rows(store) -> list[dict]:
             "flag": FLAG_LABEL[flag], "hs6": v.top_code or ("…" if pending else "—"), "confidence": (v.top_confidence or 0) / 100.0,
             "route": ROUTE_LABEL.get(route, route), "needs_action": (not pending) and store.needs_action(line),
             "pending": pending, "version": v.version_no,
+            "markers": ["CN-8 to confirm"] if not pending and store.cn8_pending(line) else [],   # feature 004
         })
     rows.sort(key=lambda r: (0 if r["needs_action"] else (1 if not r["pending"] else 2), r["line_no"]))
     return rows
@@ -78,7 +79,7 @@ def _row(r: dict, selected: bool) -> bool:
         c[3].markdown(":gray[no code]")
     else:
         c[3].progress(r["confidence"], text=f"`{r['hs6']}` · {round(r['confidence'] * 100)}%")
-    c[4].markdown(ROUTE_BADGE.get(r["route"], r["route"]))
+    c[4].markdown(ROUTE_BADGE.get(r["route"], r["route"]) + "".join(f"  \n:orange-badge[{m}]" for m in r.get("markers", [])))
     return c[5].button("", icon=":material/chevron_right:", key=f"open_{r['line_no']}", type="primary" if selected else "tertiary",
                        help=f"Open line {r['line_no']}")
 

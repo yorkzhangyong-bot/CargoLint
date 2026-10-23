@@ -1,4 +1,4 @@
-"""CargoLint tools package. The five agent tools register themselves in TOOLS when imported."""
+"""CargoLint tools package. The seven agent tools register themselves in TOOLS when imported."""
 from __future__ import annotations
 
 from typing import Any
@@ -16,7 +16,8 @@ def load_all() -> list[Any]:
     """Import every tool module that exists so that TOOLS is complete."""
     import importlib
 
-    for name in ("parse_packing_list", "check_description", "classify_hs6", "lookup_precedent", "apply_shipper_reply"):
+    for name in ("parse_packing_list", "check_description", "classify_hs6", "lookup_precedent", "classify_cn8", "lookup_taric",
+                 "apply_shipper_reply"):
         try:
             importlib.import_module(f"tools.{name}")
         except ModuleNotFoundError as exc:  # a story not implemented yet

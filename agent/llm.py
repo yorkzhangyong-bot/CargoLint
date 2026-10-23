@@ -91,10 +91,13 @@ class StructuredCaller:
         self.usage_sink = usage_sink
         self.max_retries = max_retries
 
-    def call(self, schema: type[BaseModel], system: str, user: str) -> BaseModel:
+    def call(self, schema: type[BaseModel], system: str, user: str, max_retries: int | None = None) -> BaseModel:
+        """`max_retries` overrides the caller's default for one call (feature 004: one retry for the CN-8 and subdivision
+        calls)."""
+        retries = self.max_retries if max_retries is None else max_retries
         feedback = ""
         last_error: Exception | None = None
-        for attempt in range(self.max_retries + 1):
+        for attempt in range(retries + 1):
             out = self.raw.raw_structured(schema, system, user + feedback)
             self._record_usage()
             try:
@@ -105,8 +108,8 @@ class StructuredCaller:
                 last_error = exc
                 feedback = ("\n\nYour previous answer was invalid: " + str(exc).splitlines()[0]
                             + ". Return only valid JSON that matches the schema.")
-                log.info("structured output invalid (attempt %s/%s) for %s", attempt + 1, self.max_retries + 1, schema.__name__)
-        raise SchemaError(f"{schema.__name__}: invalid after {self.max_retries + 1} attempts: {last_error}")
+                log.info("structured output invalid (attempt %s/%s) for %s", attempt + 1, retries + 1, schema.__name__)
+        raise SchemaError(f"{schema.__name__}: invalid after {retries + 1} attempts: {last_error}")
 
     def _record_usage(self) -> None:
         if self.usage_sink is None:

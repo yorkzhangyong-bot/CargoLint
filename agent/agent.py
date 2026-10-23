@@ -111,7 +111,7 @@ def build_agent(model: Any, tools: list[Any]) -> Any:
 
 def turn_tools(reply_ref: str | None) -> list[Any]:
     """A reply turn offers only apply_shipper_reply: it re-checks the line itself, so the check tools would only redo
-    that work and could outdate the contradiction note. Every other turn offers all five tools."""
+    that work and could outdate the contradiction note. Every other turn offers all seven tools."""
     if reply_ref:
         return [t for t in TOOLS if t.name == "apply_shipper_reply"]
     return list(TOOLS)
@@ -267,4 +267,21 @@ def _finalize(store: Any, kb: Any, ctx: ToolContext, check_run: CheckRun, on_pro
             return f"{matched} BTI rulings matched"
         step("lookup_precedent", _precedent)
 
+    # feature 004: the CN-8 step for decided lines without a CN-8 choice for that HS-6
+    no_cn8 = [l.line_no for l in store.lines
+              if (hs6 := store.decided_code(l)[0]) and (l.current.cn8 is None or l.current.cn8.hs6 != hs6)]
+    if no_cn8:
+        from tools.classify_cn8 import run_cn8_step, summarize as cn8_summary
+
+        step("classify_cn8", lambda: cn8_summary(run_cn8_step(store, kb, ctx.client, no_cn8, workers=ctx.workers or 4)))
+
     store.finalize_check()
+
+
+def after_hs6_decision(store: Any, kb: Any, line_no: int) -> str:
+    """Feature 004: the CN-8 step for one line once the clerk accepts or chooses its HS-6; the UI runs it as a background
+    job. Its calls go through the usage-recording client, so the shipment's tokens and cost include them."""
+    from tools.classify_cn8 import run_cn8_step, summarize as cn8_summary
+
+    client = get_client(usage_sink=store.add_usage, settings=get_settings())
+    return cn8_summary(run_cn8_step(store, kb, client, [line_no], workers=1))

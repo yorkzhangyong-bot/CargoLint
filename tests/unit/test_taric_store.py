@@ -129,7 +129,7 @@ class TestStatisticMeasures:
         assert not {17, 18} & set(sids(store.lookup_taric("73181595", origin)[0]))
 
     def test_the_snapshot_record_still_counts_them(self, store):
-        assert store.snapshot.measure_records == 18
+        assert store.snapshot.measure_records == 19   # 18, plus feature 004's type-570 fixture measure
 
 
 class TestInput:
@@ -157,7 +157,7 @@ class TestReadOnly:
 
     def test_snapshot_info(self, store):
         assert store.snapshot == TaricSnapshotInfo(snapshot_date=date(2026, 10, 1), batch_id="small",
-                                                   loaded_at="2026-10-22T14:05:31Z", goods_records=7, measure_records=18,
+                                                   loaded_at="2026-10-22T14:05:31Z", goods_records=8, measure_records=19,
                                                    cn8_mismatches=0)
 
 

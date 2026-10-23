@@ -7,7 +7,7 @@ import streamlit as st
 
 from agent.schemas import Decision, DecisionRoute
 from agent.store import LockedError, UnknownCodeError
-from ui.chat import FLAG_BADGE, ROUTE_BADGE, ROUTE_LABEL
+from ui.chat import FLAG_BADGE, ROUTE_BADGE, ROUTE_LABEL, queue_finer_codes
 from ui.review import next_needs_action, reset_selection
 
 ROUTE_PILLS = {"review": "Human review", "ask_shipper": "Ask the shipper"}
@@ -87,7 +87,8 @@ def render(store, kb) -> None:
             st.caption("No candidate" + (" (no valid candidate)" if v.no_valid_candidate else "") + ".")
         st.caption("Confidence is a model estimate, not a calibrated probability.")
 
-        _route_control(store, line)
+        _route_control(store, line, kb)
+        _cn8_section(store, line)
 
         if v.flag and v.flag.kind.value != "ok":
             rule = f" — {v.flag.rule_source.value.replace('_', ' ')}: “{v.flag.matched_term}”" if v.flag.rule_source and v.flag.matched_term else ""
@@ -97,7 +98,7 @@ def render(store, kb) -> None:
                    "industrial sewing machines”). Only this line is re-checked.")
 
 
-def _route_control(store, line) -> None:
+def _route_control(store, line, kb) -> None:
     v = line.current
     route = store.effective_route(line)
     lock = store.accept_lock_reason(line)
@@ -117,7 +118,7 @@ def _route_control(store, line) -> None:
             st.success(f"Accepted · `{code}`", icon="✅")
         else:
             with st.popover("Accept…", disabled=lock is not None, width="stretch", help=lock or "Accept this line with a decided code"):
-                _decided_code_control(store, line)
+                _decided_code_control(store, line, kb)
     if code:
         how_text = {"auto": "top candidate, auto-accepted", "top": "top candidate, confirmed by you",
                     "other_candidate": "another candidate, chosen by you", "typed": "typed by you"}.get(how or "", how or "")
@@ -130,7 +131,7 @@ def _route_control(store, line) -> None:
         st.caption(f"{ROUTE_LABEL.get(route, route)}: {v.route_reason}.")
 
 
-def _decided_code_control(store, line) -> None:
+def _decided_code_control(store, line, kb) -> None:
     v = line.current
     codes = [c.code for c in v.candidates[:3]]
     options = [f"{c.code} — {_short(c.subheading_text, 48)}" for c in v.candidates[:3]] + ["Other HS-6 code…"]
@@ -144,5 +145,79 @@ def _decided_code_control(store, line) -> None:
             store.set_decision(line.line_no, Decision(route=DecisionRoute.accepted, decided_code=code or None))
         except (LockedError, UnknownCodeError, ValueError) as exc:
             st.error(f"Not accepted: {exc}")
+            return
+        queue_finer_codes(line.line_no, store, kb)   # feature 004: the CN-8 step for the decided HS-6
+        st.rerun()
+
+
+def _spaced(code: str) -> str:
+    return " ".join([code[:4], code[4:6], code[6:8]] + ([code[8:]] if len(code) > 8 else []))
+
+
+def _cn8_running(line_no: int) -> bool:
+    job = st.session_state.get("job")
+    return (job is not None and job.kind == "finer_codes" and job.line_no == line_no) or \
+        line_no in (st.session_state.get("finer_codes_queue") or [])
+
+
+def _cn8_section(store, line) -> None:
+    """Feature 004 (contracts/ui.md): the CN-8 under the decided HS-6, its evidence and ruling, and its state."""
+    v = line.current
+    c = v.cn8
+    st.markdown("**CN-8 and TARIC-10**")
+    if c is None:
+        st.caption("Choosing the CN-8…" if _cn8_running(line.line_no) else "Decide the HS-6 first.")
+        return
+    labels = dict(c.options)
+    if c.cn8:
+        a, b = st.columns([1.3, 5.9], vertical_alignment="center")
+        a.markdown(f"`{_spaced(c.cn8)}`")
+        b.markdown(_short(labels.get(c.cn8, ""), 90), help=labels.get(c.cn8, ""))
+        st.progress(c.confidence / 100, text=f"{c.confidence}% · model estimate")
+        if c.evidence:
+            st.caption(f"Evidence: {_short(c.evidence, 160)}")
+        if c.precedent:
+            p = c.precedent
+            with st.popover(f"BTI {p.member_state} {p.reference}", help="The EBTI ruling cited as precedent for this CN-8"):
+                st.markdown(f"**{p.reference}** → `{p.code}` · {p.member_state} · valid {p.valid_from or '?'} – {p.valid_to or 'open'}")
+                st.write(p.description[:600])
+                if p.url:
+                    st.link_button("Open ruling", p.url)
+        else:
+            st.caption("no ruling")
+    if c.cn8 and c.written_by is not None and not (c.question or c.error):
+        if c.written_by.value == "clerk":
+            st.caption("Confirmed by you.")
+        elif len(c.options) == 1:
+            st.caption("Single CN-8 line.")
+        else:
+            st.caption(f"Written by rule (confidence {c.confidence} ≥ {store.shipment.threshold}).")
+        return
+    if c.error:
+        st.error(f"CN-8 step failed: {c.error}. The line is in review; choose the CN-8.", icon="⚠️")
+    elif c.question:
+        st.warning(c.question, icon="❓")
+    else:
+        st.info("CN-8 to confirm: its confidence is below the auto-accept threshold.")
+    _cn8_confirm(store, line)
+
+
+def _cn8_confirm(store, line) -> None:
+    v = line.current
+    c = v.cn8
+    codes = [code for code, _ in c.options]
+    if not codes:
+        return
+    texts = [f"{_spaced(code)} — {_short(path, 70)}" for code, path in c.options]
+    pick = st.radio("CN-8", texts, index=codes.index(c.cn8) if c.cn8 in codes else 0,
+                    key=f"cn8_pick_{line.line_no}_{v.version_no}", label_visibility="collapsed")
+    hs6, _ = store.decided_code(line)
+    reason = None if hs6 else "Decide the HS-6 first"
+    if st.button("Confirm CN-8", key=f"cn8_confirm_{line.line_no}_{v.version_no}", type="primary", disabled=reason is not None,
+                 help=reason):
+        try:
+            store.confirm_cn8(line.line_no, codes[texts.index(pick)])
+        except (LockedError, UnknownCodeError) as exc:
+            st.error(f"Not confirmed: {exc}")
             return
         st.rerun()

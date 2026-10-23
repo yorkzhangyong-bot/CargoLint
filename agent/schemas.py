@@ -1,6 +1,7 @@
 """Pydantic models for every boundary: line store entities, tool I/O and model-output schemas.
 
-Field names and constraints follow specs/001-packing-list-check/data-model.md.
+Field names and constraints follow specs/001-packing-list-check/data-model.md and, for CN-8 and TARIC-10,
+specs/004-cn8-taric-classification/data-model.md.
 """
 from __future__ import annotations
 
@@ -8,12 +9,17 @@ import re
 from datetime import date, datetime, timezone
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, Field, computed_field, model_validator
+from pydantic import BaseModel, Field, StringConstraints, computed_field, field_validator, model_validator
 
 CODE_PATTERN = r"^\d{4}\.\d{2}$"
 CODE_RE = re.compile(CODE_PATTERN)
+CN8_PATTERN = r"^\d{8}$"           # feature 004: CN 2026 eight-digit line
+TARIC10_PATTERN = r"^\d{10}$"      # feature 004: TARIC subdivision
+ORIGIN_PATTERN = r"^[A-Z]{2}$"     # feature 004: TARIC geographical area of the goods' origin
+Cn8Code = Annotated[str, StringConstraints(pattern=CN8_PATTERN)]
+Taric10Code = Annotated[str, StringConstraints(pattern=TARIC10_PATTERN)]
 
 
 def now() -> datetime:
@@ -82,6 +88,25 @@ class ChangeKind(str, Enum):
     reply_applied = "reply_applied"
     version_added = "version_added"
     line_failed = "line_failed"
+    cn8_written = "cn8_written"                  # feature 004 (data-model §5)
+    cn8_question = "cn8_question"
+    taric_written = "taric_written"
+    taric_pending = "taric_pending"
+    taric_question = "taric_question"
+    taric_not_available = "taric_not_available"
+
+
+class WrittenBy(str, Enum):
+    rule = "rule"
+    clerk = "clerk"
+
+
+class TaricRule(str, Enum):
+    auto_completed = "auto_completed"
+    choose = "choose"
+    trade_defence = "trade_defence"
+    not_available = "not_available"
+    not_loaded = "not_loaded"
 
 
 class SourceKind(str, Enum):
@@ -159,6 +184,8 @@ class Candidate(BaseModel):
     history_only: bool = False
     source_ids: list[str] = Field(default_factory=list)
     precedent: Precedent | None = None
+    cn8: str | None = Field(default=None, pattern=CN8_PATTERN)              # feature 004: only on the decided HS-6 candidate
+    taric10: str | None = Field(default=None, pattern=TARIC10_PATTERN)      # feature 004: the highlighted subdivision
 
     @computed_field  # type: ignore[misc]
     @property
@@ -200,6 +227,8 @@ class RetrievalTrace(BaseModel):
 class Decision(BaseModel):
     route: DecisionRoute
     decided_code: str | None = Field(default=None, pattern=CODE_PATTERN)
+    decided_cn8: str | None = Field(default=None, pattern=CN8_PATTERN)          # feature 004: set by the clerk's confirmation
+    decided_taric10: str | None = Field(default=None, pattern=TARIC10_PATTERN)  # feature 004: set by the clerk's confirmation
     chosen_how: ChosenHow | None = None
     by: Literal["clerk"] = "clerk"
     at: datetime = Field(default_factory=now)
@@ -209,6 +238,42 @@ class Decision(BaseModel):
         if self.route == DecisionRoute.accepted and not self.decided_code:
             raise ValueError("an accepted decision needs a decided_code")
         return self
+
+
+class Cn8Choice(BaseModel):
+    """Feature 004 data-model §3: the CN-8 step's result for one line version."""
+
+    hs6: str = Field(pattern=CODE_PATTERN)                      # the decided HS-6 it was chosen under
+    options: list[tuple[Cn8Code, str]] = Field(default_factory=list)   # (cn8, label path) in code order
+    cn8: str | None = Field(default=None, pattern=CN8_PATTERN)  # null when the deciding attribute is missing or the step failed
+    confidence: int = Field(default=0, ge=0, le=100)
+    evidence: str = ""
+    rationale: str = ""
+    deciding_attribute: str = ""
+    question: str | None = None                                 # "Ask the shipper for: <attribute>"; a routing input
+    precedent: Precedent | None = None
+    written_by: WrittenBy | None = None                         # null while it is a suggestion
+    error: str | None = None                                    # the step failed; the line routes to review
+
+
+class TaricSuggestion(BaseModel):
+    code: str = Field(pattern=TARIC10_PATTERN)
+    confidence: int = Field(ge=0, le=100)
+
+
+class TaricOutcome(BaseModel):
+    """Feature 004 data-model §4: the TARIC step's result for one line version and origin. Measures are not stored."""
+
+    origin: str = Field(pattern=ORIGIN_PATTERN)
+    snapshot_date: date | None = None
+    rule: TaricRule
+    subdivisions: list[Taric10Code] = Field(default_factory=list)
+    trade_defence: list[Taric10Code] = Field(default_factory=list)
+    suggestion: TaricSuggestion | None = None                   # several subdivisions only; never written
+    suggestion_error: str | None = None                         # the suggestion call failed; nothing else changes
+    taric10: str | None = Field(default=None, pattern=TARIC10_PATTERN)
+    written_by: WrittenBy | None = None
+    question: str | None = None                                 # what the clerk asked the shipper instead of confirming
 
 
 class LineVersion(BaseModel):
@@ -233,6 +298,8 @@ class LineVersion(BaseModel):
     route_reason: str = ""
     decision: Decision | None = None
     contradiction_note: str | None = None
+    cn8: Cn8Choice | None = None              # feature 004: the CN-8 step's result
+    taric: TaricOutcome | None = None         # feature 004: the TARIC step's result for the shipment's origin
 
     @property
     def top_confidence(self) -> int | None:
@@ -303,6 +370,7 @@ class Shipment(BaseModel):
     threshold: int = Field(default=85, ge=60, le=99)
     ask_floor: int = Field(default=50, ge=0, le=100)
     hybrid_search: bool = True
+    taric_origin: str = Field(default="CN", pattern=ORIGIN_PATTERN)   # feature 004: the goods' origin for TARIC (not `origin`)
     source: SourceFile | None = None
     origin: str | None = None
     destination: str | None = None
@@ -312,6 +380,11 @@ class Shipment(BaseModel):
     lines: list[Line] = Field(default_factory=list)
     audit: list[DecisionRecord] = Field(default_factory=list)
     check_runs: list[CheckRun] = Field(default_factory=list)
+
+    @field_validator("taric_origin", mode="before")
+    @classmethod
+    def _upper_origin(cls, v: Any) -> Any:
+        return v.strip().upper() if isinstance(v, str) else v
 
 
 # --------------------------------------------------------------------------- knowledge base records
@@ -424,6 +497,51 @@ class ApplyReplyOutput(BaseModel):
     contradiction_note: str | None = None
 
 
+class Cn8Line(BaseModel):
+    """One line given to the CN-8 step (feature 004, contracts/tools.md §1.6)."""
+
+    line_no: int
+    text_zh: str = ""
+    text_en: str = ""
+    extracted: Extracted | None = None
+    hs6: str = Field(pattern=CODE_PATTERN)
+
+
+class Cn8Input(BaseModel):
+    lines: list[Cn8Line] = Field(default_factory=list)
+    as_of: date
+    threshold: int = Field(ge=60, le=99)
+
+
+class Cn8Result(BaseModel):
+    line_no: int
+    choice: Cn8Choice
+    status: Literal["checked", "failed"] = "checked"
+    error_reason: str | None = None
+
+
+class TaricLine(BaseModel):
+    """One line given to the TARIC step (feature 004, contracts/tools.md §1.7)."""
+
+    line_no: int
+    text_zh: str = ""
+    text_en: str = ""
+    cn8: str = Field(pattern=CN8_PATTERN)
+    cn8_written: bool = False
+
+
+class TaricInput(BaseModel):
+    lines: list[TaricLine] = Field(default_factory=list)
+    origin: str = Field(pattern=ORIGIN_PATTERN)
+
+
+class TaricResult(BaseModel):
+    """Never a failure: the TARIC step absorbs suggestion-call failures (contracts/tools.md §1.7, step 3)."""
+
+    line_no: int
+    outcome: TaricOutcome
+
+
 # --------------------------------------------------------------------------- model-output schemas
 class JudgementOut(BaseModel):
     vague: bool
@@ -451,3 +569,24 @@ class ExtractOut(BaseModel):
     material: str = ""
     part_name: str = ""
     use: str = ""
+
+
+class Cn8Out(BaseModel):
+    """The CN-8 judgement (feature 004, research R-03). Checked in code before use; never trusted as is."""
+
+    cn8: str | None = Field(default=None, pattern=CN8_PATTERN)
+    confidence: int = Field(ge=0, le=100, strict=True)
+    deciding_attribute: str = ""
+    attribute_visible: bool
+    evidence: str = ""
+    rationale: str = ""
+    precedent: str | None = None
+
+
+class SubdivisionOut(BaseModel):
+    """The suggestion among several TARIC subdivisions (feature 004, research R-06). Never written."""
+
+    code: str | None = Field(default=None, pattern=TARIC10_PATTERN)
+    confidence: int = Field(ge=0, le=100, strict=True)
+    attribute_visible: bool
+    rationale: str = ""

@@ -15,12 +15,21 @@ from typing import Any
 from uuid import uuid4
 
 from agent.config import ASK_FLOOR, DEFAULT_THRESHOLD, THRESHOLD_MAX, THRESHOLD_MIN
-from agent.routing import can_accept, route_line, validate_code
+from agent.routing import (
+    can_accept,
+    cn8_written_by_rule,
+    effective_route_of,
+    hs6_auto_decided,
+    route_line,
+    validate_cn8,
+    validate_code,
+)
 from agent.schemas import (
     Actor,
     ChangeKind,
     ChosenHow,
     Classification,
+    Cn8Choice,
     CreatedBy,
     Decision,
     DecisionRecord,
@@ -31,13 +40,13 @@ from agent.schemas import (
     LineVersion,
     ParsedLine,
     Precedent,
-    Route,
     ShipperRef,
     Shipment,
     Source,
     SourceFile,
     SourceKind,
     Usage,
+    WrittenBy,
 )
 
 
@@ -220,6 +229,12 @@ class LineStore:
             how = ChosenHow.top if codes and decision.decided_code == codes[0] else (
                 ChosenHow.other_candidate if decision.decided_code in codes else ChosenHow.typed)
             decision = decision.model_copy(update={"chosen_how": how, "at": self._clock()})
+            if v.cn8 is not None and v.cn8.hs6 != decision.decided_code:   # feature 004: a new HS-6 starts the CN-8 again
+                v.cn8, v.taric = None, None
+                for c in v.candidates:
+                    c.cn8, c.taric10 = None, None
+            elif v.cn8 is not None and v.cn8.written_by == WrittenBy.clerk:
+                decision = decision.model_copy(update={"decided_cn8": v.cn8.cn8})
         else:
             decision = decision.model_copy(update={"decided_code": None, "chosen_how": None, "at": self._clock()})
         v.decision = decision
@@ -263,6 +278,8 @@ class LineStore:
             if v.decision is not None or v.flag is None or v.flag.kind.value != "ok":
                 continue
             self._recompute(line, Actor.threshold_change, ChangeKind.threshold_recomputed)
+        for line in s.lines:   # feature 004: CN-8 codes the clerk has not confirmed follow the threshold too
+            self._reevaluate_cn8(line, value)
 
     def set_hybrid(self, value: bool) -> None:
         self.shipment.hybrid_search = bool(value)
@@ -285,7 +302,10 @@ class LineStore:
         v = line.current
         kind = v.flag.kind if v.flag is not None else None
         needs_click = line.ever_flagged or v.created_by == CreatedBy.shipper_reply  # never auto-accept after an update (FR-022)
-        route, reason = route_line(kind, v.top_confidence, v.status, needs_click, s.threshold, s.ask_floor)
+        c = v.cn8
+        route, reason = route_line(kind, v.top_confidence, v.status, needs_click, s.threshold, s.ask_floor,
+                                   cn8_question=c.deciding_attribute if c is not None and c.question else None,
+                                   cn8_error=c.error if c is not None and c.error else None)
         if v.unreadable and v.status == LineStatus.checked and not v.candidates:
             reason = "unreadable description — needs a human look"
         changed = route != v.computed_route or reason != v.route_reason
@@ -298,8 +318,7 @@ class LineStore:
 
     # ------------------------------------------------------------------ derived
     def effective_route(self, line: Line) -> str:
-        v = line.current
-        return v.decision.route.value if v.decision is not None else v.computed_route.value
+        return effective_route_of(line.current)
 
     def needs_action(self, line: Line) -> bool:
         return self.effective_route(line) not in ACCEPTED_ROUTES
@@ -315,9 +334,95 @@ class LineStore:
         v = line.current
         if v.decision is not None and v.decision.route == DecisionRoute.accepted:
             return v.decision.decided_code, (v.decision.chosen_how.value if v.decision.chosen_how else None)
-        if v.decision is None and v.computed_route == Route.auto_accept and v.candidates:
+        if v.decision is None and v.candidates and self._hs6_auto_decided(line):
             return v.candidates[0].code, ChosenHow.auto.value
         return None, None
+
+    def _hs6_auto_decided(self, line: Line) -> bool:
+        s, v = self.shipment, line.current
+        needs_click = line.ever_flagged or v.created_by == CreatedBy.shipper_reply
+        return hs6_auto_decided(v.flag.kind if v.flag is not None else None, v.top_confidence, v.status, needs_click,
+                                s.threshold, s.ask_floor)
+
+    # ------------------------------------------------------------------ feature 004: the CN-8 choice
+    def set_cn8_result(self, line_no: int, choice: Cn8Choice) -> None:
+        """Store the CN-8 step's result on the current version, record it and recompute the route (data-model §3, §5)."""
+        line = self.get_line(line_no)
+        v = line.current
+        v.cn8 = choice
+        for c in v.candidates:   # only the decided HS-6 candidate carries a CN-8
+            c.cn8 = choice.cn8 if c.code == choice.hs6 else None
+        if choice.question:
+            self._record_cn8(line, ChangeKind.cn8_question, None, Actor.routing_rule, choice.question)
+        elif choice.cn8 and choice.written_by == WrittenBy.rule:
+            note = ("single CN-8 line" if len(choice.options) == 1
+                    else f"written by rule (confidence {choice.confidence} ≥ threshold {self.shipment.threshold})")
+            self._record_cn8(line, ChangeKind.cn8_written, choice.cn8, Actor.routing_rule, note)
+        self._recompute(line, Actor.routing_rule)
+
+    def confirm_cn8(self, line_no: int, cn8: str) -> None:
+        """The clerk writes a CN-8. It closes an open question or a failed step. On an auto-accepted line it records
+        the clerk's acceptance of the auto HS-6 (research R-09)."""
+        line = self.get_line(line_no)
+        v = line.current
+        hs6, how = self.decided_code(line)
+        if not hs6:
+            raise LockedError(f"line {line_no}: the HS-6 is not decided, so a CN-8 cannot be confirmed yet")
+        same = v.cn8 is not None and v.cn8.hs6 == hs6
+        options = v.cn8.options if same else (self.index.cn8_lines(hs6) if self.index is not None else [])
+        if not validate_cn8(cn8, options):
+            raise UnknownCodeError(f"CN-8 {cn8!r} is not a CN 2026 line under {hs6}")
+        previous_cn8 = v.cn8.cn8 if same else None
+        previous_route = self.effective_route(line)
+        base = v.cn8 if same else Cn8Choice(hs6=hs6, options=options)
+        v.cn8 = base.model_copy(update={"cn8": cn8, "written_by": WrittenBy.clerk, "question": None, "error": None})
+        for c in v.candidates:
+            c.cn8 = cn8 if c.code == hs6 else None
+        if v.decision is None:
+            v.decision = Decision(route=DecisionRoute.accepted, decided_code=hs6, chosen_how=ChosenHow(how or "auto"),
+                                  decided_cn8=cn8, at=self._clock())
+            self.record(DecisionRecord(at=self._clock(), line_no=line_no, version_no=v.version_no, change=ChangeKind.clerk_decision,
+                                       previous=previous_route, new=DecisionRoute.accepted.value, actor=Actor.clerk,
+                                       note="CN-8 confirmed on an auto-accepted line"))
+        else:
+            v.decision = v.decision.model_copy(update={"decided_cn8": cn8})
+        self._record_cn8(line, ChangeKind.cn8_written, cn8, Actor.clerk, "confirmed by the clerk", previous=previous_cn8)
+        self._recompute(line, Actor.clerk)
+
+    def decided_cn8(self, line: Line) -> str | None:
+        """The written CN-8 while the HS-6 is decided (data-model §6, top-down); None otherwise."""
+        hs6, _ = self.decided_code(line)
+        c = line.current.cn8
+        if not hs6 or c is None or c.hs6 != hs6 or not c.cn8 or c.written_by is None or c.question or c.error:
+            return None
+        return c.cn8
+
+    def cn8_pending(self, line: Line) -> bool:
+        """A CN-8 suggestion waiting for the clerk: chosen, not written, no open question, no failure."""
+        hs6, _ = self.decided_code(line)
+        c = line.current.cn8
+        return bool(hs6 and c is not None and c.hs6 == hs6 and c.cn8 and c.written_by is None and not c.question
+                    and not c.error)
+
+    def _reevaluate_cn8(self, line: Line, threshold: int) -> None:
+        c = line.current.cn8
+        if c is None or not c.cn8 or c.written_by == WrittenBy.clerk or c.question or c.error:
+            return
+        written = cn8_written_by_rule(c.confidence, threshold, len(c.options) == 1)
+        if written and c.written_by is None:
+            line.current.cn8 = c.model_copy(update={"written_by": WrittenBy.rule})
+            self._record_cn8(line, ChangeKind.cn8_written, c.cn8, Actor.threshold_change,
+                             f"written by rule (confidence {c.confidence} ≥ threshold {threshold})")
+        elif not written and c.written_by == WrittenBy.rule:
+            line.current.cn8 = c.model_copy(update={"written_by": None})
+            self._record_cn8(line, ChangeKind.threshold_recomputed, None, Actor.threshold_change,
+                             f"CN-8 {c.cn8} back to a suggestion (confidence {c.confidence} < threshold {threshold})",
+                             previous=c.cn8)
+
+    def _record_cn8(self, line: Line, change: ChangeKind, new: str | None, actor: Actor, note: str,
+                    previous: str | None = None) -> None:
+        self.record(DecisionRecord(at=self._clock(), line_no=line.line_no, version_no=line.current.version_no, change=change,
+                                   previous=previous, new=new, actor=actor, note=note))
 
     def counts(self) -> dict[str, int]:
         c = {"auto_accept": 0, "review": 0, "ask_shipper": 0, "needs_action": 0, "accepted": 0}
@@ -334,6 +439,7 @@ class LineStore:
             else:
                 c["ask_shipper"] += 1
                 c["needs_action"] += 1
+        c["cn8_to_confirm"] = sum(1 for line in self.shipment.lines if self.cn8_pending(line))   # feature 004
         return c
 
     # ------------------------------------------------------------------ audit / usage / registries

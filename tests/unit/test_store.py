@@ -195,3 +195,147 @@ class TestAuditAndRegistries:
         assert memory_store.get_file(f) == (b"abc", "list.xlsx")
         assert memory_store.get_reply(r1) == "line 1 is steel bobbin cases"
         assert memory_store.get_reply(r2) == "塑料杯" and r1 != r2
+
+
+# --------------------------------------------------------------------------- feature 004: the CN-8 choice in the store
+from agent.schemas import Cn8Choice, WrittenBy  # noqa: E402
+
+MOTOR = "whether the toy cars incorporate a motor"
+
+
+def _cn8(store, hs6, cn8=None, confidence=0, written_by=None, question=None, error=None, attribute=""):
+    return Cn8Choice(hs6=hs6, options=store.index.cn8_lines(hs6), cn8=cn8, confidence=confidence, written_by=written_by,
+                     question=question, error=error, deciding_attribute=attribute)
+
+
+@pytest.fixture
+def cn8_store(memory_store):
+    s = memory_store
+    s.add_lines([_parsed(1, "塑料玩具车", "Plastic toy cars"),                  # ok 93 -> auto
+                 _parsed(2, "铝合金自行车架", "Aluminium alloy bicycle frames"),   # ok 95 -> auto
+                 _parsed(3, "LED台灯", "LED desk lamp"),                         # ok 72 -> review
+                 _parsed(4, "不锈钢保温杯", "Stainless steel vacuum flask"),       # ok 96 -> auto, single CN-8 line
+                 _parsed(5, "家具", "Furniture")], CreatedBy.paste)               # vague -> review
+    _checked_line(s, 1, FlagKind.ok, [("9503.00", 93)])
+    _checked_line(s, 2, FlagKind.ok, [("8714.91", 95)])
+    _checked_line(s, 3, FlagKind.ok, [("9405.21", 72)])
+    _checked_line(s, 4, FlagKind.ok, [("9617.00", 96)])
+    _checked_line(s, 5, FlagKind.vague, [("9403.60", 58)])
+    return s
+
+
+def _last(store, change, line_no):
+    return [r for r in store.shipment.audit if r.change == change and r.line_no == line_no][-1]
+
+
+class TestCn8:
+    def test_writing_by_rule_records_and_keeps_the_route(self, cn8_store):
+        s = cn8_store
+        s.set_cn8_result(2, _cn8(s, "8714.91", "87149110", 95, WrittenBy.rule))
+        v = s.get_line(2).current
+        assert v.cn8.cn8 == "87149110" and v.computed_route == Route.auto_accept
+        assert v.candidates[0].cn8 == "87149110"
+        rec = _last(s, ChangeKind.cn8_written, 2)
+        assert rec.actor == Actor.routing_rule and rec.new == "87149110"
+        assert rec.note == "written by rule (confidence 95 ≥ threshold 85)"
+        s.set_cn8_result(4, _cn8(s, "9617.00", "96170000", 100, WrittenBy.rule))
+        assert _last(s, ChangeKind.cn8_written, 4).note == "single CN-8 line"
+
+    def test_a_question_routes_to_ask_shipper_and_keeps_the_decided_hs6(self, cn8_store):
+        s = cn8_store
+        s.set_cn8_result(1, _cn8(s, "9503.00", question=f"Ask the shipper for: {MOTOR}", attribute=MOTOR))
+        line = s.get_line(1)
+        assert _last(s, ChangeKind.cn8_question, 1).note == f"Ask the shipper for: {MOTOR}"
+        assert line.current.computed_route == Route.ask_shipper
+        assert line.current.route_reason == f"the CN-8 depends on {MOTOR}, which the description does not state — ask the shipper"
+        assert s.decided_code(line) == ("9503.00", "auto")
+        assert s.effective_route(line) == "ask_shipper" and s.needs_action(line)
+
+    def test_a_failed_step_routes_to_review_even_over_an_acceptance(self, cn8_store):
+        s = cn8_store
+        s.set_decision(3, Decision(route=DecisionRoute.accepted, decided_code="9405.21"))
+        s.set_cn8_result(3, _cn8(s, "9405.21", error="invalid output after one retry"))
+        line = s.get_line(3)
+        assert s.effective_route(line) == "review"
+        assert line.current.route_reason == "CN-8 step failed: invalid output after one retry — needs a human look"
+        assert s.decided_code(line) == ("9405.21", "top")
+        s.confirm_cn8(3, "94052140")
+        assert line.current.cn8.error is None and s.effective_route(line) == "accepted"
+
+    def test_an_open_question_overrides_an_acceptance_but_not_a_clerk_route(self, cn8_store):
+        s = cn8_store
+        s.set_decision(3, Decision(route=DecisionRoute.accepted, decided_code="9405.21"))
+        s.set_cn8_result(3, _cn8(s, "9405.21", question="Ask the shipper for: the material", attribute="the material"))
+        assert s.effective_route(s.get_line(3)) == "ask_shipper"
+        s.set_decision(3, Decision(route=DecisionRoute.review))
+        assert s.effective_route(s.get_line(3)) == "review"
+
+    def test_confirming_on_an_auto_accepted_line(self, cn8_store):
+        s = cn8_store
+        s.set_cn8_result(1, _cn8(s, "9503.00", question=f"Ask the shipper for: {MOTOR}", attribute=MOTOR))
+        s.confirm_cn8(1, "95030095")
+        line = s.get_line(1)
+        d = line.current.decision
+        assert (d.route, d.decided_code, d.chosen_how, d.decided_cn8) == (DecisionRoute.accepted, "9503.00", ChosenHow.auto, "95030095")
+        assert line.current.cn8.cn8 == "95030095" and line.current.cn8.written_by == WrittenBy.clerk
+        assert line.current.cn8.question is None
+        rec = _last(s, ChangeKind.cn8_written, 1)
+        assert rec.actor == Actor.clerk and rec.note == "confirmed by the clerk" and rec.new == "95030095"
+        assert s.effective_route(line) == "accepted" and s.decided_code(line) == ("9503.00", "auto")
+
+    def test_confirm_refusals(self, cn8_store):
+        s = cn8_store
+        s.set_cn8_result(1, _cn8(s, "9503.00", "95030095", 70))
+        with pytest.raises(UnknownCodeError):
+            s.confirm_cn8(1, "95039999")
+        with pytest.raises(LockedError):
+            s.confirm_cn8(3, "94052140")          # HS-6 in review, not decided
+        with pytest.raises(LockedError):
+            s.confirm_cn8(5, "94036010")          # flagged
+
+    def test_decided_cn8(self, cn8_store):
+        s = cn8_store
+        s.set_cn8_result(2, _cn8(s, "8714.91", "87149110", 95, WrittenBy.rule))
+        assert s.decided_cn8(s.get_line(2)) == "87149110"
+        s.set_cn8_result(4, _cn8(s, "9617.00", error="timed out"))
+        s.set_cn8_result(1, _cn8(s, "9503.00", question=f"Ask the shipper for: {MOTOR}", attribute=MOTOR))
+        assert s.decided_cn8(s.get_line(4)) is None and s.decided_cn8(s.get_line(1)) is None
+        s.set_decision(2, Decision(route=DecisionRoute.review))
+        assert s.decided_cn8(s.get_line(2)) is None
+        s.set_cn8_result(3, _cn8(s, "9405.21", "94052140", 70))
+        assert s.decided_cn8(s.get_line(3)) is None   # a suggestion
+
+    def test_counts_cn8_to_confirm(self, cn8_store):
+        s = cn8_store
+        before = {k: v for k, v in s.counts().items() if k != "cn8_to_confirm"}
+        s.set_cn8_result(2, _cn8(s, "8714.91", "87149110", 80))                       # suggestion: counted
+        s.set_cn8_result(4, _cn8(s, "9617.00", "96170000", 100, WrittenBy.rule))      # written: not counted
+        assert s.counts()["cn8_to_confirm"] == 1
+        assert {k: v for k, v in s.counts().items() if k != "cn8_to_confirm"} == before
+        s.set_cn8_result(1, _cn8(s, "9503.00", question=f"Ask the shipper for: {MOTOR}", attribute=MOTOR))
+        s.set_cn8_result(4, _cn8(s, "9617.00", error="timed out"))
+        assert s.counts()["cn8_to_confirm"] == 1                                         # questions and failures are routes
+
+    def test_threshold_reevaluates_unconfirmed_choices(self, cn8_store):
+        s = cn8_store
+        s.set_cn8_result(2, _cn8(s, "8714.91", "87149110", 90, WrittenBy.rule))
+        s.set_cn8_result(1, _cn8(s, "9503.00", "95030095", 90, WrittenBy.rule))
+        s.confirm_cn8(1, "95030095")
+        s.set_threshold(95)
+        assert s.get_line(2).current.cn8.written_by is None
+        rec = _last(s, ChangeKind.threshold_recomputed, 2)
+        assert rec.actor == Actor.threshold_change and "87149110" in (rec.previous or "") + (rec.note or "")
+        assert s.get_line(1).current.cn8.written_by == WrittenBy.clerk
+        s.set_threshold(90)
+        assert s.get_line(2).current.cn8.written_by == WrittenBy.rule
+        assert _last(s, ChangeKind.cn8_written, 2).actor == Actor.threshold_change
+
+    def test_accepting_another_hs6_clears_the_cn8_and_taric(self, cn8_store):
+        s = cn8_store
+        s.set_decision(3, Decision(route=DecisionRoute.accepted, decided_code="9405.21"))
+        s.set_cn8_result(3, _cn8(s, "9405.21", "94052140", 95, WrittenBy.rule))
+        s.set_decision(3, Decision(route=DecisionRoute.accepted, decided_code="9405.21"))
+        assert s.get_line(3).current.cn8 is not None
+        s.set_decision(3, Decision(route=DecisionRoute.accepted, decided_code="9617.00"))
+        v = s.get_line(3).current
+        assert v.cn8 is None and v.taric is None

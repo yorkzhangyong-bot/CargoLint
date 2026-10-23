@@ -4,11 +4,12 @@ import pytest
 
 from agent.agent import run_turn
 from agent.llm import set_chat_model_factory
-from agent.schemas import Actor, CreatedBy, LineStatus, ParsedLine
+from agent.schemas import (Actor, Candidate, Classification, CreatedBy, DescriptionCheck, Flag, FlagKind, LineStatus,
+                           ParsedLine)
 from rag.bti import BTIStore, row_to_ruling
 from rag.loader import KnowledgeBase
 from rag.retriever import BM25Index, HybridRetriever, InMemoryVectorSearch
-from tests.fakes import ScriptedChatModel, ai_tool_call
+from tests.fakes import ScriptedChatModel, ai_tool_call, assert_no_unconfirmed_writes
 from langchain_core.messages import AIMessage
 
 pytestmark = pytest.mark.integration
@@ -54,6 +55,7 @@ FULL_SCRIPT = [
     ai_tool_call("check_description", {"line_nos": [1, 2, 3]}, "c1"),
     ai_tool_call("classify_hs6", {"line_nos": [1, 2, 3]}, "c2"),
     ai_tool_call("lookup_precedent", {"line_nos": [1, 2, 3]}, "c3"),
+    ai_tool_call("classify_cn8", {}, "c4"),
     AIMessage(content="All 3 lines checked."),
 ]
 
@@ -63,11 +65,12 @@ def test_tools_run_in_order_with_progress_and_counts_from_the_store(fake_llm, kb
     events = []
     result = run_turn("Check lines 1–3", store_with_lines, kb, on_progress=events.append)
     starts = [e.tool for e in events if e.phase == "start"]
-    assert starts == ["check_description", "classify_hs6", "lookup_precedent"]
+    assert starts == ["check_description", "classify_hs6", "lookup_precedent", "classify_cn8"]
     assert [e.tool for e in events if e.phase == "end"] == starts
     assert result.text == "All 3 lines checked."
     assert result.counts == store_with_lines.counts()
-    assert result.counts == {"auto_accept": 1, "review": 0, "ask_shipper": 2, "needs_action": 2, "accepted": 1}
+    assert result.counts == {"auto_accept": 1, "review": 0, "ask_shipper": 2, "needs_action": 2, "accepted": 1,
+                             "cn8_to_confirm": 0}
     assert all(line.current.status == LineStatus.checked for line in store_with_lines.lines)
     assert [s.tool for s in result.check_run.steps] == starts and all(s.run_by == "agent" for s in result.check_run.steps)
     assert store_with_lines.get_line(2).current.candidates[0].precedent.reference == "DE-FLASK"
@@ -136,4 +139,50 @@ def test_a_reply_turn_offers_only_the_reply_tool():
 
     load_all()
     assert [t.name for t in turn_tools(reply_ref="r1")] == ["apply_shipper_reply"]   # apply re-checks the line itself
-    assert len(turn_tools(reply_ref=None)) == 5
+    assert len(turn_tools(reply_ref=None)) == 6   # feature 004 adds classify_cn8
+
+
+# --------------------------------------------------------------------------- feature 004: the CN-8 step
+def test_the_system_prompt_lists_classify_cn8_and_the_ask_rule():
+    from agent.prompts import SYSTEM_PROMPT
+
+    assert "6. classify_cn8" in SYSTEM_PROMPT
+    assert "open CN-8 question" in SYSTEM_PROMPT
+
+
+def test_the_guard_runs_classify_cn8_when_the_agent_skips_it(fake_llm, kb, store_with_lines, scripted):
+    scripted(FULL_SCRIPT[:3] + [AIMessage(content="Done.")])
+    result = run_turn("Check lines 1–3", store_with_lines, kb)
+    assert ("classify_cn8", "app") in [(s.tool, s.run_by) for s in result.check_run.steps]
+    flask = store_with_lines.get_line(2).current
+    assert flask.cn8.cn8 == "96170000" and flask.cn8.written_by.value == "rule"
+    assert store_with_lines.get_line(1).current.cn8 is None and store_with_lines.get_line(3).current.cn8 is None
+    assert_no_unconfirmed_writes(store_with_lines)
+
+
+def test_no_app_step_when_the_agent_calls_classify_cn8(fake_llm, kb, store_with_lines, scripted):
+    scripted(FULL_SCRIPT)
+    result = run_turn("Check lines 1–3", store_with_lines, kb)
+    assert all(s.run_by == "agent" for s in result.check_run.steps)
+    assert store_with_lines.get_line(2).current.cn8.cn8 == "96170000"
+
+
+def _decided(store, n, code, conf=95):
+    store.update_check(n, DescriptionCheck(line_no=n, flag=Flag(kind=FlagKind.ok), status=LineStatus.checked))
+    store.update_classification(n, Classification(line_no=n, candidates=[
+        Candidate(code=code, subheading_text="t", confidence=conf, rationale="r")], status=LineStatus.checked))
+
+
+def test_after_hs6_decision_runs_the_cn8_step_for_that_line_only(fake_llm, kb, memory_store):
+    from agent.agent import after_hs6_decision
+
+    s = memory_store
+    s.add_lines([ParsedLine(text_zh="铝合金自行车架", text_en="Aluminium alloy bicycle frames"),
+                 ParsedLine(text_zh="塑料玩具车", text_en="Plastic toy cars")], CreatedBy.paste)
+    _decided(s, 1, "8714.91")
+    _decided(s, 2, "9503.00", 93)
+    calls_before = s.shipment.usage.calls
+    after_hs6_decision(s, kb, 1)
+    assert s.get_line(1).current.cn8.cn8 == "87149110" and s.get_line(2).current.cn8 is None
+    assert s.shipment.usage.calls > calls_before          # the call went through the usage-recording client
+    assert_no_unconfirmed_writes(s)

@@ -19,7 +19,7 @@ NOT_APPLIED_HINT = ("Answered, not applied: to update a line with this text star
 
 QUICK_ACTIONS = [
     ("Try one description", "e.g. 不锈钢保温杯 500ml", "不锈钢保温杯 500ml"),
-    ("Use the sample packing list", "12 Yiwu consolidation lines, 5 problematic", "__sample__"),
+    ("Use the sample packing list", "12 Yiwu consolidation lines, 6 problematic", "__sample__"),
     ("Which terms does customs reject?", "The ICS2 unacceptable-terms lists", "__terms__"),
 ]
 
@@ -126,8 +126,32 @@ def _en(line: str) -> str:
     return "" if re.search(r"[一-鿿]", parts[0]) else parts[0].strip()
 
 
+def queue_finer_codes(line_no: int, store, kb) -> None:
+    """Feature 004: run the CN-8 step for a line after the clerk's HS-6 decision, in the background. Behind a running
+    job the line waits in a queue that `_finish_job` works through."""
+    if st.session_state.get("job") is not None:
+        queue = st.session_state.setdefault("finer_codes_queue", [])
+        if line_no not in queue:
+            queue.append(line_no)
+        return
+    st.session_state["job"] = jobs.start(jobs.Job(kind="finer_codes", message="", is_check=False, line_no=line_no), store, kb)
+
+
+def _start_queued_finer_codes(store, kb) -> None:
+    queue = st.session_state.get("finer_codes_queue") or []
+    if queue and st.session_state.get("job") is None:
+        queue_finer_codes(queue.pop(0), store, kb)
+
+
 def _finish_job(store, kb) -> None:
     job = st.session_state.pop("job")
+    if job.kind == "finer_codes":   # no chat message; only an unexpected failure is reported
+        if job.error:
+            st.session_state["chat"].append({"role": "assistant", "content": f"I could not finish the CN-8 step for line "
+                                             f"{job.line_no}: {job.error}", "kind": job.kind, "error": True})
+        _start_queued_finer_codes(store, kb)
+        st.rerun()
+        return
     label = jobs.finish_label(job, store)
     if job.error:
         content = f"I could not finish this: {job.error}"
@@ -156,6 +180,7 @@ def _finish_job(store, kb) -> None:
     elif job.kind == "reply" and job.new_line_nos and not job.error:
         st.session_state["selected_line_no"] = job.new_line_nos[0]   # show the clerk the updated version
         reset_selection()
+    _start_queued_finer_codes(store, kb)
     st.rerun()
 
 
@@ -182,10 +207,11 @@ def _welcome(store, kb, compact: bool) -> None:
 
 
 def _render_counts(counts: dict) -> None:
-    c1, c2, c3 = st.columns(3)
+    c1, c2, c3, c4 = st.columns(4)
     c1.metric("Auto-accept", counts.get("auto_accept", 0))
     c2.metric("Human review", counts.get("review", 0))
     c3.metric("Ask the shipper", counts.get("ask_shipper", 0))
+    c4.metric("CN-8 to confirm", counts.get("cn8_to_confirm", 0), help="Confirmations waiting for you, not a route")
 
 
 def _needs_action_list(store) -> None:
@@ -338,6 +364,8 @@ def _live_turn(store) -> None:
         has_lines = store.has_shipment() and bool(store.lines)
         if job.done or has_lines != st.session_state.get("layout_has_lines", False):
             st.rerun()  # finished, or the review column must appear now that the parse step added lines
+            return
+        if job.kind == "finer_codes":   # the detail card shows its progress, not the chat
             return
         with st.chat_message("assistant"):
             # not a `with` block: leaving a status context would flip it to "complete" while the job still runs

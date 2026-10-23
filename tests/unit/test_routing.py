@@ -92,3 +92,52 @@ class TestContradiction:
 
     def test_no_new_top_candidate_is_not_a_contradiction(self):
         assert is_contradiction([_cand("9617.00")], None) == (False, None)
+
+
+# --------------------------------------------------------------------------- feature 004: the CN-8 inputs
+import agent.routing as R  # noqa: E402  (module access keeps the feature 001 tests collectable while these are red)
+
+MOTOR = "whether the toy cars incorporate a motor"
+
+
+class TestCn8Routing:
+    """Data-model §6: the open CN-8 question and a failed CN-8 step are routing inputs."""
+
+    def test_an_open_question_routes_to_ask_shipper(self):
+        route, reason = R.route_line(FlagKind.ok, 95, "checked", False, T, F, cn8_question=MOTOR)
+        assert route == Route.ask_shipper
+        assert reason == f"the CN-8 depends on {MOTOR}, which the description does not state — ask the shipper"
+
+    @pytest.mark.parametrize("conf,ever", [(70, False), (95, True)])
+    def test_the_question_also_applies_below_the_threshold_and_after_a_flag(self, conf, ever):
+        assert R.route_line(FlagKind.ok, conf, "checked", ever, T, F, cn8_question=MOTOR)[0] == Route.ask_shipper
+
+    def test_a_failed_step_routes_to_review(self):
+        route, reason = R.route_line(FlagKind.ok, 95, "checked", False, T, F, cn8_error="invalid output after one retry")
+        assert route == Route.review
+        assert reason == "CN-8 step failed: invalid output after one retry — needs a human look"
+
+    @pytest.mark.parametrize("conf,ever", [(70, False), (95, True)])
+    def test_the_failure_also_applies_below_the_threshold_and_after_a_flag(self, conf, ever):
+        assert R.route_line(FlagKind.ok, conf, "checked", ever, T, F, cn8_error="timeout")[0] == Route.review
+
+    @pytest.mark.parametrize("flag,conf,status", [(FlagKind.vague, 31, "checked"), (FlagKind.stop_word, 99, "checked"),
+                                                  (FlagKind.ok, 95, "failed"), (FlagKind.ok, 95, "pending")])
+    def test_neither_input_applies_to_failed_pending_or_flagged_lines(self, flag, conf, status):
+        plain = R.route_line(flag, conf, status, False, T, F)
+        assert R.route_line(flag, conf, status, False, T, F, cn8_question=MOTOR) == plain
+        assert R.route_line(flag, conf, status, False, T, F, cn8_error="timeout") == plain
+
+    @pytest.mark.parametrize("flag,conf,status,ever,expected", [
+        (FlagKind.ok, 84, "checked", False, False), (FlagKind.ok, 85, "checked", False, True),
+        (FlagKind.ok, 95, "checked", False, True), (FlagKind.ok, 95, "checked", True, False),
+        (FlagKind.vague, 95, "checked", False, False), (FlagKind.stop_word, 95, "checked", False, False),
+        (FlagKind.ok, 95, "failed", False, False), (FlagKind.ok, 95, "pending", False, False)])
+    def test_hs6_auto_decided_is_feature_001s_auto_accept(self, flag, conf, status, ever, expected):
+        assert R.hs6_auto_decided(flag, conf, status, ever, T, F) is expected
+        assert expected is (R.route_line(flag, conf, status, ever, T, F)[0] == Route.auto_accept)
+
+    @pytest.mark.parametrize("conf,single,expected", [(10, True, True), (85, False, True), (84, False, False),
+                                                      (99, False, True)])
+    def test_cn8_written_by_rule(self, conf, single, expected):
+        assert R.cn8_written_by_rule(conf, T, single) is expected

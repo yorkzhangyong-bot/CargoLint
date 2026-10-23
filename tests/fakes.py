@@ -71,6 +71,11 @@ class FakeRawClient:
             return {"candidates": []}
         if name == "ExtractOut":
             return {"material": "", "part_name": "", "use": ""}
+        if name == "Cn8Out":  # an unrecorded line gets a question, never a written CN-8
+            return {"cn8": None, "confidence": 0, "deciding_attribute": "the attribute that separates the CN-8 lines",
+                    "attribute_visible": False, "evidence": "", "rationale": "no recorded CN-8 judgement", "precedent": None}
+        if name == "SubdivisionOut":
+            return {"code": None, "confidence": 0, "attribute_visible": False, "rationale": "no recorded judgement"}
         return {}
 
     # Convenience for assertions -------------------------------------------------
@@ -112,3 +117,15 @@ class ScriptedChatModel(BaseChatModel):
     @property
     def _llm_type(self) -> str:
         return "scripted"
+
+
+def assert_no_unconfirmed_writes(store) -> None:
+    """SC-005 (feature 004): nothing is written without the clerk's confirmation where a rule requires it."""
+    threshold = store.shipment.threshold
+    for line in store.lines:
+        c = line.current.cn8
+        if c is None or c.cn8 is None or c.written_by is None:
+            continue
+        assert c.cn8 in [code for code, _ in c.options], f"line {line.line_no}: written CN-8 {c.cn8} is not one of its options"
+        if c.written_by.value == "rule":
+            assert len(c.options) == 1 or c.confidence >= threshold, f"line {line.line_no}: CN-8 written below the threshold"

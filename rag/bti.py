@@ -139,6 +139,28 @@ class BTIStore:
                                  url=ruling_url(r["reference"]) if r.get("reference") else None, language=r.get("language", "")))
         return out
 
+    def by_cn8(self, hs6: str, as_of: date) -> dict[str, list[Precedent]]:
+        """Feature 004: the rulings under a subheading valid on `as_of`, grouped by their CN-8, newest first. A ruling
+        coded to fewer than eight digits is no CN-8 precedent. Each Precedent carries the ruling's own CN code."""
+        groups: dict[str, list[tuple[date, dict]]] = {}
+        for r in self._by_code.get(hs6, []):
+            cn = r.get("cn_code") or ""
+            if len(cn) < 8:
+                continue
+            start, end = parse_date(r.get("valid_from")), parse_date(r.get("valid_to"))
+            if (end is not None and end < as_of) or (start is not None and start > as_of):
+                continue
+            groups.setdefault(cn[:8], []).append((start or date.min, r))
+        out: dict[str, list[Precedent]] = {}
+        for cn8, hits in groups.items():
+            hits.sort(key=lambda t: t[0], reverse=True)
+            out[cn8] = [Precedent(reference=r["reference"], member_state=r.get("member_state", ""), code=r.get("cn_code", ""),
+                                  description=r.get("description", ""), reasoning=r.get("reasoning", ""),
+                                  valid_from=parse_date(r.get("valid_from")), valid_to=parse_date(r.get("valid_to")),
+                                  url=ruling_url(r["reference"]) if r.get("reference") else None,
+                                  language=r.get("language", "")) for _, r in hits]
+        return out
+
     def chunk_texts(self) -> list[tuple[str, str, dict]]:
         """(id, text, metadata) for embedding: description + reasoning only."""
         out = []

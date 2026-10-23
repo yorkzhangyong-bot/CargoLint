@@ -94,3 +94,19 @@ class TestDecisionFlow:
         with pytest.raises(LockedError):
             populated.set_decision(1, Decision(route=DecisionRoute.accepted, decided_code="8452.90"))
         assert populated.accept_lock_reason(populated.get_line(2)) is None
+
+
+class TestFinerCodeMarkers:
+    """Feature 004: a line waiting for a CN-8 confirmation carries a marker in its row; the columns stay."""
+
+    def test_a_cn8_suggestion_marks_its_row(self, populated):
+        from agent.schemas import Cn8Choice
+
+        populated.set_decision(2, Decision(route=DecisionRoute.accepted, decided_code="9405.21"))
+        populated.set_cn8_result(2, Cn8Choice(hs6="9405.21", options=populated.index.cn8_lines("9405.21"), cn8="94052140",
+                                              confidence=70))
+        rows = {r["line_no"]: r for r in table_rows(populated)}
+        assert rows[2]["markers"] == ["CN-8 to confirm"]
+        assert rows[1]["markers"] == [] and rows[3]["markers"] == []
+        assert set(rows[2]) == {"line_no", "description", "text_zh", "text_en", "qty", "flag", "hs6", "confidence", "route",
+                                "needs_action", "pending", "version", "markers"}
