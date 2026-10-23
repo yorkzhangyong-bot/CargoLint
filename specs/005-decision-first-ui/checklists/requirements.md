@@ -1,0 +1,45 @@
+# Specification Quality Checklist: Decision-First Clerk Workflow (UI Redesign)
+
+**Purpose**: Validate specification completeness and quality before proceeding to planning
+**Created**: 2026-10-23
+**Feature**: [spec.md](../spec.md)
+
+## Content Quality
+
+- [x] No implementation details (languages, frameworks, APIs)
+- [x] Focused on user value and business needs
+- [x] Written for non-technical stakeholders
+- [x] All mandatory sections completed
+
+## Requirement Completeness
+
+- [x] No [NEEDS CLARIFICATION] markers remain
+- [x] Requirements are testable and unambiguous
+- [x] Success criteria are measurable
+- [x] Success criteria are technology-agnostic (no implementation details)
+- [x] All acceptance scenarios are defined
+- [x] Edge cases are identified
+- [x] Scope is clearly bounded
+- [x] Dependencies and assumptions identified
+
+## Feature Readiness
+
+- [x] All functional requirements have clear acceptance criteria
+- [x] User scenarios cover primary flows
+- [x] Feature meets measurable outcomes defined in Success Criteria
+- [x] No implementation details leak into specification
+
+## Notes
+
+- The three clarification markers were resolved by the author on 2026-10-23: the threshold stays 85 %; stricter
+  routing for new shippers is left out; and a confirm never waits for the model, while the background CN-8 and TARIC
+  steps run as today. The Clarifications section records them, with the accepted backend addition, the replaced UI
+  tests and the Chinese-email rule.
+- The spec was checked against the Claude Docs wireframes (read on 2026-10-23). Six deliberate differences are listed
+  under Assumptions.
+- The framework appears only in the verbatim Input block ("Streamlit multipage"); the requirements avoid framework
+  names. The Admin label "BM25 and vectors" is the wireframe's own wording.
+- Re-checked on 2026-10-23 after constitution v1.3.0: all items pass. Dependencies cites v1.3.0. FR-011, User Story 3
+  scenario 6, the Line status table and SC-007 add the disabled Accept control with its lock reason on red rows
+  (Principle VI). The Q1–Q3 answers and the Chinese-template rule were already applied.
+- The spec is ready for `/speckit-clarify` or `/speckit-plan`.
