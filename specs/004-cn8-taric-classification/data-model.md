@@ -75,6 +75,7 @@ always equals the snapshot (FR-013, SC-004).
 |---|---|---|
 | cn8_written | a CN-8 is written | "written by rule (confidence N ≥ threshold T)", "single CN-8 line" or "confirmed by the clerk"; the CN-8 |
 | cn8_question | the deciding attribute is missing | "Ask the shipper for: <attribute>" |
+| cn8_pending | the rule leaves the CN-8 to the clerk (added by T055 for FR-020: a suggestion is an outcome too) | "to confirm: confidence N < threshold T" or "to confirm: the cited ruling <reference> classifies under <CN-8>, not <CN-8>"; the CN-8 |
 | taric_written | a TARIC-10 is written | "auto-completed, single TARIC subdivision, snapshot <date>" or "confirmed by the clerk"; the origin |
 | taric_pending | the rule leaves the TARIC-10 to the clerk | "several subdivisions" or "trade-defence measure <types>"; snapshot date and origin |
 | taric_question | the clerk sends the line to the shipper instead of confirming a subdivision | "Ask the shipper for: <question>"; snapshot date and origin |

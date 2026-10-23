@@ -536,3 +536,63 @@ class TestTaricOrigin:
             with pytest.raises(ValueError):
                 s.set_taric_origin(bad)
             assert s.shipment.taric_origin == "US"   # the previous origin stays
+
+
+class TestFinerCodeAudit:
+    """FR-020: every CN-8 and TARIC-10 outcome leaves a record: the time, the line and version, the change kind, the
+    actor (the rule or the clerk) and a note with the rule; TARIC records carry the snapshot date and the origin."""
+
+    def test_every_outcome_is_recorded(self, memory_store):
+        s = memory_store
+        lines = [("十字槽螺钉", "7318.15"), ("不锈钢保温杯", "9617.00"), ("螺钉", "7318.15"), ("螺钉", "7318.15"),
+                 ("塑料玩具车", "9503.00"), ("铝合金自行车架", "8714.91"), ("螺钉", "7318.15"), ("螺钉", "7318.15")]
+        s.add_lines([_parsed(n, z, f"goods {n}") for n, (z, _) in enumerate(lines, 1)], CreatedBy.paste)
+        for n, (_, code) in enumerate(lines, 1):
+            _checked_line(s, n, FlagKind.ok, [(code, 95)])
+        s.set_cn8_result(1, _cn8(s, "7318.15", "73181595", 95, WrittenBy.rule))
+        s.set_taric_result(1, _outcome(TaricRule.auto_completed, ["7318159500"]))
+        s.set_cn8_result(2, _cn8(s, "9617.00", "96170000", 100, WrittenBy.rule))
+        s.set_taric_result(2, _outcome(TaricRule.not_available))
+        s.set_cn8_result(3, _cn8(s, "7318.15", "73181558", 95, WrittenBy.rule))
+        s.set_taric_result(3, _defence())
+        s.confirm_taric10(3, PAIR[0])
+        s.set_cn8_result(4, _cn8(s, "7318.15", "73181558", 70))
+        s.confirm_cn8(4, "73181558")
+        s.set_taric_result(4, _outcome(TaricRule.choose, PAIR))
+        s.ask_shipper_for_taric(4, "Are the screws self-locking?")
+        s.set_cn8_result(5, _cn8(s, "9503.00", question=f"Ask the shipper for: {MOTOR}", attribute=MOTOR))
+        s.set_cn8_result(6, _cn8(s, "8714.91", error="SchemaError: invalid after 2 attempts"))
+        s.set_cn8_result(7, _cn8(s, "7318.15", "73181558", 95, WrittenBy.rule))
+        s.set_taric_result(7, _outcome(TaricRule.not_loaded))
+        s.set_cn8_result(8, _cn8(s, "7318.15", "73181558", 70))
+        expected = [
+            (1, ChangeKind.cn8_written, Actor.routing_rule, "written by rule (confidence 95 ≥ threshold 85)"),
+            (2, ChangeKind.cn8_written, Actor.routing_rule, "single CN-8 line"),
+            (4, ChangeKind.cn8_written, Actor.clerk, "confirmed by the clerk"),
+            (5, ChangeKind.cn8_question, Actor.routing_rule, f"Ask the shipper for: {MOTOR}"),
+            (8, ChangeKind.cn8_pending, Actor.routing_rule, "to confirm: confidence 70 < threshold 85"),
+            (6, ChangeKind.route_computed, Actor.routing_rule,
+             "CN-8 step failed: SchemaError: invalid after 2 attempts — needs a human look"),
+            (1, ChangeKind.taric_written, Actor.routing_rule, "auto-completed, single TARIC subdivision, snapshot 2026-10-01; origin CN"),
+            (3, ChangeKind.taric_written, Actor.clerk, "confirmed by the clerk; snapshot 2026-10-01; origin CN"),
+            (3, ChangeKind.taric_pending, Actor.routing_rule, "trade-defence measure 552; snapshot 2026-10-01; origin CN"),
+            (4, ChangeKind.taric_pending, Actor.routing_rule, "several subdivisions (2); snapshot 2026-10-01; origin CN"),
+            (4, ChangeKind.taric_question, Actor.clerk,
+             "Ask the shipper for: Are the screws self-locking?; snapshot 2026-10-01; origin CN"),
+            (2, ChangeKind.taric_not_available, Actor.routing_rule, "TARIC not available; snapshot 2026-10-01; origin CN"),
+            (7, ChangeKind.taric_not_available, Actor.routing_rule, "TARIC not loaded; origin CN"),
+        ]
+        for n, change, actor, note in expected:
+            found = [r for r in s.shipment.audit if (r.line_no, r.change, r.actor, r.note) == (n, change, actor, note)]
+            assert found, f"no {change.value} record for line {n}: {note}"
+            assert found[-1].at is not None and found[-1].version_no == s.get_line(n).current.version_no
+
+    def test_a_suggestion_names_the_conflicting_ruling(self, cn8_store):
+        from agent.schemas import Precedent
+
+        s = cn8_store
+        s.set_cn8_result(2, Cn8Choice(hs6="8714.91", options=s.index.cn8_lines("8714.91"), cn8="87149110", confidence=95,
+                                      precedent=Precedent(reference="DE-FORK-1", code="8714913000")))
+        rec = _last(s, ChangeKind.cn8_pending, 2)
+        assert (rec.new, rec.actor) == ("87149110", Actor.routing_rule)
+        assert rec.note == "to confirm: the cited ruling DE-FORK-1 classifies under 87149130, not 87149110"

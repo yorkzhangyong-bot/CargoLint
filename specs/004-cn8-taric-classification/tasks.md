@@ -440,14 +440,14 @@ description: "Task list for CN-8 and TARIC-10 classification in the agent and th
 
 ### Tests for User Story 5 (write FIRST, ensure they FAIL)
 
-- [ ] T053 [P] [US5] Add to tests/unit/test_export.py (contracts/export.md):
+- [X] T053 [P] [US5] Add to tests/unit/test_export.py (contracts/export.md):
   - **Columns**: `CSV_COLUMNS` is the 21 existing columns in their order, then `cn8` and `taric10`.
   - **Untouched lines**, with no clerk action, no CN-8 question and no failed CN-8 step: every existing value is as before. A line re-routed by a CN-8 question or a failed step differs only in `route`.
   - **`cn8`**: filled only when the CN-8 is written and `decided_code` is set. It is empty for a suggestion, an open question or a failed step, and after the clerk sends the line to review or to the shipper.
   - **`taric10`**: filled only when the TARIC-10 is written and `cn8` is filled.
   - **JSON**: each line gains `"cn8"` and `"taric10"`, null when empty.
   - **Clerk confirmation on an auto-accepted line**: `route` reads "accepted" and `route_set_by` reads "clerk", while `decided_code` and `decided_how` ("auto") stay.
-- [ ] T054 [P] [US5] Add an audit-completeness test to tests/unit/test_store.py (FR-020), with one case per outcome:
+- [X] T054 [P] [US5] Add an audit-completeness test to tests/unit/test_store.py (FR-020), with one case per outcome:
   - `cn8_written`, by rule, for a single line, and by the clerk;
   - `cn8_question`;
   - `taric_written`, auto-completed and by the clerk;
@@ -459,7 +459,7 @@ description: "Task list for CN-8 and TARIC-10 classification in the agent and th
 
 ### Implementation for User Story 5
 
-- [ ] T055 [US5] In agent/store.py, `export_rows`, `CSV_COLUMNS` and `to_json_bytes` append `cn8` and `taric10` from `decided_cn8` and `decided_taric10`. Close any audit gap that T054 finds.
+- [X] T055 [US5] In agent/store.py, `export_rows`, `CSV_COLUMNS` and `to_json_bytes` append `cn8` and `taric10` from `decided_cn8` and `decided_taric10`. Close any audit gap that T054 finds.
 
 **Checkpoint**: `pytest -q` green.
 

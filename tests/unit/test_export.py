@@ -27,6 +27,7 @@ pytestmark = pytest.mark.unit
 
 CSV_COLUMNS = ["line_no", "text_zh", "text_en", "qty", "flag", "flag_rule", "hs6_1", "conf_1", "hs6_2", "conf_2", "hs6_3", "conf_3",
                "precedent_1", "route", "route_set_by", "decided_code", "decided_how", "version_no", "last_change", "status", "note"]
+FINER = ["cn8", "taric10"]   # feature 004: appended after note (contracts/export.md)
 
 
 @pytest.fixture
@@ -58,7 +59,8 @@ def test_csv_columns_bom_and_content(store):
     assert data.startswith("﻿".encode("utf-8"))
     text = data.decode("utf-8-sig")
     rows = list(csv.DictReader(io.StringIO(text)))
-    assert list(rows[0].keys()) == CSV_COLUMNS
+    assert list(rows[0].keys()) == CSV_COLUMNS + FINER
+    assert all(r["cn8"] == "" and r["taric10"] == "" for r in rows)   # no CN-8 step has run on these lines
     assert [r["line_no"] for r in rows] == ["1", "2", "3", "4"]  # every line, in line order
     r1, r2, r3, r4 = rows
     assert r1["text_en"] == "steel bobbin cases" and r1["version_no"] == "2"  # current version only
@@ -86,6 +88,7 @@ def test_json_shape(store):
     assert payload["lines"][3]["flag"]["ask_for"] == ["material"]
     for line in payload["lines"]:
         assert "reply_text" not in line and "retrieval_trace" not in line and "audit" not in line
+        assert line["cn8"] is None and line["taric10"] is None
 
 
 def test_precedent_reference_is_exported_for_the_top_candidate(small_index):
@@ -102,3 +105,97 @@ def test_precedent_reference_is_exported_for_the_top_candidate(small_index):
 def test_export_filename_pattern(store):
     assert re.fullmatch(r"cargolint_HOL-2026-10-0472_\d{8}-\d{4}\.csv", store.export_filename("csv"))
     assert store.export_filename("json").endswith(".json")
+
+
+# --------------------------------------------------------------------------- feature 004: the cn8 and taric10 columns
+from datetime import date  # noqa: E402
+
+from agent.schemas import Cn8Choice, TaricOutcome, TaricRule, WrittenBy  # noqa: E402
+
+SNAP = date(2026, 10, 1)
+PAIR = ["7318155810", "7318155890"]
+
+
+@pytest.fixture
+def finer(small_index):
+    """Six auto-accepted lines; returns the store and the export rows taken before any CN-8 or TARIC step."""
+    s = LineStore(backend={}, index=small_index)
+    s.new_shipment(reference="FINER", threshold=85)
+    lines = [("十字槽螺钉", "Steel screws, cross-recessed heads", "7318.15"),   # 1 CN-8 written, TARIC-10 auto-completed
+             ("螺钉", "Steel screws with heads", "7318.15"),                  # 2 CN-8 written, TARIC-10 to confirm
+             ("螺钉", "Steel screws", "7318.15"),                             # 3 CN-8 a suggestion
+             ("塑料玩具车", "Plastic toy cars", "9503.00"),                     # 4 CN-8 question
+             ("铝合金自行车架", "Aluminium alloy bicycle frames", "8714.91"),    # 5 CN-8 step failed
+             ("不锈钢保温杯", "Stainless steel vacuum flask", "9617.00")]       # 6 no CN-8 step
+    s.add_lines([ParsedLine(text_zh=z, text_en=e, source_ref=f"r{n}") for n, (z, e, _) in enumerate(lines, 1)], CreatedBy.file)
+    for n, (_, _, code) in enumerate(lines, 1):
+        s.update_check(n, DescriptionCheck(line_no=n, flag=Flag(kind=FlagKind.ok)))
+        s.update_classification(n, Classification(line_no=n, candidates=[Candidate(code=code, subheading_text="t", confidence=95,
+                                                                                    rationale="r")]))
+    before = {r["line_no"]: r for r in s.export_rows()}
+    o = s.index.cn8_lines
+    s.set_cn8_result(1, Cn8Choice(hs6="7318.15", options=o("7318.15"), cn8="73181595", confidence=95, written_by=WrittenBy.rule))
+    s.set_taric_result(1, TaricOutcome(origin="CN", snapshot_date=SNAP, rule=TaricRule.auto_completed, subdivisions=["7318159500"]))
+    s.set_cn8_result(2, Cn8Choice(hs6="7318.15", options=o("7318.15"), cn8="73181558", confidence=95, written_by=WrittenBy.rule))
+    s.set_taric_result(2, TaricOutcome(origin="CN", snapshot_date=SNAP, rule=TaricRule.trade_defence, subdivisions=PAIR,
+                                       trade_defence=PAIR, trade_defence_types=["552"]))
+    s.set_cn8_result(3, Cn8Choice(hs6="7318.15", options=o("7318.15"), cn8="73181558", confidence=70))
+    s.set_cn8_result(4, Cn8Choice(hs6="9503.00", options=o("9503.00"), question="Ask the shipper for: a motor",
+                                  deciding_attribute="a motor"))
+    s.set_cn8_result(5, Cn8Choice(hs6="8714.91", options=o("8714.91"), error="SchemaError: invalid after 2 attempts"))
+    return s, before
+
+
+def _rows(s):
+    return {r["line_no"]: r for r in s.export_rows()}
+
+
+def test_two_columns_are_appended_after_note(finer):
+    s, _ = finer
+    assert LineStore.CSV_COLUMNS == CSV_COLUMNS + FINER
+    rows = list(csv.DictReader(io.StringIO(s.to_csv_bytes().decode("utf-8-sig"))))
+    assert list(rows[0]) == CSV_COLUMNS + FINER
+
+
+def test_existing_values_stay_and_only_rerouted_lines_change_their_route(finer):
+    s, before = finer
+    after = _rows(s)
+    for n in (1, 2, 3, 6):                 # untouched: no clerk action, no CN-8 question, no failed CN-8 step
+        assert {k: after[n][k] for k in CSV_COLUMNS} == {k: before[n][k] for k in CSV_COLUMNS}
+    for n in (4, 5):                       # re-routed by a CN-8 question or a failed step: only the route differs
+        assert {k for k in CSV_COLUMNS if after[n][k] != before[n][k]} == {"route"}
+    assert (after[4]["route"], after[5]["route"]) == ("ask_shipper", "review")
+
+
+def test_cn8_only_when_written_and_the_hs6_decided(finer):
+    s, _ = finer
+    assert [_rows(s)[n]["cn8"] for n in range(1, 7)] == ["73181595", "73181558", "", "", "", ""]
+    s.set_decision(1, Decision(route=DecisionRoute.review))           # the clerk sends the line to review …
+    s.set_decision(2, Decision(route=DecisionRoute.ask_shipper))      # … or to the shipper
+    rows = _rows(s)
+    assert (rows[1]["cn8"], rows[1]["taric10"], rows[1]["decided_code"], rows[2]["cn8"]) == ("", "", "", "")
+    s.set_decision(1, Decision(route=DecisionRoute.accepted, decided_code="7318.15"))   # the same HS-6 again brings them back
+    assert (_rows(s)[1]["cn8"], _rows(s)[1]["taric10"]) == ("73181595", "7318159500")
+
+
+def test_taric10_only_when_written_and_cn8_is_filled(finer):
+    s, _ = finer
+    assert [_rows(s)[n]["taric10"] for n in range(1, 7)] == ["7318159500", "", "", "", "", ""]
+    s.confirm_taric10(2, PAIR[0])
+    assert _rows(s)[2]["taric10"] == PAIR[0]
+
+
+def test_json_lines_gain_cn8_and_taric10(finer):
+    s, _ = finer
+    lines = json.loads(s.to_json_bytes().decode("utf-8"))["lines"]
+    assert [(line["cn8"], line["taric10"]) for line in lines] == [("73181595", "7318159500"), ("73181558", None), (None, None),
+                                                                  (None, None), (None, None), (None, None)]
+
+
+def test_a_clerk_confirmation_on_an_auto_accepted_line_reads_accepted_by_the_clerk(finer):
+    s, before = finer
+    s.confirm_taric10(2, PAIR[0])
+    row = _rows(s)[2]
+    assert (row["route"], row["route_set_by"], row["decided_code"], row["decided_how"]) == ("accepted", "clerk", "7318.15", "auto")
+    assert before[2]["decided_code"] == "7318.15" and before[2]["decided_how"] == "auto"
+    assert (row["cn8"], row["taric10"]) == ("73181558", PAIR[0])

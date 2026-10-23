@@ -380,6 +380,15 @@ class LineStore:
             note = ("single CN-8 line" if len(choice.options) == 1
                     else f"written by rule (confidence {choice.confidence} ≥ threshold {self.shipment.threshold})")
             self._record_code(line, ChangeKind.cn8_written, choice.cn8, Actor.routing_rule, note)
+        elif choice.cn8 and choice.written_by is None and not choice.error:   # FR-020: a suggestion is an outcome too
+            p = choice.precedent
+            if cn8_precedent_conflict(choice.cn8, p.code if p else None):
+                note = f"to confirm: the cited ruling {p.reference} classifies under {p.code[:8]}, not {choice.cn8}"
+            elif choice.confidence < self.shipment.threshold:
+                note = f"to confirm: confidence {choice.confidence} < threshold {self.shipment.threshold}"
+            else:
+                note = "to confirm"
+            self._record_code(line, ChangeKind.cn8_pending, choice.cn8, Actor.routing_rule, note)
         self._recompute(line, Actor.routing_rule)
 
     def confirm_cn8(self, line_no: int, cn8: str) -> None:
@@ -637,12 +646,14 @@ class LineStore:
             notes = [n for n in (v.error_reason, v.contradiction_note, "truncated" if v.truncated else None,
                                  "unreadable" if v.unreadable else None) if n]
             row["note"] = "; ".join(notes)
+            row["cn8"] = self.decided_cn8(line) or ""          # feature 004: written codes only, top-down (FR-022)
+            row["taric10"] = self.decided_taric10(line) or ""
             rows.append(row)
         return rows
 
     CSV_COLUMNS = ["line_no", "text_zh", "text_en", "qty", "flag", "flag_rule", "hs6_1", "conf_1", "hs6_2", "conf_2",
                    "hs6_3", "conf_3", "precedent_1", "route", "route_set_by", "decided_code", "decided_how",
-                   "version_no", "last_change", "status", "note"]
+                   "version_no", "last_change", "status", "note", "cn8", "taric10"]
 
     def to_csv_bytes(self) -> bytes:
         buf = io.StringIO()
@@ -666,7 +677,7 @@ class LineStore:
                 "route": row["route"], "route_set_by": row["route_set_by"],
                 "decided_code": row["decided_code"] or None, "decided_how": row["decided_how"] or None,
                 "version_no": v.version_no, "last_change": row["last_change"], "status": row["status"],
-                "note": row["note"] or None,
+                "note": row["note"] or None, "cn8": row["cn8"] or None, "taric10": row["taric10"] or None,
             })
         payload = {
             "shipment": {"id": s.id, "reference": s.reference, "shipper": s.shipper.name, "threshold": s.threshold,

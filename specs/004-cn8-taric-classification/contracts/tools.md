@@ -103,7 +103,8 @@ All are free of model, store and Streamlit imports and are covered by tests writ
 ## 3. Line store interface (additions; `agent/store.py`)
 
 ```text
-set_cn8_result(line_no, choice: Cn8Choice)                 # writes or suggests; records cn8_written / cn8_question; recomputes the route
+set_cn8_result(line_no, choice: Cn8Choice)                 # writes or suggests; records cn8_written / cn8_question /
+                                                           # cn8_pending; recomputes the route
 confirm_cn8(line_no, cn8: str)                             # clerk; validate_cn8; closes an open question; records cn8_written (clerk)
 set_taric_result(line_no, outcome: TaricOutcome)           # records taric_written / taric_pending / taric_not_available
 confirm_taric10(line_no, code: str)                        # clerk; validate_taric10; requires a written CN-8

@@ -90,6 +90,7 @@ class ChangeKind(str, Enum):
     line_failed = "line_failed"
     cn8_written = "cn8_written"                  # feature 004 (data-model §5)
     cn8_question = "cn8_question"
+    cn8_pending = "cn8_pending"                  # the rule leaves the CN-8 to the clerk (T055 closed this audit gap)
     taric_written = "taric_written"
     taric_pending = "taric_pending"
     taric_question = "taric_question"
