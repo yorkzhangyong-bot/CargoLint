@@ -8,6 +8,7 @@ import streamlit as st
 from agent.agent import line_taric_view
 from agent.schemas import Decision, DecisionRoute
 from agent.store import LockedError, UnknownCodeError
+from agent.taric_rules import EZT_ONLINE_URL, GROUPS, eu_taric_url
 from ui.chat import FLAG_BADGE, ROUTE_BADGE, ROUTE_LABEL, queue_finer_codes
 from ui.review import next_needs_action, reset_selection
 
@@ -232,6 +233,8 @@ def _cn8_confirm(store, line, kb) -> None:
         st.rerun()
 
 
+GROUP_LABEL = {"duties": "Duties", "trade_defence": "Trade defence", "requirements": "Requirements"}
+TABLE_PX = 250   # a fixed height: one subdivision of 7318 15 58 has about 100 trade-defence rows for China
 TARIC_NOTES = {"auto_completed": "Auto-completed: single TARIC subdivision", "choose": "Choose a subdivision",
                "trade_defence": "Trade-defence measures: confirm the subdivision",
                "not_available": "TARIC not available — the line stops at 8 digits"}
@@ -261,7 +264,7 @@ def _taric_section(store, line, kb) -> None:
     if view.suggestion_error:
         st.caption(f"Suggestion unavailable: {view.suggestion_error}")
     for sv in view.subdivisions:
-        _subdivision_card(sv, view, t)
+        _subdivision_card(sv, view, t, line.line_no)
     if t.taric10:
         who = "Confirmed by you" if t.written_by is not None and t.written_by.value == "clerk" else "Auto-completed"
         st.success(f"{who} · TARIC-10 `{_spaced(t.taric10)}`", icon="✅")
@@ -276,7 +279,24 @@ def _sub_text(sv) -> str:
     return sv.description or ("the whole CN-8" if sv.code.endswith("00") else "no description")
 
 
-def _subdivision_card(sv, view, t) -> None:
+def _measure_table(measures, group: str, key: str) -> None:
+    """One group of measures exactly as returned (FR-013); conditional duty text stays text."""
+    st.markdown(f"**{GROUP_LABEL[group]}** · {len(measures)}")
+    if not measures:
+        st.caption("none")
+        return
+    rows = []
+    for m in measures:
+        row = {"Type": f"{m.measure_type} {m.measure_type_label}", "Area": f"{m.geo_area} {m.geo_area_name}".strip()}
+        if group == "trade_defence":
+            row["Additional code"] = m.additional_code or ""
+        row["Duty"] = m.duty
+        row["Regulation"] = f"{m.regulation_id} {m.regulation_ref}".strip()
+        rows.append(row)
+    st.dataframe(rows, hide_index=True, height=min(35 * (len(rows) + 1) + 3, TABLE_PX), key=key)
+
+
+def _subdivision_card(sv, view, t, line_no: int) -> None:
     suggested = view.suggestion is not None and view.suggestion.code == sv.code
     badges = ([f":blue-badge[Suggested · {view.suggestion.confidence} %]"] if suggested else []) \
         + ([":orange-badge[Trade defence]"] if sv.trade_defence else []) + ([":green-badge[Written]"] if t.taric10 == sv.code else [])
@@ -287,6 +307,14 @@ def _subdivision_card(sv, view, t) -> None:
             st.caption("Suggested: a model estimate; it is never written without your confirmation.")
         if sv.trade_defence:
             st.caption(f"Trade-defence measures {', '.join(sv.confirm_types)} apply: confirm the subdivision.")
+        for g in GROUPS:
+            _measure_table(sv.groups[g], g, key=f"measures_{line_no}_{sv.code}_{view.origin}_{g}")
+        a, b, c = st.columns([1.1, 1.2, 2.4], vertical_alignment="center")
+        a.link_button("EU TARIC", eu_taric_url(sv.code, view.origin, view.snapshot_date), key=f"eu_{line_no}_{sv.code}",
+                      help=f"The EU TARIC consultation page for this code, origin {view.origin}, on {view.snapshot_date}")
+        b.link_button("EZT-online", EZT_ONLINE_URL, key=f"ezt_{line_no}_{sv.code}",
+                      help="The EZT-online start page; copy the code and origin from beside it")
+        c.code(f"{sv.code} {view.origin}", language=None)
 
 
 def _taric_controls(store, line, view) -> None:

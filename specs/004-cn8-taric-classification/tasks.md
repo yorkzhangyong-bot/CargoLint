@@ -390,12 +390,12 @@ description: "Task list for CN-8 and TARIC-10 classification in the agent and th
 ### Implementation for User Story 3
 
 - [X] T046 [US3] Add to agent/taric_rules.py: the fixed `MEASURE_GROUPS` table of research R-07, `measure_group`, `taric_view` (grouping only), `eu_taric_url` and `EZT_ONLINE_URL`. Add `line_taric_view(store, kb, line_no)` to agent/agent.py: it looks up the line's CN-8 for the shipment's origin and returns `taric_view`, or None without a CN-8.
-- [ ] T047 [US3] In ui/detail.py, fill each subdivision expander from the agent's `line_taric_view`; the UI never reads `kb.taric` itself (contracts/ui.md):
+- [X] T047 [US3] In ui/detail.py, fill each subdivision expander from the agent's `line_taric_view`; the UI never reads `kb.taric` itself (contracts/ui.md):
   - **Tables**: Duties, Trade defence and Requirements, each a fixed-height `st.dataframe`, because a trade-defence group can hold about 94 rows (7318 15 58 for China).
     - Columns: type and label, area code and name, additional code (trade defence only), duty text and regulation reference.
     - Conditional duty text is shown as text.
   - **Links**: `st.link_button("EU TARIC", eu_taric_url(...))` and `st.link_button("EZT-online", EZT_ONLINE_URL)`, with `st.code(f"{code} {origin}")` beside them for copying.
-- [ ] T048 [P] [US3] Create tests/eval/taric_ui_parity.py (SC-004). It uses the real snapshot and needs no key.
+- [X] T048 [P] [US3] Create tests/eval/taric_ui_parity.py (SC-004). It uses the real snapshot and needs no key.
   - **Compare**: for the 20 `CODES` of tests/eval/taric_acceptance.py and origin CN, `taric_view`'s groups against `lookup_taric`'s output.
   - **Report**: print "N of 20" with each difference, and exit non-zero on any difference.
   - **Run it**: 20 of 20 is expected.
