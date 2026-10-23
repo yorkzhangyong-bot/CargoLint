@@ -8,10 +8,10 @@
   function from the line's flag, its confidence against the threshold, and whether the attribute
   that decides its CN-8 is missing from the line text. Routing MUST NOT be a tool, a model
   decision, or logic that exists only in the UI.
-- The auto-accept threshold defaults to 85%, is adjustable in the sidebar from 60% to 99%, and
-  MUST be enforced in code. A flagged (vague or stop-word) line, or a line below the threshold,
-  MUST NOT be routed to `auto_accept`. Behaviour at exactly the threshold MUST be fixed in the
-  spec and covered by a test.
+- The auto-accept threshold defaults to 85%, is adjustable from 60% to 99% on the Admin page
+  (Rules), and MUST be enforced in code. A flagged (vague or stop-word) line, or a line below the
+  threshold, MUST NOT be routed to `auto_accept`. Behaviour at exactly the threshold MUST be
+  fixed in the spec and covered by a test.
 - A line that was ever flagged MUST NOT become `auto_accept` after an update (for example a
   shipper reply) without an explicit human click.
 - Every HS-6 code shown to the clerk MUST exist in the loaded nomenclature. A code that fails
@@ -82,10 +82,12 @@ plausible code that the description cannot support.
   description and reasoning) with code, member state and validity dates as metadata; the full
   ruling text stays in a document store, not in the vector index.
 - Hybrid retrieval is the default. Vector-only mode MAY exist only as a comparison baseline,
-  reachable from the sidebar "Hybrid search" switch and from the evaluation scripts.
+  reachable from the "Hybrid search" switch on the Admin page (Rules) and from the evaluation
+  scripts.
 - The knowledge-base loader MUST be scripted, repeatable and driven by a chapter list, so that
   adding chapters means re-running it with a longer list, not changing code.
-- The sidebar MUST state truthfully what the knowledge base covers and when it was last updated.
+- The Admin page (Data) MUST state truthfully what the knowledge base covers and when it was last
+  updated.
 
 **Rationale**: HS code numbers and exact product terms retrieve poorly with vectors alone,
 Chinese input needs translation, and one chunk per subheading mirrors how the nomenclature is
@@ -115,19 +117,23 @@ auditor can follow.
 - The UI MUST be built from native Streamlit components in the visual language of the design
   canvas. Custom components or CSS are allowed only where no native component works, and the
   plan MUST say where and why.
-- The UI MUST show context, sources, tool results and progress: `st.status` for tool-call
-  progress, `st.expander` for sources and retrieval steps, `st.dataframe` for the review table,
-  `st.metric` for routing counts and per-shipment tokens and cost, `st.download_button` for
-  export to CSV and JSON.
-- The review table MUST be rendered from the line store, needs-action lines first. It MUST NOT
-  be reconstructed from model prose.
+- The UI MUST show context, sources, tool results and progress, split between two pages:
+  - the main page, which has no sidebar: progress while a check runs (each line's code fills in
+    and its running step shows), the routing counts in the summary bar, the evidence behind each
+    decision in the expanded row (candidates, confidence, EBTI precedent, TARIC measures), and
+    the CSV and JSON export under the table;
+  - the Admin page: sources and retrieval steps (Ask the agent), per-shipment tokens and cost
+    (Cost), and the knowledge-base statement (Data).
+- The decision table MUST be rendered from the line store, each line with a status that names the
+  decision it needs. It MUST NOT be reconstructed from model prose.
 - Code-enforced guardrails MUST be visible: where auto-accept is locked for a line, the control
   is shown disabled with the reason.
-- Token usage and cost per shipment MUST be calculated and shown in the sidebar.
+- Token usage and cost per shipment MUST be calculated and shown on the Admin page (Cost).
 - Chinese and English text are shown together, UI and assistant text are in English, and Chinese
-  glyphs MUST render correctly.
+  glyphs MUST render correctly. The shipper email draft MAY be in Chinese.
 - The in-app "What I can and cannot do" statement MUST stay true to Principles I–III.
-- The two MVP screens and their minimum elements are listed under "UI Design Contract".
+- The main page and the Admin page, with their minimum elements, are listed under "UI Design
+  Contract".
 
 **Rationale**: the clerk must see why a line was flagged, which tool ran and where an answer
 came from, in a layout that feels native to Streamlit.
@@ -176,19 +182,23 @@ design, and RAGAs evaluation is a stretch.
 
 These MUST NOT be built, and the UI MUST NOT imply they exist:
 
-- drafting the bilingual query to the shipper (the assistant tells the clerk what to ask, the
-  clerk writes the message);
 - a line version-history UI (versions are stored, only the current version is shown);
 - any "Import declaration (ATLAS)" flow: ICS2 house (ENS) is the only supported filing type;
 - sending anything to a shipper or to a customs system;
 - persistence beyond the Streamlit session, accounts and multi-user access (SQLite is roadmap).
 
+Drafting an email to the shipper is in scope since v1.3.0: the app fills fixed string templates,
+in English or Chinese, with the open questions, without a model call, and the clerk copies the
+text into their own mail program. Sending it stays out of scope.
+
 ### Architecture
 
-Flow: clerk inputs (packing list or invoice as xlsx, csv, pdf or photo; chat messages) →
-Streamlit UI (sidebar, chat, review table and detail) → LangChain agent with its LLM via
-OpenRouter → seven tools → data. Sidebar settings reach the agent as explicit parameters; the
-agent writes per-line results and versions to the line store; the review table reads from it.
+Flow: clerk inputs (packing list or invoice as xlsx, csv, pdf or photo; one typed line; an
+updated description; questions in the Admin page's chat) → Streamlit UI (main page: header,
+upload, summary bar and decision table with expanded rows; Admin page: Rules, Data, Cost,
+Quality, Ask the agent) → LangChain agent with its LLM via OpenRouter → seven tools → data.
+Admin settings reach the agent as explicit parameters; the agent writes per-line results and
+versions to the line store; the decision table reads from it.
 
 | Tool | Backed by |
 |------|-----------|
@@ -232,39 +242,49 @@ embedded or indexed. Download locations are listed in the intro, section 10.
 
 ### UI Design Contract
 
-The design canvas `CargoLint — MVP screens.html` (repository root) holds the two screens and the
-architecture board in Streamlit's visual language. It is the source of truth for layout and
-styling; `CargoLint_Project_Intro.md` is the source of truth for scope and behaviour. A conflict
-between them MUST be resolved in the spec, not silently in code. The inventory below is the MVP
-minimum: cosmetic changes need no amendment, but removing or relocating a listed element needs
-a spec change.
+The design canvas `CargoLint — MVP screens.html` (repository root) is the source of truth for
+styling in Streamlit's visual language. Since v1.3.0 the layout of the two pages follows feature
+005 (`specs/005-decision-first-ui/`) and its wireframes ("CargoLint UI redesign — wireframes"),
+which replace the canvas's two screens. `CargoLint_Project_Intro.md` is the source of truth for
+scope and behaviour. A conflict between them MUST be resolved in the spec, not silently in code.
+The inventory below is the minimum: cosmetic changes need no amendment, but removing or relocating
+a listed element needs a spec change.
 
 - Styling: native Streamlit theme with the canvas accent (`#1D4FB8`); Source Sans 3 for text,
-  Source Code Pro for codes and numbers, a CJK-capable font for Chinese. Flag chips are OK,
-  Vague and Stop-word; route chips are Auto-accept, Review and Ask shipper, colour-coded as in
-  the canvas. Confidence is a percentage with a bar. "Needs action" means any line not routed
-  to `auto_accept`.
-- Screen 1, Start (before upload). Sidebar: title and tagline; uploader (drag and drop, 20 MB
-  limit, XLSX/CSV/PDF/JPG/PNG); Shipment (your reference; shipper: detect from file, known
-  shipper with past-shipment count, or new shipper; filing: ICS2 house (ENS)); Rules
-  (auto-accept threshold slider 60–99, default 85; hybrid-search switch, on by default);
-  knowledge-base caption with last-updated date. Main: assistant welcome message with three
-  quick actions (try one description, use the bundled sample packing list of 12 lines with 6
-  needing action, look up the ICS2 unacceptable terms), the "What I can and cannot do" panel,
-  and a chat input that accepts pasted lines.
-- Screen 2, Chat + review table (after check). Sidebar: as above plus the uploaded-file chip,
-  tokens and cost for this shipment, and "Export results (CSV / JSON)". Left, chat column: the
-  clerk's request; an `st.status` summary ("N lines checked · K tools · T s") with one line per
-  tool call; routing metrics (Auto-accept, Human review, Ask the shipper); a plain-language
-  summary of the lines needing action; a Sources expander; a Retrieval steps expander (original
-  query → translation and expansion → metadata filter → BM25 and vector hits fused by RRF →
-  chunks sent to the model); answers to follow-ups such as "why only 31%?"; and a chat input
-  for questions and pasted shipper replies. Right, review column: header with shipment
-  reference, route, mode, line count and "needs-action first"; filter (All, Needs action,
-  Accepted); the table (# · Description as filed with Chinese, English and quantity · Flag ·
-  HS-6 · Confidence · Route); and, for the selected line, quantity, weight and value, the top-3
-  HS-6 candidates (code, name, confidence, rationale or precedent), the route control with its
-  lock message, why the line was flagged, and how to update it.
+  Source Code Pro for codes and numbers, a CJK-capable font for Chinese. Each line's status is a
+  coloured dot with the decision it needs: green "Ready" or "Accepted", yellow "Pick: …" or
+  "Confirm: …", red "Ask: …". Confidence is a percentage with a bar, shown only inside an expanded
+  row. "Needs action" means any yellow or red line.
+- Main page, with no sidebar:
+  - Header: CargoLint; the open file's name and line count; the origin field (two letters, CN by
+    default; a change re-applies the TARIC rules without a model call and shows a toast); the link
+    to the Admin page.
+  - Upload, before a file is open: a drop zone (20 MB limit, XLSX/CSV/PDF/JPG/PNG); "Try the sample
+    invoice" (the bundled sample of 12 lines, 6 needing action); "Check one line" for a single
+    description; and the empty table.
+  - Summary bar, after a check: "N lines checked in T s · A ready · B need a pick · C need the
+    shipper", a green, yellow and red split bar, and "Accept all K ready" for batch acceptance of
+    the green lines.
+  - The single decision table: # · Description as filed (Chinese and English) · Code (the 10-digit
+    TARIC code, undecided digits as underscores) · Status · Action ("Choose" or "Update"). A line
+    expands in place into one of three kinds:
+    - (a) choose the HS-6 or CN-8 from the top candidates, with confidence bars and EBTI precedent;
+    - (b) choose the TARIC-10 subdivision, with duty and anti-dumping columns, all measures and the
+      EU TARIC link;
+    - (c) ask the shipper: the question, the reason, "Copy question", the description to update and
+      "Re-check line".
+  - Under the table: "Export CSV", "Export JSON", "Draft shipper email" (a text block from
+    templates, English or Chinese, copy only) and "+ Check one more line".
+- Admin page, for the operator and course evaluators, reached from the header link, with a left
+  navigation:
+  - Rules: the auto-accept threshold (60–99, default 85) and the hybrid-search switch (on by
+    default);
+  - Data: the EBTI ruling count, the TARIC snapshot date and source, the model, and the
+    knowledge-base last-updated date;
+  - Cost: tokens and cost for this shipment and for the session;
+  - Quality: the latest evaluation runs and the audit trail export;
+  - Ask the agent: the chat, with the Sources, Retrieval steps and Assistant notes of each check,
+    and the "What I can and cannot do" statement.
 
 ## Development Workflow & Quality Gates
 
@@ -287,7 +307,7 @@ a spec change.
   retrieval date. Demo data is labelled as such, and no real shipper data or contact details
   are committed.
 - **Definition of done** for any feature: the Principle VII tests pass offline; the Constitution
-  Check is re-run and clean; the UI matches the design canvas for the elements it touches; no
+  Check is re-run and clean; the UI matches the UI Design Contract for the elements it touches; no
   secrets are in the repository; the README is updated.
 - **Evaluation readiness**: the README MUST explain how RAG works in this pipeline (translation
   → hybrid retrieval → ranking → validation), the tool-calling loop, the security measures, the
@@ -299,8 +319,9 @@ a spec change.
 ## Governance
 
 This constitution supersedes other practices and the defaults of the Spec Kit templates in this
-repository. `CargoLint_Project_Intro.md` supplies background, scope and requirements, and the
-design canvas supplies layout and styling; neither may contradict this document.
+repository. `CargoLint_Project_Intro.md` supplies background, scope and requirements, the design
+canvas supplies styling, and feature 005's wireframes the layout of the two pages; none may
+contradict this document.
 
 **Amendment procedure**: every change is made through `/speckit-constitution`, states what
 changes and why, bumps the version, updates the last-amended date, and ends with a consistency
@@ -321,4 +342,4 @@ the spec, plan or tasks change. Each feature is closed against the Definition of
 **Keywords**: MUST and MUST NOT are mandatory; SHOULD is a default that needs a recorded reason
 to depart from; MAY is optional.
 
-**Version**: 1.2.1 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-23
+**Version**: 1.3.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-23
