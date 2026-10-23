@@ -5,8 +5,9 @@
 ### I. Guardrails Live in Code, Not in the Prompt (NON-NEGOTIABLE)
 
 - Routing to `auto_accept`, `review` or `ask_shipper` MUST be computed by one deterministic
-  function from the line's flag and confidence against the threshold. Routing MUST NOT be a
-  tool, a model decision, or logic that exists only in the UI.
+  function from the line's flag, its confidence against the threshold, and whether the attribute
+  that decides its CN-8 is missing from the line text. Routing MUST NOT be a tool, a model
+  decision, or logic that exists only in the UI.
 - The auto-accept threshold defaults to 85%, is adjustable in the sidebar from 60% to 99%, and
   MUST be enforced in code. A flagged (vague or stop-word) line, or a line below the threshold,
   MUST NOT be routed to `auto_accept`. Behaviour at exactly the threshold MUST be fixed in the
@@ -15,9 +16,15 @@
   shipper reply) without an explicit human click.
 - Every HS-6 code shown to the clerk MUST exist in the loaded nomenclature. A code that fails
   the check MUST be discarded, never displayed as a suggestion.
+- Every CN-8 code shown MUST exist in the loaded CN 2026 nomenclature, and every TARIC-10 code
+  and every measure shown MUST exist in the loaded TARIC snapshot, with the snapshot date
+  displayed.
+- No TARIC subdivision is written to a line without the clerk's confirmation, except the
+  auto-completion of a single subdivision, which MUST be recorded in the audit trail.
 - Every model or tool output MUST be validated against a strict Pydantic schema before use:
-  codes match `\d{4}\.\d{2}`, routes are one of the three enum values, confidence is 0–100.
-  Invalid output is retried or failed for that line; it is never passed through.
+  HS-6 codes match `\d{4}\.\d{2}`, CN-8 codes are eight digits and TARIC-10 codes ten digits,
+  routes are one of the three enum values, confidence is 0–100. Invalid output is retried or
+  failed for that line; it is never passed through.
 - CargoLint advises and the clerk decides. No code path may file, send or finalise anything on
   the clerk's behalf, and `auto_accept` only means "needs no attention" inside the app.
 
@@ -180,7 +187,7 @@ These MUST NOT be built, and the UI MUST NOT imply they exist:
 
 Flow: clerk inputs (packing list or invoice as xlsx, csv, pdf or photo; chat messages) →
 Streamlit UI (sidebar, chat, review table and detail) → LangChain agent with its LLM via
-OpenRouter → five tools → data. Sidebar settings reach the agent as explicit parameters; the
+OpenRouter → seven tools → data. Sidebar settings reach the agent as explicit parameters; the
 agent writes per-line results and versions to the line store; the review table reads from it.
 
 | Tool | Backed by |
@@ -188,7 +195,9 @@ agent writes per-line results and versions to the line store; the review table r
 | `parse_packing_list` | file parsers: openpyxl/pandas, pdfplumber and OCR, ZH/EN split, caps |
 | `check_description` | rule lists: ICS2 unacceptable terms, firm stop-words, vagueness check |
 | `classify_hs6` | RAG: ZH→EN translation, BM25 and embeddings fused by RRF, Chroma |
+| `classify_cn8` | CN 2026 eight-digit lines under the decided HS-6; BTI rulings with a CN code as precedent |
 | `lookup_precedent` | BTI rulings, local, indexed by subheading |
+| `lookup_taric` | TARIC snapshot: subdivisions and measures for a CN-8 and an origin |
 | `apply_shipper_reply` | line store: versions, routes, audit log (`st.session_state` in MVP) |
 
 Invariants:
@@ -312,4 +321,4 @@ the spec, plan or tasks change. Each feature is closed against the Definition of
 **Keywords**: MUST and MUST NOT are mandatory; SHOULD is a default that needs a recorded reason
 to depart from; MAY is optional.
 
-**Version**: 1.1.1 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-22
+**Version**: 1.2.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-23
