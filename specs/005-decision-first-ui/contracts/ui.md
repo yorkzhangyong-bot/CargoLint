@@ -151,21 +151,28 @@ pick is kept in `pick_{line_no}_{version_no}_{kind}`, pre-set as [view.md](view.
 ### 5.4 Kind (a) on a green row: "Change"
 
 A green row is never read-only. "Change", or the row's description, opens kind (a) on the decided codes, so the
-clerk can override a code that was accepted automatically (spec clarification).
+clerk can override a code that was accepted automatically (spec clarifications). When the CN-8 has several
+subdivisions, the switch also opens kind (b) to re-pick the TARIC-10.
 - **The decided codes**: the first line of `view.explain_a(…, "a_change")`, with who decided each code.
 - **For a line with a TARIC-10**:
   - "TARIC snapshot {date} · origin {XX}";
   - the written subdivision's description, duty and anti-dumping cells;
   - "All measures" and "Open in EU TARIC ↗", as in kind (b).
-- **The switch**: `st.segmented_control` with "HS-6" (the default) and "CN-8". It is shown only when the decided
-  HS-6 has more than one CN-8 line.
-- **The table of the chosen form**, as in §5.1, with the decided code pre-selected and the top candidate's rationale
-  above it (Principle III).
+- **The switch**: `st.segmented_control`, keyed `change_level_{line_no}_{version_no}`, with these options:
+  - "HS-6", the default;
+  - "CN-8", when the decided HS-6 has more than one CN-8 line;
+  - "TARIC-10", when the stored TARIC outcome has more than one subdivision.
+
+  It is shown when it has more than one option.
+- **The table of the chosen form**:
+  - HS-6 or CN-8: as in §5.1, with the decided code pre-selected and the top candidate's rationale above it
+    (Principle III);
+  - TARIC-10: kind (b) as in §5.2, with the written TARIC-10 pre-selected.
 - **"Confirm {picked code}"**: disabled while the pick is the decided code, with the help "This is the current code".
-  Another code follows §5.1 exactly:
-  - an HS-6: `set_decision`, then a `finer_codes` job;
-  - a CN-8: `confirm_cn8`, then a TARIC-only job when needed.
-  The row goes grey, then green or yellow.
+  Another code follows §5.1 or §5.2 exactly:
+  - an HS-6: `set_decision`, then a `finer_codes` job; the row goes grey, then green or yellow;
+  - a CN-8: `confirm_cn8`, then a TARIC-only job when needed; the row goes grey, then green or yellow;
+  - a TARIC-10: `confirm_taric10`, with no model call and no job; the row stays green with the new code.
 - **"None of these → ask shipper"**: as in §5.1.
 
 ## 6. Background jobs (`ui/runner.py`, `ui/jobs.py`)
@@ -271,7 +278,7 @@ Each action in the first group returns without waiting for a model, within 1 s o
 | Confirm an HS-6 (a), also from Change | `set_decision` | 0 | `finer_codes` |
 | Confirm a CN-8 (a), also from Change | `confirm_cn8` | 0 | `finer_codes`, TARIC only, when needed |
 | None of these → ask shipper (a) | `set_decision` | 0 | none |
-| Confirm a TARIC-10 (b) | `confirm_taric10` | 0 | none |
+| Confirm a TARIC-10 (b), also from Change | `confirm_taric10` | 0 | none |
 | Accept all K ready, accept selected | `confirm_taric10` or `confirm_cn8`, per line | 0 | none |
 | Change the origin | `apply_taric_origin` (agent, no model) | 0 | none |
 | Draft the email, switch its language | none | 0 | none |

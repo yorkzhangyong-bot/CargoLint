@@ -335,7 +335,9 @@ they reach a button label, a caption or Markdown.
   the current code is what the Accept control does.
 - **The flow**: a code the clerk confirms follows kind (a)'s flow for a review or CN-8 line. A new HS-6 runs the CN-8
   and TARIC steps again; a new CN-8 runs the TARIC step again.
-- **The TARIC-10**: it is re-chosen only through a new CN-8. "Change" offers no TARIC-10 form, as the author scoped it.
+- **The TARIC-10**: when the stored TARIC outcome has more than one subdivision, the switch also offers "TARIC-10".
+  It opens kind (b) with the written TARIC-10 pre-selected. Confirming another subdivision calls `confirm_taric10`,
+  with no model call and no job, and the row stays green. The author added this on 2026-10-23.
 
 **Rationale**: the clerk signs the declaration and must be able to override a code accepted automatically. Reusing
 kind (a) and the store's confirmations adds no backend surface.

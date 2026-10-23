@@ -14,8 +14,10 @@ The clerk gets one main page:
   TARIC-10, (c) ask the shipper, then update and re-check;
 - exports, and a template-built shipper email in English or Chinese.
 
-A green row is never read-only: its "Change" action opens kind (a) on the decided codes. The clerk signs the
-declaration and can override an automatically accepted code, which then follows the confirm flow of a review line.
+A green row is never read-only: its "Change" action opens kind (a) on the decided codes. When the CN-8 has several
+subdivisions, it can also open kind (b) to re-pick the TARIC-10. The clerk signs the declaration and can override
+an automatically accepted code. The new code then follows the confirm flow of a review line, and a new TARIC-10
+calls no model.
 
 Everything the clerk does not need moves to an Admin page: rules, data, cost, quality and the agent chat.
 
@@ -143,7 +145,7 @@ agent/
 ui/
 ├── main_page.py             # new: header, empty state, summary bar, buttons under the table, email block
 ├── table.py                 # new: rows, paging, opening a row, the live fragment
-├── expand.py                # new: kinds (a), (b), (c); kind (a) also opens from "Change" on a green row
+├── expand.py                # new: kinds (a), (b), (c); kinds (a) and (b) also open from "Change" on a green row
 ├── view.py                  # new, pure: status mapping, codes, texts, counts, rows, toast, escaping, audit CSV
 ├── shipper_email.py         # new, pure: the English and Chinese templates
 ├── actions.py               # new, pure: batch and selected acceptance

@@ -66,6 +66,8 @@ Out of scope: user accounts, persistence across sessions, shipper memory, sendin
 - Q: Are green rows read-only? → A: No. Each green row has a "Change" action that opens kind (a), and a code the
   clerk chooses there follows the same confirm flow as a review line. The clerk signs the declaration and must be able
   to override an auto-accepted code.
+- Q: Can "Change" re-pick the TARIC-10? → A: Yes. When the line's CN-8 has several TARIC-10 subdivisions, "Change"
+  can open kind (b) directly to re-pick the subdivision, with no model call.
 - Q: Where does the summary count failed checks and lines still being checked? → A: Apart from the three counts, as
   " · F check failed" and " · R updating", each shown only when above 0.
 - Q: When are a vague line's candidates "too close to call"? → A: When the top two confidences differ by at most 10
@@ -119,7 +121,8 @@ line needs:
 - or the TARIC-10, from the subdivisions with their duty and any anti-dumping duty.
 
 One option is pre-selected, and one "Confirm <code>" settles it. "Change" on a green line opens the same HS-6 or CN-8
-choice, so the clerk can override a code that was accepted automatically.
+choice, or the TARIC-10 choice when the CN-8 has several subdivisions, so the clerk can override a code that was
+accepted automatically.
 
 **Why this priority**: yellow lines need the clerk's judgement most often, and today each one takes several panels
 and clicks.
@@ -127,7 +130,8 @@ and clicks.
 **Independent Test**: on a store holding a review line, a CN-8 to confirm and a TARIC-10 to confirm, each line
 expands into its kind (a) or (b). Confirming the pre-selected option writes the code and changes the status. No
 other line changes. A green line's "Change" opens kind (a) with its decided HS-6 pre-selected, and confirming
-another code runs its later steps again.
+another code runs its later steps again. Its TARIC-10 option opens kind (b), and confirming another subdivision calls
+no model.
 
 **Acceptance Scenarios**:
 
@@ -151,10 +155,14 @@ another code runs its later steps again.
    under are both confirmed by the clerk, and the row turns green.
 6. **Given** a green line, **When** the clerk chooses "Change", **Then** kind (a) opens under the row with:
    - the decided codes and who decided them, and for a TARIC-10 its duty, anti-dumping duty and measures;
-   - the top candidates with the decided HS-6 pre-selected, and a switch to the CN-8 lines under it.
+   - the top candidates with the decided HS-6 pre-selected;
+   - a switch to the CN-8 lines under it and, when the CN-8 has several TARIC-10 subdivisions, to kind (b).
 7. **Given** kind (a) opened by "Change", **When** the clerk confirms another HS-6 or CN-8, **Then** the same flow as
    for a review line follows: the click returns at once, the later steps run in the background, and the row turns
    green or offers kind (b). The code already decided cannot be confirmed again there; the Accept control does that.
+8. **Given** "Change" on a green line whose CN-8 has several subdivisions, **When** the clerk switches to TARIC-10,
+   **Then** kind (b) opens with the written TARIC-10 pre-selected. Confirming another subdivision takes effect at once,
+   with no model call, and the row stays green with the new code.
 
 ---
 
@@ -292,7 +300,8 @@ re-routes the unconfirmed lines without a model call and leaves clerk-confirmed 
 - **A re-checked line that was ever flagged**: it never turns green by itself. It shows yellow "Confirm: <code>"
   until the clerk confirms (Principle I).
 - **An automatically accepted code the clerk disagrees with**: "Change" on the green row opens kind (a). A new HS-6 or
-  CN-8 runs the later steps again, as for a review line.
+  CN-8 runs the later steps again, as for a review line. A new TARIC-10 among several subdivisions is confirmed in
+  kind (b), with no model call.
 - **Failures**:
   - A failed check shows red "Check failed" with "Re-check line" and no question.
   - A failed CN-8 step leaves the HS-6 decided and offers a yellow pick of the CN-8 lines.
@@ -405,8 +414,9 @@ re-routes the unconfirmed lines without a model call and leaves clerk-confirmed 
   - "None of these → ask shipper" MUST send the line to the shipper (kind (c)).
   - Opened by "Change" on a green line (clarification), it MUST also show the decided codes and who decided them,
     with the TARIC-10's duty, anti-dumping duty and measures when there is one. The decided HS-6 is pre-selected, and
-    a switch offers the CN-8 lines under it, the decided one pre-selected. A code the clerk confirms there follows the
-    flow above. The code already decided cannot be confirmed again there.
+    a switch offers the CN-8 lines under it, the decided one pre-selected. When the CN-8 has several TARIC-10
+    subdivisions, the switch also offers kind (b) (FR-015). A code the clerk confirms there follows the flow above, or
+    FR-015's for a TARIC-10. The code already decided cannot be confirmed again there.
 - **FR-015**: **Kind (b), choose the TARIC-10**:
   - It MUST explain the choice: the CN-8 with its label, how many of the subdivisions carry anti-dumping duty for the
     origin, that the pick confirms both the CN-8 and the TARIC-10, and the CN-8's confidence and precedent link.
@@ -420,6 +430,8 @@ re-routes the unconfirmed lines without a model call and leaves clerk-confirmed 
   - An "All measures" expander MUST show feature 004's grouped measures, with the EZT-online link and the code to
     copy.
   - "Open in EU TARIC ↗" MUST link the selected code.
+  - Opened from "Change" on a green line (clarification), it MUST pre-select the written TARIC-10. Confirming another
+    subdivision MUST call no model, and the row stays green.
 - **FR-016**: **Kind (c), ask the shipper, then update and re-check**:
   - An "Ask the shipper" box MUST show the question, with "Copy question".
   - For a vague line it MUST show the top candidates with their confidences. When the top two differ by at most 10
@@ -516,7 +528,7 @@ re-routes the unconfirmed lines without a model call and leaves clerk-confirmed 
 | Stored state of the line | Colour | Status text | Action | Expanded kind |
 |---|---|---|---|---|
 | Still being checked | grey, dashed | the running step ("Running TARIC step…") | none | none |
-| Nothing left to decide: the HS-6 decided, the CN-8 written, the TARIC-10 written or not available, nothing pending | green | "Ready", or "Accepted" once the clerk confirmed | Change | (a), on the decided codes |
+| Nothing left to decide: the HS-6 decided, the CN-8 written, the TARIC-10 written or not available, nothing pending | green | "Ready", or "Accepted" once the clerk confirmed | Change | (a), on the decided codes; (b) for a TARIC-10 among several subdivisions |
 | Not flagged, routed to review below the threshold | yellow | "Pick: <n> candidates" | Choose | (a) HS-6 |
 | Ready to accept after an update | yellow | "Confirm: <code>" | Choose | (a) |
 | The HS-6 decided; the CN-8 to confirm, or the CN-8 step failed | yellow | "Pick: CN-8, <n> lines" | Choose | (a) CN-8 |
@@ -559,7 +571,7 @@ re-routes the unconfirmed lines without a model call and leaves clerk-confirmed 
   - the underscore code rendering;
   - the clerk's description edit and its audit entry;
   - the disabled Accept control and its lock reason on every kind of red row;
-  - "Change" on a green row and the override that follows.
+  - "Change" on a green row and the override that follows, including the TARIC-10 re-pick.
 - **SC-008**: An origin change re-applies the rules to every line with a CN-8, reports that count, and makes no model
   call.
 

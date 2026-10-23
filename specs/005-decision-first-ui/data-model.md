@@ -78,7 +78,7 @@ writes only through the existing store methods.
 | `selected_line_no` | the open row's line number, or null; the Admin chat reads it as the selected line, as today |
 | `accept_{line_no}` | the Accept checkbox of a Ready row |
 | `pick_{line_no}_{version_no}_{kind}` | the code picked in an open row of kind (a) or (b) |
-| `change_level_{line_no}_{version_no}` | the form of kind (a) on a green row: HS-6 or CN-8 |
+| `change_level_{line_no}_{version_no}` | the form "Change" shows on a green row: HS-6, CN-8 or TARIC-10 |
 | `email_open`, `email_lang` | whether the email block is open, and EN or 中文 |
 | `more_line_open` | whether the "+ Check one more line" field is shown |
 | `origin_field` | the header's origin text: the shipment's `taric_origin`, or the origin the next shipment starts with |

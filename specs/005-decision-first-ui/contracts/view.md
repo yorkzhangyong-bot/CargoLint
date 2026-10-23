@@ -40,8 +40,9 @@ Notation: `v = line.current`, `route = store.effective_route(line)`, `hs6 = stor
   error). The clerk picks or re-confirms the CN-8, which runs the missing step again (research R-15).
 - In rows 7, 9 and 10, `{n}` counts the CN-8 lines under the HS-6: `c.options` when the choice was made under it,
   else `store.index.cn8_lines(hs6)`.
-- Row 13's kind `a_change` is kind (a) opened on the decided codes (§5). A green line is never read-only: the clerk
-  can override an automatically accepted code (spec clarification).
+- Row 13's kind `a_change` is kind (a) opened on the decided codes (§5). Its TARIC-10 form shows kind (b) when the
+  CN-8 has several subdivisions. A green line is never read-only: the clerk can override an automatically accepted
+  code (spec clarifications).
 - A green line is **Accepted** when `v.decision` accepts its HS-6, `c.written_by` is clerk, and `t.written_by` is
   clerk or `t.rule` is `not_available` or `not_loaded`. Otherwise it is **Ready**.
 - The dot: `:green[●]`, `:yellow[●]`, `:red[●]`, `:gray[◌]` (research R-09).
@@ -140,14 +141,18 @@ Button labels: "Accept all {to_accept} ready"; "Accept {n} selected"; "Draft shi
 Pre-selection:
 - `a_hs6`: the top candidate;
 - `a_cn8`: `c.cn8` when set, else the first line;
-- `a_change`: the decided HS-6 in the HS-6 form, the decided CN-8 in the CN-8 form.
+- `a_change`: the decided HS-6 in the HS-6 form, the decided CN-8 in the CN-8 form, the written TARIC-10 in the
+  TARIC-10 form.
 
-`a_change` has two forms:
+`a_change` has three forms:
 - **HS-6** (the default): `hs6_rows`;
-- **CN-8**: `cn8_rows`, offered only when the decided HS-6 has more than one CN-8 line.
+- **CN-8**: `cn8_rows`, offered only when the decided HS-6 has more than one CN-8 line;
+- **TARIC-10**: kind (b)'s `subdivision_rows` (§6), offered only when the stored TARIC outcome has more than one
+  subdivision.
 
-In both forms, "Confirm" is disabled while the pick is the decided code. A code the clerk confirms follows the flow
-of kind (a) on a review or CN-8 line (contracts/ui.md §5.1).
+In every form, "Confirm" is disabled while the pick is the decided code. A code the clerk confirms follows:
+- for an HS-6 or a CN-8, the flow of kind (a) on a review or CN-8 line (contracts/ui.md §5.1);
+- for a TARIC-10, kind (b)'s `confirm_taric10`, with no model call and no job (contracts/ui.md §5.2).
 
 `explain_a(store, line, kind) -> tuple[str, str]`: the two explanation lines of FR-014.
 - **First line**:
@@ -168,7 +173,8 @@ of kind (a) on a review or CN-8 line (contracts/ui.md §5.1).
 - **For `a_change`**:
   - first line: "Decided: HS-6 {hs6}, {how} · CN-8 {cn8}, {how} · TARIC-10 {code}, {how}". The last part reads
     "· TARIC not available" or "· TARIC not loaded" for a line that stops at 8 digits;
-  - second line: "Pick another code to override it. The later steps run again after your pick."
+  - second line, in the HS-6 and CN-8 forms: "Pick another code to override it. The later steps run again after your
+    pick."; in the TARIC-10 form, the two lines of `explain_b` instead.
 
 | Code | {how} |
 |---|---|
@@ -203,7 +209,8 @@ The page shows the anti-dumping cell in red unless it reads "none".
   - " CN-8 confirmed by you.";
   - " Single CN-8 line."
 
-Pre-selection: the suggestion when set, else the first subdivision.
+Pre-selection: the suggestion when set, else the first subdivision. In the TARIC-10 form of `a_change`, the written
+TARIC-10.
 
 On a green row (`a_change`), the TARIC block shows the row of `subdivision_rows` for the written TARIC-10.
 

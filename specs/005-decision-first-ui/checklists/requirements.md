@@ -46,3 +46,5 @@
 - Updated on 2026-10-23 after the author's plan review: green rows get "Change", which opens kind (a) (FR-011,
   FR-014, User Story 2, the Line status table, SC-007). FR-005 and FR-016 take the accepted summary counts and the
   10-point closeness rule. All items still pass.
+- The author then added a TARIC-10 option to "Change": kind (b) on a green line whose CN-8 has several subdivisions
+  (FR-014, FR-015, User Story 2 scenario 8, the Line status table, SC-007). All items still pass.
