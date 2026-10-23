@@ -4,7 +4,8 @@ A linter for packing lists. Before a Hamburg freight forwarder files an ICS2 hou
 for China→EU sea freight, CargoLint flags cargo descriptions that EU customs will reject, suggests the
 top-3 HS-6 subheadings with confidence, reasoning and a BTI precedent, and routes every line to
 **auto-accept**, **human review** or **ask the shipper**. The clerk works a review table, decides a
-code when accepting, pastes the shipper's reply to re-check one line, and exports CSV/JSON.
+code when accepting, pastes the shipper's reply to re-check one line, and exports CSV/JSON. For a decided
+HS-6 it also chooses the CN-8 and completes the TARIC-10 by fixed rules from a local TARIC snapshot.
 
 Built for Turing College · AI Engineering · Sprint 2 ("Building Applications with AI": LangChain,
 RAG, tool calling, Streamlit). Author: Yong Zhang. Spec-driven: see `specs/001-packing-list-check/`
@@ -19,7 +20,7 @@ set OPENROUTER_API_KEY=sk-or-...                           # or put it in .env (
 python -m rag.loader --demo                               # builds the knowledge base (≈ 10 min, ≈ $0.02)
 python -m rag.loader                                      # full EBTI rulings index for precedent-driven retrieval (74k rulings, ≈ 90 min, ≈ $0.3, 1.8 GB on disk)
 python -m rag.loader --taric                              # one-time TARIC snapshot for digits 9–10 and measures (needs gpg, see below)
-pytest -q                                                 # 431 offline tests, no key needed
+pytest -q                                                 # 706 offline tests, no key needed
 streamlit run app.py
 ```
 
@@ -35,9 +36,8 @@ searches (see below). Data provenance and licences: `data/SOURCES.md`.
 CargoLint can hold one EU TARIC snapshot for the last two digits of a code and the measures on it (features
 002 and 003, `specs/002-taric-snapshot-load/` and `specs/003-taric-groups-exclusions/`). TARIC is used only for
 digits 9 to 10 and measures: CN 2026 stays the only source for digits 1 to 8, and TARIC is never embedded or
-indexed. The lookup
-(`TaricStore.lookup_taric(cn8, origin="CN")` in `rag/taric.py`) is not yet connected to the assistant or the
-review screen; that is the next feature.
+indexed. The lookup (`TaricStore.lookup_taric(cn8, origin="CN")` in `rag/taric.py`) feeds the TARIC-10 step
+described in [CN-8 and TARIC-10](#cn-8-and-taric-10).
 
 1. Download the six object files of one batch (GoodsNomenclature, Measure, MeasureType, GeographicalArea,
    DutyExpression and Regulation) from https://distr.tullverket.se/tulltaxan/xml/tot/ into `data/raw/taric/`,
@@ -70,24 +70,60 @@ feature 002 allows 30 minutes). With the snapshot the knowledge base opens 0.7 t
 lookup takes under 1 ms. For China, the 2026-10-01 snapshot gives 1,512 group measures that used to be missing,
 and leaves out 1,238 erga omnes measures and 37 group measures that exclude China.
 
+## CN-8 and TARIC-10
+
+Once a line's HS-6 is decided, auto-accepted or accepted by the clerk, two more steps run (feature 004,
+`specs/004-cn8-taric-classification/`):
+
+- **CN-8** (`tools/classify_cn8.py`, tool 6). With a single CN 2026 line under the HS-6, that line is taken
+  without a model call. Otherwise one structured call chooses among the CN-8 lines. It cites the words of the
+  description that decide (the evidence) and an EBTI ruling as precedent. Code checks the code against the CN-8
+  lines, every quoted word against the description, and the cited ruling against the rulings sent.
+  - When the deciding attribute is not in the text, the line routes to **ask the shipper** with a question naming
+    it; for the sample's "Plastic toy cars" that is whether a motor is fitted.
+  - The CN-8 is written when its confidence meets the auto-accept threshold and the cited ruling does not sit at
+    another CN-8. Otherwise it waits as "CN-8 to confirm".
+- **TARIC-10** (`tools/lookup_taric.py`, tool 7). The CN-8 is looked up in the snapshot for the invoice's origin:
+  CN by default, set per invoice as "Origin (TARIC)" in the sidebar. Exactly one rule applies, in code
+  (`agent/taric_rules.py`):
+
+| Rule | When | What happens |
+|---|---|---|
+| Auto-completed | one subdivision, without a trade-defence measure | written once the CN-8 is written; the audit trail reads "auto-completed, single TARIC subdivision, snapshot <date>" |
+| Choose | several subdivisions | all are shown, one may be highlighted as a suggestion with a confidence when the line states the separating attribute, and nothing is written until the clerk confirms one or asks the shipper |
+| Trade defence | a subdivision carries measure type 551 to 555 or 570 (anti-dumping or countervailing) | the clerk confirms, even when it is the only subdivision |
+| Not available | TARIC has no subdivision for the CN-8 | the line stops at 8 digits, without guessing "00" |
+| Not loaded | no snapshot | "TARIC not loaded" |
+
+The detail card shows each subdivision with its measures exactly as the lookup returns them, in three groups:
+- **duties**: third-country duty, preferences, quotas and additional duties;
+- **trade defence**: anti-dumping and countervailing measures with their additional codes and conditional duty text,
+  such as "39.6 % with anti-dumping/countervailing document D008; otherwise 86.5 %";
+- **requirements**: controls, CBAM, licences and units.
+
+Beside them are the snapshot date, an "EU TARIC" link to the consultation page for the code, origin and date, and an
+"EZT-online" link to its start page, with the code and origin to copy. Changing the origin re-applies the rules
+without a model call, and codes the clerk confirmed stay. The CSV and JSON exports gain `cn8` and `taric10`, filled
+only with written codes; every existing column keeps its value.
+
 ## What the clerk sees
 
 **Start screen**: a grouped sidebar — uploader (XLSX/CSV/PDF/JPG/PNG, 20 MB), shipment reference and
-shipper (detected from the file or chosen), the auto-accept threshold (60–99, default 85) and the
+shipper (detected from the file or chosen), the TARIC origin, the auto-accept threshold (60–99, default 85) and the
 hybrid-search switch, a knowledge-base caption, and tokens, cost and the CSV/JSON exports pinned at the
 bottom; a welcome message with three quick-action cards and a "What I can and cannot do" panel.
 
 **While a check runs**: the agent turn runs in a worker thread, so the page stays live. The assistant
 rail shows each tool step as it finishes (`parse_packing_list` → `check_description` → `classify_hs6`
-→ `lookup_precedent`) with the current tool and elapsed time, and the review list appears as soon as
+→ `lookup_precedent` → `classify_cn8` → `lookup_taric`) with the current tool and elapsed time, and the review list appears as soon as
 the file is parsed, filling in flags, codes and routes line by line.
 
-**After a check**: routing counts, the lines that need attention and what to ask the shipper, the
+**After a check**: routing counts and the two confirmation counts (CN-8 to confirm, TARIC-10 to confirm), the lines that need attention and what to ask the shipper, the
 model's notes (collapsed), a Sources expander grouped by kind and a Retrieval-steps expander; the
 review list orders every line needs-action first (description · flag · HS-6 with confidence · route),
 25 per page, and the detail card beneath it shows the top-3 candidates with a BTI precedent popover,
 the route pills, an Accept popover with the decided-code control, why the line was flagged and how to
-update it, plus previous/next buttons that cycle through the lines needing action. The layout is
+update it, the CN-8 and TARIC-10 section, plus previous/next buttons that cycle through the lines needing action. The layout is
 native Streamlit only (no custom HTML or CSS); the review list uses proportional columns so nothing is
 clipped at laptop widths.
 
@@ -128,7 +164,8 @@ clipped at laptop widths.
 
 ## The tool-calling loop
 
-`agent/agent.py` builds a LangChain v1 agent (`create_agent`) with exactly five tools. For every clerk
+`agent/agent.py` builds a LangChain v1 agent (`create_agent`) with exactly seven tools: `parse_packing_list`,
+`check_description`, `classify_hs6`, `lookup_precedent`, `apply_shipper_reply`, `classify_cn8` and `lookup_taric`. For every clerk
 message the app builds a **context block** from the line store (counts, needs-action lines, the
 selected line in full, the rule lists when the question is about terms) and a short code-built request
 (`Check lines 1–3`, `Apply reply r1 to line 1`, `FILE REFERENCE: f1`). Tools take **references**
@@ -207,16 +244,45 @@ was tried the same day and reverted: it lowered plain-retrieval MRR to 0.65 in b
 `3926.90`.
 
 Scale (`python tests/eval/scale_check.py`, 100 generated lines, six workers): first progress step
-after 1.6 s, all 100 lines checked in 130 s, none failed, €0.05; a 201-line file is rejected whole
-before any model call. (The first run took 484 s because every expansion query was embedded with its
+after 2.2 s (1.6 s in the previous run; the aim is 2 s), all 100 lines checked in 159 s, of which the CN-8 step took
+17 s and the TARIC step 9 s, none failed, €0.07; a 201-line file is rejected whole before any model call. (The first run took 484 s because every expansion query was embedded with its
 own API call; the queries of a line are now embedded in one request and reused by the history boost.)
 
-Live budget (`pytest -m live`): the 12-line sample plus two follow-up questions = 40.6k tokens,
-36 calls, €0.007.
+Live budget (`pytest -m live`): the 12-line sample plus two follow-up questions, with the CN-8 and TARIC steps =
+70.7k tokens, 43 calls, €0.012; the check itself took 45 s (the budget is €0.10 and 60 s).
 
 Manual checks (not automated): moving the threshold slider re-routes lines instantly without a model
 call; uploading a second file while a shipment is open asks for confirmation; the CSV/JSON downloads
 open with Chinese text intact.
+
+CN-8 and TARIC-10 (feature 004), measured on 2026-10-23 with the 2026-10-01 TARIC snapshot:
+
+- **CN-8 top-1** (`python tests/eval/cn8_eval.py`, SC-002): 120 valid EBTI rulings, 10 from each of the twelve
+  target chapters, fixed before any tuning. Each ruling's goods description is the line and its HS-6 the decided
+  HS-6, and its own ruling is never a precedent. The target is 60 of 120. Tuning closed after three iterations;
+  the full report is `tests/eval/cn8_eval.md`.
+
+| Run | Top-1 | Written by rule | Written, wrong | To confirm | Asked the shipper | Cost |
+|---|---|---|---|---|---|---|
+| Iteration 1 (as built) | 100/120 | 119 | 19 | 0 | 1 | €0.033 |
+| Iteration 2 (evidence and precedent rules) | 83/120 | 92 | 11 | 3 | 25 | €0.036 |
+| Iteration 3 (word-level evidence, conflict-only precedent) | 91/120 | 103 | 12 | 3 | 14 | €0.035 |
+| Validation run, no change since iteration 3 | 93/120 | 107 | 14 | 1 | 12 | €0.035 |
+
+  Most wrong CN-8 codes written by rule cite an EBTI ruling that agrees with the wrong line, so no code rule can
+  catch them; that is why a written CN-8 stays advice the clerk can overrule.
+- **What the clerk sees equals the snapshot** (`python tests/eval/taric_ui_parity.py`, SC-004, no key): for the 20
+  acceptance codes of feature 002 and origin China, the subdivisions and measures of the detail card equal
+  `lookup_taric`'s output, each measure in exactly one group: 20 of 20.
+- **The sample with the CN-8 and TARIC steps** (`python tests/eval/run_eval.py --modes hybrid --sample`): the
+  labelled set is unchanged (flags 20/20, HS-6 top-1 10/12, top-3 12/12, no flagged line auto-accepted), and the
+  sample reports "SC-005: 0 unconfirmed writes". Of the seven auto-decided sample lines in that run, two were
+  auto-completed (vacuum flasks 9617 00 00 00, phone cases 4202 32 10 00), four left the subdivision to the clerk
+  (T-shirts 2, toy cars 3, earphones 2, O-rings 3) and one had trade-defence measures (bicycle frames 8714 91 10,
+  nine subdivisions, three of them under anti-dumping duty); none was "not available". Routes matched the
+  expected ones on 9 of 12 lines. The LED desk lamp asked for its material once its HS-6 came back at 95, the bare
+  "Furniture" came back at 40 and went to the shipper, and the toy cars were written as 9503 00 95 instead of
+  asking whether a motor is fitted.
 
 ## Known weaknesses and next steps
 
@@ -225,14 +291,16 @@ open with Chinese text intact.
 - Chinese product slang and brand-only names still miss; the hybrid index helps but does not solve it.
 - Classification confusions remain where the nomenclature itself is subtle (protective phone cases vs
   packaging cases; aluminium bicycle frames landed in aluminium structures `7610.90` instead of
-  `8714.91` in one live run) — and the model occasionally auto-accepts such a wrong code at high
-  confidence, which is why the threshold is adjustable and the audit trail exists.
+  `8714.91` in one live run, and in wheeled toys `9503.00`, steered by a ruling, in two app runs on 2026-10-23) —
+  and the model occasionally auto-accepts such a wrong code at high confidence, which is why the threshold is
+  adjustable and the audit trail exists. A wrong HS-6 accepted this way carries through: the CN-8 and the
+  TARIC-10 under it can then be written by rule too.
 - Precedent votes can point at a neighbouring code: for plastic household storage boxes the rulings vote
   `3926.90`/`3923.10` first and for steel bobbin cases `7326.90`. The model kept the right code in both cases,
   and the tag is presented as evidence, not as a verdict; the clerk sees the ruling and decides.
 - `gpt-4o-mini` sometimes skips `lookup_precedent`; the completeness guard runs it, so results are
   complete, but the progress block then shows the step as "run by the app".
-- BTI coverage: the ten target chapters only (73,899 valid rulings with the full build, 192 with `--demo`). Rulings
+- BTI coverage: the twelve target chapters only (73,899 valid rulings with the full build, 192 with `--demo`). Rulings
   must be refreshed as they expire, and the full rulings index costs about 1.2 GB of RAM in the app.
 - OCR on phone photos is the weakest input path (RapidOCR, PP-OCR models); quantities and values are
   not read from photos.
@@ -243,17 +311,23 @@ open with Chinese text intact.
   composite agricultural goods show the base duty only; and conditional duties, such as company-specific
   anti-dumping rates, are shown as text but never evaluated, so the clerk decides which rate applies. The
   snapshot is loaded by hand, with no daily updates.
+- CN-8 confidence is a model estimate, like the HS-6 one. A CN-8 written by rule can still be wrong when the cited
+  ruling agrees with the wrong line (see the CN-8 evaluation below), so a written CN-8 is advice the clerk can
+  overrule like any other. The evidence check proves that the quoted words are in the description, not that they
+  state the deciding attribute: "Plastic toy cars" was once written as 9503 00 95 (without a motor) instead of
+  asking whether a motor is fitted.
+- "TARIC not available" is proven by fixture tests only: on the 2026-10-01 snapshot every CN 2026 line has at least
+  one subdivision for China.
 
 Roadmap, in order of customer value: drafted bilingual shipper queries with send tracking; line version
-history and audit export; CN-8 classification; TARIC-10 lookup (duty, anti-dumping, certificates);
-SQLite persistence and multi-user access.
+history and audit export; duty calculation from the TARIC measures; SQLite persistence and multi-user access.
 
 ## Repository layout
 
 ```
 app.py          Streamlit entry point        ui/        sidebar, upload, chat, jobs (worker turns), replies, review, detail
 agent/          config, schemas, routing, prompts, llm (client factory + cost), agent (loop + guard), store
-tools/          the five tools, parsers, ocr, common (context + per-line runner)
+tools/          the seven tools, parsers, ocr, common (context + per-line runner)
 rag/            loader (CLI), nomenclature (SKOS), bti (EBTI), rules (ICS2 PDFs), embeddings, retriever, translate, taric + taric_extract + pgp (TARIC snapshot)
 data/           processed knowledge base, rule lists, shipper history (synthetic), sample lists (xlsx, gbk csv, text pdf, photo), labelled set, SOURCES.md
 store/          Chroma vectors (nomenclature in chroma/, rulings in chroma-bti/), BM25 pickle, BTI document store (git-ignored; rebuilt by the loader)

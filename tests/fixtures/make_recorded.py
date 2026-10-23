@@ -54,7 +54,20 @@ def main() -> int:
         "塑料杯": {"material": "plastic", "part_name": "cups", "use": "drinking"},
         "line 3 is plastic cups": {"material": "plastic", "part_name": "cups", "use": "drinking"},
     }
-    for name, data in (("JudgementOut", judgement), ("TranslateOut", translate), ("RankOut", rank), ("ExtractOut", extract)):
+    # CN-8 choices (feature 004): a sample line with expected_cn8 states its deciding attribute; one with only
+    # expected_cn8_attribute does not, so the step asks the shipper.
+    cn8: dict[str, dict] = {}
+    for line in sample:
+        k = key(line["text_zh"], line["text_en"])
+        attribute = line.get("expected_cn8_attribute", "")
+        if line.get("expected_cn8"):
+            cn8[k] = {"cn8": line["expected_cn8"], "confidence": 95, "deciding_attribute": attribute, "attribute_visible": True,
+                      "evidence": line["text_en"], "rationale": "the description states the deciding attribute", "precedent": None}
+        elif attribute:
+            cn8[k] = {"cn8": None, "confidence": 0, "deciding_attribute": attribute, "attribute_visible": False,
+                      "evidence": "", "rationale": f"the description does not state {attribute}", "precedent": None}
+    for name, data in (("JudgementOut", judgement), ("TranslateOut", translate), ("RankOut", rank), ("ExtractOut", extract),
+                       ("Cn8Out", cn8), ("SubdivisionOut", {})):
         (OUT / f"{name}.json").write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
         print(f"{name}: {len(data)} recorded")
     return 0

@@ -6,6 +6,7 @@ from pathlib import Path
 
 import streamlit as st
 
+from agent.agent import apply_taric_origin
 from agent.config import ROOT
 from tools.parse_packing_list import load_into_store
 from tools.parsers import ParseError, check_caps
@@ -139,6 +140,23 @@ def render_shipment_fields(store, kb) -> None:
             p = next((p for p in kb.shippers if p.name == choice), None)
             store.set_shipper(choice, known=p is not None, past_shipment_count=len(p.past_shipments) if p else 0)
     st.selectbox("Filing", FILING_OPTIONS, index=0, key="filing")
+    if store.has_shipment():   # feature 004: the goods' origin for TARIC, per invoice
+        key = f"taric_origin_{store.shipment.id}"
+        st.session_state.setdefault(key, store.shipment.taric_origin)
+        st.text_input("Origin (TARIC)", key=key, max_chars=2, on_change=_on_taric_origin, args=(store, kb, key),
+                      help="The goods' country of origin for the TARIC lookup, two letters; CN by default")
+        error = st.session_state.pop("taric_origin_error", None)
+        if error:
+            st.error(error)
+
+
+def _on_taric_origin(store, kb, key: str) -> None:
+    """A new origin re-applies the TARIC rules, with no model call (FR-017, FR-018); a refused one is put back."""
+    try:
+        apply_taric_origin(store, kb, st.session_state[key])
+    except ValueError as exc:
+        st.session_state["taric_origin_error"] = f"Origin not changed: {exc}"
+    st.session_state[key] = store.shipment.taric_origin
 
 
 def render(store, kb) -> None:  # kept for compatibility

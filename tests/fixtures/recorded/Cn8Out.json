@@ -1,0 +1,38 @@
+{
+ "LED台灯 USB供电 / LED desk lamp, USB powered": {
+  "cn8": null,
+  "confidence": 0,
+  "deciding_attribute": "the lamp's material: plastics or ceramics, glass, or other",
+  "attribute_visible": false,
+  "evidence": "",
+  "rationale": "the description does not state the lamp's material: plastics or ceramics, glass, or other",
+  "precedent": null
+ },
+ "塑料玩具车 / Plastic toy cars": {
+  "cn8": null,
+  "confidence": 0,
+  "deciding_attribute": "whether the toy cars incorporate a motor",
+  "attribute_visible": false,
+  "evidence": "",
+  "rationale": "the description does not state whether the toy cars incorporate a motor",
+  "precedent": null
+ },
+ "铝合金自行车架 / Aluminium alloy bicycle frames": {
+  "cn8": "87149110",
+  "confidence": 95,
+  "deciding_attribute": "",
+  "attribute_visible": true,
+  "evidence": "Aluminium alloy bicycle frames",
+  "rationale": "the description states the deciding attribute",
+  "precedent": null
+ },
+ "硅胶手机壳 / Silicone mobile phone cases": {
+  "cn8": "39269097",
+  "confidence": 95,
+  "deciding_attribute": "",
+  "attribute_visible": true,
+  "evidence": "Silicone mobile phone cases",
+  "rationale": "the description states the deciding attribute",
+  "precedent": null
+ }
+}

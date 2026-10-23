@@ -111,7 +111,7 @@ def build_agent(model: Any, tools: list[Any]) -> Any:
 
 def turn_tools(reply_ref: str | None) -> list[Any]:
     """A reply turn offers only apply_shipper_reply: it re-checks the line itself, so the check tools would only redo
-    that work and could outdate the contradiction note. Every other turn offers all five tools."""
+    that work and could outdate the contradiction note. Every other turn offers all seven tools."""
     if reply_ref:
         return [t for t in TOOLS if t.name == "apply_shipper_reply"]
     return list(TOOLS)
@@ -267,4 +267,73 @@ def _finalize(store: Any, kb: Any, ctx: ToolContext, check_run: CheckRun, on_pro
             return f"{matched} BTI rulings matched"
         step("lookup_precedent", _precedent)
 
+    # feature 004: the CN-8 step for decided lines without a CN-8 choice for that HS-6
+    no_cn8 = [l.line_no for l in store.lines
+              if (hs6 := store.decided_code(l)[0]) and (l.current.cn8 is None or l.current.cn8.hs6 != hs6)]
+    if no_cn8:
+        from tools.classify_cn8 import run_cn8_step, summarize as cn8_summary
+
+        step("classify_cn8", lambda: cn8_summary(run_cn8_step(store, kb, ctx.client, no_cn8, workers=ctx.workers or 4)))
+
+    # feature 004: the TARIC step for lines with a CN-8 and no outcome for the shipment's origin
+    from tools.lookup_taric import needs_taric, run_taric_step, summarize as taric_summary
+
+    no_taric = [l.line_no for l in store.lines if needs_taric(store, l)]
+    if no_taric:
+        step("lookup_taric", lambda: taric_summary(run_taric_step(store, kb, ctx.client, no_taric, workers=ctx.workers or 4)))
+
     store.finalize_check()
+
+
+def after_hs6_decision(store: Any, kb: Any, line_no: int, taric_only: bool = False) -> str:
+    """Feature 004: the CN-8 step and then the TARIC step for one line once the clerk accepts or chooses its HS-6, or
+    the TARIC step alone after a CN-8 confirmation (`taric_only`). The UI runs it as a background job. Its calls go
+    through the usage-recording client, so the shipment's tokens and cost include them."""
+    from tools.classify_cn8 import run_cn8_step, summarize as cn8_summary
+    from tools.lookup_taric import run_taric_step, summarize as taric_summary
+
+    client = get_client(usage_sink=store.add_usage, settings=get_settings())
+    parts = [] if taric_only else [cn8_summary(run_cn8_step(store, kb, client, [line_no], workers=1))]
+    parts.append(taric_summary(run_taric_step(store, kb, client, [line_no], workers=1)))
+    return "; ".join(parts)
+
+
+def apply_taric_origin(store: Any, kb: Any, code: str) -> str:
+    """Feature 004 (FR-017, FR-018, contracts/tools.md §4): set the shipment's TARIC origin, then re-apply the lookup
+    and the rules to every line with a CN-8 and a TARIC outcome. Subdivision codes do not depend on the origin, so the
+    stored suggestions are reused and no model is called; the store keeps the TARIC-10 codes the clerk confirmed. A
+    line whose TARIC step has not run yet is left to it. A refused origin raises ValueError and changes nothing."""
+    from tools.lookup_taric import rule_outcome
+
+    before = store.shipment.taric_origin
+    origin = store.set_taric_origin(code)
+    n = 0
+    for line in store.lines if origin != before else []:
+        c, prev = line.current.cn8, line.current.taric
+        if c is None or not c.cn8 or c.question or c.error or prev is None:
+            continue
+        outcome, _ = rule_outcome(c.cn8, store.decided_cn8(line) is not None, origin, kb)
+        if prev.subdivisions == outcome.subdivisions:
+            outcome = outcome.model_copy(update={"suggestion": prev.suggestion, "suggestion_error": prev.suggestion_error})
+        store.set_taric_result(line.line_no, outcome)
+        n += 1
+    return f"Origin {origin}: the TARIC rules re-applied to {n} line{'s' if n != 1 else ''}"
+
+
+def line_taric_view(store: Any, kb: Any, line_no: int) -> Any:
+    """Feature 004 (contracts/tools.md §4, Display): the line's CN-8 looked up for the shipment's origin, as
+    `taric_view` groups it; None without a CN-8. The UI calls this and never reads `kb.taric` itself. Measures are
+    never stored, so what the clerk sees always equals the snapshot (FR-013)."""
+    from agent.taric_rules import taric_view
+
+    line = store.get_line(line_no)
+    c = line.current.cn8
+    if c is None or not c.cn8:
+        return None
+    origin = store.shipment.taric_origin
+    t = line.current.taric
+    outcome = t if t is not None and t.origin == origin else None
+    taric = getattr(kb, "taric", None)
+    if taric is None:
+        return taric_view([], origin, None, outcome)
+    return taric_view(taric.lookup_taric(c.cn8, origin), origin, taric.snapshot.snapshot_date, outcome)

@@ -71,6 +71,11 @@ class FakeRawClient:
             return {"candidates": []}
         if name == "ExtractOut":
             return {"material": "", "part_name": "", "use": ""}
+        if name == "Cn8Out":  # an unrecorded line gets a question, never a written CN-8
+            return {"cn8": None, "confidence": 0, "deciding_attribute": "the attribute that separates the CN-8 lines",
+                    "attribute_visible": False, "evidence": "", "rationale": "no recorded CN-8 judgement", "precedent": None}
+        if name == "SubdivisionOut":
+            return {"code": None, "confidence": 0, "attribute_visible": False, "rationale": "no recorded judgement"}
         return {}
 
     # Convenience for assertions -------------------------------------------------
@@ -112,3 +117,26 @@ class ScriptedChatModel(BaseChatModel):
     @property
     def _llm_type(self) -> str:
         return "scripted"
+
+
+def assert_no_unconfirmed_writes(store) -> None:
+    """SC-005 (feature 004): nothing is written without the clerk's confirmation where a rule requires it."""
+    threshold = store.shipment.threshold
+    for line in store.lines:
+        c = line.current.cn8
+        cn8_written = c is not None and c.cn8 is not None and c.written_by is not None
+        if cn8_written:
+            assert c.cn8 in [code for code, _ in c.options], f"line {line.line_no}: written CN-8 {c.cn8} is not one of its options"
+            if c.written_by.value == "rule":
+                assert len(c.options) == 1 or c.confidence >= threshold, f"line {line.line_no}: CN-8 written below the threshold"
+                assert len(c.options) == 1 or not (c.precedent and c.precedent.code[:8] != c.cn8), \
+                    f"line {line.line_no}: CN-8 written although its cited ruling is at another CN-8"
+        t = line.current.taric
+        if t is None or t.taric10 is None or t.written_by is None:
+            continue
+        assert t.taric10 in t.subdivisions, f"line {line.line_no}: written TARIC-10 {t.taric10} is not one of its subdivisions"
+        if t.written_by.value == "rule":
+            assert len(t.subdivisions) == 1, f"line {line.line_no}: TARIC-10 written by rule among several subdivisions"
+            assert t.rule.value == "auto_completed" and not t.trade_defence, \
+                f"line {line.line_no}: TARIC-10 written by rule although a confirm type applies"
+            assert cn8_written, f"line {line.line_no}: TARIC-10 written by rule while its CN-8 is not written"

@@ -1,0 +1,968 @@
+{
+ "built_on": "2026-10-23",
+ "seed": 2026,
+ "per_chapter": 10,
+ "source": "store/bti_docs.jsonl (full EBTI build) and data/nomenclature_2026.jsonl (CN 2026)",
+ "rulings": [
+  {
+   "reference": "IEBTIIENEN004-2025-BTI351",
+   "chapter": "39",
+   "hs6": "3925.90",
+   "cn8": "39259010",
+   "language": "en",
+   "description": "Internal mounting bracket for infrared sensor\nThe bracket is used to hold the sensor on the ceiling so that only the bracket and not the sensor is visible. The sensor can be used without the bracket.\nThe product is made of ABS Plastic"
+  },
+  {
+   "reference": "IEBTIIENEN004-2025-BTI245",
+   "chapter": "39",
+   "hs6": "3926.90",
+   "cn8": "39269097",
+   "language": "en",
+   "description": "Perform Stem Masks\nThey are used in the Thermal Spray process of coating Orthopaedic Implants. They are used to either aid the spraying process or protect the implants during the spraying process.\nThe masks come in various sizes as they are used on different size Implants and are all made from the same material.\nThe product is made from Silicone"
+  },
+  {
+   "reference": "XIBTI505068468",
+   "chapter": "39",
+   "hs6": "3926.90",
+   "cn8": "39269097",
+   "language": "en",
+   "description": "A gas fuelled space heater\nIt’s function is to provide heat by burning gas. Typically installed in caravans or motorhomes\nMade from various materials including glass filled nylon for the outer casing and aluminium for the heat exchangers and a stainless steel burner\nOther components include a blower fan to distribute the heated air into the room and  electronic circuitry to regulate the system, provide ignition for the gas and other safety systems – powered from the vehicle’s 12v power supply."
+  },
+  {
+   "reference": "IEBTIIENEN004-2025-BTI258",
+   "chapter": "39",
+   "hs6": "3926.90",
+   "cn8": "39269097",
+   "language": "en",
+   "description": "Silicone masks that vary in shape and size and are used on various sizes and types of implants.\nA mask that is used in the thermal spray process of coating orthopaedic implants to either aid the spraying process or protect the areas of the implant from being sprayed during the coating process.\nThis is made from silicone"
+  },
+  {
+   "reference": "IEBTIIENEN004-2025-BTI51",
+   "chapter": "39",
+   "hs6": "3926.90",
+   "cn8": "39269097",
+   "language": "en",
+   "description": "Part Number 2MM-01019AA Panel is a front housing on the central console in a car.\nIts function when combined with electrical components is to allow the car user to start and stop the car engine. The Button can function without the housing itself.\nIt is a moulded part made of polycarbonate."
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI324",
+   "chapter": "39",
+   "hs6": "3919.90",
+   "cn8": "39199080",
+   "language": "en",
+   "description": "Multi layered self adhesive sheeting.\nIt is used in the manufacture of road safety signs.\nThe sheeting consists of polymethylmethacrylate, glass beads, a layer of aluminium and self adhesive layer. The polymethylmethacrylate predominates by weight over each of the other individual layers.\nThe sheeting is presented in rolls of a width exceeding 20cm, in various colours."
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI133",
+   "chapter": "39",
+   "hs6": "3926.90",
+   "cn8": "39269097",
+   "language": "en",
+   "description": "This is a protection case for Apple Airpods.\nDesigned to Keep product protected without sacrificing style with soft-touch silicone.\nA fun and elevated DOT textured design keep things light & airy, while our premium materials protect against drops.\nAntimicrobial soft-touch silicone with textured design Carabiner attachment wireless charging compatible."
+  },
+  {
+   "reference": "IEBTIIENEN004-2025-BTI463",
+   "chapter": "39",
+   "hs6": "3926.90",
+   "cn8": "39269097",
+   "language": "en",
+   "description": "The product is an orange coloured cushion part used inside a gear shifter, under the “P” button\nIts function is sound suppression when the “P” button is clicked.\nSilicone rubber.\nRaw materials are moulded, cured and then checked and packed."
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI141",
+   "chapter": "39",
+   "hs6": "3926.90",
+   "cn8": "39269097",
+   "language": "en",
+   "description": "The product is a snap on protective case for a smart watch.\nIts function is to protect the watch display.\nIt is in a rectangular form. It does not encase the smart watch."
+  },
+  {
+   "reference": "IEBTIIENEN004-2023-BTI572",
+   "chapter": "39",
+   "hs6": "3923.10",
+   "cn8": "39231090",
+   "language": "en",
+   "description": "Celsius SSM Shipper\nIt is used to ship Pharmaceutical Drug Substance on an international level\nAluminum Pallet Base, LLDPE exterior, Fiberglass interior,Polyurethane Insulation"
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI284",
+   "chapter": "42",
+   "hs6": "4202.12",
+   "cn8": "42021291",
+   "language": "en",
+   "description": "Slim lightweight structured ipad  sleeve with front zippered pocket for accessories\n\nMade from 100% RPET\nPlastic"
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI145",
+   "chapter": "42",
+   "hs6": "4202.92",
+   "cn8": "42029291",
+   "language": "en",
+   "description": "Travel bag\n\nOuter surface is made of polyester, Made from 99.9& Polyester, 0.1% PU.  With handles and zip closure."
+  },
+  {
+   "reference": "IEBTIIENEN004-2025-BTI449",
+   "chapter": "42",
+   "hs6": "4202.92",
+   "cn8": "42029219",
+   "language": "en",
+   "description": "Multifunction pencil case with calculator and pencil sharpener.\nThe predominant material of the outer sell is made of plastic sheeting. Inside storage compartment is made of moulded plastic."
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI189",
+   "chapter": "42",
+   "hs6": "4202.92",
+   "cn8": "42029291",
+   "language": "en",
+   "description": "24L Pack Pack\n\nStandard Issue 24-liter backpacks - multiple\ncompartments at different easy access points, chest strap,\n\nClamshell body, ergonomic moulded padding,  outer surface of polyester\n\nmulti-organization dividers, multiple\ncompartments and pockets, & fleece-lined top-loading tech locker"
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI239",
+   "chapter": "42",
+   "hs6": "4202.92",
+   "cn8": "42029298",
+   "language": "en",
+   "description": "Luggage organizer, outer shell is made of textile woven fabric. The product is designed to hold items of clothing/personal belongings and then be stored within a suitcase. It has a full zip closure, and a small hook at the top so the organizer can be hung or picked up."
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI315",
+   "chapter": "42",
+   "hs6": "4202.32",
+   "cn8": "42023210",
+   "language": "en",
+   "description": "Metropolis Protection case for iPhone 11\n\nIT ENCASES THE PHONE BY COVERING THE BACK, THE SIDES AND THE FRONT SIDE OF THE MOBILE PHONE IN ORDER TO PROTECT IT.\nIT IS AN ARTICLE OF A KIND NORMALLY CARRIED IN THE POCKET OR IN THE HANDBAG.\nTHERMOPLASTIC POLYURETHANE WITH A FELT LINING."
+  },
+  {
+   "reference": "IEBTIIENEN004-2025-BTI264",
+   "chapter": "42",
+   "hs6": "4202.92",
+   "cn8": "42029291",
+   "language": "en",
+   "description": "Back-pack / Rucksack\nBag for carrying laptop / conveyance of goods or personal effects\nBlack in colour, 5 separate zipped compartments in different sizes, each bag is packaged in clear transparent.  One comparted at the rear of the bag has section within to secure a laptop.  Black netting pocket on both side of the bag.  Handle on top of bag, adjustable straps to allow the bag to be carried on a person's back & adjustable luggage strap with quick release buckle (nylon & pvc).    Size approx. Width: 35CM / Depth: 16CM / Height: 40cm\nPlastic / Synthetic Textile material\n100% 600D (denier) Polyester."
+  },
+  {
+   "reference": "FRBTIFR-BTI-2025-02100",
+   "chapter": "42",
+   "hs6": "4203.29",
+   "cn8": "42032910",
+   "language": "en",
+   "description": "Accessoire du vêtement, de type gant de protection pour tous métiers, à cinq doigts, couvrant la main jusqu’au poignet, confectionné en étoffe de bonneterie de fibres haute ténacité, et dont la partie inférieure comporte un revêtement en cuir naturel, avec des renforts au niveau de la paume et de l’index. Le poignet est doté d’un bord-côte. L'article est utilisé dans l'industrie mécanique et automobile pour son excellente isolation thermique."
+  },
+  {
+   "reference": "IEBTIIENEN004-2025-BTI227",
+   "chapter": "42",
+   "hs6": "4202.92",
+   "cn8": "42029298",
+   "language": "en",
+   "description": "BACKPACK, NYLON 840D, DETACHABLE SHOULDER STRAPS, ZIPPERED POCKETS [Hip PAck Olive Drab]"
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI261",
+   "chapter": "42",
+   "hs6": "4202.92",
+   "cn8": "42029219",
+   "language": "en",
+   "description": "PROTECTION CASE FOR MACBOOK PRO 13”.\n\nIT’S COMPOSED OF HARD PLASTIC AND COVERS THE FRONT, BACK AND SIDES OF THE SECTION THAT LIFTS UP."
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI132",
+   "chapter": "61",
+   "hs6": "6102.30",
+   "cn8": "61023090",
+   "language": "en",
+   "description": "This garment is a full zip fleece.\nThis is a knitted recycled 100% polyester two-tone fleece.\nIt has a complete opening at the front and is fastened by a zip.  It has stretch binding to cuff and hem with 2 zipped lower pockets."
+  },
+  {
+   "reference": "FRBTIFR-BTI-2025-03147",
+   "chapter": "61",
+   "hs6": "6116.10",
+   "cn8": "61161020",
+   "language": "en",
+   "description": "Gant de protection à cinq doigts, de couleur verte, en étoffe de bonneterie de coton, enduit sur toute la surface extérieure de caoutchouc synthétique non alvéolaire, et non stratifié. Ce gant est destiné à la réalisation de travaux dans l'industrie. Il est conditionné pour la vente au détail dans un emballage en matière plastique.\nLongueur (cm) 38\nÉpaisseur (mm) 1.35\nTailles : 8, 9 et 10"
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI208",
+   "chapter": "61",
+   "hs6": "6109.90",
+   "cn8": "61099020",
+   "language": "en",
+   "description": "T-Shirt Type Garment for Unisex\nUndergarment for wear by a person who has a spinal brace\nMade from knitted Fabric 96% Polyester and 4% Lycra"
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI90",
+   "chapter": "61",
+   "hs6": "6101.30",
+   "cn8": "61013090",
+   "language": "en",
+   "description": "This is a knitted jacket type garment.\nThis is a knitted garment and is made of a fabric composed of 100% polyester.\nThis garment does not have a hood or drawstring at the waist. It has elasticated wrist cuffs and zipped pockets. This garment is designed to go down to the just below the waist (as opposed to mid-thigh)."
+  },
+  {
+   "reference": "FRBTIFR-BTI-2025-08672",
+   "chapter": "61",
+   "hs6": "6111.20",
+   "cn8": "61112090",
+   "language": "en",
+   "description": "Accessoire du vêtement pour bébés se présentant sous la forme d’un bavoir de forme rectangulaire et arrondi sur les bords. \nLe produit est confectionné en matière textile de bonneterie bouclée du genre éponge de fibres naturelles (coton majoritaire, et polyester).\nCe bavoir comporte, selon les modèles, des motifs brodés sur la face avant. L’article est doté d’un biais sur tout son pourtour, et se ferme au moyen de liens à nouer autour du cou. \nLe bavoir est conditionné en lot de trois unités de divers coloris, et est conditionné à l’importation pour la vente au détail avec un emballage cartonné muni d’un crochet en matière plastique.\nDimensions : 20 × 25 cm."
+  },
+  {
+   "reference": "DEBTI45301/24-1",
+   "chapter": "61",
+   "hs6": "6110.20",
+   "cn8": "61102099",
+   "language": "de",
+   "description": "Pullover, sog. Strickpullover, in Erwachsenengröße, Foto siehe Anlage\n- aus ca. 1,1 mm dicken, einfarbigen Gewirken aus laut Antrag 92 % Baumwolle und\n  8 % Kaschmir (feine Tierhaare); u. a. aufgrund der Gewirkedicke kein Unterziehpulli,\n- über die Taille reichend (Rückenlänge: ca. 65,5 cm),\n- mit einem runden Halsausschnitt,\n- ohne Öffnung und ohne Verschluss,\n- ohne Hinweise auf den Trägerkreis (unisex),\n- mit langen Ärmeln,\n- auf der Rückseite mit einem Firmenlogo bestickt,\n- am unteren Rand durch Umschlagen und Festnähen gesäumt.\n\n\"Pullover, aus Gewirken, aus Baumwolle, kein Unterziehpulli, für Frauen\""
+  },
+  {
+   "reference": "DEBTI36175/25-1",
+   "chapter": "61",
+   "hs6": "6116.10",
+   "cn8": "61161020",
+   "language": "de",
+   "description": "Fingerhandschuhe, Größe 8, Foto siehe Anlage,\n- paarweise an einer Pappkarte mit Aufhänger angebracht,\n- als Fünffingerhandschuhe gearbeitet,\n- aus einfarbigen Gewirken aus laut Antrag Baumwolle,\n- nachträglich mit Ausnahme des größten Teils des Bündchens und des Handrückens einseitig\n  (Außenseite) im Tauchverfahren mit Kautschuk (laut Antrag: Nitrilschaum-Kautschuk; keine \n  Zellstruktur erkennbar) getränkt, \n- auf dem Handrücken mit Schriftzügen bedruckt,\n- mit einem angenähten, doppelt gearbeiteten, elastischen Bündchen.\n\n\"Fingerhandschuhe, aus Gewirken, mit Kautschuk getränkt\""
+  },
+  {
+   "reference": "DEBTI23122/26-1",
+   "chapter": "61",
+   "hs6": "6116.10",
+   "cn8": "61161080",
+   "language": "de",
+   "description": "Handschuhe, Größe 10/XL, Foto siehe Anlage,\n- laut Antrag:\n-- paarweise an einem bedruckten Pappaufhänger befestigt,\n-- als Fünffingerhandschuhe gearbeitet,\n-- mit einer Handinnenfläche, einem Daumen, Fingerspitzen und Fingerzwischenräumen sowie \n   einem ca. 3﻿,﻿8 cm breiten Streifen auf dem Handrücken und einem kleinen Teil der Stulpeninnen-\n   fläche aus einfarbigen, gerauten, einseitig (Außenseite) mit geprägtem Kunststoff überzogenen \n   Gewirken der Position 5903 aus synthetischen Chemiefasern (somit keine Meterware des \n   Kapitels 39), \n-- in den übrigen Bereichen des Handrückens, der Fingeraußenseiten und der bis zu ca. 6 cm \n   breiten Stulpe aus einfarbigen Geweben aus Baumwolle; im Bereich der Stulpe zweilagig \n   gearbeitet,\n-- im Bereich des Handgelenks elastisch verengt und mit einem schmalen Gewebestreifen verziert,\n-- an der Eingriffsöffnung mit einem schmalen Gewebestreifen eingefasst,\n- insbesondere im Hinblick auf die Verwendung als Gartenhandschuhe bestimmen die u. a. die \n  Innenhand bildenden Gewirke den wesentlichen Charakter der Ware.\n\n\"Fingerhandschuhe, aus Gewirken, mit Kunststoff überzogen\""
+  },
+  {
+   "reference": "DEBTI52786/23-1",
+   "chapter": "61",
+   "hs6": "6113.00",
+   "cn8": "61130090",
+   "language": "de",
+   "description": "Blouson, sog. PREVENT® Warnschutz-Softshelljacke, Artikel 8060O, Größe M, Foto siehe Anlage,\n- in einem Polybeutel verpackt,\n- aus ca. 1,9 mm dicken, dreilagigen Flächenerzeugnissen der Position 5903 mit einer Außen- und\n  Innenlage aus verschiedenen (glatten sowie gerauten) einfarbigen Gewirken aus laut Antrag\n  100 % Polyester (synthetische Chemiefasern) und einer Zwischenlage aus einer Kunststofffolie aus\n  laut Antrag Polyurethan,\n- über den Schritt reichend (Rückenlänge: ca. 71 cm), hinten abgerundet und vorn bis zu ca. 5 cm\n  kürzer gearbeitet,\n- mit einem Stehkragen,\n- vorn mit einer durchgehenden Öffnung mit einem bis in die Kragenspitzen reichenden Reißverschluss,\n  am Kragenrand mit einer kurzen Überlappung von rechts auf links,\n- mit langen, mittels Reißverschluss abtrennbaren Ärmeln, die über den unteren Rand des Kleidungs-\n  stücks hinausreichen; an den Ärmelenden mit verengenden Klettverschlussriegeln ausgestattet,\n- mit reflektierenden Streifen ausgestattet; z. T. längs über die Schultern verlaufend (sog. Hosen-\n  trägerreflex),\n- vorn mit einer eingesetzten Brusttasche und mit zwei eingesetzten Taschen unterhalb der Taille\n  (alle mit Reißverschluss),\n- am unteren Rand mit einem Tunnelzug mit Kordelstoppern zu verengen,\n- erfüllt die Merkmale zur Einreihung als Blouson, somit keine Jacke,\n- u. a. aufgrund der verwendeten Flächenerzeugnisse keine Kleidung der Position 6102.\n\n\"Kleidung (Blouson) aus Gewirken der Position 5903\""
+  },
+  {
+   "reference": "DEBTI44123/25-1",
+   "chapter": "61",
+   "hs6": "6115.10",
+   "cn8": "61151010",
+   "language": "de",
+   "description": "Kompressionskniestrümpfe, Größe M, Foto siehe Anlage,\n- paarweise in einem Polybeutel verpackt,\n- aus bis zu ca. 1﻿,﻿2 mm dicken, buntgewirkten, elastischen Gewirken aus laut Antrag 85 % Polyamid\n  und 15 % Elasthan (beides synthetische Chemiefasern),\n- die Wade bedeckend, bis etwa zum Knie reichend,\n- schlauchförmig, anatomisch dem Bein angepasst gewirkt und an den Fußspitzen durch\n  Zusammennähen konfektioniert; mit ausgearbeiteter Ferse, \n- am oberen Rand durch Umschlagen und Festnähen gesäumt,\n- mit einer degressiven Kompression, die im Bereich des Knöchels laut Antrag 16 mmHg beträgt\n  und sich aufwärts in Richtung des Beines reduziert.\n\n\"Kniestrümpfe mit degressiver Kompression, aus Gewirken, aus synthetischen Chemiefasern\""
+  },
+  {
+   "reference": "IEBTIIENEN004-2026-BTI106",
+   "chapter": "62",
+   "hs6": "6212.10",
+   "cn8": "62121090",
+   "language": "en",
+   "description": "Women's bikini top\nConsists of two separate fabric lined cups; Two vertical self-fabric straps tie at the back of the neck to provide body support with two straps ties at the back.\nIt is made of knitted synthetic fabric"
+  },
+  {
+   "reference": "IEBTIIENEN004-2026-BTI75",
+   "chapter": "62",
+   "hs6": "6212.10",
+   "cn8": "62121090",
+   "language": "en",
+   "description": "Strappy crop top\nsuitable to be worn when doing sports and exercise.\ncriss cross back with the padded cups and elasticated bottom which provides certain level support\nmade of elastic knitted nylon fabric"
+  },
+  {
+   "reference": "IEBTIIENEN004-2026-BTI108",
+   "chapter": "62",
+   "hs6": "6212.10",
+   "cn8": "62121090",
+   "language": "en",
+   "description": "Women's bikini top\nConsists of two separate fabric lined cups; Two vertical self-fabric straps tie at the back of the neck to provide body support with two straps ties at the back.\nMade of knitted synthetic fabric"
+  },
+  {
+   "reference": "IEBTIIENEN004-2026-BTI107",
+   "chapter": "62",
+   "hs6": "6212.10",
+   "cn8": "62121090",
+   "language": "en",
+   "description": "A women's bandeau bikini top\nIt consists of two removable foam cups inside which provide body support. It is closed with plastic clip at the back.\nIt is made of synthetic fabric.  \nAccording to the applicants declaration, it is knitted."
+  },
+  {
+   "reference": "IEBTIIENEN004-2026-BTI89",
+   "chapter": "62",
+   "hs6": "6212.10",
+   "cn8": "62121090",
+   "language": "en",
+   "description": "A women's bandeau bikini top made of synthetic fabric; It consists of two fabric lined cups separated by a knot.  It is closed with plastic clip at the back. Brassières"
+  },
+  {
+   "reference": "IEBTIIENEN004-2026-BTI74",
+   "chapter": "62",
+   "hs6": "6212.10",
+   "cn8": "62121090",
+   "language": "en",
+   "description": "Seam free wireless sports Bra\nTo be worn when doing sports and exercise.\nWide shoulder strap with a racer back, the padded cups and elasticated bottom provide certain level support\nMade of elastic knitted nylon fabric"
+  },
+  {
+   "reference": "DEBTI7623/25-1",
+   "chapter": "62",
+   "hs6": "6202.40",
+   "cn8": "62024010",
+   "language": "de",
+   "description": "Blouson, sog. Jacke für Frauen, Größe M, Foto siehe Anlage,\n- aus ca. 0,3 mm dicken, buntgewebten Geweben aus laut Antrag 50 % Polyester, 2 % Elasthan \n  (beides synthetische Chemiefasern), 37 % Wolle und 11 % Leinen,\n- durchgehend gefüttert,\n- mit einem Stückgewicht von ca. 498 g,\n- über die Taille reichend (Rückenlänge: ca. 65 cm),\n- mit einem Stehkragen,\n- vorn mit einer durchgehenden Öffnung mit einem bis in den Kragen reichenden Reißverschluss,\n- ohne Hinweise auf den Trägerkreis (unisex),\n- mit langen Ärmeln, die über den unteren Rand des Kleidungsstücks hinausreichen; an den \n  Ärmelenden mit doppelt gearbeiteten, gerippt gewirkten, verengenden Bündchen,\n- mit zwei eingesetzten, offenen Taschen unterhalb der Taille,\n- am unteren Rand teilweise mit einem angesetzten, doppelt gearbeiteten, teilweise gerippt \n  gewirkten verengenden Bund,\n- erfüllt die Merkmale zur Einreihung als Blouson, somit keine Jacke.\n\n\"Blouson, aus Geweben, für Frauen, aus Chemiefasern, mit einem Stückgewicht von weniger \n als 1 kg\""
+  },
+  {
+   "reference": "DEBTI44553/23-1",
+   "chapter": "62",
+   "hs6": "6203.43",
+   "cn8": "62034311",
+   "language": "de",
+   "description": "Lange Hose, sog. PREVENT® Warnschutz-Bundhose, Art. WHS, Größe 52, Foto siehe Anlage,\n- mit einer Produktbeschreibung in einem Polybeutel verpackt,\n- aus ca. 0,6 mm dicken, buntgewebten, strapazierfähigen Geweben aus laut Antrag 80 % Polyester\n  (synthetische Chemiefasern) und 20 % Baumwolle, \n- in der Taille abschließend; mit einem angesetzten Bund mit Gürtelschlaufen,\n- vorn mit einer Öffnung mit Knopfverschluss, verdeckt von einer Patte von links auf rechts (Männer-\n  kleidung),\n- mit verschiedenen ein- und aufgesetzten Taschen,\n- mit knöchellangen Hosenbeinen, die im Bereich des Unterschenkels mit zwei aufgenähten, ca. 5 cm\n  breiten, reflektierenden Streifen versehen sind,\n- an den Beinabschlüssen durch Umschlagen und Festnähen gesäumt,\n- lässt u. a. aufgrund ihres allgemeinen Aussehens und der Beschaffenheit erkennen, dass sie dazu\n  bestimmt ist, ausschließlich oder hauptsächlich zum (körperlichen oder hygienischen) Schutz anderer\n  Kleidungsstücke und/oder Personen bei Ausübung einer Gewerbe-, Berufs- oder Haushaltstätigkeit\n  getragen zu werden.\n\n\"Lange Hose, aus Geweben, für Männer, aus synthetischen Chemiefasern, Arbeits- und Berufskleidung\""
+  },
+  {
+   "reference": "DEBTI43065/25-1",
+   "chapter": "62",
+   "hs6": "6210.10",
+   "cn8": "62101098",
+   "language": "de",
+   "description": "Kittel, in Erwachsenengröße, Foto siehe Anlage,\n- in einem Polybeutel verpackt,\n- aus ca. 0,2 mm dicken Vliesstoffen der Position 5603 aus laut Antrag Polypropylen (synthetische\n  Chemiefasern),\n- über das Knie reichend (Rückenlänge: ca. 116 cm),\n- mit einem runden Halsausschnitt mit einer Randeinfassung,\n- hinten mit einer durchgehenden Öffnung, im Nacken mit Bindebändern zu schließen,\n- mit langen Ärmeln,\n- an allen Rändern durch Umschlagen und Festnähen gesäumt,\n- wird laut Antrag in unterschiedlichen Bereichen und nicht ausschließlich bei chirurgischen \n  Eingriffen verwendet.\n\n\"Kleidung aus Erzeugnissen der Position 5603, kein Einwegkittel, von der durch Patienten bzw. \n Chirurgen bei chirurgischen Eingriffen verwendeten Art\""
+  },
+  {
+   "reference": "DEBTI32632/24-1",
+   "chapter": "62",
+   "hs6": "6212.10",
+   "cn8": "62121090",
+   "language": "de",
+   "description": "Büstenhalter, sog. Bustier seamless, Größe L (44/46), Foto siehe Anlage,\n- in einem bedruckten Pappkarton verpackt,\n- vorn doppelt gearbeitet, aus bis zu ca. 1,2 mm dicken, unterschiedlich strukturierten, einfarbigen,\n  elastischen Gewirken aus laut Antrag 95 % Polyamid und 5 % Elasthan (beides synthetische Chemie-\n  fasern),\n- im Brustbereich durch Änderung der Wirkart mit ausgearbeiteten, die natürliche Form der Brust\n  nachzeichnenden Büstenteilen von konvexer Form,\n- mit eingearbeiteten Polstern,\n- mit ca. 4 cm breiten Schulterträgern,\n- ohne Öffnung und ohne Verschluss,\n- entlang der oberen Ränder mit einer ca. 1,5 cm breiten, angenähten Borte aus durchbrochen\n  gearbeiteten Gewirken (sog. Raschelspitze),\n- mit einem abgepasst gewirkten, doppelt gearbeiteten, ca. 4 cm breiten, elastischen unteren Rand, der\n  eng am Körper anliegt,\n- die Ware ist geeignet, die Einzelbüste zu stützen, zu korrigieren und zu formen.\n\n\"Büstenhalter, aus Gewirken, nicht in Warenzusammenstellung für den Einzelverkauf aufgemacht\""
+  },
+  {
+   "reference": "IEBTIIENEN004-2026-BTI23",
+   "chapter": "63",
+   "hs6": "6307.90",
+   "cn8": "63079098",
+   "language": "en",
+   "description": "Two strips of grosgrain textile material cut to a specified length, then attached by a short strip of elastic, then tied in a bow with a knot so that the loop is a specified diameter, with bow span and tail ends of a specified length.  This is a made up decorative item for packaging.  The completed item is imported in this manner.\nWoven from PET polyester thread."
+  },
+  {
+   "reference": "IEBTIIENEN004-2026-BTI228",
+   "chapter": "63",
+   "hs6": "6307.90",
+   "cn8": "63079098",
+   "language": "en",
+   "description": "A comprehensive eyelid hygiene kit designed to cleanse, soothe, and support eyelids affected by styes.\n\nThe Eye Doctor Stye Hygiene Kit is specially formulated to provide gentle yet effective care for eyelids experiencing styes or irritation. The kit contains pre-moistened wipes and a cleansing solution designed to remove debris, reduce discomfort, and maintain eyelid hygiene. Suitable for sensitive eyes, the products can be used daily to help alleviate inflammation and support faster recovery. Regular use can promote a cleaner, more comfortable eyelid area, minimise irritation, and enhance overall eye health. Convenient and practical, the kit is easy to integrate into a daily hygiene routine for consistent care.\n\nStarter kit including pre-moistened wipes and cleansing solution.\n\nIngredients:\n\nPre-moistened wipes: purified water, glycerin, chamomile extract, aloe vera, mild cleansing agents; Cleansing solution: purified water, mild surfactants, skin-conditioning agents, and soothing botanical extracts.\neye compress -polyester/cotton fabric"
+  },
+  {
+   "reference": "SEBTITV-2026-01096",
+   "chapter": "63",
+   "hs6": "6307.90",
+   "cn8": "63079010",
+   "language": "en",
+   "description": "Varan är enligt uppgift en konfektionerad hundleksak i form av en gris.\nVaran är avsedd att användas som en hundleksak.\nVaran är huvudsakligen tillverkad av stoppat trikåmaterial och utanpå den stoppade kroppen finns en bollformad plastdel med piggar. Grisen är även försedd med en svans (knorr) tillverkad av garn. I grisens huvud finns en squeaker som avger ett pipljud när hunden biter i den. Produkten är 15 cm stor och är förpackad för försäljning i detaljhandeln."
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI7",
+   "chapter": "63",
+   "hs6": "6307.90",
+   "cn8": "63079098",
+   "language": "en",
+   "description": "SET OF 2 BASKETS;  MADE OF 100% PAPER TWISTED INTO PAPER YARN THEN SEWED"
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI5",
+   "chapter": "63",
+   "hs6": "6307.90",
+   "cn8": "63079098",
+   "language": "en",
+   "description": "SET OF 3 PAPER ROPE BASKETS; IT IS MADE OF 100% PAPER TWISTED. MANUFACTURE PROCESS IS FIRST TO BUILD A WOODEN MODULE IN PRODUCT SIZE, THEN WOVEN THE PAPER ROPE ABOUT THE MODULE TO SHAPE A BASKET. THIS PRODUCT IS MADE WITHOUT GLUE AND DOESN'T CONSIST OF METAL WIRE."
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI8",
+   "chapter": "63",
+   "hs6": "6307.90",
+   "cn8": "63079098",
+   "language": "en",
+   "description": "OPEN WEAVE BASKET; MADE OF 100% PAPER TWISTED PAPER ROPE AND IRON FRAME. IT CONSISTS OF METAL FRAME ONTO WHICH THE PAPER ROPE IS WOVEN."
+  },
+  {
+   "reference": "MTBTI2025-018",
+   "chapter": "63",
+   "hs6": "6307.90",
+   "cn8": "63079098",
+   "language": "en",
+   "description": "Woven polyester fabric, 100% waterproof.  Hemmed all round and can be tightened with the fitted rope.\nFor use to cover outdoor furniture."
+  },
+  {
+   "reference": "XIBTI505066180",
+   "chapter": "63",
+   "hs6": "6307.90",
+   "cn8": "63079010",
+   "language": "en",
+   "description": "The product is a seat belt pad to be used in conjunction with the car booster seat for children aged 4 - 11 years old.\nThe seat belt pad is attached to the car seat belt by Velcro \nIt measures 28cm wide by 10cm width and 6cm depth when closed and wrapped around the seat belt\nThe pad is not attached to the car booster seat but must be used in conjunction with the seat and this is clearly illustrated and documented in the instructions"
+  },
+  {
+   "reference": "MTBTI2025-017",
+   "chapter": "63",
+   "hs6": "6307.90",
+   "cn8": "63079098",
+   "language": "en",
+   "description": "Cylindrical woven finish textile article with a zip fastner or velcro at the top.  Commonly called \"sand bag\".  Product is to be filled with sand and acts as a weight for gazebos"
+  },
+  {
+   "reference": "CZBTI47/152108/2024-580000-04/01",
+   "chapter": "63",
+   "hs6": "6307.90",
+   "cn8": "63079098",
+   "language": "en",
+   "description": "Dle deklarovaných údajů se jedná o textilní vycpávaný výrobek - hračku pro kočky.\n\nVnější materiál hračky je z větší části vyroben z tkaniny. Hračka je připevněna na šňůrce upevněné na plastovém prutu, který je dlouhý cca 18 cm; ke šňůrce je rovněž připevněna rolnička.\n\nHračka je dodávána ve třech tvarových modifikacích: pták, ryba, balónek.\n\nBalení: dodáváno na papírové kartě."
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI352",
+   "chapter": "64",
+   "hs6": "6404.19",
+   "cn8": "64041910",
+   "language": "en",
+   "description": "LADIES FAUX FUR MULE STYLE SLIPPER WITH A CLOSED IN TOE. UPPERS OF TEXTILE, OUTER SOLES OF PLASTIC COVERED WITH TEXTILE.\n70% Plastic/Rubber\n30% Textile"
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI356",
+   "chapter": "64",
+   "hs6": "6405.20",
+   "cn8": "64052091",
+   "language": "en",
+   "description": "LADIES FAUX FUR MULE STYLE SLIPPER WITH A CLOSED IN TOE. UPPERS OF TEXTILE, OUTER SOLES OF PLASTIC COVERED WITH TEXTILE.\n48% plastic\n52% textile"
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI354",
+   "chapter": "64",
+   "hs6": "6404.19",
+   "cn8": "64041910",
+   "language": "en",
+   "description": "LADIES FUR MULE STYLE SLIPPER WITH OPEN TOE, UPPERS OF TEXTILE, OUTER SOLES OF PLASTIC COVERED WITH TEXTILE.\nAnalysis determined that the rubber is the material with the greatest surface area on the sole."
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI377",
+   "chapter": "64",
+   "hs6": "6404.19",
+   "cn8": "64041910",
+   "language": "en",
+   "description": "MEN'S MULE STYLE SLIPPER WITH A CLOSED IN TOE; UPPERS OF TEXTILE, OUTER SOLES OF PLASTIC COVERED WITH TEXTILE.\nANALYSIS FOUND OUTERSOLE CONSISTS OF 58% PLASTIC OR RUBBER AND 42% TEXTILE."
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI122",
+   "chapter": "64",
+   "hs6": "6402.99",
+   "cn8": "64029939",
+   "language": "en",
+   "description": "Ladies Sandals- PU Weave Strap Mule Sandal\nThe sandal consists of a silicone rubber sole with a vamp made of straps of polyurethane weave.  The sole of the sandal contain >90% silicone (synthetic rubber)"
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI348",
+   "chapter": "64",
+   "hs6": "6404.19",
+   "cn8": "64041910",
+   "language": "en",
+   "description": "CHILDREN'S MOCCASIN STYLE SLIPPERS WITH UPPERS OF TEXTILE, OUTER SOLES OF PLASTIC COVERED WITH TEXTILE..\nANALYSIS DETERMINED THAT RUBBER IS THE MATERIAL WITH THE GREATEST SURFACE AREA ON THE SOLE."
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI128",
+   "chapter": "64",
+   "hs6": "6404.19",
+   "cn8": "64041990",
+   "language": "en",
+   "description": "Women’s Sandals  – The upper material is textile fully covered with glass beads, the underlying material between the beads is not visible. \nThe outer sole is made of rubber/plastic.\nThe glass beaded sandal is made of 100% TPR for outsole; 100% glass beads with textile lining for uppers. The glass beads fully covered the textile material"
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI355",
+   "chapter": "64",
+   "hs6": "6404.19",
+   "cn8": "64041910",
+   "language": "en",
+   "description": "LADIES FAUX SUEDE MULE STYLE SLIPPER WITH A CLOSED IN TOE. UPPERS OF TEXTILE, OUTER SOLES OF PLASTIC\nCOVERED WITH TEXTILE.\nAnalysis determined that the rubber is the material with the greatest surface area on the sole."
+  },
+  {
+   "reference": "DEBTI16524/26-1",
+   "chapter": "64",
+   "hs6": "6402.99",
+   "cn8": "64029998",
+   "language": "de",
+   "description": "Slipper, Größe 37, Foto siehe Anlage,\n- mit Laufsohlen aus laut Antrag Kunststoff,\n- mit Oberteil (geschlossenes Blatt) aus Kunststoff (Spinnstoff mit einer mit bloßem Auge\n  wahrnehmbaren Außenschicht aus Kunststoff, den größten Teil der Außenfläche bildend) und \n  Spinnstoffen,\n- über dem Spann mit Strasssteinchen verziert,\n- nicht den Knöchel bedeckend,\n- ohne Metallschutz in der Vorderkappe,\n- mit einer Länge der Innensohle von ca. 24﻿,﻿7 cm,\n- als Frauenschuhe erkennbar.\n\n\"Schuhe, andere als in der Position 6401 genannte, mit Laufsohlen und Oberteil aus Kunststoff,\n andere als in den Unterpositionen (KN) 6402 1210 bis 6402 9950 genannte, mit einer Länge der\n Innensohle von mehr als 24 cm, für Frauen\""
+  },
+  {
+   "reference": "DEBTI37155/24-1",
+   "chapter": "64",
+   "hs6": "6402.91",
+   "cn8": "64029190",
+   "language": "de",
+   "description": "Pumps mit Absatz, sog. Schuhe DM-W-JY_W20-125_A03B/ Spangen Pumps/ Graceland, Größe 37,\nFoto siehe Anlage,\n- mit Laufsohlen aus laut Antrag Kunststoff,\n- mit Oberteil aus Kunststoff (Spinnstoff mit einer mit bloßem Auge wahrnehmbaren Außenschicht \n  aus Kunststoff),\n- im Bereich der Ferse hochgearbeitet, mit einem daran befestigten bis zur Mitte der Sohle\n  reichenden wellenartig über den Spann verlaufenden Riemen aus Kunststoff mit Schnallen-\n  verschluss,\n- den Knöchel bedeckend, \n- ohne Metallschutz in der Vorderkappe,\n- mit einem ca. 8 cm hohen Pfennigabsatz.\n\n\"Schuhe, andere als in der Position 6401 genannte, mit Laufsohlen und Oberteil aus Kunststoff, \n andere als in den Unterpositionen (KN) 6402 1210 bis 6402 2000 genannte, den Knöchel\n bedeckend, andere als in der Unterposition (KN) 6402 9110 genannte\""
+  },
+  {
+   "reference": "XIBTI505060394",
+   "chapter": "73",
+   "hs6": "7326.90",
+   "cn8": "73269098",
+   "language": "en",
+   "description": "A metal box with a hinged lid measuring 625(D) x 1210(W) x 645mm(H). Weight is approximately 60KG, colour is black and grey with the company logo on the front and sides\nIt is designed for the purpose of securely storing tools and equipment.\nConstruction is of steel – 2-5mm made by rolling, bending, cutting and welding.\nIt features 2 5-lever locks to secure the lid closed. The lid has gas struts to hold it open. On the bottom of the box are mounting points to enable the box to be bolted to the floor of a vehicle."
+  },
+  {
+   "reference": "IEBTIIENEN004-2025-BTI77",
+   "chapter": "73",
+   "hs6": "7318.15",
+   "cn8": "73181552",
+   "language": "en",
+   "description": "THREADED SHOULDER BOLT TURNED FROM A SOLID BAR. \nPhoto enclosed\n\nA custom made threaded bolt made from 1.4571/316Ti grade Stainless Steel. The part is a component for Cable Trollies used for cable management of festoon systems which in turn are used for a wide range of industrial applications."
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI92",
+   "chapter": "73",
+   "hs6": "7320.90",
+   "cn8": "73209090",
+   "language": "en",
+   "description": "Springs made of thin metal\n\nAttached to conductor rails to allow for some movement/flexibility when joining sections\nSTEEL"
+  },
+  {
+   "reference": "IEBTIIENEN004-2026-BTI279",
+   "chapter": "73",
+   "hs6": "7318.15",
+   "cn8": "73181542",
+   "language": "en",
+   "description": "Mild Steel Threaded Bar Zinc Plated CR3 (for increased corrosion resistance).\nIt is used for general metric bolting.  \nIt is used to fasten goods\nSizes are M6 x 1Metre/ M8 x 1Metre/ M10 x 1Metre/ M10 x 2Metre/ M12 x 1Metre/ M12 x 2Metre/ M14 x 1Metre/ M16 x 1Metre/ M16 x 2Metre/ M20 x 1Metre/ M20 x 2Metre/ M24 x 1Metre\nMild Steel Threaded Bar Zinc Plated CR3 (for increased corrosion resistance) DIN 975/ 4.6 GRADE/ 60 DEGREE. Bundle Packaging\nit is without heads.  Raw material SAE1008, Zinc plated.  Tensile strength is less than 800 MPa."
+  },
+  {
+   "reference": "IEBTIIENEN004-2025-BTI69",
+   "chapter": "73",
+   "hs6": "7318.14",
+   "cn8": "73181499",
+   "language": "en",
+   "description": "A mild steel, case hardened, hex Flange head screw with self cutting HI-LO thread for masonry, finished with ruspert coating.\nUsed for fixing components to mass concrete, block & brick. The bolts can pass through a pre-drilled fixture into the pre-drilled hole in the concrete, block or brick. The load is secured by the screw cutting a thread into the wall of the hole.\nIt will be imported in the diameters 8mm, 10mm, 12mm & 16mm in various lengths.\nThis anchor is manufactured from case hardened mild steel and finished with a ruspert coating."
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI96",
+   "chapter": "73",
+   "hs6": "7326.90",
+   "cn8": "73269098",
+   "language": "en",
+   "description": "Alloy steel shank used in the production or Rotary Burs. The steel shank is welded to a carbide bur blank using a trifoil. The function of the complete article is metal removal.\ncomponent of the semi-finished item\nSteel\nIt cannot be considered a product of heading 8207 as it is not mounted, for example, onto a tool, and therefore classification under heading 7326 is appropriate"
+  },
+  {
+   "reference": "IEBTIIENEN004-2025-BTI378",
+   "chapter": "73",
+   "hs6": "7317.00",
+   "cn8": "73170020",
+   "language": "en",
+   "description": "Brad nails are thin and small nails made from 16 gauge wire, and the finish is galvanised. Straight brad nails go into straight nailer gun, and angled brad nails go into angled nailer gun.\nBrad nails are primarily used for indoor applications in woodworking, particularly for attaching trim, molding, and decorative pieces where a clean, finished look is desired.\nSizes are 32mm/ 38mm/ 45mm/ 51mm/ 64mm for the angled brad nails, and 25mm/ 32mm /38mm/ 45mm/ 50mm/ 63mm for the straight brad nails.\nThey are made from 16 gauge wire, and the finish is galvanised"
+  },
+  {
+   "reference": "IEBTIIENEN004-2025-BTI331",
+   "chapter": "73",
+   "hs6": "7308.90",
+   "cn8": "73089098",
+   "language": "en",
+   "description": "A high Tensile Steel Y Shaped Fencing Post\nThe product is used for agricultural fencing. It is driven 2 ft into the ground and wire fence netting is then attached to the Y shaped fencing post\n1.8m long hot dipped galvanised steel Y shaped post 11 spring loaded clips at various hights \nHigh Tensile galvanised steel 2.5m wall thickness\nManufactured from high tensile steel coil, that is then rolled and welded, cut and laser welded, punched with a steel punch machine, hot-dipped galvanised. Aluminium Clips are assembled with a stainless steel spring and then riveted on. \n\nMost defining feature is the Y shape and the spring loaded clip. (A patented spring loaded clip is used)"
+  },
+  {
+   "reference": "IEBTIIENEN004-2025-BTI173",
+   "chapter": "73",
+   "hs6": "7326.90",
+   "cn8": "73269098",
+   "language": "en",
+   "description": "Product is a non-magnetic Hexagonal Metal sticker (adhesive on one side) for sticking on a work surface.  Magnetic phone accessories can then be attached to the metal part. \n\nProduct composition: \nSUS420 0 Stainless Steel 420 grade 30.3g (92.4%)\n3M sticker 2.5g (7.6%)"
+  },
+  {
+   "reference": "IEBTIIENEN004-2025-BTI301",
+   "chapter": "73",
+   "hs6": "7325.99",
+   "cn8": "73259990",
+   "language": "en",
+   "description": "1. Stainless steel X5000 Housing \n2. Circular Housing , with 4 Cable entries , \n     Up to 2 Cable entries can be used to hold accept gas \n     Detector sensors(Not subject to BTI) , the housing has slots to accept the \n     X5000 Electronic control board(Not subject to BTI)\n3. Its a metal housing  which has electronic components, \n    sensors and Lid added to manufacture a  complete Gas \n    detector (Electronic components / sensors not subject to BTI)\n4. It is Made from 316 Stainless steel\n5.  Its a 316 Stainless steel cast which is then machined to \n     exact specifications \n6. it has internal Thread on inside top to accept tread from separate Lid , it has MSA Engraved on it , it has the cable entries numbered and 4 hole slots inside to accept the Electronic components\nHousing\nCast stainless steel"
+  },
+  {
+   "reference": "IEBTIIENEN004-2026-BTI19",
+   "chapter": "84",
+   "hs6": "8415.10",
+   "cn8": "84151010",
+   "language": "en",
+   "description": "Railway HVAC Systems. \n\nThese are self contained systems that regulate the interior climate of rolling stock and are essential for maintaining passenger comfort and equipment performance across varying environmental conditions.\nKey components of the systems include compressors, air filters, evaporators, and control units. They include a refrigeration unit and are pre-charged with HFCs. There is no heat pump present. The frame is typically built from aluminium or stainless steel."
+  },
+  {
+   "reference": "IEBTIIENEN004-2025-BTI249",
+   "chapter": "84",
+   "hs6": "8421.39",
+   "cn8": "84213925",
+   "language": "en",
+   "description": "A static, single use assembly.  \n\nIt is used in the pharmaceutical industry and contains plastic tubing, caps, retainers, stoppers, couplers, bags and filters in one package. The filters are made from polypropylene and are designed for the filtration of air (no liquid is transferred through these filters).\nLiquids/fluids move through the assembly which displace the air, the displaced air then passes through the filters. The filters are used to maintain a sterile environment within the assemblies by filtering particles and micro-organisms from the liquid/fluid.\nThe micron measurement of the filters is typically 0.2µm. All parts are imported together with the filter being the essential character of the whole assembly."
+  },
+  {
+   "reference": "IEBTIIENEN004-2025-BTI293",
+   "chapter": "84",
+   "hs6": "8424.90",
+   "cn8": "84249080",
+   "language": "en",
+   "description": "Hypotube Tip.  This is a stainless-steel component used in a spray nozzle assembly.  The nozzle cannot function without this Tip.  The Hypotube Tip is encased through the centre of the nozzle housing, it is inserted and then tighten with a nut.  Solution is sprayed through the hypotube.  \n\nSpray nozzle assemblies are used to spray both the primer and drug solution layers onto stents."
+  },
+  {
+   "reference": "IEBTIIENEN004-2026-BTI68",
+   "chapter": "84",
+   "hs6": "8479.89",
+   "cn8": "84798997",
+   "language": "en",
+   "description": "A buffer preparation skid assembly.  This is a stainless-steel vessel with a heating coil embedded in the jacket used as a buffer preparation skid which incorporates several components such as agitator, pump, heat exchanger, valves, control unit, each providing essential functionality to the overall skid.  These components all work together to prepare, store and deploy buffer solution.\n\nIt will be used in the pharmaceutical sector."
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI278",
+   "chapter": "84",
+   "hs6": "8421.39",
+   "cn8": "84213925",
+   "language": "en",
+   "description": "SINGLE USE BOTTLE END ASSEMBLY.\n\nIT IS DESIGNED FOR THE FILTRATION OF AIR; NO LIQUID IS TRANSFERRED THROUGH THE FILTER. AS LIQUID FILLS AN ATTACHED BOTTLE, DISPLACED AIR WILL PASS THROUGH THE FILTER AS THE BOTTLE FILLS. THE FILTER IS A STERILISING GRADE AIR FILTER AND IS USED TO MAINTAIN A STERILE ENVIRONMENT WITHIN THE ASSEMBLY. THE ASSEMBLY IS SUPPLIED GAMMA IRRADIATED.\n\nTHE PRODUCT CONSISTS OF AN EIGHT PORT MANIFOLD, EIGHT 60ML PETG BOTTLES, ONE 500 ML PETG BOTTLE, NINE FILTERS EACH WITH A MEMBRANE PORE SIZE OF 0.20 µM (MICRON), PLASTIC TUBING, PINCH CLAMPS AND A CABLE TIE. THE FILTER GIVES THE ESSENTIAL CHARACTER TO THE ASSEMBLY. ALL PARTS ARE IMPORTED TOGETHER."
+  },
+  {
+   "reference": "IEBTIIENEN004-2026-BTI124",
+   "chapter": "84",
+   "hs6": "8431.49",
+   "cn8": "84314980",
+   "language": "en",
+   "description": "This is an assembly for use in a Straddle Carrier Product. It consists of a square hollow section of mild steel. The product has been cut and welded on import. It does not have any mechanical parts. It forms a part of the main support frame of a straddle carrier. It is essential for the operation of a straddle carrier. It is made from hot rolled mild steel."
+  },
+  {
+   "reference": "IEBTIIENEN004-2026-BTI105",
+   "chapter": "84",
+   "hs6": "8474.90",
+   "cn8": "84749090",
+   "language": "en",
+   "description": "Machine Parts. \n\nThese are Polyethylene Plastic parts that are used as wear strips. They prevent steel on steel wear in machines that wash and screen sand and gravel. \n\nThey are cut from sheets of plastic and range in thickness from 3mm, 5mm, 6mm, 7mm, 8mm, 10mm, 12mm, 15mm, 20mm, 25mm and 30m."
+  },
+  {
+   "reference": "IEBTIIENEN004-2026-BTI255",
+   "chapter": "84",
+   "hs6": "8421.39",
+   "cn8": "84213985",
+   "language": "en",
+   "description": "SINGLE USE PLASTIC ASSEMBLY FOR BIOPROCESSING WITH FILTER FOR GASES. THE ASSEMBLY IS COMPOSED OF REINFORCED TUBING WITH FITINGS AND 0.2 MICRONS STERILE FILTER."
+  },
+  {
+   "reference": "IEBTIIENEN004-2025-BTI26",
+   "chapter": "84",
+   "hs6": "8471.60",
+   "cn8": "84716070",
+   "language": "en",
+   "description": "Wireless Pencil.\n\nThe device is a touch pen which is designed for use with a certain type of tablet. It contains a plastic housing, rechargeable battery and replaceable plastic tips. It connects to the tablet via a Bluetooth connection and also charges inductively through the tablet.\nIt includes a touch surface that supports double-tapping, it has palm rejection and pressure & tilt sensitivity. It measures 166 mm (6.53 inches) in length, 0.35 inch (8.9 mm) in diameter and it weighs 19.15 grams (0.68 ounces)."
+  },
+  {
+   "reference": "MTBTI2024-002",
+   "chapter": "84",
+   "hs6": "8424.89",
+   "cn8": "84248970",
+   "language": "en",
+   "description": "A housing container made of plastic or steel which incorporates a simple suction pump and a dispenser opening.  The pump is activated by manual pushing at the bottom of housing. Once the button is presses, the liquid soap is dispersed through the opening at the bottom.  Designed to be fixed to a wall.  Its is commonly used in bathrooms and kitchens"
+  },
+  {
+   "reference": "IEBTIIENEN004-2026-BTI60",
+   "chapter": "85",
+   "hs6": "8538.90",
+   "cn8": "85389099",
+   "language": "en",
+   "description": "RESIDUAL CURRENT DETECTION MODULE CONSISTING OF A SENSOR PRINTED CIRCUIT BOARD ASSEMBLY (PCBA) AND A FOUR-POLE CURRENT TRANSFORMER (CT). BOTH COMPONENTS ARE DESIGNED FOR INTEGRATION WITHIN THE HOUSING OF A RESIDUAL CURRENT CIRCUIT BREAKER. THE PCBA CONNECTS DIRECTLY TO THE CT VIA DEDICATED TERMINALS AND PROVIDES AN ELECTRICAL OUTPUT SIGNAL FOR THE TRIP OR ALARM CIRCUIT. THE MODULE IS IDENTIFIABLE AS BEING PRINCIPALLY FOR USE WITH EQUIPMENT OF HEADING 8536."
+  },
+  {
+   "reference": "IEBTIIENEN004-2025-BTI336",
+   "chapter": "85",
+   "hs6": "8538.90",
+   "cn8": "85389099",
+   "language": "en",
+   "description": "IT IS MADE OF PLASTIC AND IS USED TO HOLD THE SENSOR ON THE CEILING SO THAT ONLY THE BRACKET AND NOT THE SENSOR IS VISIBLE. THE PART IS RECOGNISABLE FOR USE WITH A SPECIFIC RANGE OF SENSORS."
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI388",
+   "chapter": "85",
+   "hs6": "8504.40",
+   "cn8": "85044083",
+   "language": "en",
+   "description": "USB Charger. \n\nIt is a 30W fast charger which includes 2 charging ports – 1x Type C & 1x Type A. It has an input voltage range of AC 100V-240V and an output voltage range of DC 5V-20V. It uses Gallium Nitride for efficient, low heat, fast charging. \n\nIt measures 41.40 x 31.40 x 37.90 mm."
+  },
+  {
+   "reference": "IEBTIIENEN004-2023-BTI579",
+   "chapter": "85",
+   "hs6": "8528.52",
+   "cn8": "85285210",
+   "language": "en",
+   "description": "14” portable LCD colour monitor.  With a screen resolution of 1920 x 1080 pixels, with dimensions of 321.4mm (w) x 210mm (h) x 15.2mm (d), contrast ratio of 800:1 (typical), brightness of 400cd/m2 (typical), 16.7M colours, IPS panel technology, 16:9 aspect ratio, pixel pitch of 0.161mm, no audio out jack, no speakers, no camera.  Refresh rate 60Hz.\n\nINPUT/OUTPUT connections: USB Type C x 2.  Powered through USB Type C cable connected to PC/mobile device or external AC adapter.  Mounted on a flat base which allows forward or backward adjustment only with a tilt angle of 0° to 78°.  The monitor does not have TV signal reception capability, it has no on-board tuner."
+  },
+  {
+   "reference": "XIBTI505059567",
+   "chapter": "85",
+   "hs6": "8504.40",
+   "cn8": "85044060",
+   "language": "en",
+   "description": "Body Worn Camera Docking Station\n\nBlack docking station with magnetic self-locating charge base with ports for multiple body worn cameras. \n\nComes in cardboard box, usually shipped 5 to a box, each containing a power cable.\n\nPOWER INPUT 100V~240V/250W\nPower Max 5V/25A\nCharge Each 5V/2.0A\n\nCompatible USB 2.0/3.0 480Mbps/s - simultaneous uploads from 10 cameras.\n\nNetworked: Max transfer speed 1 Gigabit via RJ45 network connection.\nUsed to charge multiple cameras and offload recorded footage automatically without the need for cables. Either 6 or 10 depending on the camera variant.\nMetal outer case with electronic circuitry contained inside and ports to the rear."
+  },
+  {
+   "reference": "XIBTI505068566",
+   "chapter": "85",
+   "hs6": "8504.40",
+   "cn8": "85044083",
+   "language": "en",
+   "description": "This product is a transformer\nInitiates the start up of a pump, regulates flow rate and helps shut down the pump.\n\nThe overall product that the transformer is used in is called Instant Match. Instant Match regulates the removal of water from a shower so that it matches the flow from the shower head. \n\nIt is mainly used for disabled people in apartments where there is not enough gravity to draw water away efficiently.\nThe product has two main Printed Circuit Board Assemblies encased in a plastic housing."
+  },
+  {
+   "reference": "IEBTIIENEN004-2023-BTI625",
+   "chapter": "85",
+   "hs6": "8528.52",
+   "cn8": "85285210",
+   "language": "en",
+   "description": "27\" LCD COLOUR MONITOR, WITH A SCREEN RESOLUTION OF 3840 X 2160 PIXELS, WITH DIMENSIONS OF: 609.9MM (W) X 513.8MM (H) X 260.5MM (D). THE MONITOR HAS THE FOLLOWING INPUT/OUTPUT CONNECTIONS: 2 X HDMI, 1 X DISPLAY PORT, 1 X USB C, 2 X USB A, AUDIO OUT JACK AND SPEAKERS. THE MONITOR HAS A CONTRAST RATIO OF 1000:1 (TYPICAL), BRIGHTNESS OF 450CD/M2 (TYPICAL), 16.7M COLOURS, IPS PANEL TECHNOLOGY, PIXEL PITCH 0.1554MM AND A 16:9 ASPECT RATIO. NO WEB CAMERA, EXTERNAL POWER SUPPLY. IT IS MOUNTED ON AN ADJUSTABLE STAND AND DOES NOT HAVE A TV TUNER."
+  },
+  {
+   "reference": "IEBTIIENEN004-2023-BTI561",
+   "chapter": "85",
+   "hs6": "8537.10",
+   "cn8": "85371098",
+   "language": "en",
+   "description": "FUSEBOX WHICH CONTAINS AN RCD (RESIDUAL CURRENT DEVICE) AND 2 MINI CIRCUIT BREAKERS. THE FUSES OPERATE WITH A MAXIMUM LOAD OF 63A. THE DEVICE IS FOR A VOLTAGE NOT EXCEEDING 1,000. ELECTRICAL APPARATUS FOR SWITCHING OR PROTECTING ELECTRICAL CIRCUITS, OR FOR MAKING CONNECTIONS TO OR IN ELECTRICAL CIRCUITS."
+  },
+  {
+   "reference": "XIBTI505065379",
+   "chapter": "85",
+   "hs6": "8505.19",
+   "cn8": "85051910",
+   "language": "en",
+   "description": "Durable, plastic horseshoe-shaped magnets  in six different colours.\nIntended for Children's' play and educational use\nProduct made from plastic and ferrite magnet.\nRetail cardboard packaging."
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI118",
+   "chapter": "85",
+   "hs6": "8528.52",
+   "cn8": "85285210",
+   "language": "en",
+   "description": "A 27\" LCD COLOUR MONITOR, WITH A SCREEN RESOLUTION OF 2560 X 1440 PIXELS AND A CONTRAST RATIO OF 1500:1 (TYPICAL).  DIMENSIONS OF: 613.18MM (W) X 571.61MM (H) X 196.23MM (D), BRIGHTNESS OF 350CD/M2 (TYPICAL), 16.7M COLOURS, IPS PANEL TECHNOLOGY.  PIXEL PITCH 0.233MM.  RESPONSE TIME 6MS (NORMAL).  REFRESH RATE 100HZ.\n\nINPUT/OUTPUT CONNECTIONS: 2 X HDMI (V2.1), 1 X DP (V1.4, HBR2), ASPECT RATIO 16:9, AUDIO OUT JACK. NO WEBCAM OR MIC. WITH SPEAKERS (2X3W). MOUNTED ON AN ADJUSTABLE STAND. INTERNAL POWER SUPPLY. \n\nTHE MONITOR IS USED PRINCIPALLY IN A DATA PROCESSING SYSTEM. THE MONITOR DOES NOT HAVE ANY TV SIGNAL RECEPTION CAPABILITY, IT HAS NO ONBOARD TUNER."
+  },
+  {
+   "reference": "MTBTI2025-011",
+   "chapter": "94",
+   "hs6": "9405.42",
+   "cn8": "94054231",
+   "language": "en",
+   "description": "An emergency light fitting with LEDs, having an internal power source in the form of a rechargeable battery.\nDesigned to be fitted on wall or ceiling when in use.\nThe article has a plastic housing with a transparent plastic cover.  It is presented in a packed box."
+  },
+  {
+   "reference": "XIBTI505070292",
+   "chapter": "94",
+   "hs6": "9403.20",
+   "cn8": "94032080",
+   "language": "en",
+   "description": "This is a pet camping bed with a canopy for protection from the sun.\nA camping cot or bed for pets is a specially designed sleeping option that keeps your pet comfortable and safe during outdoor trips.\nIt is mainly made of steel with plastic connectors and has a fabric cover."
+  },
+  {
+   "reference": "SEBTITV-2024-01674",
+   "chapter": "94",
+   "hs6": "9401.99",
+   "cn8": "94019980",
+   "language": "en",
+   "description": "Möbelklädsel för armstöd till en soffa.\nKlädseln är enligt uppgift avsedd att fästas permanent till en specifik soffa med hjälp av kardborrband. Klädseln är avpassad för armstöd.\nKlädseln är enligt uppgift tillverkad av väv (dobbyväv) av bomull, polyester och viskos/rayon.\nKlädseln är igenkännlig som en del till en sittmöbel eftersom den är avsedd att fästas permanent till ett specifikt armstöd och är nödvändig för att soffan ska kunna användas på ett funktionellt sätt. Varan är förpackad för försäljning i detaljhandeln."
+  },
+  {
+   "reference": "XIBTI505070488",
+   "chapter": "94",
+   "hs6": "9403.20",
+   "cn8": "94032080",
+   "language": "en",
+   "description": "This is a foldable raised camping pet bed\nA camping cot or bed for pets is a specially designed sleeping option that can keep your pet comfortable and safe during outdoor trips.\nMade from steel tubing and rivets with some plastic parts.  \nThe bed has a fabric cover"
+  },
+  {
+   "reference": "XIBTI505070096",
+   "chapter": "94",
+   "hs6": "9403.20",
+   "cn8": "94032080",
+   "language": "en",
+   "description": "This is an Elevated Cot dog bed with sides.\nA cot or bed for dogs is a specially designed sleeping option that keeps your pet comfortable and safe during outdoor trips.\nThe structure is mainly steel tubing with a fabric cover."
+  },
+  {
+   "reference": "SEBTITV-2024-01665",
+   "chapter": "94",
+   "hs6": "9401.99",
+   "cn8": "94019980",
+   "language": "en",
+   "description": "Möbelklädsel för armstöd till en soffa.\nKlädseln är enligt uppgift avsedd att fästas permanent till en specifik soffa med hjälp av kardborrband. Klädseln är avpassad för armstöd.\nKlädseln är enligt uppgift tillverkad av väv (dobbyväv) av bomull, polyester och viskos/rayon.\nKlädseln är igenkännlig som en del till en sittmöbel eftersom den är avsedd att fästas permanent till ett specifikt armstöd och är nödvändig för att soffan ska kunna användas på ett funktionellt sätt. Varan är förpackad för försäljning i detaljhandeln."
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI333",
+   "chapter": "94",
+   "hs6": "9403.60",
+   "cn8": "94036090",
+   "language": "en",
+   "description": "Childrens storage table.  A wooden unit with 6 storage compartments.    Table top has two sides.  One side of the tabletop is a studded building surface compatible with most major brick brands, the other side of the table top is a flat surface for general play.  Dimensions: 56L x 55W x 40H cm.  Assembly required.  Comes with Instructions Guide."
+  },
+  {
+   "reference": "SEBTITV-2024-01658",
+   "chapter": "94",
+   "hs6": "9401.99",
+   "cn8": "94019980",
+   "language": "en",
+   "description": "Möbelklädsel för armstöd till en soffa.\nKlädseln är enligt uppgift avsedd att fästas permanent till en specifik soffa med hjälp av kardborrband. Klädseln är avpassad för armstöd.\nKlädseln är enligt uppgift tillverkad av väv (dobbyväv) av bomull, polyester och viskos/rayon.\nKlädseln är igenkännlig som en del till en sittmöbel eftersom den är avsedd att fästas permanent till ett specifikt armstöd och är nödvändig för att soffan ska kunna användas på ett funktionellt sätt. Varan är förpackad för försäljning i detaljhandeln."
+  },
+  {
+   "reference": "SEBTITV-2026-09785",
+   "chapter": "94",
+   "hs6": "9405.42",
+   "cn8": "94054239",
+   "language": "en",
+   "description": "Elektrisk belysningsartikel enligt uppgift bestående av en vit stålram formad som en stjärna, försedd med LED-ljusslinga med en diameter på 27 cm.\nProdukten är avsedd för inomhusbruk, är batteridriven och är försedd med sladd, batteribox samt kabelhängare i plast.\nProdukten är förpackad i detaljhandelsförpackning."
+  },
+  {
+   "reference": "SEBTITV-2024-01615",
+   "chapter": "94",
+   "hs6": "9401.99",
+   "cn8": "94019980",
+   "language": "en",
+   "description": "Möbelklädsel för armstöd till en soffa.\nKlädseln är enligt uppgift avsedd att fästas permanent till en specifik soffa med hjälp av kardborrband. Klädseln är avpassad för armstöd.\nKlädseln är enligt uppgift tillverkad av väv (dobbyväv) av bomull, polyester och viskos/rayon.\nKlädseln är igenkännlig som en del till en sittmöbel eftersom den är avsedd att fästas permanent till ett specifikt armstöd och är nödvändig för att soffan ska kunna användas på ett funktionellt sätt. Varan är förpackad för försäljning i detaljhandeln."
+  },
+  {
+   "reference": "SEBTITV-2025-27476",
+   "chapter": "95",
+   "hs6": "9505.10",
+   "cn8": "95051090",
+   "language": "en",
+   "description": "Prydnadsartiklar för julgran i form av kulor med djurmotiv föreställande räv, kanin och hjort.\nArtiklarna är utformade för att hängas i en julgran.\nJulkulorna är enligt uppgift tillverkade av plast (polystyren (PS)) var och en försedda med en ring av oädel metall samt en upphängningsögla av polyester (medföljer). Artiklarna har olika färger och mått samt utstickande öron/horn. \nKanin: 98 x 115 mm (H x B).\nRäv: 98 x 80 mm (H x B).\nHjort: 115 x 105 mm (H x B).\nArtiklarna är förpackade tillsammans för försäljning i detaljhandeln."
+  },
+  {
+   "reference": "IEBTIIENEN004-2025-BTI38",
+   "chapter": "95",
+   "hs6": "9503.00",
+   "cn8": "95030041",
+   "language": "en",
+   "description": "45CM SOFT TEXTILE COVERED INTERACTIVE ANIMATRONIC PUPPET.  THE PRODUCT HAS A PLASTIC  ANIMATRONIC HEAD ALLOWING BLINKING EYES AND MOVING MOUTH.  IT HAS INTERACTIVE SENSORS ON THE HEAD, NOSE, AND MOUTH. THE HEAD WHICH IS NOT STUFFED, IS A HARD PLASTIC SHELL WITH A LARGE OPENING THROUGH WHICH ONE CAN INSERT YOUR HAND IN ORDER TO USE THE PRODUCT LIKE A HAND PUPPET. THE PRODUCT HAS STUFFING IN THE ARMS, BODY AND LEGS."
+  },
+  {
+   "reference": "IEBTIIENEN004-2025-BTI67",
+   "chapter": "95",
+   "hs6": "9503.00",
+   "cn8": "95030070",
+   "language": "en",
+   "description": "Play Kitchen. \n\nIt is a wooden play kitchen which includes 6 wooden utensils, these are a frying pan, saucepan, lid, spatula, spoon and a knife.\n\nIn addition, it also features an oven, oven hood & 2 hobs with lights and sounds, fridge with play water dispenser and a microwave. The oven knobs feature sounds when you turn them.\nIt measures L:92 x D:33.5 x H:99 cm with the worktop height being 49.5cm. It requires 4x AA batteries for the sound & light functions (not included)."
+  },
+  {
+   "reference": "IEBTIIENEN004-2026-BTI99",
+   "chapter": "95",
+   "hs6": "9503.00",
+   "cn8": "95030041",
+   "language": "en",
+   "description": "A PLUSH BABY DINOSAUR TOY AND COMFORT BLANKET.  THE COMFORTER IS COMPOSED OF 100% POLYESTER KNITTED FABRIC AND MEASURES 30 X 30CM. THE TOY IS STUFFED."
+  },
+  {
+   "reference": "IEBTIIENEN004-2026-BTI22",
+   "chapter": "95",
+   "hs6": "9504.90",
+   "cn8": "95049080",
+   "language": "en",
+   "description": "Games Table. \n\nIt contains 12 games in one table. These include billiards, table football, air hockey, table tennis, ring toss, horseshoes, bowling, shuffleboard, chess, checkers, backgammon and cards.\nIt includes all the accessories you need to play all 12 games and is easy to swap surfaces for quick changeovers. It measures 124L x 59W x 90H cm."
+  },
+  {
+   "reference": "SEBTITV-2026-09764",
+   "chapter": "95",
+   "hs6": "9505.10",
+   "cn8": "95051090",
+   "language": "en",
+   "description": "Julprydnad enligt uppgift i form av en julgran. Julgranen består av vikt grönt papper i bikakestruktur. Inuti julgranen finns en batterihållare av plast. På toppen av hållaren är en rund röd plastkula fäst. Kulan har integrerad LED-belysning som aktiveras när den trycks ned.\nJulprydnaden är avsedd för inomhusbruk.\nJulprydnaden är till största delen tillverkad av papper och har en integrerad LED-belysning som drivs av batterier. Artikeln har måtten 95 x 130 mm (B x H).\nProduktens utformning präglas av dess dekorativa funktion, som julartikel och den integrerade belysningen förhöjer endast den dekorativa effekten. Artikeln är förpackad i detaljhandelsförpackning."
+  },
+  {
+   "reference": "IEBTIIENEN004-2026-BTI118",
+   "chapter": "95",
+   "hs6": "9503.00",
+   "cn8": "95030099",
+   "language": "en",
+   "description": "A Pop-Up Play Tunnel designed for children.  Made from polyester fabric and iron spring wire frame.  For indoor and outdoor use.  Dimensions: 46L x 180H cm."
+  },
+  {
+   "reference": "IEBTIIENEN004-2025-BTI393",
+   "chapter": "95",
+   "hs6": "9503.00",
+   "cn8": "95030049",
+   "language": "en",
+   "description": "An interactive children’s toy. \n\nIt has the appearance of a chicken and includes lights, sounds and music. A ball rolls down the spiral slide and is popped out the mouth of the chicken. The head of the chicken can be turned so that the ball is directed back towards the slide or out into the room, encouraging the child to retrieve it. This aids in the development of motor skills for young children via active play.\nDimensions are L41cm x H36.8cm and it is made from plastic."
+  },
+  {
+   "reference": "IEBTIIENEN004-2025-BTI460",
+   "chapter": "95",
+   "hs6": "9503.00",
+   "cn8": "95030095",
+   "language": "en",
+   "description": "INFLATABLE SWIMMING RING, MADE FROM 100% PVC. IT IS INTENDED FOR USE BY CHILDREN TO PLAY IN WATER ENVIRONMENTS SUCH AS POOLS AND BEACHES."
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI391",
+   "chapter": "95",
+   "hs6": "9503.00",
+   "cn8": "95030010",
+   "language": "en",
+   "description": "The 6-in-1 Trike is a young children's tricycle with a detachable parent steering system, adjustable telescopic handle and detachable hood. \n\nThe Trike has 6 different modes to grow with your child from 10 to 36 months. \n\nMode 1-2: In parent-controlled mode, the handle can be adjusted to suit your height as you steer. The seat turns 180˚ at the touch of a button, allowing both rearward and forward-facing travel. The seat has 2 reclining positions and a removable early stage footrest.\n\nMode 3: Turn the seat to forward-facing mode at the press of a button. Choose the removable infant or child footrest to suit your child.\n\nMode 4-5: Switch from stroller to trike mode when kids are ready to pedal themselves. Simply remove the footrests and safety guard as required. The adjustable telescopic parent handle will help you to guide your child as they pedal.\n\nMode 6: Remove the back support and parent handle for full trike mode."
+  },
+  {
+   "reference": "IEBTIIENEN004-2026-BTI72",
+   "chapter": "96",
+   "hs6": "9619.00",
+   "cn8": "96190050",
+   "language": "en",
+   "description": "Period Pants. They are made of knitted nylon fabric with an additional non-removeable three layers in the crotch area. \n\nThe first layer is a top gusset that is made of 100% polyester with wicking properties and anti-microbial finish applied, the second is an absorption layer that is made of 87% polyester & 13% nylon towelling fabric and the final is the waterproof layer that is 100% waterproof membrane on the underside of towelling.\nThey are designed to be worn by women during menstruation and are intended for multiple uses."
+  },
+  {
+   "reference": "IEBTIIENEN004-2026-BTI71",
+   "chapter": "96",
+   "hs6": "9619.00",
+   "cn8": "96190050",
+   "language": "en",
+   "description": "Period Pants. They are made of knitted cotton fabric with an additional non-removeable three layers in the crotch area. \n\nThe first layer is a top gusset that is made of 100% polyester with wicking properties and anti-microbial finish applied, the second is an absorption layer that is made of 87% polyester & 13% nylon towelling fabric and the final is the waterproof layer that is 100% waterproof membrane on the underside of towelling.\nThey are designed to be worn by women during menstruation and are intended for multiple uses."
+  },
+  {
+   "reference": "IEBTIIENEN004-2026-BTI222",
+   "chapter": "96",
+   "hs6": "9609.10",
+   "cn8": "96091090",
+   "language": "en",
+   "description": "Sketching and drawing set consisting of the following:\n•\t44 pencils\n•\t7 charcoal sticks\n•\t1 pen\n•\tSketchbook / drawing pad / instructional or practice book \n•\tCraft knife\n•\tPencil extender\n•\tErasers\n•\tPencil sharpener\n\nAll items are stored in a zip up carrying case that contains compartments and elastic holders for the tools."
+  },
+  {
+   "reference": "FRBTIFR-BTI-2026-02219",
+   "chapter": "96",
+   "hs6": "9603.90",
+   "cn8": "96039091",
+   "language": "en",
+   "description": "Pelle et balayette en plastique avec poils non flockés, pour usage domestique."
+  },
+  {
+   "reference": "DEBTI7845/24-1",
+   "chapter": "96",
+   "hs6": "9603.90",
+   "cn8": "96039091",
+   "language": "de",
+   "description": "Es handelt sich bei dem \"Kehrset, Artikel 522731\" um eine Warenzusammenstellung in Aufmachung für den Einzelverkauf, bestehend aus einer Schaufel und einem Besen (charakterbestimmender Bestandteil im Hinblick auf Verwendung, Gesamteindruck). Die aus Kunststoff bestehende Schaufel besitzt eine Schaufelfläche mit ansteigenden Seitenrändern sowie einen nach obenhin schmaler werdendes Griffteil. Der Besen besteht aus einem ebenfalls nach oben schmaler zulaufenden Fassung aus Bambus mit Einzugsmaterial in Form von Borstenbüscheln aus Kunststoff. Besen und Schaufel sind am Stiel mit einer Kordel zusammengefügt und sind als Set zusammen verpackt. Das Set dient zum Kehren im Haushalt.\n\nDie Warenzusammenstellung ist als \"andere als zuvor von der Position 9603 erfasste Bürste, kein mechanischer Fußbodenkehrer, Bürstenware für die Straßen- und Haushaltsreinigung\" einzureihen."
+  },
+  {
+   "reference": "DEBTI3465/24-1",
+   "chapter": "96",
+   "hs6": "9609.10",
+   "cn8": "96091090",
+   "language": "de",
+   "description": "Es handelt sich bei den sog. „Regenbogenstiften, 32 Stück“ um ca. 18 cm lange Stifte mit festem Holzmantel und Mehrfarbmine (vier verschiedene Farben).  \nDie Buntstifte verfügen jeweils über eine Sechskantform und ein Design mit Regenbogenstreifen oder Regenbogenpunkten.\n\nDie verpackte Ware ist als \"Farbstift mit einem festen Schutzmantel, kein Bleistift\" einzureihen."
+  },
+  {
+   "reference": "DEBTI47340/24-1",
+   "chapter": "96",
+   "hs6": "9603.90",
+   "cn8": "96039099",
+   "language": "de",
+   "description": "Bei der als \"Trendline Schneebesen mit Eiskratzer\" bezeichneten Ware handelt es sich um eine zusammengesetzte Ware, bestehend aus \n- einem Bürstenkopf (Maße ca. 25 x 2 cm) mit Einzugsmaterial aus künstlichen Borstenbüscheln, welches in mehreren Reihen in den Kopf eingelassen ist und \n- einem Eiskratzer aus Kunststoff (ca. 10 cm breit).\n\nDas Erzeugnis verfügt über eine auf ca. 91 - 148 cm lange Teleskopstange aus Aluminium mit Softgriff. Die Ware dient dem Enteisen und Abbürsten von Fahrzeugscheiben, dabei bestimmt die Bürste im Hinblick auf den Umfang den Charakter der zusammengesetzten Ware.\n\nDie Ware wird als \"Bürste, von den Unterpositionen 9603 10 00 (KN) bis 9603 90 91 (KN) nicht erfasst\" eingereiht."
+  },
+  {
+   "reference": "DEBTI59675/24-1",
+   "chapter": "96",
+   "hs6": "9603.90",
+   "cn8": "96039099",
+   "language": "de",
+   "description": "Bei der als \"2 in 1 - Schneebesen mit Eiskratzer\" bezeichneten Ware handelt es sich um eine zusammengesetzte Ware, bestehend aus einem Eiskratzer und einer ca. 22 cm langen Bürste mit einem Bürstenkopf, jeweils aus Kunststoff mit Einzugsmaterial aus künstlichen Borstenbüscheln, welches in mehreren Reihen in den Kopf eingelassen ist. Beide Enden sind mit einem abnehmbaren Stiel aus Kunststoff (Klick-Verbindung) miteinander verbunden. Der Stiel ist mit Schaumstoff ummantelt und bildet einen ergonomischen Griff.\n\nDie Bürste bestimmt den Charakter der zusammengesetzten Ware im Hinblick auf den Umfang und die Verwendung.\n\nDie Ware wird als \"Bürste, von den Unterpositionen 9603 10 00 (KN) bis 9603 90 91 (KN) nicht erfasst\" eingereiht."
+  },
+  {
+   "reference": "DEBTI35114/25-1",
+   "chapter": "96",
+   "hs6": "9603.90",
+   "cn8": "96039091",
+   "language": "de",
+   "description": "Bei dem Erzeugnis handelt es sich um eine aus verschiedenen Bestandteilen zusammengesetzte Ware in Form einer ca. 20 cm langen Bürste mit einer feststehenden Klinge.\nDas Erzeugnis besteht im Wesentlichen aus einem gummierten Kunststoffgriff mit einem Bürstenkopf aus Kunststoff. In den Bürstenkopf sind in drei parallelen Reihen insgesamt 30 ca. 1,5 cm lange Borstenbüschel aus Kunststoff eingezogen.\nAn der Spitze des Bürstenkopfes befindet sich eine ca. 2 cm lange, im spitzen Winkel gebogene, beidseitig schneidende Klinge aus Edelstahl. \n\nDie Bürste bestimmt insbesondere im Hinblick auf den Umfang sowie aufgrund des Gesamterscheinungsbildes den Charakter der zusammengesetzten Ware.\n\nDie Ware dient der Säuberung von Fliesenfugen im Innenbereich (von z. B. Badezimmern) und ist für den Einzelverkauf auf einer bedruckten Pappkarte zum Aufhängen aufgeblistert.\n\nDas Erzeugnis ist als \"andere als in den Unterpositionen (KN) 9603 1000 bis 9603 9010  erfasste Bürste, Bürstenware für die Haushaltsreinigung\" einzureihen."
+  },
+  {
+   "reference": "DEBTI9589/25-1",
+   "chapter": "96",
+   "hs6": "9608.10",
+   "cn8": "96081092",
+   "language": "de",
+   "description": "Bei dem Kugelschreiber handelt es sich um eine aus verschiedenen Bestandteilen zusammengesetzte Ware, bestehend aus:\n\n- einem einfarbigen Kugelschreibergehäuse aus Metall mit auswechselbarer Mine mit nicht flüssiger Tinte, sowie einer Schreibspitze, die mit einer Schreibkugel versehen ist und\n- einer am oberen Ende des Gehäuses befindlichen, elastischen Halbkugel aus Kunststoff, die der Bedienung von kapazitiven Displays dient.\n\nDer Kugelschreiber bestimmt im Hinblick auf den Umfang, den Gesamteindruck und die Bedeutung für die Verwendung den Charakter der zusammengesetzten Ware.\n\nDie verpackte Ware wird als \"Kugelschreiber, nicht mit flüssiger Tinte, mit auswechselbarer Mine\" eingereiht."
+  }
+ ]
+}

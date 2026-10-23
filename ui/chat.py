@@ -19,7 +19,7 @@ NOT_APPLIED_HINT = ("Answered, not applied: to update a line with this text star
 
 QUICK_ACTIONS = [
     ("Try one description", "e.g. 不锈钢保温杯 500ml", "不锈钢保温杯 500ml"),
-    ("Use the sample packing list", "12 Yiwu consolidation lines, 5 problematic", "__sample__"),
+    ("Use the sample packing list", "12 Yiwu consolidation lines, 6 problematic", "__sample__"),
     ("Which terms does customs reject?", "The ICS2 unacceptable-terms lists", "__terms__"),
 ]
 
@@ -126,8 +126,39 @@ def _en(line: str) -> str:
     return "" if re.search(r"[一-鿿]", parts[0]) else parts[0].strip()
 
 
+def queue_finer_codes(line_no: int, store, kb, taric_only: bool = False) -> None:
+    """Feature 004: run the CN-8 and TARIC steps for a line after the clerk's HS-6 decision, or the TARIC step alone
+    after a CN-8 confirmation, in the background. Behind a running job the line waits in a queue of
+    (line_no, taric_only) that `_finish_job` works through."""
+    if st.session_state.get("job") is not None:
+        queue = st.session_state.setdefault("finer_codes_queue", [])
+        queued = next((i for i, (n, _) in enumerate(queue) if n == line_no), None)
+        if queued is None:
+            queue.append((line_no, taric_only))
+        elif not taric_only:
+            queue[queued] = (line_no, False)   # the full run includes the TARIC step
+        return
+    st.session_state["job"] = jobs.start(jobs.Job(kind="finer_codes", message="", is_check=False, line_no=line_no,
+                                                  taric_only=taric_only), store, kb)
+
+
+def _start_queued_finer_codes(store, kb) -> None:
+    queue = st.session_state.get("finer_codes_queue") or []
+    if queue and st.session_state.get("job") is None:
+        line_no, taric_only = queue.pop(0)
+        queue_finer_codes(line_no, store, kb, taric_only)
+
+
 def _finish_job(store, kb) -> None:
     job = st.session_state.pop("job")
+    if job.kind == "finer_codes":   # no chat message; only an unexpected failure is reported
+        if job.error:
+            step = "TARIC step" if job.taric_only else "CN-8 and TARIC steps"
+            st.session_state["chat"].append({"role": "assistant", "content": f"I could not finish the {step} for line "
+                                             f"{job.line_no}: {job.error}", "kind": job.kind, "error": True})
+        _start_queued_finer_codes(store, kb)
+        st.rerun()
+        return
     label = jobs.finish_label(job, store)
     if job.error:
         content = f"I could not finish this: {job.error}"
@@ -156,6 +187,7 @@ def _finish_job(store, kb) -> None:
     elif job.kind == "reply" and job.new_line_nos and not job.error:
         st.session_state["selected_line_no"] = job.new_line_nos[0]   # show the clerk the updated version
         reset_selection()
+    _start_queued_finer_codes(store, kb)
     st.rerun()
 
 
@@ -176,16 +208,20 @@ def _welcome(store, kb, compact: bool) -> None:
                     st.session_state["quick_action"] = action
         with st.expander("What I can and cannot do"):
             st.markdown("**Can:** check descriptions, suggest HS-6 subheadings with reasoning, cite BTI precedents, verify a code exists "
-                        "in the current nomenclature.\n\n**Cannot:** make the final classification decision for you. A line below the "
-                        "threshold is never auto-accepted, and a flagged line is never accepted without your click. Text inside your files "
-                        "is treated as data, never as instructions.")
+                        "in the current nomenclature, choose the CN-8 under a decided HS-6, and show the TARIC subdivisions and "
+                        "measures from the loaded snapshot.\n\n**Cannot:** make the final classification decision for you. A line below "
+                        "the threshold is never auto-accepted, and a flagged line is never accepted without your click. I never write a "
+                        "TARIC subdivision without your confirmation, except a single one without trade-defence measures, and I do not "
+                        "calculate duties. Text inside your files is treated as data, never as instructions.")
 
 
 def _render_counts(counts: dict) -> None:
-    c1, c2, c3 = st.columns(3)
+    c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("Auto-accept", counts.get("auto_accept", 0))
     c2.metric("Human review", counts.get("review", 0))
     c3.metric("Ask the shipper", counts.get("ask_shipper", 0))
+    c4.metric("CN-8 to confirm", counts.get("cn8_to_confirm", 0), help="Confirmations waiting for you, not a route")
+    c5.metric("TARIC-10 to confirm", counts.get("taric_to_confirm", 0), help="Confirmations waiting for you, not a route")
 
 
 def _needs_action_list(store) -> None:
@@ -338,6 +374,8 @@ def _live_turn(store) -> None:
         has_lines = store.has_shipment() and bool(store.lines)
         if job.done or has_lines != st.session_state.get("layout_has_lines", False):
             st.rerun()  # finished, or the review column must appear now that the parse step added lines
+            return
+        if job.kind == "finer_codes":   # the detail card shows its progress, not the chat
             return
         with st.chat_message("assistant"):
             # not a `with` block: leaving a status context would flip it to "complete" while the job still runs

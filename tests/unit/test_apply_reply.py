@@ -234,3 +234,14 @@ class TestToolTargetLock:
             assert payload["target_line_no"] == 3 and payload["applied_to_selected"] is True   # the selection stays the fallback
         finally:
             set_context(None)
+
+
+class TestFinerCodesOnReply:
+    """Feature 004, contracts/tools.md §1.5: a reply's new version starts without a CN-8 choice or TARIC outcome; the
+    steps run only once the clerk accepts its HS-6."""
+
+    def test_a_reply_version_starts_without_cn8_or_taric_and_makes_no_finer_calls(self, fake_llm, kb, checked):
+        apply_reply("line 1 is steel bobbin cases for industrial sewing machines", 1, None, checked, kb, get_client())
+        v = checked.get_line(1).current
+        assert v.version_no == 2 and v.cn8 is None and v.taric is None
+        assert fake_llm.prompts_for("Cn8Out") == [] and fake_llm.prompts_for("SubdivisionOut") == []
