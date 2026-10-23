@@ -467,26 +467,26 @@ description: "Task list for CN-8 and TARIC-10 classification in the agent and th
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T056 [P] Update the "What I can and cannot do" text in ui/chat.py as contracts/ui.md says.
-- [ ] T057 [P] Update README.md:
+- [X] T056 [P] Update the "What I can and cannot do" text in ui/chat.py as contracts/ui.md says.
+- [X] T057 [P] Update README.md:
   - add a CN-8 and TARIC-10 section: the CN-8 step, the four rules and "TARIC not loaded", the measure groups, the two links and the origin;
   - list the seven tools;
   - say "twelve target chapters" in place of the wrong "ten";
   - add the evaluation results, after T060;
   - list the weaknesses: CN-8 confidence is a model estimate, "TARIC not available" is proven by fixtures only, and the companies behind additional codes are not named.
-- [ ] T058 [P] Update CLAUDE.md: "five typed tools" becomes seven, and the opening summary mentions CN-8 and TARIC-10.
-- [ ] T059 [P] Extend the sample evaluation in tests/eval/run_eval.py (SC-005, decision 3). Today `evaluate` routes the sample without a CN-8 step, so line 6 would read auto_accept against its new expected route.
+- [X] T058 [P] Update CLAUDE.md: "five typed tools" becomes seven, and the opening summary mentions CN-8 and TARIC-10.
+- [X] T059 [P] Extend the sample evaluation in tests/eval/run_eval.py (SC-005, decision 3). Today `evaluate` routes the sample without a CN-8 step, so line 6 would read auto_accept against its new expected route.
   - **Steps**: for each sample line whose HS-6 the routing rule auto-decides, run `choose_cn8` and then the TARIC step (`taric_outcome`), and route with the question or the error.
   - **Routes**: compare them with the expected routes of T003.
   - **SC-005**: print "SC-005: N unconfirmed writes", counting CN-8 codes written below the threshold and TARIC-10 codes written against the rules. Exit non-zero when N > 0.
   The labelled-set run is unchanged (SC-001).
-- [ ] T060 Run the live checks in tests/eval/cn8_eval.py, tests/eval/run_eval.py, tests/live/test_cost_budget.py and tests/eval/scale_check.py, only when the author asks, since they spend credits:
+- [X] T060 Run the live checks in tests/eval/cn8_eval.py, tests/eval/run_eval.py, tests/live/test_cost_budget.py and tests/eval/scale_check.py, only when the author asks, since they spend credits:
   - `python tests/eval/cn8_eval.py` (SC-002, at least 60 of 120);
   - `python tests/eval/run_eval.py --modes hybrid --sample` (SC-001 unchanged; the sample's routes as updated in T003; T059's SC-005 line reads 0);
   - `pytest -m live tests/live/test_cost_budget.py` and the scale check of quickstart G (SC-008).
   Put the figures in README.md.
-- [ ] T061 Run the browser check in specs/004-cn8-taric-classification/quickstart.md (scenario H) after restarting the Streamlit server (`streamlit run app.py`).
-- [ ] T062 Final validation with specs/004-cn8-taric-classification/quickstart.md and the full suite:
+- [X] T061 Run the browser check in specs/004-cn8-taric-classification/quickstart.md (scenario H) after restarting the Streamlit server (`streamlit run app.py`).
+- [X] T062 Final validation with specs/004-cn8-taric-classification/quickstart.md and the full suite:
   - `pytest -q` passes offline; record the test count, 432 before this feature;
   - run quickstart A to C;
   - re-run the Constitution Check against v1.2.1.

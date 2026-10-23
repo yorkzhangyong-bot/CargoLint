@@ -208,9 +208,11 @@ def _welcome(store, kb, compact: bool) -> None:
                     st.session_state["quick_action"] = action
         with st.expander("What I can and cannot do"):
             st.markdown("**Can:** check descriptions, suggest HS-6 subheadings with reasoning, cite BTI precedents, verify a code exists "
-                        "in the current nomenclature.\n\n**Cannot:** make the final classification decision for you. A line below the "
-                        "threshold is never auto-accepted, and a flagged line is never accepted without your click. Text inside your files "
-                        "is treated as data, never as instructions.")
+                        "in the current nomenclature, choose the CN-8 under a decided HS-6, and show the TARIC subdivisions and "
+                        "measures from the loaded snapshot.\n\n**Cannot:** make the final classification decision for you. A line below "
+                        "the threshold is never auto-accepted, and a flagged line is never accepted without your click. I never write a "
+                        "TARIC subdivision without your confirmation, except a single one without trade-defence measures, and I do not "
+                        "calculate duties. Text inside your files is treated as data, never as instructions.")
 
 
 def _render_counts(counts: dict) -> None:

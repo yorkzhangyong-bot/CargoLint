@@ -1,19 +1,21 @@
 {
- "tokens": 40599,
- "calls": 36,
- "cost_usd": 0.0077,
- "cost_eur": 0.0071,
+ "tokens": 70748,
+ "calls": 43,
+ "cost_usd": 0.0125,
+ "cost_eur": 0.0115,
  "counts": {
-  "auto_accept": 8,
+  "auto_accept": 7,
   "review": 3,
-  "ask_shipper": 1,
-  "needs_action": 4,
-  "accepted": 8
+  "ask_shipper": 2,
+  "needs_action": 5,
+  "accepted": 7,
+  "cn8_to_confirm": 1,
+  "taric_to_confirm": 3
  },
- "tool_calls_check": 4,
- "elapsed_check_s": 104.15,
+ "tool_calls_check": 6,
+ "elapsed_check_s": 44.73,
  "answers": {
-  "why_31": "The confidence for line 1 is at 60%, which indicates that the description \"配件 / Parts\" is considered vague according to the ICS2 guidelines. The term \"Parts\" does not specify the type of parts, making it difficult to classify accurately. \n\nIn the past, if the shipper's parts were filed under 8452.90, it may have been due to a more specific description provided at that time. For this shipment, we n",
+  "why_31": "The confidence for line 1 is at 50%, which is the threshold for a human review due to the vague description \"配件 / Parts.\" While the shipper has previously filed similar items under the code 8452.90, the current description does not specify the type of parts, leading to uncertainty. The model's confidence is lower because it relies on the clarity of the description, and \"parts\" is considered vague ",
   "what_to_ask": "You need to ask the shipper for the following lines:\n\n1. **Line 1 (配件 / Parts)**: \n   - Ask for: material, product name, and what the goods are used for.\n\n2. **Line 4 (礼品 / Gift)**: \n   - Ask for: material, product name, and what the goods are used for.\n\n3. **Line 7 (电子产品 / Electronic products)**: \n   - Ask for: material, product name, and what the goods are used for.\n\n4. **Line 9 (家具 / Furniture)"
  },
  "lines": [
@@ -21,9 +23,15 @@
    "line_no": 1,
    "text": "配件 / Parts",
    "flag": "vague",
-   "top": "8409.99",
-   "confidence": 60,
-   "route": "review"
+   "top": "8452.90",
+   "confidence": 50,
+   "route": "review",
+   "cn8": null,
+   "cn8_written": false,
+   "cn8_question": null,
+   "taric_rule": null,
+   "subdivisions": null,
+   "taric10": null
   },
   {
    "line_no": 2,
@@ -31,7 +39,13 @@
    "flag": "ok",
    "top": "9405.21",
    "confidence": 95,
-   "route": "auto_accept"
+   "route": "auto_accept",
+   "cn8": "94052140",
+   "cn8_written": true,
+   "cn8_question": null,
+   "taric_rule": "auto_completed",
+   "subdivisions": 1,
+   "taric10": "9405214000"
   },
   {
    "line_no": 3,
@@ -39,15 +53,27 @@
    "flag": "ok",
    "top": "9617.00",
    "confidence": 95,
-   "route": "auto_accept"
+   "route": "auto_accept",
+   "cn8": "96170000",
+   "cn8_written": true,
+   "cn8_question": null,
+   "taric_rule": "auto_completed",
+   "subdivisions": 1,
+   "taric10": "9617000000"
   },
   {
    "line_no": 4,
    "text": "礼品 / Gift",
    "flag": "stop_word",
    "top": "9505.90",
-   "confidence": 60,
-   "route": "ask_shipper"
+   "confidence": 85,
+   "route": "ask_shipper",
+   "cn8": null,
+   "cn8_written": false,
+   "cn8_question": null,
+   "taric_rule": null,
+   "subdivisions": null,
+   "taric10": null
   },
   {
    "line_no": 5,
@@ -55,7 +81,13 @@
    "flag": "ok",
    "top": "6109.10",
    "confidence": 95,
-   "route": "auto_accept"
+   "route": "auto_accept",
+   "cn8": "61091000",
+   "cn8_written": true,
+   "cn8_question": null,
+   "taric_rule": "choose",
+   "subdivisions": 2,
+   "taric10": null
   },
   {
    "line_no": 6,
@@ -63,15 +95,27 @@
    "flag": "ok",
    "top": "9503.00",
    "confidence": 95,
-   "route": "auto_accept"
+   "route": "auto_accept",
+   "cn8": "95030010",
+   "cn8_written": false,
+   "cn8_question": null,
+   "taric_rule": "auto_completed",
+   "subdivisions": 1,
+   "taric10": null
   },
   {
    "line_no": 7,
    "text": "电子产品 / Electronic products",
    "flag": "vague",
-   "top": "8473.50",
+   "top": "8517.79",
    "confidence": 70,
-   "route": "review"
+   "route": "review",
+   "cn8": null,
+   "cn8_written": false,
+   "cn8_question": null,
+   "taric_rule": null,
+   "subdivisions": null,
+   "taric10": null
   },
   {
    "line_no": 8,
@@ -79,23 +123,41 @@
    "flag": "ok",
    "top": "8518.30",
    "confidence": 95,
-   "route": "auto_accept"
+   "route": "auto_accept",
+   "cn8": "85183000",
+   "cn8_written": true,
+   "cn8_question": null,
+   "taric_rule": "choose",
+   "subdivisions": 2,
+   "taric10": null
   },
   {
    "line_no": 9,
    "text": "家具 / Furniture",
    "flag": "vague",
-   "top": "9403.91",
+   "top": "9403.60",
    "confidence": 85,
-   "route": "review"
+   "route": "review",
+   "cn8": null,
+   "cn8_written": false,
+   "cn8_question": null,
+   "taric_rule": null,
+   "subdivisions": null,
+   "taric10": null
   },
   {
    "line_no": 10,
    "text": "铝合金自行车架 / Aluminium alloy bicycle frames",
    "flag": "ok",
-   "top": "7610.90",
-   "confidence": 85,
-   "route": "auto_accept"
+   "top": "9503.00",
+   "confidence": 90,
+   "route": "auto_accept",
+   "cn8": "95030010",
+   "cn8_written": true,
+   "cn8_question": null,
+   "taric_rule": "auto_completed",
+   "subdivisions": 1,
+   "taric10": "9503001000"
   },
   {
    "line_no": 11,
@@ -103,15 +165,27 @@
    "flag": "ok",
    "top": "4016.93",
    "confidence": 95,
-   "route": "auto_accept"
+   "route": "auto_accept",
+   "cn8": "40169300",
+   "cn8_written": true,
+   "cn8_question": null,
+   "taric_rule": "choose",
+   "subdivisions": 3,
+   "taric10": null
   },
   {
    "line_no": 12,
    "text": "硅胶手机壳 / Silicone mobile phone cases",
    "flag": "ok",
-   "top": "8480.79",
+   "top": "3926.90",
    "confidence": 90,
-   "route": "auto_accept"
+   "route": "ask_shipper",
+   "cn8": null,
+   "cn8_written": false,
+   "cn8_question": "Ask the shipper for: the type of product",
+   "taric_rule": null,
+   "subdivisions": null,
+   "taric10": null
   }
  ]
 }

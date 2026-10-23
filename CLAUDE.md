@@ -2,13 +2,14 @@
 
 CargoLint is a Streamlit + LangChain v1 + OpenRouter app for a Hamburg customs clerk: it flags vague or
 stop-word packing-list descriptions, suggests top-3 HS-6 codes with confidence, reasoning and BTI
-precedent, routes each line (auto-accept / human review / ask the shipper) and re-checks a line when the
+precedent, chooses the CN-8 under a decided HS-6 and completes the TARIC-10 by fixed rules from a local TARIC
+snapshot, routes each line (auto-accept / human review / ask the shipper) and re-checks a line when the
 shipper replies. It advises; the clerk decides. Nothing is ever sent to shippers or customs.
 
 ## Sources of truth
 
 1. `.specify/memory/constitution.md` — binding principles (guardrails in code, untrusted input, grounded
-   answers, hybrid retrieval, five typed tools, native Streamlit UI, test-first). Read it before changing
+   answers, hybrid retrieval, seven typed tools, native Streamlit UI, test-first). Read it before changing
    routing, tools, retrieval or the UI.
 2. `specs/001-packing-list-check/` — spec, plan, data model, contracts (`contracts/ui.md`,
    `contracts/tools.md`), research decisions and tasks. The project is built with GitHub Spec Kit: new

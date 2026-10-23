@@ -94,5 +94,37 @@
   "elapsed_s": 125.6,
   "cost_usd": 0.0379,
   "cost_eur": 0.0348
+ },
+ {
+  "iteration": 4,
+  "run_on": "2026-10-23",
+  "change": "T060 validation run: no change to the CN-8 step since iteration 3 (tuning closed); shows run-to-run variation",
+  "model": "openai/gpt-4o-mini",
+  "threshold": 85,
+  "top1": 93,
+  "n": 120,
+  "written": 107,
+  "written_wrong": 14,
+  "to_confirm": 1,
+  "questions": 12,
+  "failures": 0,
+  "with_precedent": 103,
+  "per_chapter": {
+   "39": "10/10",
+   "42": "6/10",
+   "61": "8/10",
+   "62": "9/10",
+   "63": "9/10",
+   "64": "6/10",
+   "73": "7/10",
+   "84": "8/10",
+   "85": "7/10",
+   "94": "7/10",
+   "95": "9/10",
+   "96": "7/10"
+  },
+  "elapsed_s": 106.5,
+  "cost_usd": 0.038,
+  "cost_eur": 0.0349
  }
 ]

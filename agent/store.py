@@ -406,7 +406,10 @@ class LineStore:
         previous_cn8 = v.cn8.cn8 if same else None
         previous_route = self.effective_route(line)
         base = v.cn8 if same else Cn8Choice(hs6=hs6, options=options)
-        v.cn8 = base.model_copy(update={"cn8": cn8, "written_by": WrittenBy.clerk, "question": None, "error": None})
+        update = {"cn8": cn8, "written_by": WrittenBy.clerk, "question": None, "error": None}
+        if previous_cn8 != cn8:   # the model's estimate, evidence and ruling were about another code, or none
+            update |= {"confidence": 0, "evidence": "", "rationale": "", "precedent": None}
+        v.cn8 = base.model_copy(update=update)
         if previous_cn8 != cn8:   # another CN-8: its TARIC outcome no longer applies; the TARIC step runs again
             v.taric = None
         for c in v.candidates:

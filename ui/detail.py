@@ -176,7 +176,8 @@ def _cn8_section(store, line, kb) -> None:
         a, b = st.columns([1.3, 5.9], vertical_alignment="center")
         a.markdown(f"`{_spaced(c.cn8)}`")
         b.markdown(_short(labels.get(c.cn8, ""), 90), help=labels.get(c.cn8, ""))
-        st.progress(c.confidence / 100, text=f"{c.confidence}% · model estimate")
+        if len(c.options) > 1 and c.confidence > 0:   # a single line or a clerk's choice has no model estimate
+            st.progress(c.confidence / 100, text=f"{c.confidence}% · model estimate")
         if c.evidence:
             st.caption(f"Evidence: {_short(c.evidence, 160)}")
         if c.precedent:

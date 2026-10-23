@@ -340,6 +340,20 @@ class TestCn8:
         v = s.get_line(3).current
         assert v.cn8 is None and v.taric is None
 
+    def test_a_clerk_choice_of_another_code_drops_the_models_estimate(self, cn8_store):
+        from agent.schemas import Precedent
+
+        s = cn8_store
+        s.set_cn8_result(2, Cn8Choice(hs6="8714.91", options=s.index.cn8_lines("8714.91"), cn8="87149110", confidence=70,
+                                      evidence="bicycle frames", rationale="r", precedent=Precedent(reference="DE-1", code="8714911000")))
+        s.confirm_cn8(2, "87149110")                     # the model's own suggestion: its estimate still describes it
+        c = s.get_line(2).current.cn8
+        assert (c.confidence, c.evidence, c.precedent.reference) == (70, "bicycle frames", "DE-1")
+        s.confirm_cn8(2, "87149130")                     # another line: the estimate, evidence and ruling were for 87149110
+        c = s.get_line(2).current.cn8
+        assert (c.cn8, c.written_by, c.confidence, c.evidence, c.rationale, c.precedent) == (
+            "87149130", WrittenBy.clerk, 0, "", "", None)
+
     def test_a_threshold_change_never_writes_a_choice_whose_precedent_conflicts(self, cn8_store):
         from agent.schemas import Precedent
 

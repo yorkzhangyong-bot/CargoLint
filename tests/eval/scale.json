@@ -1,48 +1,60 @@
 {
  "lines": 100,
- "elapsed_s": 130.4,
- "first_step_s": 1.56,
+ "elapsed_s": 158.9,
+ "first_step_s": 2.18,
  "workers": 6,
  "checked": 100,
  "failed": 0,
  "counts": {
-  "auto_accept": 59,
+  "auto_accept": 56,
   "review": 23,
-  "ask_shipper": 18,
-  "needs_action": 41,
-  "accepted": 59
+  "ask_shipper": 21,
+  "needs_action": 44,
+  "accepted": 56,
+  "cn8_to_confirm": 0,
+  "taric_to_confirm": 32
  },
  "tool_calls": 3,
  "steps": [
   [
    "parse_packing_list",
    "agent",
-   0.02
+   0.01
   ],
   [
    "check_description",
    "agent",
-   27.12
+   18.3
   ],
   [
    "classify_hs6",
    "agent",
-   124.4
+   126.36
   ],
   [
    "lookup_precedent",
    "app",
-   0.01
+   0.3
+  ],
+  [
+   "classify_cn8",
+   "app",
+   16.74
+  ],
+  [
+   "lookup_taric",
+   "app",
+   8.99
   ]
  ],
  "usage": {
-  "prompt_tokens": 265461,
-  "completion_tokens": 21429,
-  "total_tokens": 286890,
-  "cost_usd": 0.05267655,
-  "cost_eur": 0.04846242599999998,
-  "calls": 283
+  "prompt_tokens": 395789,
+  "completion_tokens": 27146,
+  "total_tokens": 422935,
+  "cost_usd": 0.07565595000000003,
+  "cost_eur": 0.06960347399999997,
+  "calls": 343
  },
  "rejected_201": true,
- "passed": true
+ "passed": false
 }

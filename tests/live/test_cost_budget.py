@@ -37,8 +37,18 @@ def test_sample_shipment_plus_two_followups_stays_under_budget():
               "counts": counts, "tool_calls_check": r1.tool_calls, "elapsed_check_s": r1.check_run.elapsed_s if r1.check_run else None,
               "answers": {"why_31": r2.text[:400], "what_to_ask": r3.text[:400]},
               "lines": [{"line_no": l.line_no, "text": l.current.display_text, "flag": l.current.flag.kind.value if l.current.flag else None,
-                         "top": l.current.top_code, "confidence": l.current.top_confidence, "route": store.effective_route(l)} for l in store.lines]}
+                         "top": l.current.top_code, "confidence": l.current.top_confidence, "route": store.effective_route(l),
+                         **_finer(store, l)} for l in store.lines]}
     (ROOT / "tests" / "eval" / "budget.json").write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
     print(json.dumps(report, ensure_ascii=False)[:1500])
     assert usage.total_tokens > 0 and usage.calls > 0
     assert usage.cost_eur < 0.10, f"cost €{usage.cost_eur:.4f} exceeds the €0.10 budget"
+    assert r1.check_run.elapsed_s < 60, f"the check took {r1.check_run.elapsed_s} s (SC-008 allows 60 s)"
+
+
+def _finer(store, line) -> dict:
+    """Feature 004: the line's CN-8 and TARIC outcome, as the store holds them."""
+    c, t = line.current.cn8, line.current.taric
+    return {"cn8": c.cn8 if c else None, "cn8_written": bool(c and c.written_by), "cn8_question": c.question if c else None,
+            "taric_rule": t.rule.value if t else None, "subdivisions": len(t.subdivisions) if t else None,
+            "taric10": store.decided_taric10(line)}

@@ -8,7 +8,8 @@
   "top1": 10,
   "top3": 12,
   "flagged_auto_accepts": 0,
-  "elapsed_s": 32.2,
+  "unconfirmed_writes": null,
+  "elapsed_s": 23.1,
   "rows": [
    {
     "text": "配件 / Parts",
@@ -47,7 +48,7 @@
     "precedent_codes": [
      "8517.62",
      "9405.11",
-     "8543.70"
+     "8414.51"
     ]
    },
    {
@@ -76,9 +77,9 @@
     "flag": "vague",
     "expected_code": null,
     "codes": [
+     "6107.91",
      "6114.20",
-     "6211.49",
-     "6211.39"
+     "6112.11"
     ],
     "confidence": 40,
     "route": "ask_shipper",
@@ -96,8 +97,8 @@
     "flag": "vague",
     "expected_code": null,
     "codes": [
-     "8302.49",
      "8302.41",
+     "8302.49",
      "8467.89"
     ],
     "confidence": 40,
@@ -192,8 +193,8 @@
     "expected_code": "9503.00",
     "codes": [
      "9503.00",
-     "9503.00",
-     "9505.90"
+     "9505.90",
+     "3926.40"
     ],
     "confidence": 95,
     "route": "auto_accept",
@@ -210,8 +211,8 @@
     "expected_code": "8518.30",
     "codes": [
      "8518.30",
-     "8517.62",
-     "8518.90"
+     "8518.90",
+     "8517.62"
     ],
     "confidence": 95,
     "route": "auto_accept",
@@ -258,8 +259,8 @@
     "error": null,
     "precedent_codes": [
      "3926.90",
-     "3924.10",
-     "3923.10"
+     "3923.10",
+     "3924.10"
     ]
    },
    {
@@ -268,7 +269,7 @@
     "flag": "ok",
     "expected_code": "3926.90",
     "codes": [
-     "4202.32",
+     "4202.92",
      "3926.90",
      "4016.10"
     ],
@@ -289,8 +290,8 @@
     "expected_code": "9405.21",
     "codes": [
      "9405.21",
-     "9405.42",
-     "9405.29"
+     "9405.29",
+     "8539.52"
     ],
     "confidence": 95,
     "route": "auto_accept",
@@ -310,7 +311,7 @@
     "codes": [
      "8452.90",
      "7326.90",
-     "8452.29"
+     "8452.21"
     ],
     "confidence": 95,
     "route": "auto_accept",
@@ -349,7 +350,7 @@
     "expected_code": "6203.42",
     "codes": [
      "6203.42",
-     "6203.31",
+     "6203.42",
      "6203.22"
     ],
     "confidence": 95,
@@ -383,25 +384,26 @@
    }
   ]
  },
- "vector_only": {
-  "mode": "vector_only",
+ "sample": {
+  "mode": "hybrid",
   "precedents": true,
-  "n": 20,
+  "n": 12,
   "flag_accuracy": 1.0,
-  "clear_lines": 12,
-  "top1": 11,
-  "top3": 12,
+  "clear_lines": 8,
+  "top1": 7,
+  "top3": 8,
   "flagged_auto_accepts": 0,
-  "elapsed_s": 19.6,
+  "unconfirmed_writes": 0,
+  "elapsed_s": 21.1,
   "rows": [
    {
     "text": "配件 / Parts",
     "expected_flag": "vague",
     "flag": "vague",
-    "expected_code": null,
+    "expected_code": "8452.90",
     "codes": [
-     "8409.99",
      "8714.10",
+     "8409.99",
      "8431.39"
     ],
     "confidence": 40,
@@ -415,123 +417,36 @@
     ]
    },
    {
-    "text": "电子产品 / Electronic products",
-    "expected_flag": "vague",
-    "flag": "vague",
-    "expected_code": null,
+    "text": "LED台灯 USB供电 / LED desk lamp, USB powered",
+    "expected_flag": "ok",
+    "flag": "ok",
+    "expected_code": "9405.21",
     "codes": [
-     "8517.79",
-     "8543.70",
-     "8517.62"
+     "9405.21",
+     "9405.29",
+     "8539.52"
     ],
-    "confidence": 40,
+    "confidence": 95,
     "route": "ask_shipper",
     "status": "checked",
     "error": null,
     "precedent_codes": [
-     "8517.62",
+     "9405.21",
      "9405.11",
-     "8543.70"
-    ]
-   },
-   {
-    "text": "家具 / Furniture",
-    "expected_flag": "vague",
-    "flag": "vague",
-    "expected_code": null,
-    "codes": [
-     "9403.60",
-     "9403.91",
-     "9403.99"
+     "9405.42"
     ],
-    "confidence": 40,
-    "route": "ask_shipper",
-    "status": "checked",
-    "error": null,
-    "precedent_codes": [
-     "9403.60",
-     "9401.61",
-     "9401.39"
-    ]
+    "cn8": null,
+    "cn8_confidence": 0,
+    "cn8_written": false,
+    "cn8_question": "Ask the shipper for: material",
+    "cn8_error": null,
+    "taric_rule": null,
+    "subdivisions": null,
+    "taric10": null,
+    "suggestion_error": null
    },
    {
-    "text": "服装 / Apparel",
-    "expected_flag": "vague",
-    "flag": "vague",
-    "expected_code": null,
-    "codes": [
-     "6114.20",
-     "6211.49",
-     "6112.11"
-    ],
-    "confidence": 40,
-    "route": "ask_shipper",
-    "status": "checked",
-    "error": null,
-    "precedent_codes": [
-     "6110.30",
-     "6104.63",
-     "6103.33"
-    ]
-   },
-   {
-    "text": "五金 / Hardware",
-    "expected_flag": "vague",
-    "flag": "vague",
-    "expected_code": null,
-    "codes": [
-     "8467.89",
-     "8302.41",
-     "7318.19"
-    ],
-    "confidence": 40,
-    "route": "ask_shipper",
-    "status": "checked",
-    "error": null,
-    "precedent_codes": [
-     "9405.11",
-     "7318.19",
-     "7318.15"
-    ]
-   },
-   {
-    "text": "礼品 / Gift",
-    "expected_flag": "stop_word",
-    "flag": "stop_word",
-    "expected_code": null,
-    "codes": [],
-    "confidence": null,
-    "route": "ask_shipper",
-    "status": "checked",
-    "error": null,
-    "precedent_codes": []
-   },
-   {
-    "text": "样品 / Samples",
-    "expected_flag": "stop_word",
-    "flag": "stop_word",
-    "expected_code": null,
-    "codes": [],
-    "confidence": null,
-    "route": "ask_shipper",
-    "status": "checked",
-    "error": null,
-    "precedent_codes": []
-   },
-   {
-    "text": "个人物品 / Personal effects",
-    "expected_flag": "stop_word",
-    "flag": "stop_word",
-    "expected_code": null,
-    "codes": [],
-    "confidence": null,
-    "route": "ask_shipper",
-    "status": "checked",
-    "error": null,
-    "precedent_codes": []
-   },
-   {
-    "text": "不锈钢保温杯 500ml / Stainless steel vacuum flask, 500 ml",
+    "text": "不锈钢保温杯 / Stainless steel vacuum flask, 500 ml",
     "expected_flag": "ok",
     "flag": "ok",
     "expected_code": "9617.00",
@@ -547,7 +462,28 @@
     "precedent_codes": [
      "9617.00",
      "7323.93"
-    ]
+    ],
+    "cn8": "96170000",
+    "cn8_confidence": 100,
+    "cn8_written": true,
+    "cn8_question": null,
+    "cn8_error": null,
+    "taric_rule": "auto_completed",
+    "subdivisions": 1,
+    "taric10": "9617000000",
+    "suggestion_error": null
+   },
+   {
+    "text": "礼品 / Gift",
+    "expected_flag": "stop_word",
+    "flag": "stop_word",
+    "expected_code": null,
+    "codes": [],
+    "confidence": null,
+    "route": "ask_shipper",
+    "status": "checked",
+    "error": null,
+    "precedent_codes": []
    },
    {
     "text": "纯棉针织T恤 / Cotton T-shirts, knitted",
@@ -567,7 +503,16 @@
      "6109.10",
      "6109.90",
      "6110.20"
-    ]
+    ],
+    "cn8": "61091000",
+    "cn8_confidence": 100,
+    "cn8_written": true,
+    "cn8_question": null,
+    "cn8_error": null,
+    "taric_rule": "choose",
+    "subdivisions": 2,
+    "taric10": null,
+    "suggestion_error": null
    },
    {
     "text": "塑料玩具车 / Plastic toy cars",
@@ -576,7 +521,7 @@
     "expected_code": "9503.00",
     "codes": [
      "9503.00",
-     "9503.00",
+     "9508.23",
      "8715.00"
     ],
     "confidence": 95,
@@ -585,6 +530,35 @@
     "error": null,
     "precedent_codes": [
      "9503.00"
+    ],
+    "cn8": "95030095",
+    "cn8_confidence": 85,
+    "cn8_written": true,
+    "cn8_question": null,
+    "cn8_error": null,
+    "taric_rule": "choose",
+    "subdivisions": 3,
+    "taric10": null,
+    "suggestion_error": null
+   },
+   {
+    "text": "电子产品 / Electronic products",
+    "expected_flag": "vague",
+    "flag": "vague",
+    "expected_code": "8543.70",
+    "codes": [
+     "8543.70",
+     "8517.79",
+     "8517.62"
+    ],
+    "confidence": 40,
+    "route": "ask_shipper",
+    "status": "checked",
+    "error": null,
+    "precedent_codes": [
+     "8517.62",
+     "9405.11",
+     "8414.51"
     ]
    },
    {
@@ -594,7 +568,7 @@
     "expected_code": "8518.30",
     "codes": [
      "8518.30",
-     "8517.62",
+     "8518.90",
      "8517.79"
     ],
     "confidence": 95,
@@ -604,37 +578,75 @@
     "precedent_codes": [
      "8518.30",
      "8517.62"
+    ],
+    "cn8": "85183000",
+    "cn8_confidence": 100,
+    "cn8_written": true,
+    "cn8_question": null,
+    "cn8_error": null,
+    "taric_rule": "choose",
+    "subdivisions": 2,
+    "taric10": null,
+    "suggestion_error": null
+   },
+   {
+    "text": "家具 / Furniture",
+    "expected_flag": "vague",
+    "flag": "vague",
+    "expected_code": "9403.60",
+    "codes": [
+     "9403.99",
+     "9403.91",
+     "9403.50"
+    ],
+    "confidence": 40,
+    "route": "ask_shipper",
+    "status": "checked",
+    "error": null,
+    "precedent_codes": [
+     "9403.60",
+     "9401.61",
+     "9401.39"
     ]
    },
    {
-    "text": "不锈钢六角螺栓 / Stainless steel hexagon bolts, threaded",
+    "text": "铝合金自行车架 / Aluminium alloy bicycle frames",
     "expected_flag": "ok",
     "flag": "ok",
-    "expected_code": "7318.15",
+    "expected_code": "8714.91",
     "codes": [
-     "7318.15",
-     "7318.19",
-     "7318.11"
+     "8714.91",
+     "8714.99",
+     "7610.90"
     ],
     "confidence": 95,
     "route": "auto_accept",
     "status": "checked",
     "error": null,
     "precedent_codes": [
-     "7318.15",
-     "7318.16",
-     "7318.29"
-    ]
+     "9503.00",
+     "9507.90",
+     "9406.90"
+    ],
+    "cn8": "87149110",
+    "cn8_confidence": 85,
+    "cn8_written": true,
+    "cn8_question": null,
+    "cn8_error": null,
+    "taric_rule": "trade_defence",
+    "subdivisions": 9,
+    "taric10": null,
+    "suggestion_error": null
    },
    {
-    "text": "家用塑料收纳箱 / Plastic storage boxes for household use",
+    "text": "橡胶密封圈 / Rubber O-ring gaskets, vulcanised",
     "expected_flag": "ok",
     "flag": "ok",
-    "expected_code": "3924.90",
+    "expected_code": "4016.93",
     "codes": [
-     "3924.90",
-     "3923.10",
-     "3926.90"
+     "4016.93",
+     "4016.99",
+     "8484.90"
     ],
     "confidence": 95,
     "route": "auto_accept",
@@ -642,9 +654,18 @@
     "error": null,
     "precedent_codes": [
      "3926.90",
-     "3923.10",
-     "3924.10"
-    ]
+     "8484.90",
+     "8487.90"
+    ],
+    "cn8": "40169300",
+    "cn8_confidence": 100,
+    "cn8_written": true,
+    "cn8_question": null,
+    "cn8_error": null,
+    "taric_rule": "choose",
+    "subdivisions": 3,
+    "taric10": null,
+    "suggestion_error": null
    },
    {
     "text": "硅胶手机壳 / Silicone mobile phone cases",
@@ -653,8 +674,8 @@
     "expected_code": "3926.90",
     "codes": [
      "4202.32",
-     "3923.10",
-     "3926.90"
+     "3926.90",
+     "4016.10"
     ],
     "confidence": 95,
     "route": "auto_accept",
@@ -664,116 +685,27 @@
      "3926.90",
      "4202.92",
      "4202.32"
-    ]
-   },
-   {
-    "text": "LED台灯 USB供电 / LED desk lamp, USB powered",
-    "expected_flag": "ok",
-    "flag": "ok",
-    "expected_code": "9405.21",
-    "codes": [
-     "9405.21",
-     "9405.42",
-     "8513.10"
     ],
-    "confidence": 95,
-    "route": "auto_accept",
-    "status": "checked",
-    "error": null,
-    "precedent_codes": [
-     "9405.21",
-     "9405.11",
-     "9405.42"
-    ]
-   },
-   {
-    "text": "工业缝纫机钢制梭芯套 / Steel bobbin cases for industrial sewing machines",
-    "expected_flag": "ok",
-    "flag": "ok",
-    "expected_code": "8452.90",
-    "codes": [
-     "8452.90",
-     "8448.59",
-     "7326.90"
-    ],
-    "confidence": 95,
-    "route": "auto_accept",
-    "status": "checked",
-    "error": null,
-    "precedent_codes": [
-     "7318.29",
-     "7326.90",
-     "7318.23"
-    ]
-   },
-   {
-    "text": "真皮女式手提包 / Women's handbags with outer surface of leather",
-    "expected_flag": "ok",
-    "flag": "ok",
-    "expected_code": "4202.21",
-    "codes": [
-     "4202.21",
-     "4202.31",
-     "4202.29"
-    ],
-    "confidence": 95,
-    "route": "auto_accept",
-    "status": "checked",
-    "error": null,
-    "precedent_codes": [
-     "4202.21",
-     "4202.92",
-     "4202.22"
-    ]
-   },
-   {
-    "text": "男式纯棉牛仔裤 梭织 / Men's cotton denim trousers, woven",
-    "expected_flag": "ok",
-    "flag": "ok",
-    "expected_code": "6203.42",
-    "codes": [
-     "6203.42",
-     "6203.42",
-     "6203.43"
-    ],
-    "confidence": 95,
-    "route": "auto_accept",
-    "status": "checked",
-    "error": null,
-    "precedent_codes": [
-     "6203.42",
-     "6203.43"
-    ]
-   },
-   {
-    "text": "女式运动鞋 橡胶底纺织面 / Women's sports shoes, rubber outer sole, textile upper",
-    "expected_flag": "ok",
-    "flag": "ok",
-    "expected_code": "6404.11",
-    "codes": [
-     "6404.11",
-     "6404.19",
-     "6402.19"
-    ],
-    "confidence": 95,
-    "route": "auto_accept",
-    "status": "checked",
-    "error": null,
-    "precedent_codes": [
-     "6404.11",
-     "6404.19",
-     "6402.99"
-    ]
+    "cn8": "42023210",
+    "cn8_confidence": 85,
+    "cn8_written": true,
+    "cn8_question": null,
+    "cn8_error": null,
+    "taric_rule": "auto_completed",
+    "subdivisions": 1,
+    "taric10": "4202321000",
+    "suggestion_error": null
    }
-  ]
+  ],
+  "route_hits": 9
  },
  "usage": {
-  "prompt_tokens": 86246,
-  "completion_tokens": 6680,
-  "total_tokens": 92926,
-  "cost_usd": 0.0169449,
-  "cost_eur": 0.015589308000000005,
-  "calls": 79
+  "prompt_tokens": 80972,
+  "completion_tokens": 6398,
+  "total_tokens": 87370,
+  "cost_usd": 0.015984600000000005,
+  "cost_eur": 0.014705832000000004,
+  "calls": 80
  },
  "thresholds": {
   "flag_accuracy": 1.0,

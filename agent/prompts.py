@@ -85,7 +85,8 @@ def _version_summary(line: Line, v: LineVersion, full: bool = False) -> list[str
         elif c.cn8:
             state = {"rule": "written by rule", "clerk": "confirmed by the clerk"}.get(c.written_by.value if c.written_by else "",
                                                                                     "suggested, to confirm")
-            out.append(f"  CN-8: {c.cn8} ({c.confidence}%, {state})")
+            estimate = f"{c.confidence}%, " if len(c.options) > 1 and c.confidence > 0 else ""
+            out.append(f"  CN-8: {c.cn8} ({estimate}{state})")
     if v.taric is not None:
         out.append("  " + _taric_summary(v.taric, line.line_no, v.cn8 is not None and v.cn8.written_by is not None))
     if full:

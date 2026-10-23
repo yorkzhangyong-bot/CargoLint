@@ -32,7 +32,7 @@ A run guide that proves the feature end to end. Commands are for Git Bash at the
    - "EU TARIC" opens the consultation page for the code and CN on 01-10-2026. "EZT-online" opens its start page, with the code and origin shown for copying.
    - Confirm one subdivision: it is written, and the audit trail records the clerk's confirmation.
 5. **"Wireless Bluetooth earphones"**: 8518 30 00 is written as the single CN-8 line, and it has two subdivisions. Use "Ask the shipper" with a question. The route reads Ask the shipper, set by you, and the line's `decided_code`, `cn8` and `taric10` are empty in the CSV.
-6. **Trade-defence measures in detail**: paste `碳钢十字槽盘头螺钉 M4x10 / Carbon steel cross-recessed pan head screws M4 x 10`, and accept the HS-6 7318.15 if it is not auto-accepted. If the CN-8 is 7318 15 58:
+6. **Trade-defence measures in detail**: add `碳钢十字槽盘头螺钉 M4x10 / Carbon steel cross-recessed pan head screws M4 x 10` in the chat, starting with `add:` because a shipment is open, and accept the HS-6 7318.15 if it is not auto-accepted. If the CN-8 is 7318 15 58, or after you choose it there:
    - each subdivision's trade-defence table lists the anti-dumping rows with their additional codes and "39.6 % with anti-dumping/countervailing document D008; otherwise 86.5 %";
    - the requirements table lists 763 and 775 for 1008, All third countries (US3 scenario 1).
 7. **Change the origin**: set "Origin (TARIC)" to `US`. The anti-dumping rows for China disappear, and 7318 15 58's note becomes "Choose a subdivision". The TARIC-10 confirmed in step 4 stays. Then enter `C1`: it is refused, and the origin stays US.
