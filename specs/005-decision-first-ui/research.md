@@ -56,6 +56,11 @@ follows the spec's Line status table, in a fixed order of precedence (contracts/
 routes come from `agent/routing.py` through the store (Principle I). The lock reasons of FR-011 are built from the
 line's flag, CN-8 question, decision or failure. The store's `accept_lock_reason` covers only flagged and unchecked
 lines, and its wording is feature 001's.
+- **The TARIC step**: whether a line still waits for it is read from the stored CN-8 choice and TARIC outcome.
+  `ui/` never imports the TARIC tool, because tests/unit/test_taric_store.py forbids the tool's name in `ui/` and
+  `app.py`.
+- **Unreadable lines** map to red. They have no flag, so the store refuses to accept them, and a yellow pick would
+  hide that lock (Principle VI).
 
 **Rationale**:
 - One place to test every row of the mapping offline (SC-004), with no running page.
@@ -72,8 +77,11 @@ the backend change the author accepted.
   incorporate a motor" becomes "Ask: the toy cars incorporate a motor?". The full question is in the expanded row.
 - **A flagged line**:
   - with a matched term: "Ask: what exactly is “<term>”?";
-  - with a vagueness judgement: "Ask: " plus its missing facts, "material, product, use?".
-- **A line the clerk sent to the shipper**: "Ask: what exactly are the goods?".
+  - with a vagueness judgement: "Ask: " plus its missing facts, with "_" read as a space: "material, product name,
+    use?".
+- **An unreadable line**: "Ask: unreadable line".
+- **A line the clerk sent to the shipper**: "Ask: what exactly are the goods?", or "Ask: which TARIC subdivision
+  applies?" when it was sent from kind (b).
 - **Picks**:
   - "Pick: N candidates" for an HS-6 choice;
   - "Pick: CN-8, N lines" for a CN-8 choice;
@@ -81,7 +89,8 @@ the backend change the author accepted.
   - "Pick: N options, K AD" for more, where K counts the subdivisions under trade defence. Without any, it reads
     "Pick: N options";
   - one subdivision under trade defence: "Confirm: <code>".
-- **Length**: every short text is cut at 44 characters with "…". contracts/view.md §2 lists every text.
+- **Length**: status texts are cut at 44 characters with "…". Lock reasons, questions and reason lines are never
+  cut. contracts/view.md §2 lists every text.
 
 **Rationale**: FR-012 rules out a model call, and the wireframe's examples are illustrations.
 
@@ -100,8 +109,12 @@ the backend change the author accepted.
     first duty text, cut short. A percentage-only reading would show "none" for them, which would be wrong;
   - only a type-570 control: "control";
   - none: "none".
+- **Code**: the full spaced code, "7318 15 58 10".
 - **Description**: the subdivision's TARIC text; a code ending in 00 reads "the whole CN-8" (feature 004).
 - **Pre-selection**: the stored suggestion, if any.
+- **"None of these → ask shipper"**: feature 004's FR-009 allows it, and the store already offers
+  `ask_shipper_for_taric`. The stored question lists the subdivisions with their TARIC texts (contracts/view.md
+  §7.3).
 
 **Rationale**: FR-015 asks for one duty and one anti-dumping cell per subdivision. "All measures" keeps the full rows,
 so nothing is lost, and the parity of feature 004 stands.
@@ -117,7 +130,7 @@ that is green and not yet Accepted:
 - a line that stops at 8 digits is confirmed with `store.confirm_cn8(n, cn8)`.
 
 The function returns how many lines it confirmed. A line counts as "Accepted" when the clerk's decision accepts its
-HS-6, its CN-8 was written by the clerk, and its TARIC-10 was written by the clerk or is not available.
+HS-6, its CN-8 was written by the clerk, and its TARIC-10 was written by the clerk, is not available or is not loaded.
 
 **Rationale**: it uses only feature 004's confirmations, so the export reads "accepted" by the clerk with
 `decided_how` "auto", and threshold changes no longer touch those codes.
@@ -134,7 +147,9 @@ HS-6, its CN-8 was written by the clerk, and its TARIC-10 was written by the cle
 - `agent.recheck_line(store, kb, line_no) -> str` runs, for that line only, what `_finalize` runs for pending
   lines: the description check, the HS-6 classification, the precedent lookup, then the CN-8 and TARIC steps when
   the HS-6 is decided. It goes through the usage-recording client, so the shipment's cost includes it.
-- The UI starts it as a background job of kind `recheck`.
+- The UI starts it as a background job of kind `recheck`. A re-check queued behind another job keeps the edited text,
+  and the edit is stored only when the job starts (R-15). A running check could otherwise classify the new version
+  without its description check.
 - A clerk version is not locked by itself: `_recompute` keeps its rule "ever flagged, or a shipper reply". A line
   that was ever flagged still needs the clerk's click (Principle I). A line never flagged may turn green, as the
   wireframe shows (spec Assumptions).
@@ -193,7 +208,8 @@ lines with a question.
 
 ## R-11 The email templates
 
-**Decision**: `ui/view.py` builds the draft from fixed templates, in English and Chinese (contracts/view.md §4):
+**Decision**: `ui/shipper_email.py` builds the draft from fixed templates, in English and Chinese (contracts/view.md
+§7):
 - **Invoice id**: the shipment's reference, which the page sets to the bundled reference for the sample and to the
   file name without its extension for an upload. A typed line has none, so the shipment id stands in, as
   `export_filename` already does.
@@ -201,12 +217,16 @@ lines with a question.
   generic.
 - **Each question**: built from the line's state:
   - a CN-8 question: the stored attribute, model-written, kept in English in both versions;
-  - a flagged line, or one the clerk sent: the standard ask for material, exact product name and use, from the
-    template, in Chinese in the Chinese version.
+  - a flagged line, an unreadable line, or one the clerk sent: the standard ask for material, exact product name and
+    use, from the template, in Chinese in the Chinese version;
+  - a line sent from kind (b): the template question listing the subdivisions, with their TARIC texts.
 - **Chinese version**: every template part is Chinese, including the sign-off placeholders ("[经办人姓名] —
-  [货代公司名称]，汉堡").
+  [货代公司名称]，汉堡"). The acronyms ICS2 and TARIC are the only exception.
+- **English in the Chinese version**: only data: the shipper's descriptions and name, the invoice id, quoted terms,
+  TARIC codes and texts, and model-written CN-8 attributes.
 
-**Rationale**: FR-020 and FR-021, and the author's rule that only model-written questions may stay English.
+**Rationale**: FR-020 and FR-021. The author's rule keeps all template text Chinese; English stays only where it is
+the data itself.
 
 ## R-12 The Admin page's sources
 
@@ -215,8 +235,9 @@ lines with a question.
   `store.set_hybrid` (today's callbacks).
 - **Data**:
   - the ruling count is `len(kb.bti)`;
-  - the TARIC snapshot date comes from `kb.taric.snapshot`, with the source "Swedish Customs Tariff File
-    Distribution", or "TARIC not loaded";
+  - the TARIC snapshot date and CN-8 mismatch count come from `kb.taric.snapshot`, with the source "Swedish Customs
+    Tariff File Distribution", or "TARIC not loaded". This keeps feature 002 FR-024's caption, which moves here
+    from the sidebar;
   - the model is `settings.chat_model`, "via OpenRouter";
   - the knowledge-base date is `kb.updated`;
   - "Refresh (later)" is a disabled button.
@@ -232,8 +253,11 @@ lines with a question.
   - A run measures one of the two columns; the other reads "—".
   - When the files are missing, the section reads "no evaluation run yet".
   - "Export audit trail" downloads a CSV built by `view.audit_csv(store)` from `store.shipment.audit`.
-- **Ask the agent**: today's chat (`ui/chat.py`) with its Sources, Retrieval steps and Assistant notes, under an
-  expander "What I can and cannot do". Its text gains "draft the email to the shipper (you send it)".
+- **Ask the agent**: today's chat (`ui/chat.py`), with its Sources, Retrieval steps and Assistant notes.
+  - The expander "What I can and cannot do" is shown at all times. Its text gains "draft the email to the shipper
+    (you copy and send it)".
+  - The terms quick action stays.
+  - Its live turn reruns through the runner, not through the old layout flag.
 
 ## R-13 Tests
 
@@ -242,15 +266,23 @@ lines with a question.
   - `tests/unit/test_view.py` covers every row of the Line status table, the codes, the short texts, the lock reasons,
     the counts and the kind (a) and (b) rows;
   - `tests/unit/test_shipper_email.py` covers both emails;
-  - `tests/unit/test_actions.py` covers acceptance.
+  - `tests/unit/test_actions.py` covers acceptance;
+  - `tests/unit/test_runner.py` covers the job coverage and the failure handling.
 - **Store tests**: `tests/unit/test_store.py` gains the clerk edit and its audit record.
 - **Re-check tests**: `tests/integration/test_recheck.py` runs `recheck_line` with `FakeRawClient`.
-- **Page tests** (`tests/ui/`): `streamlit.testing.v1.AppTest`, offline. A harness builds stores in each state through
-  the store's own methods, with a fake knowledge base. It renders `ui.main_page.render` and `ui.admin.render`, and
-  replaces the job starter so no thread or model runs. One test runs `app.py` with the knowledge-base loader patched,
-  for the navigation.
+- **Page tests** (`tests/ui/`): `streamlit.testing.v1.AppTest`, offline.
+  - A harness builds stores in each state through the store's own methods, with the flags from the real rule engine
+    and a fake knowledge base.
+  - It renders both pages through an `st.navigation` like `app.py`'s, so tests can switch pages and check the links.
+  - It replaces the job starter, so no thread or model runs.
+  - One test runs `app.py` itself with the knowledge-base loader patched.
+- **The sample's TARIC data**: a new fixture, tests/fixtures/taric/snapshot_sample.jsonl, holds the records of
+  data/taric.jsonl for the CN-8 codes the offline sample reaches. Kind (b), the TARIC re-pick and the walkthrough
+  can then run on the sample. The small fixture of feature 004 stays as it is.
 - **Walkthrough**: `tests/eval/walkthrough.py` drives the sample as a clerk would and writes each action's response
-  time, the action count and the total to `tests/eval/walkthrough.json` (SC-001, SC-002).
+  time, the action count and the total to `tests/eval/walkthrough.json`. It records machine time only. The clerk's
+  time is the author's own timed run in the browser, recorded in quickstart.md (SC-001).
+- **On the sample**: the generic-text check (SC-003) and the email's line list (SC-006) also run on the sample.
 - **Model calls**: a test client counts them; the actions in SC-002 must make none.
 - **Today's UI tests**: the 13 tests of `ui/review.py` and `ui/sidebar.py` are replaced. The 14 that test kept
   functions stay unchanged: the reply hook, message classification and the upload helpers. One of them reads
@@ -265,6 +297,9 @@ lines with a question.
   on the others.
 - The pick is kept per line, version and kind in session state, pre-set to the leader or the suggestion.
 - "Confirm {code}" reads it.
+- The HS-6 form ends with "Other HS-6 code…": picking it shows a text input. The store checks the typed code against
+  the loaded nomenclature, as feature 001's FR-023 does.
+- The key includes the form, so the HS-6, CN-8 and TARIC-10 forms of "Change" keep separate picks.
 
 **Rationale**: it draws the wireframe's radio column inside a row layout, and `AppTest` can click it.
 
@@ -280,8 +315,13 @@ lines with a question.
   - It takes over `queue_finer_codes` and `_finish_job` from `ui/chat.py`. The finished check still adds its chat
     record, so Admin › Ask the agent shows its sources, steps and notes.
   - `ui/jobs.py` stays free of Streamlit and gains the kind `recheck`.
-- **The queue**: `job_queue` holds `finer_codes` and `recheck` entries, and typed lines that wait for a running check.
-  A waiting line is added to the store only when its check starts, so no line is added while a worker reads the store.
+- **The queue**: `job_queue` holds `finer_codes` entries, `recheck` entries with their edited text, and typed lines
+  that wait for a running check. Each touches the store only when its job starts. So no line or version is added
+  while a worker reads the store.
+- **Coverage**: a running check covers every line; a running `finer_codes`, `recheck` or `reply` job covers its line.
+- **Finishing**:
+  - it never changes the open row, so no row opens by itself;
+  - a finished re-check adds a chat record with its line's sources and retrieval steps, as a reply does today.
 - **A job that ends with an error** fails what it left pending, through the store:
   - a check: `store.finalize_check()`;
   - a re-check: `store.mark_failed`.
@@ -305,6 +345,8 @@ lines with a question.
   - the candidates line ends with "— too close to call";
   - the reason reads "Reason: candidates too close".
 - Otherwise the reason reads "Reason: vague description — {the flag's reason}".
+- A term-based flag keeps its own reason ("Reason: ICS2 unacceptable term 'parts'"); the closeness rule applies only
+  to judgement flags.
 - This is a display rule only; routing never reads it.
 
 **Rationale**: FR-016 and User Story 3 show "too close to call" for close candidates, but the backend has no closeness
@@ -314,8 +356,8 @@ rule (spec Assumptions). Saying "too close" for 40 % against 10 % would be untru
 
 ## R-17 Untrusted text in labels and Markdown
 
-**Decision**: descriptions, matched terms, the shipper name and model text are escaped with `view.md_escape` before
-they reach a button label, a caption or Markdown.
+**Decision**: descriptions, matched terms, the shipper name, the uploaded file name and model text are escaped with
+`view.md_escape` before they reach a button label, a caption or Markdown.
 
 **Rationale**:
 - Streamlit renders Markdown in labels. A description such as "[click](https://…)" would otherwise become a link
@@ -330,7 +372,8 @@ they reach a button label, a caption or Markdown.
 - **The action**: every green row, Ready or Accepted, has the action "Change". It opens kind (a) on the decided codes:
   - the codes and who decided each one;
   - the written TARIC-10's duty, anti-dumping duty and measures;
-  - the HS-6 candidates, with a switch to the CN-8 lines under the decided HS-6 when there is more than one.
+  - the HS-6 candidates and "Other HS-6 code…", with a switch to the CN-8 lines under the decided HS-6 when there is
+    more than one.
 - **The pick**: the decided code is pre-selected, and "Confirm" stays disabled until the clerk picks another. Accepting
   the current code is what the Accept control does.
 - **The flow**: a code the clerk confirms follows kind (a)'s flow for a review or CN-8 line. A new HS-6 runs the CN-8
@@ -347,3 +390,47 @@ kind (a) and the store's confirmations adds no backend surface.
 - Re-confirming the same code: on a Ready row it would record the HS-6 alone as the clerk's, and the row would
   still read Ready, because `needs_cn8` keeps the CN-8 chosen under the same HS-6. On an Accepted row it would
   change nothing. Accept already confirms the current codes.
+
+## R-19 Widget values across pages
+
+**Decision**: the widgets whose values must survive a page switch use `persist_state="session"`. These are the
+threshold slider, the hybrid switch, the Admin section radio and the header's origin field.
+
+**Rationale**:
+- Streamlit 1.65 drops a widget's value when the widget is not rendered on a run, which happens whenever the user
+  switches pages.
+- Today the sidebar renders the threshold on every run. Once it moves to the Admin page, a new shipment would silently
+  start with 85 %.
+
+**Alternatives considered**: copying each value into a separate key in a callback. It is more code for what one native
+argument does.
+
+## R-20 The HS-6 candidates in every expanded row (Principle III)
+
+**Decision**: every expanded row of a line with candidates shows its top-3 HS-6 candidates, each with:
+- its confidence;
+- its own reasoning, as a caption cut at 150 characters with the full text as its help;
+- the "history only" badge where set;
+- its EBTI precedent.
+
+**Where**:
+- in kind (a) for an HS-6, and in the HS-6 form of "Change", they are the pick table;
+- in the other kinds, an expander "HS-6 candidates (model estimate)" holds them:
+  - open in kind (c), where the clerk decides what to ask;
+  - closed in kinds (a) for a CN-8 and (b), where the HS-6 is already decided.
+
+**Rationale**: Principle III requires every classified line to show its top-3 candidates, each with a confidence and a
+reasoning text, as today's detail card does. The first plan showed only the top candidate's reasoning, and showed no
+candidates in kinds (b) and (c).
+
+**Alternatives considered**: always open everywhere. It would push kind (b)'s subdivision table below the fold, though
+the HS-6 there is already settled.
+
+## R-21 Opening another file
+
+**Decision**: once a shipment has lines, the header shows "Open another file". It opens the drop zone and "Try the
+sample invoice", and is disabled while a job runs. Opening a file asks the replacement question first, as today. While
+a file is being read, before any line exists, the page shows "Checking {file name}…" instead of the empty state.
+
+**Rationale**: the spec's edge case keeps today's replacement flow, and the empty state alone would hide the drop zone
+once lines exist (author's decision, 2026-10-23).

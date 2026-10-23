@@ -66,6 +66,9 @@ def recheck_line(store: Any, kb: Any, line_no: int) -> str:
 
 - **Precondition**: the current version is pending, as `update_description` leaves it. Otherwise it raises
   `ValueError` and changes nothing.
+  - The UI's runner stores the edit right before it starts this job, never while another job runs
+    (contracts/ui.md §6).
+  - So a running check cannot classify the new version without its description check.
 - **Client**: `get_client(usage_sink=store.add_usage, settings=get_settings())`, as `after_hs6_decision` uses, so the
   shipment's tokens and cost include the re-check.
 - **Steps, for this line only**, as `apply_reply` does for a reply's version:
@@ -82,8 +85,11 @@ def recheck_line(store: Any, kb: Any, line_no: int) -> str:
 
 **Tests** (`tests/integration/test_recheck.py`, written first, offline with `FakeRawClient` and a patched
 `get_client`):
-- a clerk edit of a stop-word line to a clear description is checked, classified and given precedents;
-- with its HS-6 auto-decided, it reaches the CN-8 and TARIC steps;
+- **An ever-flagged line**: a line flagged by the ICS2 term "spare parts", edited to a clear description, is
+  checked, classified and given precedents. It routes to `review` and its HS-6 is not decided, so no CN-8 step runs
+  (Principle I).
+- **A never-flagged line**: the open CN-8 question line, edited to state the attribute, is checked and classified.
+  Its HS-6 is auto-decided, and the CN-8 and TARIC steps run.
 - the other lines' versions, routes and audit records are untouched (single-line scope, as for `apply_shipper_reply`);
 - a failing model call fails this line only, with its reason;
 - an injected instruction in the edited text leaves the routing and schemas unaffected (Principle II, like the existing
@@ -96,7 +102,10 @@ def recheck_line(store: Any, kb: Any, line_no: int) -> str:
 - `Job.kind` gains `recheck`, with `line_no` set. The worker runs `job.note = recheck_line(store, kb, job.line_no)`
   and never calls Streamlit, as for `finer_codes`.
 - `running_label`: "Re-checking line {n}… · {elapsed} s". `finish_label`: "Line {n} re-checked · {elapsed} s".
-- On an exception: `job.error`, which the page turns into a failed line (contracts/ui.md §6).
+- **On an exception**: `job.error`, which the page turns into a failed line (contracts/ui.md §6).
+- **Queued re-checks**: a re-check queued behind another job keeps the edited text in its queue entry. The runner
+  calls `update_description` when the job starts.
+- **The chat record**: a finished re-check adds one to the Admin chat, with the line's sources and retrieval steps.
 
 ## 4. What stays the same
 

@@ -12,14 +12,14 @@ What the table shows for one line, computed by `line_status(store, line, activit
 
 | Field | Type | Rule |
 |---|---|---|
-| colour | `green`, `yellow`, `red` or `grey` | the first matching row of the mapping; grey while a job still covers the line's next step |
-| text | string | "Ready", "Accepted", "Pick: …", "Confirm: …", "Ask: …", "Check failed", "Running {step}…", "Queued: {step}" or "Not checked yet" |
+| colour | `green`, `yellow`, `red` or `grey` | the first matching row of the mapping; grey while a job still covers the line's next step, or while its re-check waits |
+| text | string | "Ready", "Accepted", "Pick: …", "Confirm: …", "Ask: …" (including "Ask: unreadable line"), "Check failed", "Running {step}…", "Queued: {step}", "Queued: re-check" or "Not checked yet" |
 | action | `Choose`, `Update`, `Change` or none | Choose for yellow, Update for red, Change for green, none for grey |
 | kind | `a_hs6`, `a_cn8`, `a_change`, `b`, `c`, `c_failed` or none | the expanded row it opens; `a_change` is kind (a) on a green line's decided codes |
 | selectable | bool | Ready lines only: the Accept checkbox is enabled |
 | lock_reason | string or null | red lines only: "Locked: {what blocks} — {what unlocks}" (FR-011); the Accept checkbox is shown disabled |
 | question | string or null | red lines with a question: the full English question for kind (c) and the email |
-| accepted | bool | green and confirmed by the clerk: the HS-6 accepted by the clerk, the CN-8 written by the clerk, and the TARIC-10 written by the clerk or not available |
+| accepted | bool | green and confirmed by the clerk: the HS-6 accepted by the clerk, the CN-8 written by the clerk, and the TARIC-10 written by the clerk, not available or not loaded |
 
 ### CodeDisplay
 
@@ -45,17 +45,19 @@ never fills a digit.
 
 | Record | Fields |
 |---|---|
-| CandidateRow (kind a) | code (HS-6, its single CN-8 line, or a CN-8), description, confidence (0–100) or none, precedent or none ("no close precedent") |
-| SubdivisionRow (kind b) | code, description, duty, anti_dumping ("{rate} % AD", a range, "AD: {specific duty}", "control" or "none"), has_trade_defence, suggested |
+| CandidateRow (kind a, and the HS-6 candidates block) | code (HS-6, its single CN-8 line, or a CN-8), description, confidence (0–100) or none, rationale (the candidate's reasoning) or none, history_only, precedent or none ("no close precedent") |
+| SubdivisionRow (kind b) | code (the full spaced code), description, duty, anti_dumping ("{rate} % AD", a range, "AD: {specific duty}", "control" or "none"), has_trade_defence, suggested |
 
 ### EmailDraft
+
+Built by `draft(store, kb, lang)`.
 
 | Field | Type | Rule |
 |---|---|---|
 | lang | `en` or `zh` | the toggle |
 | subject | string | the invoice id and the number of lines that need more detail |
-| body | string | greeting, introduction, numbered questions, closing and sign-off placeholders, in the chosen language; only model-written questions may stay English |
-| line_nos | list of int | the red lines with a question, in file order |
+| body | string | greeting, introduction, numbered questions, closing and sign-off placeholders, in the chosen language; in Chinese, English appears only in data (contracts/view.md §7.2) |
+| line_nos | list of int | the red lines with a question, in file order; a failed check has none |
 | text | string | the subject, a blank line and the body: what "Copy email" copies |
 
 ## 2. Backend addition: the version the clerk's edit creates (accepted on 2026-10-23)
@@ -67,9 +69,10 @@ never fills a digit.
 | Audit record | change `version_added`, actor `clerk`, previous = the replaced version's text, new = the new text, note "description updated by clerk" (or "re-checked by clerk, description unchanged") |
 | `LineStore.add_version` | maps a version created by the clerk to the actor `clerk` and the record above; other versions keep today's record |
 | Lock | unchanged rule: a line that was ever flagged, or a shipper-reply version, needs the clerk's click; a clerk version alone does not lock a never-flagged line |
+| `agent.recheck_line(store, kb, line_no)` | re-checks that one line, from the stop-word check onwards, with the existing tool functions and no agent turn (contracts/backend.md §2) |
+| Job kind `recheck` (`ui/jobs.py`) | runs `recheck_line` in the background; a queued re-check keeps the edited text until it starts (contracts/backend.md §3) |
 
-The re-check that follows is an agent-level function, `recheck_line(store, kb, line_no)` (contracts/backend.md §2). It
-writes only through the existing store methods.
+`recheck_line` writes only through the existing store methods.
 
 ## 3. Page state (session only)
 
@@ -77,16 +80,17 @@ writes only through the existing store methods.
 |---|---|
 | `selected_line_no` | the open row's line number, or null; the Admin chat reads it as the selected line, as today |
 | `accept_{line_no}` | the Accept checkbox of a Ready row |
-| `pick_{line_no}_{version_no}_{kind}` | the code picked in an open row of kind (a) or (b) |
+| `pick_{line_no}_{version_no}_{kind}_{form}` | the code picked in an open row of kind (a) or (b); `{form}` is `hs6`, `cn8` or `taric10` |
+| `typed_{line_no}_{version_no}` | the code typed into "Other HS-6 code…" |
 | `change_level_{line_no}_{version_no}` | the form "Change" shows on a green row: HS-6, CN-8 or TARIC-10 |
 | `email_open`, `email_lang` | whether the email block is open, and EN or 中文 |
-| `more_line_open` | whether the "+ Check one more line" field is shown |
-| `origin_field` | the header's origin text: the shipment's `taric_origin`, or the origin the next shipment starts with |
-| `job`, `job_queue` | the running background job and the waiting entries; job kinds `check`, `reply`, `question`, `finer_codes` and new `recheck` |
-| `threshold`, `hybrid` | the Admin › Rules values; a new shipment starts with them, as today |
+| `more_line_open`, `open_file` | whether the "+ Check one more line" field and the "Open another file" drop zone are shown |
+| `origin_field` | the header's origin text, kept across pages (`persist_state="session"`): the shipment's `taric_origin`, or the origin every new shipment starts with |
+| `job`, `job_queue` | the running background job and the waiting entries: `(finer_codes, line_no, taric_only)`, `(recheck, line_no, text)` and typed lines as text; job kinds `check`, `reply`, `question`, `finer_codes` and new `recheck` |
+| `threshold`, `hybrid` | the Admin › Rules values, kept across pages (`persist_state="session"`); a new shipment starts with them |
 | `session_usage` | the session's tokens and cost from replaced shipments (Admin › Cost) |
-| `chat` | the agent chat's messages, shown only on the Admin page |
-| `admin_section` | the Admin page's current section |
+| `chat` | the agent chat's messages, shown only on the Admin page, including a record for each finished re-check |
+| `admin_section` | the Admin page's current section, kept across pages (`persist_state="session"`) |
 | `uploaded_file`, `pending_replacement`, `last_upload_id` | today's upload state |
 
 Nothing persists beyond the session (constitution, out of scope).

@@ -48,3 +48,10 @@
   10-point closeness rule. All items still pass.
 - The author then added a TARIC-10 option to "Change": kind (b) on a green line whose CN-8 has several subdivisions
   (FR-014, FR-015, User Story 2 scenario 8, the Line status table, SC-007). All items still pass.
+- Updated on 2026-10-24 after `/speckit-analyze`, with the author's decisions (Clarifications, Session 2026-10-24):
+  - Principle III: every expanded row shows the HS-6 candidates with their reasoning;
+  - the unreadable lock; the typed HS-6 code; kind (b)'s "ask the shipper"; "Open another file";
+  - the queued re-check; the 14 kept tests; the Chinese-email data rule;
+  - SC-001 measured by the author's timed run, and the examples aligned with the rule engine.
+  At the author's request, FR-030 and Dependencies name `agent.recheck_line` and the job kind `recheck`. This is
+  a recorded exception to "No implementation details". All items still pass.
