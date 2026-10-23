@@ -135,7 +135,7 @@ The export gains a CN-8 column and a TARIC-10 column. Each is filled only once t
 - **Shipper reply**: re-runs the CN-8 and TARIC steps for that line only, after its HS-6 is decided again.
 - **HS-6 changed by the clerk after a TARIC-10 was written**: the new version starts without a CN-8 and TARIC-10; the CN-8 step runs again.
 - **Origin changed after confirmations**: confirmed TARIC-10 codes stay, since subdivision codes do not depend on origin. Auto-completed ones are re-evaluated, and the measures shown change.
-- **Auto-accept threshold changed in the sidebar**: CN-8 codes the clerk has not confirmed are re-evaluated against the new threshold, just as routes are. A CN-8 that falls below it becomes a suggestion again, together with any TARIC-10 written from it.
+- **Auto-accept threshold changed in the sidebar**: CN-8 codes the clerk has not confirmed are re-evaluated against the new threshold, just as routes are. A CN-8 that falls below it becomes a suggestion again, together with any TARIC-10 auto-completed from it. Confirming a TARIC-10 also confirms the CN-8 it sits under, recorded as two audit entries (the CN-8, then the TARIC-10), so a threshold change never touches a CN-8 the clerk confirmed, directly or with its TARIC-10.
 - **Origin unknown to TARIC** (a valid two-letter code that belongs to no group): only its own measures and erga omnes measures apply, as feature 003 defines.
 - **EBTI ruling coded to fewer than 8 digits**: not a CN-8 precedent.
 - **Expired EBTI ruling**: filtered out, as for HS-6 precedent (constitution Principle III).

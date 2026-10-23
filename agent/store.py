@@ -507,28 +507,36 @@ class LineStore:
         return ChangeKind.taric_not_available, f"{text}; {where}"
 
     def confirm_taric10(self, line_no: int, code: str) -> None:
-        """The clerk writes a TARIC-10 among the subdivisions (FR-012). It needs a decided HS-6 and a written CN-8. On
-        an auto-accepted line it records the clerk's acceptance of the auto HS-6 (research R-09)."""
+        """The clerk writes a TARIC-10 among the subdivisions (FR-012). It needs a decided HS-6 and a written CN-8, and
+        it confirms that CN-8 too, so a threshold change no longer touches it: two audit entries, or one when the
+        clerk had confirmed the CN-8 already. On an auto-accepted line it records the clerk's acceptance of the auto
+        HS-6 (research R-09)."""
         line = self.get_line(line_no)
         v = line.current
         hs6, how = self.decided_code(line)
         if not hs6:
             raise LockedError(f"line {line_no}: the HS-6 is not decided, so a TARIC-10 cannot be confirmed yet")
-        if self.decided_cn8(line) is None:
+        cn8 = self.decided_cn8(line)
+        if cn8 is None:
             raise LockedError(f"line {line_no}: the CN-8 is not written, so a TARIC-10 cannot be confirmed yet")
         t = v.taric
         if t is None or not validate_taric10(code, t.subdivisions):
-            raise UnknownCodeError(f"TARIC-10 {code!r} is not a subdivision of CN-8 {v.cn8.cn8} in the loaded snapshot")
+            raise UnknownCodeError(f"TARIC-10 {code!r} is not a subdivision of CN-8 {cn8} in the loaded snapshot")
         previous_route = self.effective_route(line)
+        confirms_cn8 = v.cn8.written_by != WrittenBy.clerk
+        if confirms_cn8:   # the TARIC-10 confirms the CN-8 it sits under
+            v.cn8 = v.cn8.model_copy(update={"written_by": WrittenBy.clerk})
         v.taric = t.model_copy(update={"taric10": code, "written_by": WrittenBy.clerk, "question": None})
         if v.decision is None:
             v.decision = Decision(route=DecisionRoute.accepted, decided_code=hs6, chosen_how=ChosenHow(how or "auto"),
-                                  decided_taric10=code, at=self._clock())
+                                  decided_cn8=cn8, decided_taric10=code, at=self._clock())
             self.record(DecisionRecord(at=self._clock(), line_no=line_no, version_no=v.version_no, change=ChangeKind.clerk_decision,
                                        previous=previous_route, new=DecisionRoute.accepted.value, actor=Actor.clerk,
                                        note="TARIC-10 confirmed on an auto-accepted line"))
         else:
-            v.decision = v.decision.model_copy(update={"decided_taric10": code})
+            v.decision = v.decision.model_copy(update={"decided_cn8": cn8, "decided_taric10": code})
+        if confirms_cn8:
+            self._record_code(line, ChangeKind.cn8_written, cn8, Actor.clerk, f"confirmed by the clerk with TARIC-10 {code}")
         self._record_code(line, ChangeKind.taric_written, code, Actor.clerk, f"confirmed by the clerk; {self._taric_where(t)}",
                           previous=t.taric10)
         self._recompute(line, Actor.clerk)

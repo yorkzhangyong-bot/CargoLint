@@ -107,7 +107,9 @@ set_cn8_result(line_no, choice: Cn8Choice)                 # writes or suggests;
                                                            # cn8_pending; recomputes the route
 confirm_cn8(line_no, cn8: str)                             # clerk; validate_cn8; closes an open question; records cn8_written (clerk)
 set_taric_result(line_no, outcome: TaricOutcome)           # records taric_written / taric_pending / taric_not_available
-confirm_taric10(line_no, code: str)                        # clerk; validate_taric10; requires a written CN-8
+confirm_taric10(line_no, code: str)                        # clerk; validate_taric10; requires a written CN-8 and
+                                                           # confirms it too (decided_cn8): two audit entries, cn8_written
+                                                           # then taric_written; one when the clerk had confirmed the CN-8
 ask_shipper_for_taric(line_no, question: str)              # clerk; feature 001's ask-shipper decision; stores the question;
                                                            # records taric_question; writes no TARIC-10
 set_taric_origin(code: str) -> str                         # upper-cases and validates ^[A-Z]{2}$, else ValueError; previous origin stays
@@ -115,7 +117,8 @@ set_decision (changed): accepting an HS-6 other than the one the CN-8 was chosen
 decided_code(line) (changed): with no clerk decision, it uses hs6_auto_decided (data-model §6)
 decided_cn8(line) -> str|None, decided_taric10(line) -> str|None   # written codes, top-down (data-model §6)
 counts() gains "cn8_to_confirm" and "taric_to_confirm"     # never added to the route counts
-set_threshold(value) also re-evaluates CN-8 choices the clerk has not confirmed, and re-applies code_to_write (no model call)
+set_threshold(value) also re-evaluates CN-8 choices the clerk has not confirmed, and re-applies code_to_write (no model call);
+                                                           # a CN-8 the clerk confirmed, directly or with its TARIC-10, stays
 effective_route(line): an open CN-8 question or a failed CN-8 step takes precedence over an HS-6 acceptance (data-model §6)
 CSV_COLUMNS gains "cn8", "taric10" at the end; to_json_bytes gains "cn8", "taric10" per line
 ```

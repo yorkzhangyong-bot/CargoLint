@@ -440,13 +440,27 @@ class TestTaric:
         line = s.get_line(2)
         d = line.current.decision
         assert (d.route, d.decided_code, d.chosen_how, d.decided_cn8, d.decided_taric10) == (
-            DecisionRoute.accepted, "7318.15", ChosenHow.auto, None, PAIR[0])
+            DecisionRoute.accepted, "7318.15", ChosenHow.auto, "73181558", PAIR[0])
         assert (line.current.taric.taric10, line.current.taric.written_by) == (PAIR[0], WrittenBy.clerk)
-        rec = _last(s, ChangeKind.taric_written, 2)
-        assert (rec.actor, rec.new) == (Actor.clerk, PAIR[0])
+        assert line.current.cn8.written_by == WrittenBy.clerk          # the TARIC-10 confirms the CN-8 it sits under
+        cn8_rec, rec = [r for r in s.shipment.audit if r.line_no == 2 and r.actor == Actor.clerk][-2:]
+        assert (cn8_rec.change, cn8_rec.new) == (ChangeKind.cn8_written, "73181558")
+        assert cn8_rec.note == f"confirmed by the clerk with TARIC-10 {PAIR[0]}"
+        assert (rec.change, rec.new) == (ChangeKind.taric_written, PAIR[0])
         assert rec.note == "confirmed by the clerk; snapshot 2026-10-01; origin CN"
         assert s.decided_taric10(line) == PAIR[0] and s.effective_route(line) == "accepted"
         assert s.decided_code(line) == ("7318.15", "auto") and s.decided_cn8(line) == "73181558"
+
+    def test_a_cn8_the_clerk_confirmed_before_gets_no_second_entry(self, taric_store):
+        s = taric_store
+        s.set_cn8_result(2, _cn8(s, "7318.15", "73181558", 70))
+        s.confirm_cn8(2, "73181558")
+        s.set_taric_result(2, _defence())
+        before = len([r for r in s.shipment.audit if r.change == ChangeKind.cn8_written and r.line_no == 2])
+        s.confirm_taric10(2, PAIR[1])
+        assert len([r for r in s.shipment.audit if r.change == ChangeKind.cn8_written and r.line_no == 2]) == before
+        assert _last(s, ChangeKind.taric_written, 2).new == PAIR[1]
+        assert s.get_line(2).current.decision.decided_cn8 == "73181558"
 
     def test_confirm_refusals(self, taric_store):
         s = taric_store
@@ -523,7 +537,9 @@ class TestTaric:
         assert (t.taric10, t.written_by) == (None, None)
         rec = _last(s, ChangeKind.threshold_recomputed, 1)
         assert (rec.previous, rec.actor) == ("7318159500", Actor.threshold_change) and "withdrawn" in rec.note
-        assert s.get_line(2).current.taric.taric10 == PAIR[0]       # confirmed by the clerk: stays
+        assert s.get_line(2).current.taric.taric10 == PAIR[0]       # confirmed by the clerk: stays …
+        assert s.get_line(2).current.cn8.written_by == WrittenBy.clerk   # … with its CN-8, which the threshold never touches
+        assert s.decided_taric10(s.get_line(2)) == PAIR[0]
         s.set_threshold(90)
         t = s.get_line(1).current.taric
         assert (t.taric10, t.written_by) == ("7318159500", WrittenBy.rule)
@@ -588,6 +604,7 @@ class TestFinerCodeAudit:
             (6, ChangeKind.route_computed, Actor.routing_rule,
              "CN-8 step failed: SchemaError: invalid after 2 attempts — needs a human look"),
             (1, ChangeKind.taric_written, Actor.routing_rule, "auto-completed, single TARIC subdivision, snapshot 2026-10-01; origin CN"),
+            (3, ChangeKind.cn8_written, Actor.clerk, f"confirmed by the clerk with TARIC-10 {PAIR[0]}"),
             (3, ChangeKind.taric_written, Actor.clerk, "confirmed by the clerk; snapshot 2026-10-01; origin CN"),
             (3, ChangeKind.taric_pending, Actor.routing_rule, "trade-defence measure 552; snapshot 2026-10-01; origin CN"),
             (4, ChangeKind.taric_pending, Actor.routing_rule, "several subdivisions (2); snapshot 2026-10-01; origin CN"),

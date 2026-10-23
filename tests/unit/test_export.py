@@ -199,3 +199,11 @@ def test_a_clerk_confirmation_on_an_auto_accepted_line_reads_accepted_by_the_cle
     assert (row["route"], row["route_set_by"], row["decided_code"], row["decided_how"]) == ("accepted", "clerk", "7318.15", "auto")
     assert before[2]["decided_code"] == "7318.15" and before[2]["decided_how"] == "auto"
     assert (row["cn8"], row["taric10"]) == ("73181558", PAIR[0])
+
+
+def test_a_confirmed_taric10_keeps_both_codes_through_a_threshold_change(finer):
+    s, _ = finer
+    s.confirm_taric10(2, PAIR[0])          # also confirms its CN-8 73181558, written by rule at 95
+    s.set_threshold(99)
+    row = _rows(s)[2]
+    assert (row["route"], row["decided_code"], row["cn8"], row["taric10"]) == ("accepted", "7318.15", "73181558", PAIR[0])

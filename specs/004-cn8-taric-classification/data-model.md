@@ -19,7 +19,7 @@ follow constitution v1.2.0 Principle I:
 |---|---|---|---|
 | Candidate | cn8 | string or null, `^\d{8}$` | the CN-8 chosen for this HS-6 candidate; only the decided HS-6 candidate carries one |
 | Candidate | taric10 | string or null, `^\d{10}$` | the suggested TARIC subdivision, when one is highlighted (FR-009) |
-| Decision | decided_cn8 | string or null, `^\d{8}$` | set only by the clerk's CN-8 confirmation; must be one of the decided HS-6's CN-8 lines (FR-002) |
+| Decision | decided_cn8 | string or null, `^\d{8}$` | set only by the clerk: a CN-8 confirmation, or a TARIC-10 confirmation, which confirms the CN-8 it sits under; must be one of the decided HS-6's CN-8 lines (FR-002) |
 | Decision | decided_taric10 | string or null, `^\d{10}$` | set only by the clerk's TARIC-10 confirmation; must be one of the snapshot's subdivisions for the written CN-8 (FR-012) |
 
 `Decision`'s existing rule ("an accepted decision needs a decided_code") stays. A confirmation on an auto-accepted line
@@ -73,7 +73,7 @@ always equals the snapshot (FR-013, SC-004).
 
 | Change kind | Recorded when | `note` carries |
 |---|---|---|
-| cn8_written | a CN-8 is written | "written by rule (confidence N ≥ threshold T)", "single CN-8 line" or "confirmed by the clerk"; the CN-8 |
+| cn8_written | a CN-8 is written | "written by rule (confidence N ≥ threshold T)", "single CN-8 line", "confirmed by the clerk" or "confirmed by the clerk with TARIC-10 <code>"; the CN-8 |
 | cn8_question | the deciding attribute is missing | "Ask the shipper for: <attribute>" |
 | cn8_pending | the rule leaves the CN-8 to the clerk (added by T055 for FR-020: a suggestion is an outcome too) | "to confirm: confidence N < threshold T" or "to confirm: the cited ruling <reference> classifies under <CN-8>, not <CN-8>"; the CN-8 |
 | taric_written | a TARIC-10 is written | "auto-completed, single TARIC subdivision, snapshot <date>" or "confirmed by the clerk"; the origin |
