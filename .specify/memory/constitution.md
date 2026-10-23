@@ -249,7 +249,7 @@ a spec change.
   shipper with past-shipment count, or new shipper; filing: ICS2 house (ENS)); Rules
   (auto-accept threshold slider 60–99, default 85; hybrid-search switch, on by default);
   knowledge-base caption with last-updated date. Main: assistant welcome message with three
-  quick actions (try one description, use the bundled sample packing list of 12 lines with 5
+  quick actions (try one description, use the bundled sample packing list of 12 lines with 6
   needing action, look up the ICS2 unacceptable terms), the "What I can and cannot do" panel,
   and a chat input that accepts pasted lines.
 - Screen 2, Chat + review table (after check). Sidebar: as above plus the uploaded-file chip,
@@ -321,4 +321,4 @@ the spec, plan or tasks change. Each feature is closed against the Definition of
 **Keywords**: MUST and MUST NOT are mandatory; SHOULD is a default that needs a recorded reason
 to depart from; MAY is optional.
 
-**Version**: 1.2.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-23
+**Version**: 1.2.1 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-23
