@@ -22,7 +22,7 @@ Input  Cn8Input                       # function input
 Agent-facing wrapper args: line_nos: [int]|None (omit → every line with a decided HS-6 and no CN-8 choice yet)
 Output [Cn8Result]                    # one per input line
   line_no
-  choice: Cn8Choice|None              # data-model §3; None when the line failed this step
+  choice: Cn8Choice                   # data-model §3; on failure it carries `error` and no CN-8
   status: checked|failed, error_reason
 Structured model output Cn8Out        # validated before use; invalid → one retry, then the line fails this step
   cn8: "########"|null, confidence: 0-100, deciding_attribute: str, attribute_visible: bool,
@@ -63,10 +63,12 @@ The steps:
 3. **Suggestion**: for `choose`, a suggestion is kept only when `attribute_visible` is true and `code` is among the subdivisions.
 4. **Audit**: every outcome is recorded (data-model §5).
 
-### 1.5 `apply_shipper_reply` (changed)
+### 1.5 `apply_shipper_reply` (behaviour unchanged)
 
-After check, classify and precedent for the new version, the reply also runs the CN-8 and TARIC steps for that line,
-once its HS-6 is decided. It still touches that line only (Principle V).
+The reply's new version starts without a CN-8 choice or TARIC outcome. A version created by a reply is never
+auto-accepted (feature 001's lock), so only the clerk's click decides its HS-6. That click runs the two steps for the
+line (`after_hs6_decision`, §4); `apply_shipper_reply` makes no CN-8 or TARIC call itself (FR-006). It still touches
+that line only (Principle V).
 
 ## 2. Pure guardrail functions (additions; `agent/routing.py`, `agent/taric_rules.py`)
 
@@ -119,7 +121,7 @@ not decided or, for a TARIC-10, when its CN-8 is not written. Feature 001's lock
 
   The model never states a CN-8, TARIC-10, rule or count that is not in a tool result or the context block.
 - **Completeness guard** (`_finalize`): after the HS-6 steps, it runs `classify_cn8` for decided lines without a CN-8 choice and `lookup_taric` for lines without a current outcome. These are marked "run by the app".
-- **`turn_tools`**: a reply turn still offers only `apply_shipper_reply`, which runs the two steps itself.
+- **`turn_tools`**: a reply turn still offers only `apply_shipper_reply`; the two steps run once the clerk accepts the new version's HS-6.
 - **Clerk actions**: an app-level function `after_hs6_decision(store, kb, line_no)` runs the two steps for one line. The UI starts it as a background job after the clerk accepts or chooses an HS-6, and after a CN-8 confirmation (TARIC step only). The UI never calls the model or retrieval itself.
 - **Origin change**: an app-level function `apply_taric_origin(store, kb, code)` calls `set_taric_origin`, then re-runs the lookup and the rules for every line with a CN-8. Subdivision codes do not depend on the origin, so stored suggestions are reused and no model is called (FR-018). Each lookup takes under 1 ms, so it runs synchronously.
 - **Context block**: `build_context` gains each line's CN-8, TARIC-10, rule and pending markers, so follow-up answers come from stored results (Principle III).

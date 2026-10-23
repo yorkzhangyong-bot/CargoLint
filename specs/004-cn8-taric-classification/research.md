@@ -92,7 +92,7 @@ So a model judgement is needed for a third of the decided subheadings.
 **Decision**:
 - **During a check**: the agent calls `classify_cn8`, then `lookup_taric`, after `lookup_precedent`, for lines whose HS-6 is decided. The system prompt's tool order gains steps 6 and 7. The completeness guard (`agent.agent._finalize`) runs whatever the agent skipped, as it already does for the HS-6 steps, marked "run by the app".
 - **When the clerk accepts or chooses an HS-6**: the UI starts the same two steps for that line through an agent-level function run as a background job (`ui/jobs.py`), so the click returns at once. The UI never calls the model or retrieval directly (constitution, architecture invariant).
-- **Shipper reply**: `apply_shipper_reply` re-runs check, classify and precedent as today, then CN-8 and TARIC for that line only (FR-006, Principle V).
+- **Shipper reply**: `apply_shipper_reply` re-runs check, classify and precedent as today. A version created by a reply is never auto-accepted (feature 001), so the CN-8 and TARIC steps run when the clerk accepts its HS-6, for that line only (FR-006, Principle V).
 - **Threshold change**:
   - CN-8 codes the clerk has not confirmed are re-evaluated against the new threshold, with no model call. Below it they become suggestions again, and a TARIC-10 written from them is withdrawn.
   - Routes are recomputed as today.
@@ -219,7 +219,7 @@ The measure table is filled by the page's script, so it needs a browser, which t
 
 ## R-14 UI
 
-**Decision**: native Streamlit only (Principle VI). The files `ui/chat.py`, `ui/detail.py` and `ui/review.py` are CRLF and keep their line endings.
+**Decision**: native Streamlit only (Principle VI). The files `ui/chat.py`, `ui/detail.py`, `ui/review.py` and `ui/upload.py` are CRLF and keep their line endings.
 - **Detail card** (`ui/detail.py`): a "CN-8 and TARIC-10" section under the route control.
   - **CN-8**: the code with its label path, a confidence bar, the evidence and the ruling (popover). Its state is one of:
     - written (by rule or by you);
@@ -232,7 +232,7 @@ The measure table is filled by the page's script, so it needs a browser, which t
     - the two links, with the code in a copyable block.
 - **Counts** (`ui/chat.py _render_counts`): "CN-8 to confirm" and "TARIC-10 to confirm" are shown as metrics after the three routing metrics, labelled as confirmations.
 - **Review rows** (`ui/review.py`): a small badge for each marker in the row's route cell. The columns are unchanged.
-- **Sidebar** (`ui/sidebar.py`): "Origin (TARIC)" in the Shipment expander.
+- **Sidebar**: "Origin (TARIC)" in the Shipment expander, whose fields `ui/upload.py` renders (`render_shipment_fields`).
 - **Parity (SC-004)**: a pure view-model function `taric_view(subdivisions, …)` builds what the card shows from the lookup output.
   - Unit tests on the fixture snapshot prove it neither adds, drops nor alters a measure.
   - `tests/eval/taric_ui_parity.py` checks the 20 acceptance codes against the real snapshot.

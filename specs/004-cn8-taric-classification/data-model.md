@@ -40,6 +40,7 @@ creates `Decision(route=accepted, decided_code=<the auto-decided HS-6>, chosen_h
 | question | string or null | "Ask the shipper for: <deciding_attribute>" when the attribute is not visible; this is the routing input (§6) |
 | precedent | Precedent or null | a valid EBTI ruling sent in this run whose code starts with `cn8` |
 | written_by | `rule`, `clerk` or null | `rule` when `confidence` ≥ the shipment threshold (or a single line); `clerk` after a confirmation; null while it is a suggestion |
+| error | string or null | why the step failed for this line: invalid output after one retry, or an API error. There is then no CN-8 and no question; the line keeps its HS-6 route and waits for the clerk's choice (§6) |
 
 ## 4. TARIC Outcome (new; `LineVersion.taric`)
 
@@ -105,7 +106,7 @@ feature 001, and with it the CN-8 and TARIC-10 columns. The stored choices stay 
 HS-6 again brings them back.
 
 **Pending confirmations** never change a route (clarifications Q1 and Q4). They are counted separately:
-- `cn8_to_confirm`: lines with a decided HS-6 and a CN-8 that is not written and has no open question;
+- `cn8_to_confirm`: lines with a decided HS-6 whose CN-8 is not written and has no open question, that is, a suggestion or a failed step;
 - `taric_to_confirm`: lines with a written CN-8 whose rule is `choose` or `trade_defence`, whose TARIC-10 is not written,
   and which the clerk has not sent to the shipper.
 
@@ -129,7 +130,7 @@ Threshold change  ─► unconfirmed CN-8 re-evaluated; a TARIC-10 written from 
 Origin change     ─► TARIC step again for every line with a CN-8; clerk-confirmed TARIC-10 codes stay
 HS-6 changed      ─► new line version or decision: CN-8 and TARIC cleared, CN-8 step again
 Sent to review or the shipper by the clerk ─► choices kept on the version; HS-6, CN-8 and TARIC-10 export columns empty
-Shipper reply     ─► new version: check, classify, precedent, CN-8, TARIC for that line only
+Shipper reply     ─► new version: check, classify, precedent; CN-8 and TARIC once the clerk accepts its HS-6
 ```
 
 ## 8. Export (001 export contract, columns added)

@@ -75,7 +75,7 @@ A TARIC lookup takes under 1 ms, so origin and threshold changes run synchronous
 - `CODE_PATTERN`, the HS-6 pipeline, its results and the existing export columns are unchanged (FR-021).
 - No loader change; TARIC is never embedded or indexed.
 - Untrusted text reaches the model only fenced.
-- Native Streamlit only. `ui/chat.py`, `ui/detail.py` and `ui/review.py` keep their CRLF line endings.
+- Native Streamlit only. `ui/chat.py`, `ui/detail.py`, `ui/review.py` and `ui/upload.py` keep their CRLF line endings.
 
 **Scale/Scope**:
 - **Nomenclature**: 5,612 HS-6 subheadings and 9,791 CN-8 lines. 1,835 subheadings have two or more CN-8 lines.
@@ -96,7 +96,7 @@ raised in planning on 2026-10-23; they are listed after the Constitution Check.
 | II | Untrusted input, end to end | Text fenced; never an instruction, path or tool hint | PASS | **Fencing**: both new calls fence the line text with `fence()`, and send ruling excerpts and subdivision descriptions as data. **Origin**: a validated two-letter code. **Adversarial test**: a new fixture orders the model to pick a CN-8 and to write a TARIC-10; the test asserts that validation and the rules are unaffected |
 | III | Grounded, cited, never guessed | Precedent traced to a ruling retrieved in the run; expired rulings filtered; "no ruling" stated; confidence not presented as calibrated | PASS | **Citations**: a cited ruling must be among those sent (R-03). **Validity**: `BTIStore.by_cn8` applies the validity filter. **Confidence**: the card captions it "model estimate". **Measures**: they and both links come from the official sources, with the snapshot date. A missing attribute leads to a question, not a code (FR-003) |
 | IV | Hybrid, structure-aware retrieval | `classify_hs6` pipeline unchanged; TARIC never embedded; scripted loader; truthful sidebar | PASS | The HS-6 pipeline is untouched (FR-021). The CN-8 precedent search reuses the existing BTI vectors with a subheading filter, so there is no new index and no loader change. The knowledge-base caption is unchanged |
-| V | Single-purpose, schema-typed tools | Each added tool listed with a justification; Pydantic schemas; plain functions; per-line isolation; a reply re-runs one line; append-only audit | PASS | **Tools**: the two that constitution v1.2.0 names, `classify_cn8` and `lookup_taric`, justified in [contracts/tools.md](contracts/tools.md). Both wrap plain functions run through `run_per_line`. **Replies**: `apply_shipper_reply` also runs both steps, for the referenced line only. **Audit**: six change kinds are added, append-only |
+| V | Single-purpose, schema-typed tools | Each added tool listed with a justification; Pydantic schemas; plain functions; per-line isolation; a reply re-runs one line; append-only audit | PASS | **Tools**: the two that constitution v1.2.0 names, `classify_cn8` and `lookup_taric`, justified in [contracts/tools.md](contracts/tools.md). Both wrap plain functions run through `run_per_line`. **Replies**: `apply_shipper_reply` is unchanged; a reply's new version gets its CN-8 and TARIC once the clerk accepts its HS-6, for that line only. **Audit**: six change kinds are added, append-only |
 | VI | Native Streamlit UI | Native components; guardrails visible; review table from the store; panel statement true | PASS | **Components**: `st.metric`, `st.expander`, `st.dataframe`, `st.radio`, `st.button`, `st.link_button`, `st.code`, `st.popover` and `st.badge`; no custom HTML, CSS or JavaScript. **Guardrails**: confirm buttons are disabled, with the reason. **Store**: counts and markers are read from it. **Panel**: the "What I can and cannot do" text gains CN-8 and TARIC ([contracts/ui.md](contracts/ui.md)) |
 | VII | Test-first and measured | Guardrail tests written first and seen to fail, offline; live checks separate | PASS | **Failing tests first** (R-15) for: `route_line` with the question; `hs6_auto_decided`; the five TARIC rules and `code_to_write`; the group table; both validators; the threshold rule; the store transitions; the export columns. **Live**: the CN-8 evaluation and the budget and scale checks are separate runs |
 | — | Technology stack | Stack as listed; deviations recorded | PASS | No new dependency. Feature 002's GnuPG deviation is unchanged and not used here |
@@ -153,19 +153,18 @@ agent/
 tools/
 ├── __init__.py                # load_all lists seven modules
 ├── classify_cn8.py            # NEW: choose_cn8 (plain function) and the classify_cn8 tool
-├── lookup_taric.py            # NEW: the lookup_taric tool over kb.taric
-└── apply_shipper_reply.py     # also runs the CN-8 and TARIC steps for the referenced line
+└── lookup_taric.py            # NEW: the lookup_taric tool over kb.taric
 rag/                           # read-only helpers; no loader change
 ├── nomenclature.py            # NomenclatureIndex.cn8_lines(hs6)
 ├── bti.py                     # BTIStore.by_cn8(hs6, as_of)
 └── retriever.py               # ChromaVectorSearch.search_by_vector gains an optional where filter
 ui/
-├── sidebar.py                 # "Origin (TARIC)" in the Shipment expander
+├── upload.py                  # CRLF: "Origin (TARIC)" in render_shipment_fields (the Shipment expander)
 ├── chat.py                    # CRLF: the two confirmation metrics; the "What I can and cannot do" text;
 │                              # the sample hint "12 Yiwu consolidation lines, 6 problematic"
 ├── review.py                  # CRLF: marker badges in the route cell
 ├── detail.py                  # CRLF: the "CN-8 and TARIC-10" section
-└── jobs.py                    # after_hs6_decision as a background job
+└── jobs.py                    # after_hs6_decision as a background job (kind finer_codes), queued behind a running job
 data/samples/sample_lines.json # expected routes updated to what FR-003 produces (decision 3)
 tests/
 ├── fakes.py                   # default_for Cn8Out and SubdivisionOut
@@ -179,7 +178,7 @@ tests/
 │   ├── test_validate.py       # validate_cn8, validate_taric10
 │   ├── test_store.py          # confirmations, questions, origin, threshold, effective route, counts, audit
 │   ├── test_export.py         # existing columns unchanged; cn8 and taric10 top-down
-│   └── test_apply_reply.py    # the reply runs both steps for its line only
+│   └── test_apply_reply.py    # a reply's new version starts without a CN-8 choice or TARIC outcome
 ├── integration/
 │   ├── test_classify_cn8.py   # NEW: options, precedent, validation, question, written or suggested
 │   ├── test_lookup_taric.py   # NEW: rules on the fixture snapshot, suggestion only for several subdivisions
@@ -217,7 +216,7 @@ README.md, CLAUDE.md           # at implementation: seven tools, the CN-8 and TA
 - **When the steps run** (R-05):
   - **During a check**: the agent calls them as tools 6 and 7, and `_finalize` runs whatever it skipped.
   - **After the clerk accepts or chooses an HS-6**: the UI starts `after_hs6_decision` as a background job. A CN-8 confirmation runs the TARIC step only.
-  - **Shipper reply**: `apply_shipper_reply` runs both for its line.
+  - **Shipper reply**: the new version starts without a CN-8 choice. Its HS-6 needs the clerk's click (feature 001), and that click runs both steps.
   - **Origin change**: `apply_taric_origin` re-runs the lookup and the rules for every line with a CN-8, reusing the stored suggestions, with no model call.
   - **Threshold change**: `set_threshold` re-evaluates CN-8 choices the clerk has not confirmed and re-applies `code_to_write`.
 - **Changing the HS-6**: when the clerk accepts an HS-6 other than the one the CN-8 was chosen under, `set_decision` clears the CN-8 choice and the TARIC outcome, and the CN-8 step runs again.

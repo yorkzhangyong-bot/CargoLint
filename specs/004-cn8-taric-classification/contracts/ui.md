@@ -2,9 +2,9 @@
 
 Changes feature 001's [ui.md](../../001-packing-list-check/contracts/ui.md). The UI stays native Streamlit
 (Principle VI): no custom HTML, CSS or JavaScript. Nothing listed in the constitution's UI design contract is removed or
-moved. The files `ui/chat.py`, `ui/detail.py` and `ui/review.py` are CRLF and keep their line endings.
+moved. The files `ui/chat.py`, `ui/detail.py`, `ui/review.py` and `ui/upload.py` are CRLF and keep their line endings.
 
-## Sidebar: Shipment expander (`ui/sidebar.py`)
+## Sidebar: Shipment expander (`ui/upload.py`, `render_shipment_fields`)
 
 | Element | Behaviour |
 |---|---|
