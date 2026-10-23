@@ -85,14 +85,14 @@ class TestChooseCn8:
         assert suggested.cn8 == "87149110" and suggested.written_by is None
         assert [c for c, _ in written.options] == ["87149110", "87149130", "87149190"]
 
-    def test_without_an_agreeing_precedent_the_confidence_is_capped_at_84(self, fake_llm, make_kb):
+    def test_without_a_precedent_the_threshold_rule_alone_decides(self, fake_llm, make_kb):
         from tools.classify_cn8 import choose_cn8
 
         choice = choose_cn8(FRAMES, "8714.91", make_kb(), get_client(), 85, AS_OF)   # recorded: 95, no precedent
-        assert (choice.cn8, choice.confidence, choice.written_by) == ("87149110", 84, None)
-        assert choose_cn8(FRAMES, "8714.91", make_kb(), get_client(), 80, AS_OF).written_by == WrittenBy.rule
+        assert (choice.cn8, choice.confidence, choice.written_by, choice.precedent) == ("87149110", 95, WrittenBy.rule, None)
+        assert choose_cn8(FRAMES, "8714.91", make_kb(), get_client(), 96, AS_OF).written_by is None
 
-    @pytest.mark.parametrize("evidence", ["", "the goods are frames for bicycles", "carbon fibre frames"])
+    @pytest.mark.parametrize("evidence", ["", "the goods are frames for bicycles", "carbon fibre frames", "Front forks"])
     def test_without_words_of_the_line_as_evidence_the_step_asks_the_shipper(self, fake_client, make_kb, evidence):
         from tools.classify_cn8 import choose_cn8
 
@@ -147,7 +147,7 @@ class TestChooseCn8:
         client, _ = fake_client({key(FRAMES): out("87149110", precedent="XX-NEVER-SENT", evidence="bicycle frames")})
         choice = choose_cn8(FRAMES, "8714.91", kb, client, 85, AS_OF)
         assert choice.precedent is None and choice.cn8 == "87149110"
-        assert choice.confidence == 84 and choice.written_by is None   # no agreeing precedent
+        assert choice.confidence == 95 and choice.written_by == WrittenBy.rule   # counts as no ruling: the threshold decides
 
     def test_a_cited_ruling_at_another_cn8_keeps_the_choice_to_confirm(self, fake_client, make_kb):
         from tools.classify_cn8 import choose_cn8
@@ -156,7 +156,7 @@ class TestChooseCn8:
         client, _ = fake_client({key(FRAMES): out("87149110", 98, precedent="DE-FORK-1", evidence="bicycle frames")})
         for threshold in (85, 60):
             choice = choose_cn8(FRAMES, "8714.91", kb, client, threshold, AS_OF)
-            assert choice.cn8 == "87149110" and choice.written_by is None and choice.confidence <= 84
+            assert choice.cn8 == "87149110" and choice.written_by is None and choice.confidence == 98
             assert choice.precedent.reference == "DE-FORK-1"   # shown, so the clerk sees the disagreement
 
     def test_at_most_two_rulings_per_cn8_line_and_eight_in_all(self, fake_client, make_kb):

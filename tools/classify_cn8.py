@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 
 from agent.llm import StructuredCaller
 from agent.prompts import CN8_SYSTEM, cn8_user
-from agent.routing import cn8_confidence, cn8_precedent_conflict, cn8_written_by_rule, evidence_in_line, validate_cn8
+from agent.routing import cn8_precedent_conflict, cn8_written_by_rule, evidence_in_line, validate_cn8
 from agent.schemas import Cn8Choice, Cn8Input, Cn8Line, Cn8Out, Cn8Result, Precedent, WrittenBy
 from tools import register
 from tools.common import get_context, run_per_line
@@ -95,10 +95,9 @@ def choose_cn8(line: Any, hs6: str, kb: Any, client: StructuredCaller | None, th
         return Cn8Choice(hs6=hs6, options=options, deciding_attribute=attribute,
                          error=f"the model chose {out.cn8}, which is not a CN-8 line of {hs6}")
     precedent = {p.reference: p for p in rulings}.get(out.precedent or "")   # a citation counts only if it was sent
-    conflict = cn8_precedent_conflict(out.cn8, precedent.code if precedent else None)
-    confidence = cn8_confidence(out.confidence, True, precedent is not None and not conflict)   # evidence checked above
-    written = cn8_written_by_rule(confidence, threshold, single_line=False, precedent_conflict=conflict)
-    return Cn8Choice(hs6=hs6, options=options, cn8=out.cn8, confidence=confidence, evidence=out.evidence,
+    conflict = cn8_precedent_conflict(out.cn8, precedent.code if precedent else None)   # no ruling is no conflict
+    written = cn8_written_by_rule(out.confidence, threshold, single_line=False, precedent_conflict=conflict)
+    return Cn8Choice(hs6=hs6, options=options, cn8=out.cn8, confidence=out.confidence, evidence=out.evidence,
                      rationale=out.rationale, deciding_attribute=attribute, precedent=precedent,
                      written_by=WrittenBy.rule if written else None)
 

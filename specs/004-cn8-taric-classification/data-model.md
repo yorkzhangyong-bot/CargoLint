@@ -33,8 +33,8 @@ creates `Decision(route=accepted, decided_code=<the auto-decided HS-6>, chosen_h
 | hs6 | string, `CODE_PATTERN` | the decided HS-6 it was chosen under |
 | options | list of (cn8, label path) | the CN 2026 CN-8 lines under `hs6`, in code order (research R-01) |
 | cn8 | string or null, `^\d{8}$` | the chosen CN-8; must be in `options`; null when the deciding attribute is missing |
-| confidence | int 0–100 | 100 for a single CN-8 line (no choice). Otherwise the validated model estimate, capped at 84 unless the evidence is words of the line and the cited ruling is at the chosen CN-8 |
-| evidence | string | the words of the line text that decide. Checked in code: without words of the line, the attribute counts as not visible and the step asks the shipper |
+| confidence | int 0–100 | 100 for a single CN-8 line (no choice). Otherwise the validated model estimate |
+| evidence | string | the words of the line text that decide. Checked in code: every quoted word must be a word of the line, both sides normalised (case, punctuation, spacing); otherwise the attribute counts as not visible and the step asks the shipper |
 | rationale | string | one or two sentences a clerk can check |
 | deciding_attribute | string | what separates the options, for example "material" |
 | question | string or null | "Ask the shipper for: <deciding_attribute>" when the attribute is not visible; this is the routing input (§6) |

@@ -144,20 +144,24 @@ class TestCn8Routing:
 
 
 class TestCn8ConfidenceSignal:
-    """Iteration 2 of the CN-8 step (2026-10-23): evidence must be words of the line, an agreeing precedent is needed for
-    85 and above, and a cited ruling at another CN-8 keeps the choice to confirm."""
+    """Iteration 3 of the CN-8 step (2026-10-23): every word of the evidence must occur in the line, both sides
+    normalised; only a cited ruling at another CN-8 keeps the choice to confirm, and no ruling leaves the threshold rule
+    alone."""
 
     @pytest.mark.parametrize("evidence,expected", [
         ("bicycle frames", True), ("Bicycle  Frames", True), ("aluminium alloy; frames", True), ("自行车架", True),
-        ("the goods are frames for bicycles", False), ("", False), ("   ", False), ("frames; carbon fibre", False)])
-    def test_evidence_must_be_words_of_the_line(self, evidence, expected):
+        ("“Bicycle frames.”", True), ("frames, bicycle", True), ("aluminium-alloy frames", True),
+        ("the goods are frames for bicycles", False), ("", False), ("   ", False), ("…", False),
+        ("frames; carbon fibre", False), ("cycle frames", False), ("碳纤维", False),
+        ("Front forks", False)])   # a CN-8 label (8714 91 30), not words of the line
+    def test_every_word_of_the_evidence_must_occur_in_the_line(self, evidence, expected):
         assert R.evidence_in_line(evidence, "铝合金自行车架 / Aluminium alloy bicycle frames") is expected
 
-    @pytest.mark.parametrize("conf,evidence,agrees,expected", [(95, True, True, 95), (95, True, False, 84),
-                                                               (95, False, True, 84), (84, True, False, 84),
-                                                               (70, True, False, 70)])
-    def test_85_and_above_needs_evidence_and_an_agreeing_precedent(self, conf, evidence, agrees, expected):
-        assert R.cn8_confidence(conf, evidence, agrees) == expected
+    @pytest.mark.parametrize("evidence,line", [("99.9% Polyester", "Woven fabric of 99.9 % polyester, dyed"),
+                                               ("100 % cotton", "T-shirts (100%cotton)"),
+                                               ("toy cars", "塑料玩具车 / Plastic toy cars.")])
+    def test_case_punctuation_and_spacing_are_normalised_on_both_sides(self, evidence, line):
+        assert R.evidence_in_line(evidence, line) is True
 
     @pytest.mark.parametrize("cn8,code,expected", [("87149110", "8714911000", False), ("87149110", "8714913000", True),
                                                    ("87149110", None, False), (None, "8714913000", False)])

@@ -69,7 +69,7 @@ So a model judgement is needed for a third of the decided subheadings.
   - set confidence by the same bands (85–98 when the text states the attribute, 60–84 when it implies it, below 60 when guessing).
 
 **Iteration 2 (2026-10-23, the author's decision after the first evaluation)**: the first run wrote 119 of 120 CN-8
-codes by rule, 19 of them wrong, because the model answered 85 almost every time. Three rules now hold in code:
+codes by rule, 19 of them wrong, because the model answered 85 almost every time. Three rules were added in code:
 - **Evidence**: it must be words of the line. Every fragment must occur in the line text, ignoring case, quotes and
   spacing. Without such words the attribute counts as not visible, and the step asks the shipper (`evidence_in_line`).
 - **Precedent agreement**: a cited ruling whose CN code is at another CN-8 keeps the choice "CN-8 to confirm",
@@ -77,7 +77,17 @@ codes by rule, 19 of them wrong, because the model answered 85 almost every time
 - **Bands**: 85 and above needs that evidence and a cited ruling at the chosen CN-8. Anything else is capped at 84
   (`cn8_confidence`). The prompt puts inferred choices at 70-84.
 
-Results of both iterations against the fixed set are in `tests/eval/cn8_eval.md`.
+**Iteration 3 (2026-10-23, the author's decision after the second evaluation, and the last tuning)**: iteration 2's
+evidence check turned 24 lines into questions, 18 of them correct before, and its cap kept every choice without an
+agreeing ruling below 85. Two rules changed:
+- **Evidence**: both sides are normalised (lower case, punctuation stripped, whitespace collapsed), and every quoted
+  word must be a word of the line, in any order (`evidence_in_line`). A Chinese word may sit inside a longer one. A
+  quoted CN-8 label whose words are not in the description still fails.
+- **Precedent**: only a cited ruling at another CN-8 keeps the choice to confirm. No ruling leaves the threshold
+  rule alone (FR-005: the ruling cited as precedent, or no ruling). The cap at 84 and `cn8_confidence` are gone, and
+  the prompt's 85-98 band no longer asks for a ruling.
+
+Results of the three iterations against the fixed set are in `tests/eval/cn8_eval.md`.
 
 **Alternatives considered**:
 - **Choosing the CN-8 inside `classify_hs6`**: changes the HS-6 path, which FR-021 forbids.

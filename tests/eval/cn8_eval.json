@@ -1,25 +1,25 @@
 {
  "summary": {
-  "iteration": 2,
-  "change": "evidence must be words of the line, else ask the shipper; a cited ruling at another CN-8 keeps it to confirm; 85+ needs that evidence and an agreeing precedent (else capped at 84); prompt bands 85-98 / 70-84",
-  "top1": 83,
+  "iteration": 3,
+  "change": "evidence: every quoted word occurs in the line after normalising both sides (case, punctuation, spacing); only a conflicting ruling keeps the CN-8 to confirm, no ruling leaves the threshold rule alone (no cap at 84, prompt band 85-98 without the ruling clause)",
+  "top1": 91,
   "n": 120,
   "target": 60,
   "passed": true,
-  "questions": 25,
+  "questions": 14,
   "failures": 0,
-  "written": 92,
-  "written_correct": 81,
+  "written": 103,
+  "written_correct": 91,
   "to_confirm": 3,
-  "with_precedent": 93,
+  "with_precedent": 101,
   "per_chapter": {
    "39": {
     "n": 10,
-    "hits": 7
+    "hits": 9
    },
    "42": {
     "n": 10,
-    "hits": 5
+    "hits": 7
    },
    "61": {
     "n": 10,
@@ -27,7 +27,7 @@
    },
    "62": {
     "n": 10,
-    "hits": 7
+    "hits": 9
    },
    "63": {
     "n": 10,
@@ -39,7 +39,7 @@
    },
    "73": {
     "n": 10,
-    "hits": 6
+    "hits": 7
    },
    "84": {
     "n": 10,
@@ -47,7 +47,7 @@
    },
    "85": {
     "n": 10,
-    "hits": 5
+    "hits": 7
    },
    "94": {
     "n": 10,
@@ -59,18 +59,18 @@
    },
    "96": {
     "n": 10,
-    "hits": 7
+    "hits": 6
    }
   },
-  "elapsed_s": 104.2,
+  "elapsed_s": 125.6,
   "threshold": 85,
   "set_built_on": "2026-10-23",
   "model": "openai/gpt-4o-mini",
   "usage": {
-   "total_tokens": 229832,
+   "total_tokens": 225818,
    "calls": 240,
-   "cost_usd": 0.0388,
-   "cost_eur": 0.0357
+   "cost_usd": 0.0379,
+   "cost_eur": 0.0348
   }
  },
  "rows": [
@@ -88,7 +88,7 @@
    "error": null,
    "precedent": null,
    "precedent_code": null,
-   "evidence": "Fittings and mountings intended for permanent installation in or on doors, windows, staircases, walls or other parts of buildings",
+   "evidence": "Fittings and mountings intended for permanent installation in or on doors, windows, staircases, walls or other parts of buildings; The bracket is used to hold the sensor on the ceiling so that only the bracket and not the sensor is visible.",
    "hit": false
   },
   {
@@ -105,7 +105,7 @@
    "error": null,
    "precedent": "IEBTIIENEN004-2025-BTI258",
    "precedent_code": "3926909790",
-   "evidence": "The product is made from Silicone; used in the Thermal Spray process of coating Orthopaedic Implants.",
+   "evidence": "They are used in the Thermal Spray process of coating Orthopaedic Implants; to either aid the spraying process or protect the implants during the spraying process.",
    "hit": true
   },
   {
@@ -133,7 +133,7 @@
    "language": "en",
    "options": 3,
    "chosen": "39269097",
-   "confidence": 85,
+   "confidence": 95,
    "written": true,
    "question": null,
    "error": null,
@@ -200,15 +200,15 @@
    "expected": "39269097",
    "language": "en",
    "options": 3,
-   "chosen": null,
-   "confidence": 0,
-   "written": false,
-   "question": "Ask the shipper for: material and function",
+   "chosen": "39269097",
+   "confidence": 85,
+   "written": true,
+   "question": null,
    "error": null,
-   "precedent": null,
-   "precedent_code": null,
-   "evidence": "Ouvrage en matière plastique (silicone) de couleur rouge, du type bouton-poussoir, sans contact électrique; Piesa are forma cilindrica/ inelara si, conform declaratiei, se obtine din coala de cauciuc siliconic (elastomer de silicon) dimensionata dupa nevoie.",
-   "hit": false
+   "precedent": "FRBTIFR-BTI-2023-05372",
+   "precedent_code": "3926909790",
+   "evidence": "The product is an orange coloured cushion part used inside a gear shifter; Its function is sound suppression when the “P” button is clicked; Silicone rubber.",
+   "hit": true
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI141",
@@ -224,7 +224,7 @@
    "error": null,
    "precedent": "IEBTIIENEN004-2023-BTI598",
    "precedent_code": "39269097",
-   "evidence": "The product is a snap on protective case for a smart watch.",
+   "evidence": "Its function is to protect the watch display.",
    "hit": true
   },
   {
@@ -234,15 +234,15 @@
    "expected": "39231090",
    "language": "en",
    "options": 2,
-   "chosen": null,
-   "confidence": 0,
-   "written": false,
-   "question": "Ask the shipper for: use",
+   "chosen": "39231090",
+   "confidence": 85,
+   "written": true,
+   "question": null,
    "error": null,
-   "precedent": null,
-   "precedent_code": null,
-   "evidence": "It is used to ship Pharmaceutical Drug Substance on an international level; Aluminum Pallet Base, LLDPE exterior, Fiberglass interior, Polyurethane Insulation",
-   "hit": false
+   "precedent": "DEBTI39347/24-1",
+   "precedent_code": "39231090",
+   "evidence": "Aluminum Pallet Base, LLDPE exterior, Fiberglass interior, Polyurethane Insulation",
+   "hit": true
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI284",
@@ -256,7 +256,7 @@
    "written": true,
    "question": null,
    "error": null,
-   "precedent": "IEBTIIENEN004-2024-BTI190",
+   "precedent": "FRBTIFR-BTI-2025-00731",
    "precedent_code": "4202121900",
    "evidence": "Slim lightweight structured ipad sleeve with front zippered pocket for accessories; Made from 100% RPET",
    "hit": false
@@ -268,15 +268,15 @@
    "expected": "42029291",
    "language": "en",
    "options": 5,
-   "chosen": null,
-   "confidence": 0,
-   "written": false,
-   "question": "Ask the shipper for: material",
+   "chosen": "42029291",
+   "confidence": 85,
+   "written": true,
+   "question": null,
    "error": null,
-   "precedent": null,
-   "precedent_code": null,
-   "evidence": "Outer surface is made of polyester; 99.9% Polyester",
-   "hit": false
+   "precedent": "FRBTIFR-BTI-2025-02821",
+   "precedent_code": "4202929190",
+   "evidence": "Outer surface is made of polyester; Made from 99.9% Polyester, 0.1% PU.",
+   "hit": true
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI449",
@@ -309,7 +309,7 @@
    "error": null,
    "precedent": "IEBTIIENEN004-2025-BTI264",
    "precedent_code": "4202929190",
-   "evidence": "Standard Issue 24-liter backpacks - multiple compartments at different easy access points, chest strap, Clamshell body, ergonomic moulded padding, outer surface of polyester",
+   "evidence": "Standard Issue 24-liter backpacks; outer surface of polyester",
    "hit": true
   },
   {
@@ -319,13 +319,13 @@
    "expected": "42029298",
    "language": "en",
    "options": 5,
-   "chosen": null,
-   "confidence": 0,
-   "written": false,
-   "question": "Ask the shipper for: material",
+   "chosen": "42029291",
+   "confidence": 85,
+   "written": true,
+   "question": null,
    "error": null,
-   "precedent": null,
-   "precedent_code": null,
+   "precedent": "IEBTIIENEN004-2024-BTI145",
+   "precedent_code": "4202929190",
    "evidence": "The outer shell is made of textile woven fabric.",
    "hit": false
   },
@@ -353,15 +353,15 @@
    "expected": "42029291",
    "language": "en",
    "options": 5,
-   "chosen": null,
-   "confidence": 0,
-   "written": false,
-   "question": "Ask the shipper for: use",
+   "chosen": "42029291",
+   "confidence": 85,
+   "written": true,
+   "question": null,
    "error": null,
-   "precedent": null,
-   "precedent_code": null,
-   "evidence": "Bag for carrying laptop / conveyance of goods or personal effects; intended for the transport of goods;",
-   "hit": false
+   "precedent": "NLBTI2025-1665",
+   "precedent_code": "4202929190",
+   "evidence": "Bag for carrying laptop; 100% 600D (denier) Polyester.",
+   "hit": true
   },
   {
    "reference": "FRBTIFR-BTI-2025-02100",
@@ -377,7 +377,7 @@
    "error": null,
    "precedent": "FRBTIFR-BTI-2025-05389",
    "precedent_code": "4203291000",
-   "evidence": "Accessoire du vêtement, de type gant de protection pour tous métiers; utilisé dans l'industrie mécanique et automobile",
+   "evidence": "L'article est utilisé dans l'industrie mécanique et automobile pour son excellente isolation thermique.",
    "hit": true
   },
   {
@@ -426,8 +426,8 @@
    "written": true,
    "question": null,
    "error": null,
-   "precedent": "DEBTI40388/23-1",
-   "precedent_code": "61023090",
+   "precedent": "DEBTI30195/24-1",
+   "precedent_code": "6102309000",
    "evidence": "This garment is a full zip fleece; It has a complete opening at the front and is fastened by a zip.",
    "hit": true
   },
@@ -456,8 +456,8 @@
    "language": "en",
    "options": 2,
    "chosen": "61099090",
-   "confidence": 84,
-   "written": false,
+   "confidence": 85,
+   "written": true,
    "question": null,
    "error": null,
    "precedent": null,
@@ -496,7 +496,7 @@
    "error": null,
    "precedent": null,
    "precedent_code": null,
-   "evidence": "Accessoire du vêtement pour bébés, de type bavoir, confectionné sur la face avant en étoffe de bonneterie de coton et sur la surface arrière en bonneterie bouclée du genre éponge, constituée majoritairement de coton (80 % coton et 20 % polyester).",
+   "evidence": "Accessoire du vêtement pour bébés, de type bavoir de forme rectangulaire et arrondie sur les bords",
    "hit": false
   },
   {
@@ -523,15 +523,15 @@
    "expected": "61161020",
    "language": "de",
    "options": 2,
-   "chosen": null,
-   "confidence": 0,
-   "written": false,
-   "question": "Ask the shipper for: Material",
+   "chosen": "61161020",
+   "confidence": 90,
+   "written": true,
+   "question": null,
    "error": null,
-   "precedent": null,
-   "precedent_code": null,
-   "evidence": "aus einfarbigen Gewirken aus laut Antrag Baumwolle; nachträglich einseitig (Außenseite) im Tauchverfahren mit Kautschuk (laut Antrag: Nitrilschaum-Kautschuk; keine Zellstruktur erkennbar) getränkt",
-   "hit": false
+   "precedent": "DEBTI51653/24-1",
+   "precedent_code": "61161020",
+   "evidence": "aus einfarbigen Gewirken aus laut Antrag Baumwolle; nachträglich ... im Tauchverfahren mit Kautschuk (laut Antrag: Nitrilschaum-Kautschuk; keine Zellstruktur erkennbar) getränkt",
+   "hit": true
   },
   {
    "reference": "DEBTI23122/26-1",
@@ -540,15 +540,15 @@
    "expected": "61161080",
    "language": "de",
    "options": 2,
-   "chosen": "61161080",
+   "chosen": "61161020",
    "confidence": 85,
    "written": true,
    "question": null,
    "error": null,
-   "precedent": "DEBTI23069/26-1",
-   "precedent_code": "61161080",
-   "evidence": "insbesondere im Hinblick auf die Verwendung als Gartenhandschuhe bestimmen die u. a. die Innenhand bildenden Gewirke den wesentlichen Charakter der Ware.",
-   "hit": true
+   "precedent": "DEBTI25532/24-1",
+   "precedent_code": "6116102091",
+   "evidence": "aus einfarbigen, gerauten, einseitig (Außenseite) mit geprägtem Kunststoff überzogenen Gewirken der Position 5903 aus synthetischen Chemiefasern;",
+   "hit": false
   },
   {
    "reference": "DEBTI52786/23-1",
@@ -575,7 +575,7 @@
    "language": "de",
    "options": 2,
    "chosen": "61151010",
-   "confidence": 85,
+   "confidence": 95,
    "written": true,
    "question": null,
    "error": null,
@@ -608,15 +608,15 @@
    "expected": "62121090",
    "language": "en",
    "options": 2,
-   "chosen": null,
-   "confidence": 0,
-   "written": false,
-   "question": "Ask the shipper for: use",
+   "chosen": "62121090",
+   "confidence": 85,
+   "written": true,
+   "question": null,
    "error": null,
-   "precedent": null,
-   "precedent_code": null,
-   "evidence": "suitable to be worn when doing sports and exercise; provide certain level support",
-   "hit": false
+   "precedent": "IEBTIIENEN004-2026-BTI74",
+   "precedent_code": "6212109000",
+   "evidence": "suitable to be worn when doing sports and exercise; provides certain level support",
+   "hit": true
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI108",
@@ -625,15 +625,15 @@
    "expected": "62121090",
    "language": "en",
    "options": 2,
-   "chosen": null,
-   "confidence": 0,
-   "written": false,
-   "question": "Ask the shipper for: type of garment",
+   "chosen": "62121090",
+   "confidence": 85,
+   "written": true,
+   "question": null,
    "error": null,
-   "precedent": null,
-   "precedent_code": null,
-   "evidence": "Women's bikini top; Consists of two separate fabric lined cups; It is made of knitted synthetic fabric",
-   "hit": false
+   "precedent": "IEBTIIENEN004-2026-BTI106",
+   "precedent_code": "6212109000",
+   "evidence": "Women's bikini top; Consists of two separate fabric lined cups; Two vertical self-fabric straps tie at the back of the neck to provide body support with two straps ties at the back.",
+   "hit": true
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI107",
@@ -649,7 +649,7 @@
    "error": null,
    "precedent": "IEBTIIENEN004-2026-BTI89",
    "precedent_code": "6212109000",
-   "evidence": "A women's bandeau bikini top; It consists of two removable foam cups inside which provide body support.",
+   "evidence": "A women's bandeau bikini top; It consists of two removable foam cups inside which provide body support. It is closed with plastic clip at the back.",
    "hit": true
   },
   {
@@ -679,7 +679,7 @@
    "chosen": null,
    "confidence": 0,
    "written": false,
-   "question": "Ask the shipper for: use",
+   "question": "Ask the shipper for: the use",
    "error": null,
    "precedent": null,
    "precedent_code": null,
@@ -698,8 +698,8 @@
    "written": true,
    "question": null,
    "error": null,
-   "precedent": "DEBTI37121/25-1",
-   "precedent_code": "6202401091",
+   "precedent": "DEBTI7613/25-1",
+   "precedent_code": "62024010",
    "evidence": "mit einem Stückgewicht von ca. 498 g; erfüllt die Merkmale zur Einreihung als Blouson, somit keine Jacke.",
    "hit": true
   },
@@ -711,13 +711,13 @@
    "language": "de",
    "options": 5,
    "chosen": "62034311",
-   "confidence": 85,
+   "confidence": 90,
    "written": true,
    "question": null,
    "error": null,
    "precedent": "DEBTI3992/24-1",
    "precedent_code": "6203431100",
-   "evidence": "dass sie dazu bestimmt ist, ausschließlich oder hauptsächlich zum (körperlichen oder hygienischen) Schutz anderer Kleidungsstücke und/oder Personen bei Ausübung einer Gewerbe-, Berufs- oder Haushaltstätigkeit getragen zu werden.",
+   "evidence": "dass sie dazu bestimmt ist, ausschließlich oder hauptsächlich zum (körperlichen oder hygienischen) Schutz anderer Kleidungsstücke und/oder Personen bei Ausübung einer Gewerbe-, Berufs- oder Haushaltstätigkeit getragen zu werden",
    "hit": true
   },
   {
@@ -732,9 +732,9 @@
    "written": true,
    "question": null,
    "error": null,
-   "precedent": "DEBTI32333/25-1",
-   "precedent_code": "6210109800",
-   "evidence": "wird laut Antrag in unterschiedlichen Bereichen und nicht ausschließlich bei chirurgischen Eingriffen verwendet; \"Kleidung aus Erzeugnissen der Position 5603, kein Einwegkittel, von der durch Patienten bzw. Chirurgen bei chirurgischen Eingriffen verwendeten Art\"",
+   "precedent": null,
+   "precedent_code": null,
+   "evidence": "wird laut Antrag in unterschiedlichen Bereichen und nicht ausschließlich bei chirurgischen Eingriffen verwendet.",
    "hit": true
   },
   {
@@ -751,7 +751,7 @@
    "error": null,
    "precedent": "DEBTI21302/24-1",
    "precedent_code": "6212109000",
-   "evidence": "nicht in Warenzusammenstellung für den Einzelverkauf aufgemacht",
+   "evidence": "Büstenhalter, aus Gewirken, nicht in Warenzusammenstellung für den Einzelverkauf aufgemacht",
    "hit": true
   },
   {
@@ -955,7 +955,7 @@
    "error": null,
    "precedent": "FRBTIFR-BTI-2025-08645",
    "precedent_code": "6405209100",
-   "evidence": "OUTER SOLES OF PLASTIC COVERED WITH TEXTILE.",
+   "evidence": "OUTER SOLES OF PLASTIC COVERED WITH TEXTILE",
    "hit": true
   },
   {
@@ -999,14 +999,14 @@
    "expected": "64029939",
    "language": "en",
    "options": 9,
-   "chosen": "64029931",
-   "confidence": 85,
-   "written": true,
-   "question": null,
+   "chosen": null,
+   "confidence": 0,
+   "written": false,
+   "question": "Ask the shipper for: material of the upper",
    "error": null,
-   "precedent": "SKBTI118540/25/140",
-   "precedent_code": "6402993100",
-   "evidence": "The sandal consists of a silicone rubber sole with a vamp made of straps of polyurethane weave.",
+   "precedent": null,
+   "precedent_code": null,
+   "evidence": "With uppers of plastics > Footwear with a vamp made of straps",
    "hit": false
   },
   {
@@ -1040,7 +1040,7 @@
    "error": null,
    "precedent": "DEBTI41346/25-1",
    "precedent_code": "6404199000",
-   "evidence": "Women’s Sandals; The upper material is textile fully covered with glass beads; The outer sole is made of rubber/plastic.",
+   "evidence": "Women’s Sandals; The outer sole is made of rubber/plastic.",
    "hit": true
   },
   {
@@ -1057,7 +1057,7 @@
    "error": null,
    "precedent": "IEBTIIENEN004-2024-BTI377",
    "precedent_code": "6404191000",
-   "evidence": "LADIES FAUX SUEDE MULE STYLE SLIPPER WITH A CLOSED IN TOE.",
+   "evidence": "LADIES FAUX SUEDE MULE STYLE SLIPPER WITH A CLOSED IN TOE",
    "hit": true
   },
   {
@@ -1108,7 +1108,7 @@
    "error": null,
    "precedent": "DEBTI21309/26-1",
    "precedent_code": "7326909890",
-   "evidence": "designed for the purpose of securely storing tools and equipment; construction is of steel",
+   "evidence": "It is designed for the purpose of securely storing tools and equipment.",
    "hit": true
   },
   {
@@ -1118,14 +1118,14 @@
    "expected": "73181552",
    "language": "en",
    "options": 12,
-   "chosen": null,
-   "confidence": 0,
-   "written": false,
-   "question": "Ask the shipper for: Material and presence of heads",
+   "chosen": "73181535",
+   "confidence": 85,
+   "written": true,
+   "question": null,
    "error": null,
-   "precedent": null,
-   "precedent_code": null,
-   "evidence": "A custom made threaded bolt made from 1.4571/316Ti grade Stainless Steel; Other > Without heads > Of stainless steel",
+   "precedent": "DEBTI27384/24-1",
+   "precedent_code": "7318153590",
+   "evidence": "A custom made threaded bolt made from 1.4571/316Ti grade Stainless Steel.",
    "hit": false
   },
   {
@@ -1159,7 +1159,7 @@
    "error": null,
    "precedent": null,
    "precedent_code": null,
-   "evidence": "with a tensile strength < 800 MPa; without heads",
+   "evidence": "with a tensile strength > Of less than 800 MPa",
    "hit": false
   },
   {
@@ -1169,15 +1169,15 @@
    "expected": "73181499",
    "language": "en",
    "options": 3,
-   "chosen": null,
-   "confidence": 0,
-   "written": false,
-   "question": "Ask the shipper for: material",
+   "chosen": "73181499",
+   "confidence": 85,
+   "written": true,
+   "question": null,
    "error": null,
-   "precedent": null,
-   "precedent_code": null,
-   "evidence": "manufactured from case hardened mild steel; not stainless steel",
-   "hit": false
+   "precedent": "IEBTIIENEN004-2026-BTI39",
+   "precedent_code": "7318149990",
+   "evidence": "manufactured from case hardened mild steel; finished with a ruspert coating",
+   "hit": true
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI96",
@@ -1193,7 +1193,7 @@
    "error": null,
    "precedent": "DEBTI14118/24-1",
    "precedent_code": "73269098",
-   "evidence": "Alloy steel shank used in the production or Rotary Burs; The steel shank is welded to a carbide bur blank",
+   "evidence": "It cannot be considered a product of heading 8207 as it is not mounted, for example, onto a tool, and therefore classification under heading 7326 is appropriate",
    "hit": true
   },
   {
@@ -1206,7 +1206,7 @@
    "chosen": null,
    "confidence": 0,
    "written": false,
-   "question": "Ask the shipper for: Form of packaging",
+   "question": "Ask the shipper for: form of packaging",
    "error": null,
    "precedent": null,
    "precedent_code": null,
@@ -1227,7 +1227,7 @@
    "error": null,
    "precedent": "DEBTI61456/24-1",
    "precedent_code": "7308909890",
-   "evidence": "Most defining feature is the Y shape and the spring loaded clip. (A patented spring loaded clip is used)",
+   "evidence": "Most defining feature is the Y shape and the spring loaded clip.",
    "hit": true
   },
   {
@@ -1261,7 +1261,7 @@
    "error": null,
    "precedent": "ATBTI2024000819-DEC",
    "precedent_code": "7325999090",
-   "evidence": "It is Made from 316 Stainless steel; Its a 316 Stainless steel cast which is then machined to exact specifications",
+   "evidence": "It is Made from 316 Stainless steel; Its a 316 Stainless steel cast which is then machined to exact specifications; Cast stainless steel",
    "hit": true
   },
   {
@@ -1272,13 +1272,13 @@
    "language": "en",
    "options": 2,
    "chosen": "84151010",
-   "confidence": 84,
-   "written": false,
+   "confidence": 90,
+   "written": true,
    "question": null,
    "error": null,
    "precedent": null,
    "precedent_code": null,
-   "evidence": "These are self contained systems; They include a refrigeration unit and are pre-charged with HFCs.",
+   "evidence": "These are self contained systems that regulate the interior climate of rolling stock; They include a refrigeration unit and are pre-charged with HFCs.",
    "hit": true
   },
   {
@@ -1295,7 +1295,7 @@
    "error": null,
    "precedent": "IEBTIIENEN004-2024-BTI274",
    "precedent_code": "8421392590",
-   "evidence": "It is used in the pharmaceutical industry and contains plastic tubing, caps, retainers, stoppers, couplers, bags and filters in one package; The filters are used to maintain a sterile environment within the assemblies by filtering particles and micro-organisms from the liquid/fluid.",
+   "evidence": "designed for the filtration of air (no liquid is transferred through these filters)",
    "hit": true
   },
   {
@@ -1306,12 +1306,12 @@
    "language": "en",
    "options": 2,
    "chosen": "84249080",
-   "confidence": 84,
-   "written": false,
+   "confidence": 85,
+   "written": true,
    "question": null,
    "error": null,
-   "precedent": "SEBTITV-2026-09958",
-   "precedent_code": "84249020",
+   "precedent": null,
+   "precedent_code": null,
    "evidence": "The nozzle cannot function without this Tip; Solution is sprayed through the hypotube.",
    "hit": true
   },
@@ -1340,7 +1340,7 @@
    "language": "en",
    "options": 4,
    "chosen": "84213925",
-   "confidence": 85,
+   "confidence": 95,
    "written": true,
    "question": null,
    "error": null,
@@ -1361,7 +1361,7 @@
    "written": true,
    "question": null,
    "error": null,
-   "precedent": "ATBTI2024000747-DEC",
+   "precedent": "CZBTI34/402839/2026-300000-ZI/01",
    "precedent_code": "8431498090",
    "evidence": "It consists of a square hollow section of mild steel; It is made from hot rolled mild steel.",
    "hit": true
@@ -1378,8 +1378,8 @@
    "written": true,
    "question": null,
    "error": null,
-   "precedent": "DEBTI57314/24-1",
-   "precedent_code": "8474909000",
+   "precedent": null,
+   "precedent_code": null,
    "evidence": "These are Polyethylene Plastic parts that are used as wear strips.",
    "hit": true
   },
@@ -1397,7 +1397,7 @@
    "error": null,
    "precedent": "IEBTIIENEN004-2024-BTI277",
    "precedent_code": "8421392590",
-   "evidence": "SINGLE USE PLASTIC ASSEMBLY FOR BIOPROCESSING WITH FILTER FOR GASES.",
+   "evidence": "SINGLE USE PLASTIC ASSEMBLY FOR BIOPROCESSING WITH FILTER FOR GASES; 0.2 MICRONS STERILE FILTER.",
    "hit": false
   },
   {
@@ -1410,7 +1410,7 @@
    "chosen": null,
    "confidence": 0,
    "written": false,
-   "question": "Ask the shipper for: type of device",
+   "question": "Ask the shipper for: the type of device",
    "error": null,
    "precedent": null,
    "precedent_code": null,
@@ -1448,7 +1448,7 @@
    "error": null,
    "precedent": null,
    "precedent_code": null,
-   "evidence": "A Printed Circuit Board Assembly.  It forms part of a Residual Current Device (RCD) module; A sensor PCB.  It acts as an interface module for a residual current monitoring system.",
+   "evidence": "A Printed Circuit Board Assembly.  It forms part of a Residual Current Device (RCD) module.",
    "hit": false
   },
   {
@@ -1458,15 +1458,15 @@
    "expected": "85389099",
    "language": "en",
    "options": 4,
-   "chosen": null,
-   "confidence": 0,
-   "written": false,
-   "question": "Ask the shipper for: use",
+   "chosen": "85389099",
+   "confidence": 95,
+   "written": true,
+   "question": null,
    "error": null,
-   "precedent": null,
-   "precedent_code": null,
-   "evidence": "IT IS MADE OF PLASTIC AND IS USED TO HOLD THE SENSOR ON THE CEILING SO THAT ONLY THE BRACKET AND NOT THE SENSOR ARE VISIBLE; IT IS RECOGNISABLE FOR USE WITH A SPECIFIC SENSOR",
-   "hit": false
+   "precedent": "IEBTIIENEN004-2026-BTI242",
+   "precedent_code": "8538909999",
+   "evidence": "IT IS MADE OF PLASTIC AND IS USED TO HOLD THE SENSOR ON THE CEILING SO THAT ONLY THE BRACKET AND NOT THE SENSOR IS VISIBLE; IT IS RECOGNISABLE FOR USE WITH A SPECIFIC SENSOR.",
+   "hit": true
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI388",
@@ -1482,7 +1482,7 @@
    "error": null,
    "precedent": "IEBTIIENEN004-2024-BTI386",
    "precedent_code": "8504408390",
-   "evidence": "USB Charger; It is a 30W fast charger which includes 2 charging ports – 1x Type C & 1x Type A; It uses Gallium Nitride for efficient, low heat, fast charging.",
+   "evidence": "It is a 30W fast charger; It has an input voltage range of AC 100V-240V and an output voltage range of DC 5V-20V.",
    "hit": true
   },
   {
@@ -1509,15 +1509,15 @@
    "expected": "85044060",
    "language": "en",
    "options": 5,
-   "chosen": "85044083",
+   "chosen": "85044060",
    "confidence": 85,
    "written": true,
    "question": null,
    "error": null,
-   "precedent": "NLBTI2024-0185",
-   "precedent_code": "8504408390",
+   "precedent": "PLBTIWIT-2023-001587",
+   "precedent_code": "85044060",
    "evidence": "Used to charge multiple cameras and offload recorded footage automatically without the need for cables.",
-   "hit": false
+   "hit": true
   },
   {
    "reference": "XIBTI505068566",
@@ -1531,9 +1531,9 @@
    "written": true,
    "question": null,
    "error": null,
-   "precedent": "PLBTIWIT-2026-000156",
+   "precedent": "ATBTI2024000275-DEC",
    "precedent_code": "85044083",
-   "evidence": "Initiates the start up of a pump, regulates flow rate and helps shut down the pump.",
+   "evidence": "regulates flow rate and helps shut down the pump; Instant Match regulates the removal of water from a shower",
    "hit": true
   },
   {
@@ -1550,7 +1550,7 @@
    "error": null,
    "precedent": null,
    "precedent_code": null,
-   "evidence": "A 27\" LCD COLOUR MONITOR, WITH A SCREEN RESOLUTION OF 3840 X 2160 PIXELS; designed for use with an automatic data processing machine of heading 8471.",
+   "evidence": "Of a kind solely or principally used in an automatic data-processing system of heading 8471",
    "hit": false
   },
   {
@@ -1595,7 +1595,7 @@
    "language": "en",
    "options": 3,
    "chosen": "85285210",
-   "confidence": 85,
+   "confidence": 95,
    "written": true,
    "question": null,
    "error": null,
@@ -1630,11 +1630,11 @@
    "options": 2,
    "chosen": "94032020",
    "confidence": 85,
-   "written": true,
+   "written": false,
    "question": null,
    "error": null,
-   "precedent": "DEBTI58012/24-1",
-   "precedent_code": "94032020",
+   "precedent": "XIBTI505070488",
+   "precedent_code": "94032080",
    "evidence": "This is a pet camping bed with a canopy for protection from the sun; A camping cot or bed for pets is a specially designed sleeping option that keeps your pet comfortable and safe during outdoor trips.",
    "hit": false
   },
@@ -1646,7 +1646,7 @@
    "language": "en",
    "options": 3,
    "chosen": "94019980",
-   "confidence": 85,
+   "confidence": 95,
    "written": true,
    "question": null,
    "error": null,
@@ -1664,12 +1664,12 @@
    "options": 2,
    "chosen": "94032020",
    "confidence": 85,
-   "written": true,
+   "written": false,
    "question": null,
    "error": null,
-   "precedent": "FRBTIFR-BTI-2026-02433",
-   "precedent_code": "9403202000",
-   "evidence": "This is a foldable raised camping pet bed; A camping cot or bed for pets is a specially designed sleeping option that can keep your pet comfortable and safe during outdoor trips.",
+   "precedent": "XIBTI505069955",
+   "precedent_code": "94032080",
+   "evidence": "This is a foldable raised camping pet bed; A camping cot or bed for pets is a specially designed sleeping option",
    "hit": false
   },
   {
@@ -1686,7 +1686,7 @@
    "error": null,
    "precedent": "FRBTIFR-BTI-2026-02433",
    "precedent_code": "9403202000",
-   "evidence": "This is an Elevated Cot dog bed with sides; A cot or bed for dogs is a specially designed sleeping option",
+   "evidence": "This is an Elevated Cot dog bed with sides; A cot or bed for dogs is a specially designed sleeping option.",
    "hit": false
   },
   {
@@ -1720,7 +1720,7 @@
    "error": null,
    "precedent": "IEBTIIENEN004-2024-BTI332",
    "precedent_code": "94036090",
-   "evidence": "Childrens storage table; A wooden unit with 6 storage compartments; Table top has two sides; One side of the tabletop is a studded building surface compatible with most major brick brands; the other side of the table top is a flat surface for general play.",
+   "evidence": "Childrens storage table; A wooden unit with 6 storage compartments.",
    "hit": true
   },
   {
@@ -1731,13 +1731,13 @@
    "language": "en",
    "options": 3,
    "chosen": "94019980",
-   "confidence": 85,
+   "confidence": 95,
    "written": true,
    "question": null,
    "error": null,
    "precedent": "SEBTITV-2024-01681",
    "precedent_code": "94019980",
-   "evidence": "Klädseln är igenkännlig som en del till en sittmöbel eftersom den är avsedd att fästas permanent till ett specifikt armstöd och är nödvändig för att soffan ska kunna användas på ett funktionellt sätt.",
+   "evidence": "Klädseln är igenkännlig som en del till en sittmöbel eftersom den är avsedd att fästas permanent till ett specifikt armstöd",
    "hit": true
   },
   {
@@ -1748,13 +1748,13 @@
    "language": "en",
    "options": 3,
    "chosen": "94054239",
-   "confidence": 95,
+   "confidence": 85,
    "written": true,
    "question": null,
    "error": null,
    "precedent": "SEBTITV-2026-09781",
    "precedent_code": "94054239",
-   "evidence": "Produkten är avsedd för inomhusbruk, är batteridriven och är försedd med sladd, batteribox samt kabelhängare i plast.",
+   "evidence": "bestående av en vit stålram; försedd med sladd, batteribox samt kabelhängare i plast",
    "hit": true
   },
   {
@@ -1765,13 +1765,13 @@
    "language": "en",
    "options": 3,
    "chosen": "94019980",
-   "confidence": 85,
+   "confidence": 95,
    "written": true,
    "question": null,
    "error": null,
    "precedent": "SEBTITV-2024-01681",
    "precedent_code": "94019980",
-   "evidence": "Klädseln är igenkännlig som en del till en sittmöbel eftersom den är avsedd att fästas permanent till ett specifikt armstöd och är nödvändig för att soffan ska kunna användas på ett funktionellt sätt.",
+   "evidence": "Klädseln är igenkännlig som en del till en sittmöbel eftersom den är avsedd att fästas permanent till ett specifikt armstöd",
    "hit": true
   },
   {
@@ -1801,7 +1801,7 @@
    "chosen": null,
    "confidence": 0,
    "written": false,
-   "question": "Ask the shipper for: type of toy",
+   "question": "Ask the shipper for: representation of non-human creatures",
    "error": null,
    "precedent": null,
    "precedent_code": null,
@@ -1815,15 +1815,15 @@
    "expected": "95030070",
    "language": "en",
    "options": 19,
-   "chosen": null,
-   "confidence": 0,
-   "written": false,
-   "question": "Ask the shipper for: type of toy",
+   "chosen": "95030070",
+   "confidence": 85,
+   "written": true,
+   "question": null,
    "error": null,
-   "precedent": null,
-   "precedent_code": null,
-   "evidence": "Play Kitchen; It is a wooden play kitchen which includes 6 wooden utensils; it features an oven, oven hood & 2 hobs with lights and sounds, fridge with play water dispenser and a microwave.",
-   "hit": false
+   "precedent": "ATBTI2025000350-DEC",
+   "precedent_code": "9503007000",
+   "evidence": "Play Kitchen; It is a wooden play kitchen which includes 6 wooden utensils; features an oven, oven hood & 2 hobs with lights and sounds, fridge with play water dispenser and a microwave.",
+   "hit": true
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI99",
@@ -1833,7 +1833,7 @@
    "language": "en",
    "options": 19,
    "chosen": "95030041",
-   "confidence": 85,
+   "confidence": 95,
    "written": true,
    "question": null,
    "error": null,
@@ -1850,7 +1850,7 @@
    "language": "en",
    "options": 2,
    "chosen": "95049080",
-   "confidence": 85,
+   "confidence": 95,
    "written": true,
    "question": null,
    "error": null,
@@ -1871,7 +1871,7 @@
    "written": true,
    "question": null,
    "error": null,
-   "precedent": "SEBTITV-2026-09768",
+   "precedent": "SEBTITV-2026-09774",
    "precedent_code": "95051090",
    "evidence": "Julprydnaden är till största delen tillverkad av papper",
    "hit": true
@@ -1890,7 +1890,7 @@
    "error": null,
    "precedent": "IEBTIIENEN004-2026-BTI119",
    "precedent_code": "9503009990",
-   "evidence": "A Pop-Up Play Tunnel designed for children; For indoor and outdoor use.",
+   "evidence": "A Pop-Up Play Tunnel designed for children; Made from polyester fabric and iron spring wire frame; For indoor and outdoor use.",
    "hit": true
   },
   {
@@ -1900,15 +1900,15 @@
    "expected": "95030049",
    "language": "en",
    "options": 19,
-   "chosen": "95030049",
-   "confidence": 85,
-   "written": true,
-   "question": null,
+   "chosen": null,
+   "confidence": 0,
+   "written": false,
+   "question": "Ask the shipper for: type of toy",
    "error": null,
-   "precedent": "ROBTI2026-005390",
-   "precedent_code": "95030049",
-   "evidence": "An interactive children’s toy; It has the appearance of a chicken; includes lights, sounds and music.",
-   "hit": true
+   "precedent": null,
+   "precedent_code": null,
+   "evidence": "Toys representing animals or non-human creatures > Other",
+   "hit": false
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI460",
@@ -1935,7 +1935,7 @@
    "language": "en",
    "options": 19,
    "chosen": "95030010",
-   "confidence": 85,
+   "confidence": 90,
    "written": true,
    "question": null,
    "error": null,
@@ -1951,15 +1951,15 @@
    "expected": "96190050",
    "language": "en",
    "options": 8,
-   "chosen": "96190050",
+   "chosen": "96190040",
    "confidence": 85,
-   "written": true,
+   "written": false,
    "question": null,
    "error": null,
    "precedent": "IEBTIIENEN004-2026-BTI71",
    "precedent_code": "9619005010",
-   "evidence": "They are made of knitted nylon fabric with an additional non-removeable three layers in the crotch area.",
-   "hit": true
+   "evidence": "They are designed to be worn by women during menstruation and are intended for multiple uses.",
+   "hit": false
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI71",
@@ -1975,7 +1975,7 @@
    "error": null,
    "precedent": "IEBTIIENEN004-2026-BTI72",
    "precedent_code": "9619005010",
-   "evidence": "They are made of knitted cotton fabric with an additional non-removeable three layers in the crotch area.",
+   "evidence": "They are designed to be worn by women during menstruation and are intended for multiple uses.",
    "hit": true
   },
   {
@@ -1985,14 +1985,14 @@
    "expected": "96091090",
    "language": "en",
    "options": 2,
-   "chosen": null,
-   "confidence": 0,
-   "written": false,
-   "question": "Ask the shipper for: material of the leads",
+   "chosen": "96091010",
+   "confidence": 85,
+   "written": true,
+   "question": null,
    "error": null,
-   "precedent": null,
-   "precedent_code": null,
-   "evidence": "With leads of graphite",
+   "precedent": "CZBTI41/000949/2025-300000-ZI/01",
+   "precedent_code": "9609101000",
+   "evidence": "44 pencils; 7 charcoal sticks;",
    "hit": false
   },
   {
@@ -2105,7 +2105,7 @@
    "language": "de",
    "options": 3,
    "chosen": "96081092",
-   "confidence": 85,
+   "confidence": 95,
    "written": true,
    "question": null,
    "error": null,

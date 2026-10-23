@@ -8,6 +8,7 @@
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | 2026-10-23 | US1 as built (commit 1bfbdc7) | 100/120 | 119 | 19 | 0 | 1 | 0 | $0.0360 (€0.0331), 171 s |
 | 2 | 2026-10-23 | evidence must be words of the line, else ask the shipper; a cited ruling at another CN-8 keeps it to confirm; 85+ needs that evidence and an agreeing precedent (else capped at 84); prompt bands 85-98 / 70-84 | 83/120 | 92 | 11 | 3 | 25 | 0 | $0.0388 (€0.0357), 104 s |
+| 3 | 2026-10-23 | evidence: every quoted word occurs in the line after normalising both sides (case, punctuation, spacing); only a conflicting ruling keeps the CN-8 to confirm, no ruling leaves the threshold rule alone (no cap at 84, prompt band 85-98 without the ruling clause) | 91/120 | 103 | 12 | 3 | 14 | 0 | $0.0379 (€0.0348), 126 s |
 
 ## Top-1 per chapter
 
@@ -15,5 +16,6 @@
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 1 | 10/10 | 6/10 | 9/10 | 10/10 | 9/10 | 8/10 | 9/10 | 9/10 | 7/10 | 7/10 | 9/10 | 7/10 |
 | 2 | 7/10 | 5/10 | 7/10 | 7/10 | 9/10 | 7/10 | 6/10 | 8/10 | 5/10 | 7/10 | 8/10 | 7/10 |
+| 3 | 9/10 | 7/10 | 7/10 | 9/10 | 9/10 | 7/10 | 7/10 | 8/10 | 7/10 | 7/10 | 8/10 | 6/10 |
 
 Model: openai/gpt-4o-mini. Line-by-line results of the latest run: `tests/eval/cn8_eval.json`; earlier runs are in the git history of that file.

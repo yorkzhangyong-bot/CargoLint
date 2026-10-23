@@ -35,14 +35,12 @@ Pipeline per line:
 2. Select up to 8 valid EBTI rulings under `hs6`, at most 2 per CN-8 line. They are the nearest to the line text when BTI vectors are loaded, else the newest.
 3. Make one structured call. The line text and the ruling excerpts are fenced as data.
 4. Validate in code:
-   - `attribute_visible` false, a null `cn8`, or `evidence` that is not words of the line gives `question` and no
-     CN-8;
+   - `attribute_visible` false, a null `cn8`, or `evidence` with a word that is not in the line (both sides
+     normalised: case, punctuation, spacing) gives `question` and no CN-8;
    - `cn8` must be among the options;
    - a cited ruling must be among those sent.
-5. Set the confidence. It is capped at 84 unless the evidence is words of the line and the cited ruling is at the
-   chosen CN-8.
-6. Write by rule when the confidence is at least `threshold` and the cited ruling does not conflict. Otherwise the
-   CN-8 is a suggestion: "CN-8 to confirm".
+5. Write by rule when the confidence is at least `threshold` and the cited ruling does not conflict; no ruling is no
+   conflict. Otherwise the CN-8 is a suggestion: "CN-8 to confirm".
 
 ### 1.7 `lookup_taric` (new)
 
@@ -86,9 +84,9 @@ hs6_auto_decided(flag_kind, top_confidence, status, ever_flagged, threshold, ask
                                                 # route_line without cn8_question or cn8_error returns auto_accept
 cn8_written_by_rule(confidence, threshold, single_line, precedent_conflict=False) -> bool
                                                 # single line, or no conflict and confidence >= threshold
-evidence_in_line(evidence, line_text) -> bool   # every fragment occurs in the line (case, quotes, spacing ignored)
+evidence_in_line(evidence, line_text) -> bool   # every quoted word is a word of the line (case, punctuation, spacing
+                                                # normalised); a Chinese word may sit inside a longer one
 cn8_precedent_conflict(cn8, precedent_code) -> bool    # the cited ruling is at another CN-8
-cn8_confidence(confidence, evidence_in_line, precedent_agrees) -> int   # capped at 84 unless both hold
 validate_cn8(code, options) -> bool             # ^\d{8}$ and among the CN-8 lines of the decided HS-6
 validate_taric10(code, subdivisions) -> bool    # ^\d{10}$ and among the subdivisions
 taric_rule(subdivisions, snapshot_loaded) -> Rule        # not_loaded | not_available | trade_defence | auto_completed | choose

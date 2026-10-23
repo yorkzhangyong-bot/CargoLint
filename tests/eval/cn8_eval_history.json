@@ -62,5 +62,37 @@
   "elapsed_s": 104.2,
   "cost_usd": 0.0388,
   "cost_eur": 0.0357
+ },
+ {
+  "iteration": 3,
+  "run_on": "2026-10-23",
+  "change": "evidence: every quoted word occurs in the line after normalising both sides (case, punctuation, spacing); only a conflicting ruling keeps the CN-8 to confirm, no ruling leaves the threshold rule alone (no cap at 84, prompt band 85-98 without the ruling clause)",
+  "model": "openai/gpt-4o-mini",
+  "threshold": 85,
+  "top1": 91,
+  "n": 120,
+  "written": 103,
+  "written_wrong": 12,
+  "to_confirm": 3,
+  "questions": 14,
+  "failures": 0,
+  "with_precedent": 101,
+  "per_chapter": {
+   "39": "9/10",
+   "42": "7/10",
+   "61": "7/10",
+   "62": "9/10",
+   "63": "9/10",
+   "64": "7/10",
+   "73": "7/10",
+   "84": "8/10",
+   "85": "7/10",
+   "94": "7/10",
+   "95": "8/10",
+   "96": "6/10"
+  },
+  "elapsed_s": 125.6,
+  "cost_usd": 0.0379,
+  "cost_eur": 0.0348
  }
 ]

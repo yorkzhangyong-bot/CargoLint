@@ -171,10 +171,9 @@ Rules:
   what such goods usually are.
 - precedent: the reference of one listed ruling at your chosen CN-8 that supports your choice, or null. Cite only
   listed rulings, and only a ruling at the CN-8 you chose.
-- confidence: 85-98 only when the evidence words state the deciding attribute and a listed ruling at your chosen
-  CN-8 supports the choice; 70-84 when the choice is inferred (the attribute is only implied, or no listed ruling at
-  your CN-8 supports it); below 70, prefer attribute_visible false and cn8 null. It is a model estimate, not a
-  probability.
+- confidence: 85-98 only when the evidence words state the deciding attribute; 70-84 when the choice is inferred
+  (the attribute is only implied); below 70, prefer attribute_visible false and cn8 null. It is a model estimate, not
+  a probability.
 - rationale: one or two sentences a customs clerk can check.
 """
 
