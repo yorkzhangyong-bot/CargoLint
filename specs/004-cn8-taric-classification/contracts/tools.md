@@ -118,7 +118,9 @@ decided_code(line) (changed): with no clerk decision, it uses hs6_auto_decided (
 decided_cn8(line) -> str|None, decided_taric10(line) -> str|None   # written codes, top-down (data-model §6)
 counts() gains "cn8_to_confirm" and "taric_to_confirm"     # never added to the route counts
 set_threshold(value) also re-evaluates CN-8 choices the clerk has not confirmed, and re-applies code_to_write (no model call);
-                                                           # a CN-8 the clerk confirmed, directly or with its TARIC-10, stays
+                                                           # a CN-8 the clerk confirmed, directly or with its TARIC-10, stays;
+                                                           # only while the HS-6 is decided and the choice was made under it:
+                                                           # a choice left alone is re-evaluated when its HS-6 is decided again
 effective_route(line): an open CN-8 question or a failed CN-8 step takes precedence over an HS-6 acceptance (data-model §6)
 CSV_COLUMNS gains "cn8", "taric10" at the end; to_json_bytes gains "cn8", "taric10" per line
 ```

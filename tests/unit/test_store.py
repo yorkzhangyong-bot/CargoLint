@@ -354,6 +354,32 @@ class TestCn8:
         assert (c.cn8, c.written_by, c.confidence, c.evidence, c.rationale, c.precedent) == (
             "87149130", WrittenBy.clerk, 0, "", "", None)
 
+    def test_a_threshold_raise_that_undecides_the_hs6_leaves_its_cn8_alone(self, cn8_store):
+        s = cn8_store
+        _checked_line(s, 2, FlagKind.ok, [("8714.91", 88)])          # the HS-6 is decided at 85 …
+        s.set_cn8_result(2, _cn8(s, "8714.91", "87149110", 95, WrittenBy.rule))
+        s.set_taric_result(2, TaricOutcome(origin="CN", rule=TaricRule.auto_completed, subdivisions=["8714911000"]))
+        line, start = s.get_line(2), len(s.shipment.audit)
+        s.set_threshold(96)                                          # … and no longer at 96 (88 < 96)
+        s.set_threshold(92)                                          # still undecided; the CN-8 (95) would pass 92
+        assert s.decided_code(line) == (None, None) and s.decided_cn8(line) is None
+        finer = [r for r in s.shipment.audit[start:] if r.line_no == 2 and (
+            r.change in (ChangeKind.cn8_written, ChangeKind.taric_written) or (r.note or "").startswith(("CN-8 ", "TARIC-10 ")))]
+        assert finer == []                       # no "written by rule" for a CN-8 that decided_cn8 does not return
+        assert (line.current.cn8.written_by, line.current.taric.taric10) == (WrittenBy.rule, "8714911000")   # left as it was
+        s.set_threshold(85)                                          # decided again: read again, still written
+        assert (s.decided_cn8(line), s.decided_taric10(line)) == ("87149110", "8714911000")
+
+    def test_a_clerk_acceptance_reevaluates_a_cn8_left_alone_while_undecided(self, cn8_store):
+        s = cn8_store
+        _checked_line(s, 2, FlagKind.ok, [("8714.91", 88)])
+        s.set_cn8_result(2, _cn8(s, "8714.91", "87149110", 95, WrittenBy.rule))
+        s.set_threshold(96)                                          # undecided: the CN-8 (95) is left as it was
+        s.set_decision(2, Decision(route=DecisionRoute.accepted, decided_code="8714.91"))   # the clerk decides the HS-6
+        line = s.get_line(2)
+        assert line.current.cn8.written_by is None and s.decided_cn8(line) is None and s.cn8_pending(line)   # 95 < 96
+        assert _last(s, ChangeKind.threshold_recomputed, 2).note == "CN-8 87149110 back to a suggestion (confidence 95 < threshold 96)"
+
     def test_a_threshold_change_never_writes_a_choice_whose_precedent_conflicts(self, cn8_store):
         from agent.schemas import Precedent
 

@@ -257,6 +257,8 @@ class LineStore:
             self.record(DecisionRecord(at=self._clock(), line_no=line_no, version_no=v.version_no,
                                        change=ChangeKind.code_decided, previous=v.top_code, new=decision.decided_code,
                                        actor=Actor.clerk, note=decision.chosen_how.value if decision.chosen_how else None))
+            self._reevaluate_cn8(line, self.shipment.threshold, Actor.routing_rule)   # feature 004: the HS-6 is decided
+            self._reapply_taric(line, Actor.routing_rule)                             # again; re-read its CN-8 and TARIC-10
         return decision
 
     def accept_lock_reason(self, line: Line) -> str | None:
@@ -337,6 +339,8 @@ class LineStore:
         if changed:
             self.record(DecisionRecord(at=self._clock(), line_no=line.line_no, version_no=v.version_no, change=change,
                                        previous=previous, new=route.value, actor=actor, note=reason))
+        self._reevaluate_cn8(line, s.threshold, actor)   # feature 004: an HS-6 decided again re-reads its CN-8 and TARIC-10
+        self._reapply_taric(line, actor)
 
     # ------------------------------------------------------------------ derived
     def effective_route(self, line: Line) -> str:
@@ -442,21 +446,26 @@ class LineStore:
         return bool(hs6 and c is not None and c.hs6 == hs6 and c.cn8 and c.written_by is None and not c.question
                     and not c.error)
 
-    def _reevaluate_cn8(self, line: Line, threshold: int) -> None:
+    def _reevaluate_cn8(self, line: Line, threshold: int, actor: Actor = Actor.threshold_change) -> None:
+        """Re-apply the threshold write rule to a CN-8 the clerk has not confirmed, only while its HS-6 is decided and
+        the choice was made under that HS-6. Otherwise decided_cn8 does not return it, so nothing changes and nothing is
+        recorded; the choice is re-evaluated once the HS-6 is decided again."""
         c = line.current.cn8
         if c is None or not c.cn8 or c.written_by == WrittenBy.clerk or c.question or c.error:
+            return
+        if c.hs6 != self.decided_code(line)[0]:
             return
         written = cn8_written_by_rule(c.confidence, threshold, len(c.options) == 1,
                                       precedent_conflict=cn8_precedent_conflict(c.cn8, c.precedent.code if c.precedent else None))
         if written and c.written_by is None:
             line.current.cn8 = c.model_copy(update={"written_by": WrittenBy.rule})
-            self._record_code(line, ChangeKind.cn8_written, c.cn8, Actor.threshold_change,
-                             f"written by rule (confidence {c.confidence} ≥ threshold {threshold})")
+            self._record_code(line, ChangeKind.cn8_written, c.cn8, actor,
+                              f"written by rule (confidence {c.confidence} ≥ threshold {threshold})")
         elif not written and c.written_by == WrittenBy.rule:
             line.current.cn8 = c.model_copy(update={"written_by": None})
-            self._record_code(line, ChangeKind.threshold_recomputed, None, Actor.threshold_change,
-                             f"CN-8 {c.cn8} back to a suggestion (confidence {c.confidence} < threshold {threshold})",
-                             previous=c.cn8)
+            self._record_code(line, ChangeKind.threshold_recomputed, None, actor,
+                              f"CN-8 {c.cn8} back to a suggestion (confidence {c.confidence} < threshold {threshold})",
+                              previous=c.cn8)
 
     def _record_code(self, line: Line, change: ChangeKind, new: str | None, actor: Actor, note: str,
                      previous: str | None = None) -> None:
@@ -570,9 +579,10 @@ class LineStore:
                     and not t.taric10 and not t.question)
 
     def _reapply_taric(self, line: Line, actor: Actor) -> None:
-        """Re-apply `code_to_write` after the CN-8's written state changed; a clerk-confirmed TARIC-10 stays."""
-        t = line.current.taric
-        if t is None or t.written_by == WrittenBy.clerk:
+        """Re-apply `code_to_write` after the CN-8's written state changed; a clerk-confirmed TARIC-10 stays. Like the
+        CN-8, nothing changes while the HS-6 is undecided or the CN-8 choice was made under another HS-6."""
+        t, c = line.current.taric, line.current.cn8
+        if t is None or t.written_by == WrittenBy.clerk or c is None or c.hs6 != self.decided_code(line)[0]:
             return
         code = code_to_write(t.rule, t.subdivisions, self.decided_cn8(line) is not None)
         if code == t.taric10:
