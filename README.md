@@ -250,7 +250,8 @@ the store, never from the model's prose.
   `tests/eval/walkthrough.json`. Offline on 2026-10-24: 57 clerk actions and 12 background jobs, every action
   under 0.07 s (1.94 s in total), all 12 lines accepted. `--live` uses the real model and runs only when asked.
   The clerk's own time is the author's timed run in the browser, recorded in
-  `specs/005-decision-first-ui/quickstart.md` §2 (not run yet).
+  `specs/005-decision-first-ui/quickstart.md` §2: 2 min 9 s from upload to export on 2026-10-24, under the
+  5 minutes SC-001 allows.
 - `pytest -m live` — three OpenRouter smoke tests (embeddings, structured output, price-table cost vs
   OpenRouter accounting) and the budget test (sample shipment + two follow-ups < €0.10).
 - `python tests/eval/run_eval.py --sample` — the 20-line labelled set (5 vague, 3 stop-word, 12 clear

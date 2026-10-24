@@ -68,7 +68,7 @@ It writes `tests/eval/walkthrough.json`: each action with its response time, the
 
 | Date | Duration | Clerk actions | Notes |
 |---|---|---|---|
-| — | — | — | not run yet |
+| 2026-10-24 | 2 min 9 s | not counted | The author, in the browser, on the 12-line sample from upload to export, without documentation. Under the 5 minutes of SC-001: passes. |
 
 ## 3. In the browser
 

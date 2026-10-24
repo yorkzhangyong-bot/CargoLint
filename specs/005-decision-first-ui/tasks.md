@@ -972,7 +972,7 @@ switch.
   - Today these are `app.py` and `tools/parse_packing_list.py` among the source files, plus any test, fixture or data
     file the check finds.
   - `ui/chat.py` and `ui/upload.py` are LF; `ui/detail.py` and `ui/review.py` are deleted.
-- [ ] T051 Run the browser check of quickstart §3 after restarting the Streamlit server (`streamlit run app.py`).
+- [X] T051 Run the browser check of quickstart §3 after restarting the Streamlit server (`streamlit run app.py`).
   - **Screenshots**: take them for the author to compare with the wireframes, and save them outside the repository:
     - the empty page and the checked sample;
     - kinds (a), (b) and (c);
