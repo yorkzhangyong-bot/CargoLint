@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
-from agent.config import ASK_FLOOR, DEFAULT_THRESHOLD, THRESHOLD_MAX, THRESHOLD_MIN
+from agent.config import ASK_FLOOR, DEFAULT_THRESHOLD, MAX_DESC_CHARS, THRESHOLD_MAX, THRESHOLD_MIN
 from agent.routing import (
     can_accept,
     cn8_precedent_conflict,
@@ -209,17 +209,38 @@ class LineStore:
     def add_version(self, line_no: int, version: LineVersion) -> LineVersion:
         line = self.get_line(line_no)
         previous_route = self.effective_route(line)
+        previous_text = line.current.display_text
         version.version_no = len(line.versions) + 1
         version.decision = None
         if version.created_at is None:
             version.created_at = self._clock()
         line.versions.append(version)
-        change = ChangeKind.reply_applied if version.created_by == CreatedBy.shipper_reply else ChangeKind.version_added
-        actor = Actor.shipper_reply if version.created_by == CreatedBy.shipper_reply else Actor.system
-        self.record(DecisionRecord(at=self._clock(), line_no=line_no, version_no=version.version_no, change=change,
-                                   previous=previous_route, new=None, actor=actor, note=version.contradiction_note))
+        if version.created_by == CreatedBy.clerk:   # feature 005 (contracts/backend.md §1): the clerk's edit
+            note = ("re-checked by clerk, description unchanged" if version.display_text == previous_text
+                    else "description updated by clerk")
+            self.record(DecisionRecord(at=self._clock(), line_no=line_no, version_no=version.version_no,
+                                       change=ChangeKind.version_added, previous=previous_text, new=version.display_text,
+                                       actor=Actor.clerk, note=note))
+        else:
+            change = ChangeKind.reply_applied if version.created_by == CreatedBy.shipper_reply else ChangeKind.version_added
+            actor = Actor.shipper_reply if version.created_by == CreatedBy.shipper_reply else Actor.system
+            self.record(DecisionRecord(at=self._clock(), line_no=line_no, version_no=version.version_no, change=change,
+                                       previous=previous_route, new=None, actor=actor, note=version.contradiction_note))
         self._recompute(line, Actor.routing_rule)
         return version
+
+    def update_description(self, line_no: int, text_zh: str, text_en: str) -> LineVersion:
+        """Feature 005 (FR-017): the clerk's edit of a line's description, as a new current version created by the clerk.
+        The earlier versions stay (Principle V); `agent.recheck_line` checks the new one. The edit is untrusted text,
+        capped like a file (Principle II): an empty or over-cap text, or an unknown line, changes nothing."""
+        zh, en = (text_zh or "").strip(), (text_en or "").strip()
+        if not zh and not en:
+            raise ValueError("write the goods description")
+        for language, text in (("Chinese", zh), ("English", en)):
+            if len(text) > MAX_DESC_CHARS:
+                raise ValueError(f"the {language} text is over {MAX_DESC_CHARS} characters")
+        self.get_line(line_no)
+        return self.add_version(line_no, LineVersion(created_by=CreatedBy.clerk, text_zh=zh, text_en=en))
 
     # ------------------------------------------------------------------ decisions
     def set_decision(self, line_no: int, decision: Decision) -> Decision:

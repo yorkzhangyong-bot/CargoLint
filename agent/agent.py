@@ -298,6 +298,44 @@ def after_hs6_decision(store: Any, kb: Any, line_no: int, taric_only: bool = Fal
     return "; ".join(parts)
 
 
+def recheck_line(store: Any, kb: Any, line_no: int) -> str:
+    """Feature 005 (FR-017, contracts/backend.md §2): check one line's current version from the stop-word check
+    onwards, with no agent turn, then run the CN-8 and TARIC steps when its HS-6 is decided. The same tool functions as
+    `_finalize` and `apply_reply`; calls go through the usage-recording client. Returns a one-line summary."""
+    from tools.check_description import check_descriptions, summarize as check_summary
+    from tools.classify_cn8 import run_cn8_step, summarize as cn8_summary
+    from tools.classify_hs6 import classify_lines, context_for_shipment, summarize as classify_summary
+    from tools.common import select_lines
+    from tools.lookup_precedent import lookup_precedents
+    from tools.lookup_taric import needs_taric, run_taric_step, summarize as taric_summary
+
+    if store.get_line(line_no).current.status != LineStatus.pending:
+        raise ValueError(f"line {line_no} has no new description to re-check")
+    client = get_client(usage_sink=store.add_usage, settings=get_settings())
+    checks = check_descriptions(select_lines(store, [line_no]), kb.rules, client, workers=1)
+    for r in checks:
+        store.update_check(line_no, r)
+    parts = [check_summary(checks)]
+    if store.get_line(line_no).current.status == LineStatus.pending:   # neither failed nor a pure stop word
+        cctx = context_for_shipment(store.shipment, kb)
+        results = classify_lines(select_lines(store, [line_no]), cctx, kb, client, workers=1)
+        for r in results:
+            store.update_classification(line_no, r)
+        parts.append(classify_summary(results, "hybrid" if cctx.hybrid else "vector_only"))
+    if store.get_line(line_no).current.candidates:
+        found = lookup_precedents([c.code for c in store.get_line(line_no).current.candidates], kb.bti, date.today())
+        store.update_precedents(line_no, found.by_code)
+        matched = sum(1 for c in store.get_line(line_no).current.candidates if c.precedent is not None)
+        parts.append(f"{matched} BTI rulings matched")
+    if store.decided_code(store.get_line(line_no))[0]:
+        parts.append(cn8_summary(run_cn8_step(store, kb, client, [line_no], workers=1)))
+    if needs_taric(store, store.get_line(line_no)):
+        parts.append(taric_summary(run_taric_step(store, kb, client, [line_no], workers=1)))
+    if store.get_line(line_no).current.status == LineStatus.pending:
+        store.mark_failed(line_no, "not checked — a step did not run")
+    return "; ".join(parts)
+
+
 def apply_taric_origin(store: Any, kb: Any, code: str) -> str:
     """Feature 004 (FR-017, FR-018, contracts/tools.md §4): set the shipment's TARIC origin, then re-apply the lookup
     and the rules to every line with a CN-8 and a TARIC outcome. Subdivision codes do not depend on the origin, so the

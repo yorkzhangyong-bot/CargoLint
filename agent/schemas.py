@@ -70,6 +70,7 @@ class CreatedBy(str, Enum):
     paste = "paste"
     sample = "sample"
     shipper_reply = "shipper_reply"
+    clerk = "clerk"                    # feature 005: the clerk's edit of the description
 
 
 class Actor(str, Enum):

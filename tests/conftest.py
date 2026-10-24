@@ -20,6 +20,25 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(skip)
 
 
+@pytest.fixture(autouse=True)
+def _offline(request, monkeypatch):
+    """Offline tests never reach OpenRouter. OPENROUTER_API_KEY is an operating-system variable, so a test that is not
+    marked live and runs without a fake client fails here instead of spending credits."""
+    if request.node.get_closest_marker("live") is not None:
+        return
+    import langchain_openai
+
+    import agent.llm
+    import rag.embeddings
+
+    def refuse(*args, **kwargs):
+        raise RuntimeError("an offline test tried to reach OpenRouter; install a fake with set_client_factory")
+
+    monkeypatch.setattr(agent.llm, "OpenRouterRawClient", refuse)
+    monkeypatch.setattr(langchain_openai, "ChatOpenAI", refuse)
+    monkeypatch.setattr(rag.embeddings, "OpenRouterEmbeddings", refuse)
+
+
 @pytest.fixture
 def small_index():
     from rag.nomenclature import NomenclatureIndex

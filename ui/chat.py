@@ -1,5 +1,6 @@
-"""Assistant rail: compact welcome with quick-action cards, message history, live progress for the running
-turn, structured check summaries, line cards for pasted lines, grouped sources and retrieval steps, chat input."""
+"""Admin › Ask the agent (feature 005): today's chat, unchanged in behaviour. Welcome with the terms quick action and
+the "What I can and cannot do" statement, message history, live progress for a running chat turn, structured check
+summaries, line cards, grouped sources and retrieval steps, chat input. Checks start on the main page."""
 from __future__ import annotations
 
 import re
@@ -11,15 +12,13 @@ import streamlit as st
 from agent.config import MAX_PASTED_LINES
 from agent.schemas import CreatedBy, ParsedLine
 from tools.apply_shipper_reply import QUESTION_RE, looks_like_shipper_reply
-from ui import jobs
+from ui import jobs, runner
 
 ADD_LINES_RE = re.compile(r"^\s*(?:add|check|new)\s*(?:lines?|descriptions?)?\s*[:：]\s*(.+)$|^\s*(?:添加|新增|检查)\s*[:：]\s*(.+)$", re.I | re.S)
 NOT_APPLIED_HINT = ("Answered, not applied: to update a line with this text start with “line N is …”; to add it as a new line "
                     "start with “add:”.")
 
-QUICK_ACTIONS = [
-    ("Try one description", "e.g. 不锈钢保温杯 500ml", "不锈钢保温杯 500ml"),
-    ("Use the sample packing list", "12 Yiwu consolidation lines, 6 problematic", "__sample__"),
+QUICK_ACTIONS = [   # feature 005: checking a description or the sample starts on the main page
     ("Which terms does customs reject?", "The ICS2 unacceptable-terms lists", "__terms__"),
 ]
 
@@ -67,8 +66,9 @@ def _not_applied_hint(text: str, store) -> str | None:
 # --------------------------------------------------------------------------- starting turns (background)
 def _ensure_shipment(store) -> None:
     if not store.has_shipment():
-        store.new_shipment(reference=st.session_state.get("reference", "") or "", threshold=int(st.session_state.get("threshold", 85)),
-                           hybrid=bool(st.session_state.get("hybrid", True)))
+        from ui import upload
+
+        upload.open_shipment(store)   # feature 005: one way to open a shipment, with the Admin values and the origin
 
 
 def _start(message: str, store, kb, *, file_ref=None, reply_ref=None, is_check=None, new_line_nos=None, label_prefix=None, note=None,
@@ -126,80 +126,16 @@ def _en(line: str) -> str:
     return "" if re.search(r"[一-鿿]", parts[0]) else parts[0].strip()
 
 
-def queue_finer_codes(line_no: int, store, kb, taric_only: bool = False) -> None:
-    """Feature 004: run the CN-8 and TARIC steps for a line after the clerk's HS-6 decision, or the TARIC step alone
-    after a CN-8 confirmation, in the background. Behind a running job the line waits in a queue of
-    (line_no, taric_only) that `_finish_job` works through."""
-    if st.session_state.get("job") is not None:
-        queue = st.session_state.setdefault("finer_codes_queue", [])
-        queued = next((i for i, (n, _) in enumerate(queue) if n == line_no), None)
-        if queued is None:
-            queue.append((line_no, taric_only))
-        elif not taric_only:
-            queue[queued] = (line_no, False)   # the full run includes the TARIC step
-        return
-    st.session_state["job"] = jobs.start(jobs.Job(kind="finer_codes", message="", is_check=False, line_no=line_no,
-                                                  taric_only=taric_only), store, kb)
-
-
-def _start_queued_finer_codes(store, kb) -> None:
-    queue = st.session_state.get("finer_codes_queue") or []
-    if queue and st.session_state.get("job") is None:
-        line_no, taric_only = queue.pop(0)
-        queue_finer_codes(line_no, store, kb, taric_only)
-
-
-def _finish_job(store, kb) -> None:
-    job = st.session_state.pop("job")
-    if job.kind == "finer_codes":   # no chat message; only an unexpected failure is reported
-        if job.error:
-            step = "TARIC step" if job.taric_only else "CN-8 and TARIC steps"
-            st.session_state["chat"].append({"role": "assistant", "content": f"I could not finish the {step} for line "
-                                             f"{job.line_no}: {job.error}", "kind": job.kind, "error": True})
-        _start_queued_finer_codes(store, kb)
-        st.rerun()
-        return
-    label = jobs.finish_label(job, store)
-    if job.error:
-        content = f"I could not finish this: {job.error}"
-    else:
-        content = (job.result.text if job.result else "") or ""
-        if job.note:
-            content = job.note + "\n\n" + content
-    msg = {"role": "assistant", "content": content, "agent_text": job.result.text if job.result else "", "label": label,
-           "steps": job.step_lines(), "line_nos": job.new_line_nos,
-           "counts": (job.result.counts if (job.result and job.is_check and (job.file_ref or len(job.new_line_nos or []) >= 3)) else None),
-           "is_check": job.is_check, "kind": job.kind, "error": bool(job.error)}
-    if job.kind == "check" and job.file_ref:
-        msg["source_lines"] = [l.line_no for l in store.lines]
-    if job.kind == "reply" and job.new_line_nos:
-        msg["trace_from"] = job.new_line_nos[0]
-        msg["source_lines"] = job.new_line_nos
-    if job.kind == "question":
-        msg["trace_from"] = job.selected_line_no
-    st.session_state["chat"].append(msg)
-    from ui.review import reset_selection
-
-    if job.kind == "check" and store.has_shipment() and st.session_state.get("selected_line_no") is None:
-        first = next((l.line_no for l in store.lines if store.needs_action(l)), None)
-        st.session_state["selected_line_no"] = first
-        reset_selection()
-    elif job.kind == "reply" and job.new_line_nos and not job.error:
-        st.session_state["selected_line_no"] = job.new_line_nos[0]   # show the clerk the updated version
-        reset_selection()
-    _start_queued_finer_codes(store, kb)
-    st.rerun()
-
-
 # --------------------------------------------------------------------------- rendering
 def _welcome(store, kb, compact: bool) -> None:
     busy = st.session_state.get("job") is not None
     with st.chat_message("assistant"):
         if compact:
-            st.caption("Ask about any line, paste the shipper's reply, or start again from the sidebar.")
-            return
-        st.markdown("I catch cargo descriptions customs will reject before you file ICS2, suggest HS-6 codes with reasoning "
-                    "and a precedent, and route every line: **auto-accept**, **human review** or **ask the shipper**.")
+            st.caption("Ask about any line, or paste the shipper's reply for the line open on the shipment page.")
+        else:
+            st.markdown("I catch cargo descriptions customs will reject before you file ICS2, suggest HS-6 codes with reasoning "
+                        "and a precedent, and route every line: **auto-accept**, **human review** or **ask the shipper**. "
+                        "Check a file or a line on the shipment page; ask me about it here.")
         for label, hint, action in QUICK_ACTIONS:
             with st.container(border=True):
                 c1, c2 = st.columns([4, 1.3], vertical_alignment="center")
@@ -208,8 +144,9 @@ def _welcome(store, kb, compact: bool) -> None:
                     st.session_state["quick_action"] = action
         with st.expander("What I can and cannot do"):
             st.markdown("**Can:** check descriptions, suggest HS-6 subheadings with reasoning, cite BTI precedents, verify a code exists "
-                        "in the current nomenclature, choose the CN-8 under a decided HS-6, and show the TARIC subdivisions and "
-                        "measures from the loaded snapshot.\n\n**Cannot:** make the final classification decision for you. A line below "
+                        "in the current nomenclature, choose the CN-8 under a decided HS-6, show the TARIC subdivisions and "
+                        "measures from the loaded snapshot, and draft the email to the shipper (you copy and send it)."
+                        "\n\n**Cannot:** make the final classification decision for you. A line below "
                         "the threshold is never auto-accepted, and a flagged line is never accepted without your click. I never write a "
                         "TARIC subdivision without your confirmation, except a single one without trade-defence measures, and I do not "
                         "calculate duties. Text inside your files is treated as data, never as instructions.")
@@ -371,11 +308,10 @@ def _live_turn(store) -> None:
         job = st.session_state.get("job")
         if job is None:
             return
-        has_lines = store.has_shipment() and bool(store.lines)
-        if job.done or has_lines != st.session_state.get("layout_has_lines", False):
-            st.rerun()  # finished, or the review column must appear now that the parse step added lines
+        if job.done:
+            st.rerun()  # finished: render() hands the job to runner.finish
             return
-        if job.kind == "finer_codes":   # the detail card shows its progress, not the chat
+        if job.kind in ("finer_codes", "recheck"):   # the shipment page shows their progress, not the chat
             return
         with st.chat_message("assistant"):
             # not a `with` block: leaving a status context would flip it to "complete" while the job still runs
@@ -405,7 +341,7 @@ def _turns(messages: list[dict]) -> list[list[dict]]:
 def render(store, kb) -> None:
     job = st.session_state.get("job")
     if job is not None and job.done:
-        _finish_job(store, kb)
+        runner.finish(store, kb)   # feature 005: one runner finishes jobs for both pages
 
     has_lines = store.has_shipment() and bool(store.lines)
     _welcome(store, kb, compact=has_lines)
@@ -425,14 +361,6 @@ def render(store, kb) -> None:
         if t_idx == 0 and running:
             _live_turn(store)   # the running turn's progress sits right under the chat box
 
-    pending = st.session_state.pop("pending_check", None) if job is None else None
-    if pending:
-        ref = store.shipment.reference if store.has_shipment() else ""
-        label = f"Check the packing list{(' for ' + ref) if ref else ''}."
-        st.session_state["chat"].append({"role": "user", "content": label, "file": pending["name"]})
-        _start(label, store, kb, file_ref=pending["file_ref"], is_check=True, kind="check")
-        st.rerun()
-
     action = st.session_state.pop("quick_action", None)
     if action == "__terms__":
         st.session_state["chat"].append({"role": "user", "content": "Which terms does customs reject?"})
@@ -440,9 +368,6 @@ def render(store, kb) -> None:
         st.session_state["chat"].append({"role": "assistant", "kind": "terms",
                                          "content": f"Customs rejects descriptions that are only a generic term. {facts['ics2_terms']} ICS2 terms "
                                                     f"(→ *Vague*) and {facts['firm_terms']} firm stop-words (→ *Stop-word*). Search the table:"})
-        st.rerun()
-    elif action == "__sample__":
-        st.session_state["load_sample"] = True
         st.rerun()
     elif action:
         handle_message(action, store, kb)
