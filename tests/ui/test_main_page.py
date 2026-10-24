@@ -217,23 +217,30 @@ def test_one_more_line_and_its_queue(kb, recorder):
     assert "Waits for the running check" in texts(at)
 
 
+def header_popover(at):
+    found = [b for b in at.get("popover") if b.proto.popover.label == "Open another file"]
+    assert len(found) == 1
+    return found[0]
+
+
 def test_open_another_file(kb, recorder):
     store, _ = h.store_with("ready", kb=kb)
     store.add_usage(Usage(total_tokens=1000, cost_eur=0.5, calls=2))
     at = h.app(store, kb).run()
-    assert not at.file_uploader                                       # hidden until asked for
-    at.button(key="open_file_button").click().run()
-    assert at.file_uploader[0].label == "Drop a packing list or invoice here"
+    pop = header_popover(at)                                          # the drop zone collapses into the header
+    assert not pop.proto.popover.disabled
+    assert [u.label for u in pop.file_uploader] == ["Drop a packing list or invoice here"]
+    assert len(at.file_uploader) == 1 and [b.key for b in pop.button] == ["sample_open"]   # nowhere else on the page
     at.button(key="sample_open").click().run()
     assert ("A checked shipment is open. Replace it with sample_packing_list.xlsx? Results, counts and cost reset."
             in texts(at))
     at.button(key="replace_yes").click().run()
     assert store.shipment.reference == h.SAMPLE_REFERENCE and at.session_state["session_usage"].total_tokens == 1000
-    store2, _ = h.store_with("ready", kb=kb)                          # the button shows once lines exist
+    store2, _ = h.store_with("ready", kb=kb)                          # the popover shows once lines exist
     at2 = h.app(store2, kb)
     at2.session_state["job"] = running_check()
     at2.run()
-    assert at2.button(key="open_file_button").disabled
+    assert header_popover(at2).proto.popover.disabled
 
 
 # --------------------------------------------------------------------------- US2: kinds (a) and (b) in place (T018)
@@ -277,8 +284,10 @@ def test_kind_a_on_a_review_line(kb, recorder):
     assert "model estimate" in page and "Confidence is a model estimate, not a calibrated probability." in page
     for r in view.hs6_rows(store, line):
         assert f"`{r.code}`" in page and r.rationale in page
+        assert " › " in r.description and any(t.startswith(r.description) for t in page)   # heading › subheading
     assert sum(1 for t in page if ":gray-badge[history only]" in t) == 1
-    assert [plain(p.proto.popover.label) for p in at.get("popover")] == ["BTI DE DE-940521-01"]
+    rulings = [plain(p.proto.popover.label) for p in at.get("popover") if p.proto.popover.label.startswith("BTI")]
+    assert rulings == ["BTI DE DE-940521-01"]
     assert page.count("no close precedent") == 2
     assert [p.proto.text for p in at.get("progress")] == ["58 %", "20 %", "10 %"]
     k = keys(store, n, "a_hs6", "hs6")
@@ -569,7 +578,8 @@ def test_kind_c_on_an_ics2_term(kb, recorder):
     assert "**Ask the shipper**" in page
     assert [c.value for c in at.code] == [view.question(store, line, "en", kb)]
     assert ":material/content_copy: Copy question — the copy button at the top right of the box" in page
-    assert "Reason: ICS2 unacceptable term 'spare parts'" in page and view.candidates_line(line) in page
+    assert "Reason: ICS2 unacceptable term 'spare parts'" in page
+    assert not any(t.startswith("Candidates: ") for t in page)       # the term is the reason: no candidates line
     block = candidates_block(at)
     assert len(block) == 1 and block[0].proto.expanded
     assert "All steps run again for this line, from the stop-word check." in page
@@ -588,6 +598,9 @@ def test_kind_c_on_the_other_red_rows(kb, recorder, state):
     assert at.text_area(key=edit_keys(store, n).area).value == line.current.display_text
     if line.current.candidates:
         assert candidates_block(at)[0].proto.expanded
+    candidates = view.candidates_line(line)                           # only a line flagged as vague by judgement
+    assert (candidates is not None) is (state in ("vague_close", "vague_apart"))
+    assert [t for t in page if t.startswith("Candidates: ")] == ([candidates] if candidates else [])
 
 
 def test_the_description_field_is_never_cut_and_names_the_original(kb, recorder):

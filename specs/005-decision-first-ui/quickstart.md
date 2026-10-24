@@ -82,7 +82,7 @@ streamlit run app.py        # http://localhost:8501
 |---|---|---|
 | US1 | Open the page | The header with the origin field at CN and "Admin ⚙"; the drop zone; "Try the sample invoice"; "Check one line"; the empty table. No sidebar. |
 | US1 | Choose "Try the sample invoice" | "Checking sample_packing_list.xlsx…" while the file is read; grey rows with their running step; codes filling in group by group; then the summary sentence, the split bar and "Accept all K ready". |
-| US1 | "Open another file" | The drop zone and the sample button under the header, disabled while a check runs; opening a file asks before it replaces the invoice. |
+| US1 | "Open another file" | A popover in the header with the drop zone and the sample button, disabled while a check runs; opening a file asks before it replaces the invoice. |
 | US2 | "Choose" on a "Pick: N candidates" line | Kind (a) under the row: two explanation lines; three candidates with their reasoning, bars and precedent; "Other HS-6 code…"; the leader picked. "Confirm" returns at once; the row goes grey, then green or yellow "Pick: …". |
 | US2 | "Other HS-6 code…" with a made-up code | "Not confirmed: …" and nothing changes. |
 | US2 | "Change" on a green line | Kind (a) with the decided codes and who decided them, and the decided HS-6 picked. The switch offers CN-8, and TARIC-10 when the CN-8 has several subdivisions. "Confirm" stays disabled until another code is picked. Confirming a new HS-6 or CN-8 sends the row grey, then green or yellow; a new TARIC-10 keeps it green, with no model call. |

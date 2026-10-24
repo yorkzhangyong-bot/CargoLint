@@ -340,13 +340,13 @@ the data itself.
 ## R-16 Close candidates and the Reason line
 
 **Decision**:
-- For a flagged vague line, kind (c) lists its candidates with their confidences.
+- For a line flagged as vague by judgement, kind (c) lists its candidates with their confidences.
 - When the top two confidences differ by at most 10 points (`CLOSE_POINTS`):
   - the candidates line ends with "— too close to call";
   - the reason reads "Reason: candidates too close".
 - Otherwise the reason reads "Reason: vague description — {the flag's reason}".
-- A term-based flag keeps its own reason ("Reason: ICS2 unacceptable term 'parts'"); the closeness rule applies only
-  to judgement flags.
+- A term-based flag keeps its own reason ("Reason: ICS2 unacceptable term 'parts'") and shows no candidates line
+  (the author's decision after the screenshot review, 2026-10-24); the closeness rule applies only to judgement flags.
 - This is a display rule only; routing never reads it.
 
 **Rationale**: FR-016 and User Story 3 show "too close to call" for close candidates, but the backend has no closeness
@@ -434,3 +434,6 @@ a file is being read, before any line exists, the page shows "Checking {file nam
 
 **Rationale**: the spec's edge case keeps today's replacement flow, and the empty state alone would hide the drop zone
 once lines exist (author's decision, 2026-10-23).
+
+**Changed on 2026-10-24** (screenshot review): "Open another file" is a popover in the header that holds the drop zone,
+the sample button and the replacement question, so nothing pushes the table down.

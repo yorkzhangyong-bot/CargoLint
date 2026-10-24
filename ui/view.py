@@ -239,9 +239,10 @@ def _close(candidates: list) -> bool:
 
 
 def candidates_line(line: Any) -> str | None:
-    """A flagged line's candidates, ending " — too close to call" when the top two are close (display only, R-16)."""
+    """A vague line's candidates, ending " — too close to call" when the top two are close (display only, R-16). A
+    line flagged by an ICS2 term or a stop word has none: its reason names the term."""
     v = line.current
-    if v.flag is None or v.flag.kind == FlagKind.ok or not v.candidates:
+    if v.flag is None or v.flag.kind == FlagKind.ok or _term_based(v.flag) or not v.candidates:
         return None
     text = "Candidates: " + " · ".join(f"{spaced(c.code)} ({c.confidence} %)" for c in v.candidates[:3])
     return text + (" — too close to call" if _close(v.candidates) else "")
@@ -303,12 +304,15 @@ def _path(path: str) -> list[str]:
 
 
 def hs6_rows(store: Any, line: Any) -> list[CandidateRow]:
-    """Up to three candidates in stored order; a subheading with one CN-8 line shows that line."""
+    """Up to three candidates in stored order, each described by its heading and subheading labels; a subheading with
+    one CN-8 line shows that line."""
     rows = []
     for c in line.current.candidates[:3]:
         lines = store.index.cn8_lines(c.code) if store.index is not None else []
-        rows.append(CandidateRow(spaced(lines[0][0] if len(lines) == 1 else c.code), c.code, c.subheading_text,
-                                 c.confidence, c.rationale or None, c.history_only, c.precedent))
+        path = store.index.label_path(c.code) if store.index is not None else []
+        rows.append(CandidateRow(spaced(lines[0][0] if len(lines) == 1 else c.code), c.code,
+                                 " › ".join(path) or c.subheading_text, c.confidence, c.rationale or None,
+                                 c.history_only, c.precedent))
     return rows
 
 

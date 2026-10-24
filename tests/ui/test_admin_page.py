@@ -115,8 +115,7 @@ def test_the_rules_and_the_section_stay_across_pages(kb, recorder):
     at.radio(key="admin_section").set_value("Data").run()
     at.session_state["_harness_page"] = "main"
     at.run()
-    at.button(key="open_file_button").click().run()                  # a new shipment opened in between
-    at.button(key="sample_open").click().run()
+    at.button(key="sample_open").click().run()                       # a new shipment opened in between
     at.button(key="replace_yes").click().run()
     assert (store.shipment.threshold, store.shipment.hybrid_search) == (90, False)
     at.session_state["_harness_page"] = "admin"

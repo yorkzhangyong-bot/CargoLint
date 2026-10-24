@@ -64,7 +64,6 @@ def begin(store, kb, data: bytes, name: str, reference: str | None = None) -> No
     st.session_state["uploaded_file"] = {"name": name, "size": len(data), "ref": file_ref}
     st.session_state["chat"] = []
     st.session_state["selected_line_no"] = None
-    st.session_state["open_file"] = False
     runner.start_check(store, kb, file_ref=file_ref, file_name=name)
 
 

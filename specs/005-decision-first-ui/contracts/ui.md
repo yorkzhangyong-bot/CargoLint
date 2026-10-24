@@ -37,10 +37,9 @@ The clerk-facing elements of feature 005, with what each one shows and does. Tex
   - its help: "The goods' country of origin for TARIC, two letters; CN by default";
   - under it, the caption `view.snapshot_caption(kb)`: "TARIC snapshot {date}", or "TARIC not loaded". This shows the
     snapshot date for every TARIC-10 in the table (Principle I).
-- **"Open another file"**: once a shipment has lines, it shows the drop zone and "Try the sample invoice" under the
-  header.
-  - Its button (key `open_file_button`) toggles the flag `open_file`. Streamlit does not let code set a button's
-    key, so the flag is a plain session value.
+- **"Open another file"**: once a shipment has lines, the drop zone and "Try the sample invoice" collapse into the
+  header. An `st.popover("Open another file")` (key `open_file_button`) holds them, with the replacement question,
+  so nothing pushes the table down.
   - It is disabled while any job runs, with the help "Wait for the running check".
 - "Admin ⚙", the link.
 
@@ -183,8 +182,9 @@ Each row is an `st.columns` row built from `view.line_status` and `view.code_dis
 - **"Ask the shipper"** (not for a failed check): a bordered container with:
   - the full question in `st.code(question, language=None, wrap_lines=True)`;
   - the caption ":material/content_copy: Copy question — the copy button at the top right of the box" (research R-08).
-- **For a flagged vague line**: the candidates line of [view.md](view.md) §2.3. Every line with candidates also has
-  the HS-6 candidates block, open.
+- **For a line flagged as vague by judgement**: the candidates line of [view.md](view.md) §2.3. A line flagged by an
+  ICS2 term or a stop word has none: its reason names the term. Every line with candidates also has the HS-6
+  candidates block, open.
 - **The reason line**.
 - **"Update the description with the shipper's answer"**:
   - an `st.text_area`, pre-filled with the current description, so that a long bilingual text is never cut;

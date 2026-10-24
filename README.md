@@ -324,6 +324,15 @@ CN-8 and TARIC-10 (feature 004), measured on 2026-10-23 with the 2026-10-01 TARI
   "Furniture" came back at 40 and went to the shipper, and the toy cars were written as 9503 00 95 instead of
   asking whether a motor is fitted.
 
+**Known issues**:
+- **Sample line 10, "铝合金自行车架 / Aluminium alloy bicycle frames"** (browser check with the live model, 2026-10-24):
+  it is auto-accepted as 9503 00 10 00 (wheeled toys) at 95 %; the correct HS-6 is 8714.91 (frames and forks of
+  bicycles).
+  - **Mitigation**: the clerk overrides it with "Change", picking 8714.91, or typing it under "Other HS-6 code…"
+    when it is not among the three candidates, as in that run. The CN-8 and TARIC steps then run again for the new
+    code, and the audit trail records the clerk's decision.
+  - The offline recordings classify the line correctly, so the walkthrough and the offline tests do not show it.
+
 ## Known weaknesses and next steps
 
 - Confidence is model-estimated and only loosely calibrated against 20 labelled lines; it must not be

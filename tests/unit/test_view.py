@@ -311,7 +311,9 @@ def test_hs6_rows(states, kb):
     assert [r.code for r in rows] == ["8714 91", "8487 90 00", "8452 90 00"]              # a single CN-8 line shows that line
     assert [r.confidence for r in rows] == [41, 39, 12]
     assert [r.history_only for r in rows] == [False, False, True]
-    assert rows[0].description == store.index.subheading_text("8714.91")
+    assert rows[0].description == ("Parts and accessories of vehicles of headings 8711 to 8713 › Frames and forks, and "
+                                   "parts thereof, of bicycles")                     # the heading, then the subheading
+    assert rows[0].description == " › ".join(store.index.label_path("8714.91"))
     assert rows[0].rationale == "matches the subheading 8714.91"
     assert rows[0].precedent.reference == "DE-871491-01" and rows[1].precedent is None
     store2, n = one_line(kb, "Stainless steel vacuum flask, 500 ml", [("9617.00", 80)], rationale="x" * 200)
@@ -554,8 +556,8 @@ def test_reason_lines(states, name, reason):
 @pytest.mark.parametrize("name, text", [
     ("vague_close", "Candidates: 3924 90 (41 %) · 3924 10 (39 %) · 9403 60 (12 %) — too close to call"),
     ("vague_apart", "Candidates: 3924 90 (40 %) · 3924 10 (10 %) · 9403 60 (5 %)"),
-    ("ics2_term", "Candidates: 8714 91 (41 %) · 8487 90 (39 %) · 8452 90 (12 %) — too close to call"),
-    ("firm_stop_word", None),                                                         # a pure stop word: no candidates
+    ("ics2_term", None),                                                              # a term flagged it: its reason says so
+    ("firm_stop_word", None),
     ("review", None),                                                                 # not flagged
 ])
 def test_candidates_line(states, name, text):
@@ -571,7 +573,7 @@ def test_too_close_to_call_at_the_boundary(kb, second, close):
     assert (view.reason_line(store, line) == "Reason: candidates too close") is close
 
 
-def test_a_term_reason_wins_over_close_candidates(kb):
+def test_a_term_flag_gives_its_reason_and_no_candidates_line(kb):
     from agent.schemas import DescriptionCheck, Flag, FlagKind, LineStatus, RuleSource
 
     store = h._store()
@@ -582,7 +584,7 @@ def test_a_term_reason_wins_over_close_candidates(kb):
     h._classify(store, n, [("8714.91", 41), ("8487.90", 39)])
     line = store.get_line(n)
     assert view.reason_line(store, line) == "Reason: ICS2 unacceptable term 'parts'"
-    assert view.candidates_line(line) == "Candidates: 8714 91 (41 %) · 8487 90 (39 %) — too close to call"
+    assert view.candidates_line(line) is None                                         # close candidates, yet no line
 
 
 @pytest.mark.parametrize("name", RED)

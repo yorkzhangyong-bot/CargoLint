@@ -114,4 +114,6 @@ def recheck_line(store: Any, kb: Any, line_no: int) -> str:
   `set_threshold`, `set_taric_origin`, the export and the `decided_*` and `*_pending` reads.
 - **`agent.apply_taric_origin`, `after_hs6_decision` and `line_taric_view`**: unchanged.
 - **The seven tools, the prompts, the system prompt and the CLI**: unchanged.
+- **`rag/nomenclature.py`**: one read-only accessor added after the screenshot review (2026-10-24),
+  `label_path(code)`, which the HS-6 rows read. The index data and the loader are unchanged.
 - **The 683 tests of features 001 to 004 that do not import the UI package**: they pass unchanged (SC-007).

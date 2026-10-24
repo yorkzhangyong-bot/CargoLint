@@ -115,7 +115,8 @@ email.
 ### 2.3 Candidates and reasons of a flagged vague line (kind c)
 
 - **The candidates line**: "Candidates: {code} ({conf} %) · {code} ({conf} %) · {code} ({conf} %)". It ends with
-  " — too close to call" when the top two confidences differ by at most `CLOSE_POINTS = 10`.
+  " — too close to call" when the top two confidences differ by at most `CLOSE_POINTS = 10`. Only a line flagged by
+  judgement has one; a term-based flag has none, because its reason names the term.
 - **The reason line**:
   - a term-based flag gives the reason of §2.1, which always wins;
   - a judgement flag gives "Reason: candidates too close" when the candidates are close as defined above, otherwise
@@ -168,7 +169,9 @@ or "(0 lines)".
 `hs6_rows(store, line) -> list[CandidateRow]`: up to three candidates, in stored order.
 - **code**: the HS-6 ("8518 30"), or its single CN-8 line when `store.index.cn8_lines(code)` has exactly one ("9617 00
   00");
-- **description**: the subheading text;
+- **description**: the heading and subheading labels joined with " › " (`NomenclatureIndex.label_path`), so a bare
+  "Other" or "Of cotton" reads with its heading; one label when the heading is not subdivided or the subheading
+  repeats it;
 - **confidence**: 0–100;
 - **rationale**: the candidate's own reasoning, shown as a caption cut at 150 characters with the full text as its help;
 - **history_only**: shown as the badge "history only";

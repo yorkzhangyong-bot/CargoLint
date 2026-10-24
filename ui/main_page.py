@@ -78,10 +78,10 @@ def _header(store: Any, kb: Any, admin_page: Any) -> None:
                       help="The goods' country of origin for TARIC, two letters; CN by default",
                       on_change=_origin_changed, args=(store, kb, st.session_state["origin_field"]))
         st.caption(view.snapshot_caption(kb))
-    if n:
+    if n:   # the drop zone collapses into the header once lines exist; its replacement question comes first
         busy = runner.busy()
-        c[3].button("Open another file", key="open_file_button", on_click=_flip, args=("open_file",), disabled=busy,
-                    help=WAIT if busy else None)
+        with c[3].popover("Open another file", key="open_file_button", disabled=busy, help=WAIT if busy else None):
+            upload.render_drop_zone(store, kb, key="open")
     if admin_page is not None:
         c[4].page_link(admin_page, label="Admin ⚙")
 
@@ -197,9 +197,6 @@ def render(store: Any, kb: Any, admin_page: Any = None) -> None:
     _header(store, kb, admin_page)
     for level, text in runner.pop_messages():
         getattr(st, level)(view.md_escape(text))
-    n = _line_count(store)
-    if n and st.session_state.get("open_file"):
-        upload.render_drop_zone(store, kb, key="open")
-    if not n:
+    if not _line_count(store):
         _empty_state(store, kb)
     _live(store, kb)
