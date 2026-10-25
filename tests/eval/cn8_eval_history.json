@@ -126,5 +126,1563 @@
   "elapsed_s": 106.5,
   "cost_usd": 0.038,
   "cost_eur": 0.0349
+ },
+ {
+  "iteration": 5,
+  "run_on": "2026-10-25",
+  "change": "stability baseline: 3 independent runs, temperature 0.0, seed none; the row shows run 1",
+  "model": "openai/gpt-4o-mini",
+  "threshold": 85,
+  "top1": 92,
+  "n": 120,
+  "written": 107,
+  "written_wrong": 15,
+  "to_confirm": 1,
+  "questions": 12,
+  "failures": 0,
+  "with_precedent": 103,
+  "per_chapter": {
+   "39": "10/10",
+   "42": "6/10",
+   "61": "8/10",
+   "62": "9/10",
+   "63": "9/10",
+   "64": "8/10",
+   "73": "6/10",
+   "84": "8/10",
+   "85": "6/10",
+   "94": "7/10",
+   "95": "9/10",
+   "96": "6/10"
+  },
+  "elapsed_s": 304.5,
+  "cost_usd": 0.1139,
+  "cost_eur": 0.1048,
+  "temperature": 0.0,
+  "seed": null,
+  "tag": "baseline-stability",
+  "repeat": 3,
+  "top1_runs": [
+   92,
+   92,
+   94
+  ],
+  "majority_top1": 93,
+  "code_consistency": 0.9167,
+  "decision_consistency": 0.9083,
+  "unstable": [
+   {
+    "reference": "IEBTIIENEN004-2025-BTI351",
+    "hs6": "3925.90",
+    "expected": "39259010",
+    "seen": [
+     {
+      "cn8": "39259010",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "39259010",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI23122/26-1",
+    "hs6": "6116.10",
+    "expected": "61161080",
+    "seen": [
+     {
+      "cn8": "61161080",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "61161020",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "61161080",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI122",
+    "hs6": "6402.99",
+    "expected": "64029939",
+    "seen": [
+     {
+      "cn8": "64029931",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI16524/26-1",
+    "hs6": "6402.99",
+    "expected": "64029998",
+    "seen": [
+     {
+      "cn8": "64029998",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "64029998",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI77",
+    "hs6": "7318.15",
+    "expected": "73181552",
+    "seen": [
+     {
+      "cn8": "73181535",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI69",
+    "hs6": "7318.14",
+    "expected": "73181499",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "73181499",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "73181499",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI26",
+    "hs6": "8471.60",
+    "expected": "84716070",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "84716070",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI72",
+    "hs6": "9619.00",
+    "expected": "96190050",
+    "seen": [
+     {
+      "cn8": "96190040",
+      "confidence": 85,
+      "decision": "review"
+     },
+     {
+      "cn8": "96190040",
+      "confidence": 85,
+      "decision": "review"
+     },
+     {
+      "cn8": "96190050",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI222",
+    "hs6": "9609.10",
+    "expected": "96091090",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "96091010",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI47340/24-1",
+    "hs6": "9603.90",
+    "expected": "96039099",
+    "seen": [
+     {
+      "cn8": "96039091",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "96039099",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "96039091",
+      "confidence": 85,
+      "decision": "review"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "iteration": 6,
+  "run_on": "2026-10-25",
+  "change": "stability baseline: 3 independent runs, temperature 0.0, seed 42; the row shows run 1",
+  "model": "openai/gpt-4o-mini",
+  "threshold": 85,
+  "top1": 91,
+  "n": 120,
+  "written": 104,
+  "written_wrong": 13,
+  "to_confirm": 2,
+  "questions": 14,
+  "failures": 0,
+  "with_precedent": 100,
+  "per_chapter": {
+   "39": "9/10",
+   "42": "6/10",
+   "61": "8/10",
+   "62": "9/10",
+   "63": "9/10",
+   "64": "8/10",
+   "73": "6/10",
+   "84": "8/10",
+   "85": "7/10",
+   "94": "7/10",
+   "95": "8/10",
+   "96": "6/10"
+  },
+  "elapsed_s": 253.6,
+  "cost_usd": 0.1135,
+  "cost_eur": 0.1045,
+  "temperature": 0.0,
+  "seed": 42,
+  "tag": "baseline-stability",
+  "repeat": 3,
+  "top1_runs": [
+   91,
+   92,
+   90
+  ],
+  "majority_top1": 90,
+  "code_consistency": 0.95,
+  "decision_consistency": 0.9333,
+  "unstable": [
+   {
+    "reference": "DEBTI16524/26-1",
+    "hs6": "6402.99",
+    "expected": "64029998",
+    "seen": [
+     {
+      "cn8": "64029998",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI26",
+    "hs6": "8471.60",
+    "expected": "84716070",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "84716070",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI60",
+    "hs6": "8538.90",
+    "expected": "85389099",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "85389091",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI38",
+    "hs6": "9503.00",
+    "expected": "95030041",
+    "seen": [
+     {
+      "cn8": "95030049",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI393",
+    "hs6": "9503.00",
+    "expected": "95030049",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "95030049",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI222",
+    "hs6": "9609.10",
+    "expected": "96091090",
+    "seen": [
+     {
+      "cn8": "96091010",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "96091010",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "iteration": 7,
+  "run_on": "2026-10-25",
+  "change": "prompt-evidence-v2: three-level attribute rule in the CN-8 prompt (stated, one plain step from stated facts, else ask the shipper); confidence rules unchanged; 3 runs, the row shows run 1",
+  "model": "openai/gpt-4o-mini",
+  "threshold": 85,
+  "top1": 91,
+  "n": 120,
+  "written": 103,
+  "written_wrong": 12,
+  "to_confirm": 4,
+  "questions": 13,
+  "failures": 0,
+  "with_precedent": 104,
+  "per_chapter": {
+   "39": "9/10",
+   "42": "6/10",
+   "61": "7/10",
+   "62": "8/10",
+   "63": "8/10",
+   "64": "8/10",
+   "73": "8/10",
+   "84": "8/10",
+   "85": "6/10",
+   "94": "7/10",
+   "95": "8/10",
+   "96": "8/10"
+  },
+  "elapsed_s": 220.1,
+  "cost_usd": 0.1198,
+  "cost_eur": 0.1102,
+  "expected_sent": {
+   "wrong": 84,
+   "with_expected": 84,
+   "share": 1.0
+  },
+  "tag": "prompt-evidence-v2",
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 3,
+  "top1_runs": [
+   91,
+   94,
+   91
+  ],
+  "majority_top1": 92,
+  "code_consistency": 0.9083,
+  "decision_consistency": 0.9167,
+  "unstable": [
+   {
+    "reference": "IEBTIIENEN004-2024-BTI132",
+    "hs6": "6102.30",
+    "expected": "61023090",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "61023090",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI75",
+    "hs6": "6212.10",
+    "expected": "62121090",
+    "seen": [
+     {
+      "cn8": "62121090",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "62121090",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI16524/26-1",
+    "hs6": "6402.99",
+    "expected": "64029998",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "64029998",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI77",
+    "hs6": "7318.15",
+    "expected": "73181552",
+    "seen": [
+     {
+      "cn8": "73181535",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI378",
+    "hs6": "7317.00",
+    "expected": "73170020",
+    "seen": [
+     {
+      "cn8": "73170060",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "73170060",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505059567",
+    "hs6": "8504.40",
+    "expected": "85044060",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "85044083",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "85044083",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "SEBTITV-2024-01674",
+    "hs6": "9401.99",
+    "expected": "94019980",
+    "seen": [
+     {
+      "cn8": "94019980",
+      "confidence": 95,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "94019980",
+      "confidence": 95,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI393",
+    "hs6": "9503.00",
+    "expected": "95030049",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "95030049",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "95030049",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI72",
+    "hs6": "9619.00",
+    "expected": "96190050",
+    "seen": [
+     {
+      "cn8": "96190040",
+      "confidence": 85,
+      "decision": "review"
+     },
+     {
+      "cn8": "96190050",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "96190040",
+      "confidence": 85,
+      "decision": "review"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI47340/24-1",
+    "hs6": "9603.90",
+    "expected": "96039099",
+    "seen": [
+     {
+      "cn8": "96039091",
+      "confidence": 85,
+      "decision": "review"
+     },
+     {
+      "cn8": "96039091",
+      "confidence": 85,
+      "decision": "review"
+     },
+     {
+      "cn8": "96039099",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI59675/24-1",
+    "hs6": "9603.90",
+    "expected": "96039099",
+    "seen": [
+     {
+      "cn8": "96039099",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "96039091",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "96039099",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "iteration": 8,
+  "run_on": "2026-10-25",
+  "change": "evidence diagnosis: the prompt and settings of iteration 7, re-run to log the raw CN-8 output, the evidence check and the route; 3 runs, the row shows run 1",
+  "model": "openai/gpt-4o-mini",
+  "threshold": 85,
+  "top1": 92,
+  "n": 120,
+  "written": 106,
+  "written_wrong": 14,
+  "to_confirm": 2,
+  "questions": 12,
+  "failures": 0,
+  "with_precedent": 106,
+  "per_chapter": {
+   "39": "9/10",
+   "42": "6/10",
+   "61": "8/10",
+   "62": "8/10",
+   "63": "8/10",
+   "64": "8/10",
+   "73": "7/10",
+   "84": "8/10",
+   "85": "6/10",
+   "94": "7/10",
+   "95": "9/10",
+   "96": "8/10"
+  },
+  "elapsed_s": 259.4,
+  "cost_usd": 0.1198,
+  "cost_eur": 0.1102,
+  "expected_sent": {
+   "wrong": 88,
+   "with_expected": 88,
+   "share": 1.0
+  },
+  "tag": "evidence-diagnosis",
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 3,
+  "top1_runs": [
+   92,
+   89,
+   91
+  ],
+  "majority_top1": 91,
+  "code_consistency": 0.9167,
+  "decision_consistency": 0.9,
+  "unstable": [
+   {
+    "reference": "FRBTIFR-BTI-2025-02100",
+    "hs6": "4203.29",
+    "expected": "42032910",
+    "seen": [
+     {
+      "cn8": "42032910",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI108",
+    "hs6": "6212.10",
+    "expected": "62121090",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "62121090",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI7623/25-1",
+    "hs6": "6202.40",
+    "expected": "62024010",
+    "seen": [
+     {
+      "cn8": "62024010",
+      "confidence": 95,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "62024010",
+      "confidence": 95,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI16524/26-1",
+    "hs6": "6402.99",
+    "expected": "64029998",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "64029950",
+      "confidence": 85,
+      "decision": "review"
+     },
+     {
+      "cn8": "64029950",
+      "confidence": 85,
+      "decision": "review"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI331",
+    "hs6": "7308.90",
+    "expected": "73089098",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "73089098",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "73089098",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI255",
+    "hs6": "8421.39",
+    "expected": "84213985",
+    "seen": [
+     {
+      "cn8": "84213925",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "SEBTITV-2024-01674",
+    "hs6": "9401.99",
+    "expected": "94019980",
+    "seen": [
+     {
+      "cn8": "94019980",
+      "confidence": 95,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "94019980",
+      "confidence": 95,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI38",
+    "hs6": "9503.00",
+    "expected": "95030041",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "95030049",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "95030049",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI72",
+    "hs6": "9619.00",
+    "expected": "96190050",
+    "seen": [
+     {
+      "cn8": "96190050",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "96190040",
+      "confidence": 85,
+      "decision": "review"
+     },
+     {
+      "cn8": "96190040",
+      "confidence": 85,
+      "decision": "review"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI222",
+    "hs6": "9609.10",
+    "expected": "96091090",
+    "seen": [
+     {
+      "cn8": "96091090",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "96091090",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "iteration": 9,
+  "run_on": "2026-10-25",
+  "change": "evidence-source-v1: goods description in its own <goods> block; the prompt allows quotes only from it, with new level-b examples (knife, hose, desk lamp); the evidence check normalises accents and line breaks and accepts a fragment found as a phrase or a run of words at 90 %; 3 runs, the row shows run 1",
+  "model": "openai/gpt-4o-mini",
+  "threshold": 85,
+  "top1": 96,
+  "n": 120,
+  "written": 108,
+  "written_wrong": 12,
+  "to_confirm": 5,
+  "questions": 7,
+  "failures": 0,
+  "with_precedent": 109,
+  "per_chapter": {
+   "39": "9/10",
+   "42": "6/10",
+   "61": "8/10",
+   "62": "10/10",
+   "63": "8/10",
+   "64": "8/10",
+   "73": "8/10",
+   "84": "8/10",
+   "85": "6/10",
+   "94": "7/10",
+   "95": "9/10",
+   "96": "9/10"
+  },
+  "elapsed_s": 217.7,
+  "cost_usd": 0.1235,
+  "cost_eur": 0.1136,
+  "expected_sent": {
+   "wrong": 78,
+   "with_expected": 78,
+   "share": 1.0
+  },
+  "tag": "evidence-source-v1",
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 3,
+  "top1_runs": [
+   96,
+   93,
+   93
+  ],
+  "majority_top1": 94,
+  "code_consistency": 0.9417,
+  "decision_consistency": 0.9333,
+  "unstable": [
+   {
+    "reference": "IEBTIIENEN004-2025-BTI351",
+    "hs6": "3925.90",
+    "expected": "39259010",
+    "seen": [
+     {
+      "cn8": "39259010",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI74",
+    "hs6": "6212.10",
+    "expected": "62121090",
+    "seen": [
+     {
+      "cn8": "62121090",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "62121090",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI354",
+    "hs6": "6404.19",
+    "expected": "64041910",
+    "seen": [
+     {
+      "cn8": "64041910",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "64041910",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI128",
+    "hs6": "6404.19",
+    "expected": "64041990",
+    "seen": [
+     {
+      "cn8": "64041990",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "64041990",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505060394",
+    "hs6": "7326.90",
+    "expected": "73269098",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "73269098",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2023-BTI579",
+    "hs6": "8528.52",
+    "expected": "85285210",
+    "seen": [
+     {
+      "cn8": "85285291",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "85285291",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI72",
+    "hs6": "9619.00",
+    "expected": "96190050",
+    "seen": [
+     {
+      "cn8": "96190050",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "96190040",
+      "confidence": 85,
+      "decision": "review"
+     },
+     {
+      "cn8": "96190040",
+      "confidence": 85,
+      "decision": "review"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "iteration": 10,
+  "run_on": "2026-10-25",
+  "change": "nearest-hits logging: deterministic retrieval order and query embeddings cached per line text (bd7f97d, order fixed in a4ec6c7); logs the top-40 vector hits; 3 runs, the row shows run 1",
+  "model": "openai/gpt-4o-mini",
+  "threshold": 85,
+  "top1": 95,
+  "n": 120,
+  "written": 108,
+  "written_wrong": 13,
+  "to_confirm": 4,
+  "questions": 8,
+  "failures": 0,
+  "with_precedent": 107,
+  "per_chapter": {
+   "39": "9/10",
+   "42": "6/10",
+   "61": "8/10",
+   "62": "10/10",
+   "63": "8/10",
+   "64": "7/10",
+   "73": "8/10",
+   "84": "8/10",
+   "85": "6/10",
+   "94": "7/10",
+   "95": "9/10",
+   "96": "9/10"
+  },
+  "elapsed_s": 173.1,
+  "cost_usd": 0.1231,
+  "cost_eur": 0.1132,
+  "expected_sent": {
+   "wrong": 71,
+   "with_expected": 71,
+   "share": 1.0
+  },
+  "tag": "nearest-hits-logging",
+  "note": "The first attempt at iteration 10 was discarded: bd7f97d inverted the retrieval order (Chroma returns a distance, not a relevance score, so the farthest of the 40 hits went first). The eval caught it as a drop from 94 to 89 majority accuracy and from 37 to 60 wrong auto-accepts; fixed in a4ec6c7 with a regression test on a real Chroma collection.",
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 3,
+  "top1_runs": [
+   95,
+   97,
+   97
+  ],
+  "majority_top1": 97,
+  "code_consistency": 0.9583,
+  "decision_consistency": 0.9583,
+  "unstable": [
+   {
+    "reference": "IEBTIIENEN004-2025-BTI351",
+    "hs6": "3925.90",
+    "expected": "39259010",
+    "seen": [
+     {
+      "cn8": "39259010",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "39259010",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "FRBTIFR-BTI-2025-08672",
+    "hs6": "6111.20",
+    "expected": "61112090",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "61112090",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "61112090",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI128",
+    "hs6": "6404.19",
+    "expected": "64041990",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "64041990",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI16524/26-1",
+    "hs6": "6402.99",
+    "expected": "64029998",
+    "seen": [
+     {
+      "cn8": "64029950",
+      "confidence": 85,
+      "decision": "review"
+     },
+     {
+      "cn8": "64029998",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "64029998",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2023-BTI579",
+    "hs6": "8528.52",
+    "expected": "85285210",
+    "seen": [
+     {
+      "cn8": "85285291",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "85285291",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "iteration": 11,
+  "run_on": "2026-10-25",
+  "change": "CN-8 auto-accept gated by the unweighted vote of the 5 nearest eligible EBTI rulings at share >= 0.5 (constitution 1.4.0); model confidence only as the fallback without an eligible ruling; 3 runs, the row shows run 1",
+  "model": "openai/gpt-4o-mini",
+  "threshold": 85,
+  "top1": 97,
+  "n": 120,
+  "written": 93,
+  "written_wrong": 5,
+  "to_confirm": 20,
+  "questions": 7,
+  "failures": 0,
+  "with_precedent": 108,
+  "per_chapter": {
+   "39": "8/10",
+   "42": "6/10",
+   "61": "9/10",
+   "62": "10/10",
+   "63": "8/10",
+   "64": "9/10",
+   "73": "8/10",
+   "84": "8/10",
+   "85": "6/10",
+   "94": "7/10",
+   "95": "9/10",
+   "96": "9/10"
+  },
+  "elapsed_s": 149.9,
+  "cost_usd": 0.1228,
+  "cost_eur": 0.113,
+  "expected_sent": {
+   "wrong": 72,
+   "with_expected": 72,
+   "share": 1.0
+  },
+  "tag": "cn8-vote-gate",
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 3,
+  "top1_runs": [
+   97,
+   95,
+   96
+  ],
+  "majority_top1": 97,
+  "code_consistency": 0.95,
+  "decision_consistency": 0.95,
+  "unstable": [
+   {
+    "reference": "IEBTIIENEN004-2025-BTI351",
+    "hs6": "3925.90",
+    "expected": "39259010",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "39259010",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "39259010",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI128",
+    "hs6": "6404.19",
+    "expected": "64041990",
+    "seen": [
+     {
+      "cn8": "64041990",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "64041990",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2023-BTI579",
+    "hs6": "8528.52",
+    "expected": "85285210",
+    "seen": [
+     {
+      "cn8": "85285291",
+      "confidence": 85,
+      "decision": "review"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505068566",
+    "hs6": "8504.40",
+    "expected": "85044083",
+    "seen": [
+     {
+      "cn8": "85044083",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "85044083",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "85044095",
+      "confidence": 85,
+      "decision": "review"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI72",
+    "hs6": "9619.00",
+    "expected": "96190050",
+    "seen": [
+     {
+      "cn8": "96190050",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "96190040",
+      "confidence": 85,
+      "decision": "review"
+     },
+     {
+      "cn8": "96190040",
+      "confidence": 85,
+      "decision": "review"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI222",
+    "hs6": "9609.10",
+    "expected": "96091090",
+    "seen": [
+     {
+      "cn8": "96091090",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "96091090",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   }
+  ]
  }
 ]

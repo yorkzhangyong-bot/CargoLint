@@ -198,7 +198,7 @@ class TestAuditAndRegistries:
 
 
 # --------------------------------------------------------------------------- feature 004: the CN-8 choice in the store
-from agent.schemas import Cn8Choice, WrittenBy  # noqa: E402
+from agent.schemas import Cn8Choice, Cn8Gate, VoteCode, WrittenBy  # noqa: E402
 
 MOTOR = "whether the toy cars incorporate a motor"
 
@@ -206,6 +206,13 @@ MOTOR = "whether the toy cars incorporate a motor"
 def _cn8(store, hs6, cn8=None, confidence=0, written_by=None, question=None, error=None, attribute=""):
     return Cn8Choice(hs6=hs6, options=store.index.cn8_lines(hs6), cn8=cn8, confidence=confidence, written_by=written_by,
                      question=question, error=error, deciding_attribute=attribute)
+
+
+def _voted(store, cn8, gate, written_by, confidence=90, majority="87149110"):
+    """A CN-8 choice under 8714.91 with the vote of three rulings: two at 87149110 (DE, FR), one at 87149130 (IE)."""
+    return Cn8Choice(hs6="8714.91", options=store.index.cn8_lines("8714.91"), cn8=cn8, confidence=confidence,
+                     written_by=written_by, gate_reason=gate, majority_cn8=majority, majority_share=0.6667,
+                     competing=[VoteCode(cn8="87149110", countries=["DE", "FR"]), VoteCode(cn8="87149130", countries=["IE"])])
 
 
 @pytest.fixture
@@ -237,7 +244,7 @@ class TestCn8:
         assert v.candidates[0].cn8 == "87149110"
         rec = _last(s, ChangeKind.cn8_written, 2)
         assert rec.actor == Actor.routing_rule and rec.new == "87149110"
-        assert rec.note == "written by rule (confidence 95 ≥ threshold 85)"
+        assert rec.note == "written by rule (no ruling vote; model estimate 95 ≥ threshold 85)"
         s.set_cn8_result(4, _cn8(s, "9617.00", "96170000", 100, WrittenBy.rule))
         assert _last(s, ChangeKind.cn8_written, 4).note == "single CN-8 line"
 
@@ -378,7 +385,31 @@ class TestCn8:
         s.set_decision(2, Decision(route=DecisionRoute.accepted, decided_code="8714.91"))   # the clerk decides the HS-6
         line = s.get_line(2)
         assert line.current.cn8.written_by is None and s.decided_cn8(line) is None and s.cn8_pending(line)   # 95 < 96
-        assert _last(s, ChangeKind.threshold_recomputed, 2).note == "CN-8 87149110 back to a suggestion (confidence 95 < threshold 96)"
+        assert _last(s, ChangeKind.threshold_recomputed, 2).note == \
+            "CN-8 87149110 back to a suggestion (no ruling vote; model estimate 95 < threshold 96)"
+
+    def test_feature_006_the_ruling_vote_is_recorded_with_the_countries(self, cn8_store):
+        s = cn8_store
+        s.set_cn8_result(2, _voted(s, "87149110", Cn8Gate.vote_agrees, WrittenBy.rule, confidence=60))
+        assert _last(s, ChangeKind.cn8_written, 2).note == "written by rule: 2 of 3 nearest rulings at 87149110 (DE, FR)"
+        s.set_cn8_result(2, _voted(s, "87149130", Cn8Gate.vote_disagrees, None, confidence=98))
+        assert _last(s, ChangeKind.cn8_pending, 2).note == \
+            "to confirm: the nearest rulings sit at 87149110 (DE, FR), not 87149130; also 87149130 (IE)"
+        s.set_cn8_result(2, _voted(s, "87149110", Cn8Gate.vote_tie, None, majority=None))
+        assert _last(s, ChangeKind.cn8_pending, 2).note == \
+            "to confirm: the nearest rulings are split: 87149110 (DE, FR), 87149130 (IE)"
+
+    def test_feature_006_a_threshold_change_never_touches_a_cn8_the_vote_decided(self, cn8_store):
+        s = cn8_store
+        s.set_cn8_result(2, _voted(s, "87149110", Cn8Gate.vote_agrees, WrittenBy.rule, confidence=60))
+        start = len(s.shipment.audit)
+        s.set_threshold(99)                                          # the model estimate is no input to the vote
+        assert s.get_line(2).current.cn8.written_by == WrittenBy.rule
+        s.set_cn8_result(2, _voted(s, "87149130", Cn8Gate.vote_disagrees, None, confidence=98))
+        s.set_threshold(60)
+        assert s.get_line(2).current.cn8.written_by is None
+        assert not [r for r in s.shipment.audit[start:] if r.line_no == 2 and r.change == ChangeKind.threshold_recomputed
+                    and (r.note or "").startswith("CN-8")]
 
     def test_a_threshold_change_never_writes_a_choice_whose_precedent_conflicts(self, cn8_store):
         from agent.schemas import Precedent
@@ -622,11 +653,11 @@ class TestFinerCodeAudit:
         s.set_taric_result(7, _outcome(TaricRule.not_loaded))
         s.set_cn8_result(8, _cn8(s, "7318.15", "73181558", 70))
         expected = [
-            (1, ChangeKind.cn8_written, Actor.routing_rule, "written by rule (confidence 95 ≥ threshold 85)"),
+            (1, ChangeKind.cn8_written, Actor.routing_rule, "written by rule (no ruling vote; model estimate 95 ≥ threshold 85)"),
             (2, ChangeKind.cn8_written, Actor.routing_rule, "single CN-8 line"),
             (4, ChangeKind.cn8_written, Actor.clerk, "confirmed by the clerk"),
             (5, ChangeKind.cn8_question, Actor.routing_rule, f"Ask the shipper for: {MOTOR}"),
-            (8, ChangeKind.cn8_pending, Actor.routing_rule, "to confirm: confidence 70 < threshold 85"),
+            (8, ChangeKind.cn8_pending, Actor.routing_rule, "to confirm: no ruling vote; model estimate 70 < threshold 85"),
             (6, ChangeKind.route_computed, Actor.routing_rule,
              "CN-8 step failed: SchemaError: invalid after 2 attempts — needs a human look"),
             (1, ChangeKind.taric_written, Actor.routing_rule, "auto-completed, single TARIC subdivision, snapshot 2026-10-01; origin CN"),

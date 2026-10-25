@@ -27,10 +27,15 @@ MAX_PASTED_LINES = 50                # lines per pasted chat message
 SUPPORTED_FILE_KINDS = ("xlsx", "csv", "pdf", "jpg", "jpeg", "png")
 
 # Routing (FR-020, FR-021)
-DEFAULT_THRESHOLD = 85
+DEFAULT_THRESHOLD = 85              # the HS-6 auto-accept threshold (constitution 1.4.0: HS-6 only)
 THRESHOLD_MIN = 60
 THRESHOLD_MAX = 99
 ASK_FLOOR = 50
+
+# CN-8 gate (feature 006, constitution 1.4.0): the vote of the nearest eligible EBTI rulings, each counted once. It is
+# unweighted by design: the product is not tied to one entry country.
+CN8_VOTE_K = 5                     # the nearest eligible rulings that vote
+CN8_VOTE_SHARE = 0.5               # the majority's share the model's CN-8 needs; exactly the share passes
 
 # Agent and model behaviour (FR-044, FR-049)
 MAX_SCHEMA_RETRIES = 2

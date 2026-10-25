@@ -8,15 +8,16 @@ from __future__ import annotations
 import json
 import logging
 from datetime import date
-from typing import Any
+from typing import Any, NamedTuple
 
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
 from agent.llm import StructuredCaller
 from agent.prompts import CN8_SYSTEM, cn8_user
-from agent.routing import cn8_precedent_conflict, cn8_written_by_rule, evidence_in_line, validate_cn8
-from agent.schemas import Cn8Choice, Cn8Input, Cn8Line, Cn8Out, Cn8Result, Precedent, WrittenBy
+from agent.routing import RulingVote, cn8_gate, cn8_precedent_conflict, cn8_ruling_vote, evidence_match, validate_cn8
+from agent.schemas import Cn8Choice, Cn8Gate, Cn8Input, Cn8Line, Cn8Out, Cn8Result, Precedent, VoteCode, WrittenBy
+from rag.retriever import stable_order
 from tools import register
 from tools.common import get_context, run_per_line
 
@@ -32,22 +33,33 @@ def _error(exc: BaseException) -> str:
     return f"{type(exc).__name__}: {str(exc)[:200]}"
 
 
+class Rulings(NamedTuple):
+    """What select_rulings finds for a line."""
+
+    sent: list[Precedent]       # shown to the model: at most 2 per CN-8 line and 8 in all
+    nearest: list[Precedent]    # feature 006: the eligible rulings among the vector hits, nearest first; they vote
+
+
 def select_rulings(text: str, hs6: str, options: list[tuple[str, str]], kb: Any, as_of: date,
-                   exclude_refs: frozenset[str] = frozenset()) -> list[Precedent]:
+                   exclude_refs: frozenset[str] = frozenset()) -> Rulings:
     """Valid rulings under the HS-6 at one of its CN-8 lines: nearest to the line text when the BTI vectors are loaded,
-    else the newest, round-robin across the CN-8 lines; at most 2 per CN-8 line and 8 in all (research R-02)."""
+    else the newest, round-robin across the CN-8 lines; at most 2 per CN-8 line and 8 in all (research R-02). Those of
+    them among the vector hits, nearest first, are the ones that vote on the CN-8 (feature 006); without vectors none
+    does."""
     allowed = {code for code, _ in options}
     pool = {cn8: [p for p in ps if p.reference not in exclude_refs]
             for cn8, ps in kb.bti.by_cn8(hs6, as_of).items() if cn8 in allowed}
     pool = {cn8: ps for cn8, ps in pool.items() if ps}
     if not pool:
-        return []
+        return Rulings([], [])
     vectors = getattr(kb, "bti_vectors", None)
+    nearest: list[Precedent] = []
     if vectors is not None:
-        vec = vectors.embed_queries([text])[0]   # one embedding request per line
+        vec = vectors.embed_query_cached(text)   # feature 006: one embedding request per line text, then from the cache
         hits = vectors.search_by_vector(vec, VECTOR_K, None, where={"code": hs6})
-        rank = {doc_id.removeprefix("bti:"): i for i, (doc_id, _) in enumerate(hits)}
+        rank = {doc_id.removeprefix("bti:"): i for i, doc_id in enumerate(stable_order(hits))}
         ordered = sorted((p for ps in pool.values() for p in ps), key=lambda p: rank.get(p.reference, len(rank)))
+        nearest = [p for p in ordered if p.reference in rank]
     else:
         ordered = [ps[depth] for depth in range(RULINGS_PER_CN8) for cn8, ps in sorted(pool.items()) if depth < len(ps)]
     chosen: list[Precedent] = []
@@ -60,7 +72,15 @@ def select_rulings(text: str, hs6: str, options: list[tuple[str, str]], kb: Any,
         per_cn8[cn8] = per_cn8.get(cn8, 0) + 1
         if len(chosen) == RULINGS_MAX:
             break
-    return chosen
+    return Rulings(chosen, nearest)
+
+
+def _vote_fields(vote: RulingVote | None) -> dict[str, Any]:
+    """The vote as Cn8Choice keeps it; nothing when no ruling voted."""
+    if vote is None:
+        return {}
+    return {"majority_cn8": vote.majority_cn8, "majority_share": vote.majority_share,
+            "competing": [VoteCode(cn8=cn8, countries=countries) for cn8, countries in vote.competing]}
 
 
 def choose_cn8(line: Any, hs6: str, kb: Any, client: StructuredCaller | None, threshold: int, as_of: date,
@@ -70,11 +90,12 @@ def choose_cn8(line: Any, hs6: str, kb: Any, client: StructuredCaller | None, th
     options = kb.index.cn8_lines(hs6)
     if len(options) == 1:   # FR-004: nothing to judge
         return Cn8Choice(hs6=hs6, options=options, cn8=options[0][0], confidence=100, written_by=WrittenBy.rule,
-                         rationale="the only CN-8 line under this subheading")
+                         rationale="the only CN-8 line under this subheading", gate_reason=Cn8Gate.single_line)
     if not options:
         return Cn8Choice(hs6=hs6, options=[], error=f"no CN-8 lines found under {hs6} in CN 2026")
     text = " / ".join(t for t in (line.text_zh, line.text_en) if t)
-    rulings = select_rulings(text, hs6, options, kb, as_of, exclude_refs)
+    found = select_rulings(text, hs6, options, kb, as_of, exclude_refs)
+    rulings = found.sent
     try:
         if client is None:
             raise RuntimeError("no model client available")
@@ -83,23 +104,26 @@ def choose_cn8(line: Any, hs6: str, kb: Any, client: StructuredCaller | None, th
     except Exception as exc:  # noqa: BLE001 - the line routes to review with the error (Principle V)
         log.warning("CN-8 step failed for line %s: %s", line.line_no, type(exc).__name__)
         return Cn8Choice(hs6=hs6, options=options, error=_error(exc))
+    vote = cn8_ruling_vote([(p.code[:8], p.member_state) for p in found.nearest], out.cn8)   # constitution 1.4.0
+    voted = _vote_fields(vote)
     attribute = out.deciding_attribute.strip()
     ex = getattr(line, "extracted", None)
     words = text if ex is None else f"{text} / {ex.material} {ex.part_name} {ex.use}"   # what the shipper confirmed counts too
-    if not out.attribute_visible or out.cn8 is None or not evidence_in_line(out.evidence, words):
+    rule = evidence_match(out.evidence, words) if out.attribute_visible and out.cn8 is not None else None
+    if rule is None:
         # FR-003: decide nothing and ask the shipper; without words of the line as evidence the attribute is not visible
         attribute = attribute or "the attribute that separates the CN-8 lines"
         return Cn8Choice(hs6=hs6, options=options, deciding_attribute=attribute, question=f"Ask the shipper for: {attribute}",
-                         evidence=out.evidence, rationale=out.rationale)
+                         evidence=out.evidence, rationale=out.rationale, **voted)
     if not validate_cn8(out.cn8, options):              # FR-002: discarded, never shown
         return Cn8Choice(hs6=hs6, options=options, deciding_attribute=attribute,
-                         error=f"the model chose {out.cn8}, which is not a CN-8 line of {hs6}")
+                         error=f"the model chose {out.cn8}, which is not a CN-8 line of {hs6}", **voted)
     precedent = {p.reference: p for p in rulings}.get(out.precedent or "")   # a citation counts only if it was sent
     conflict = cn8_precedent_conflict(out.cn8, precedent.code if precedent else None)   # no ruling is no conflict
-    written = cn8_written_by_rule(out.confidence, threshold, single_line=False, precedent_conflict=conflict)
+    written, gate = cn8_gate(out.confidence, threshold, single_line=False, precedent_conflict=conflict, vote=vote)
     return Cn8Choice(hs6=hs6, options=options, cn8=out.cn8, confidence=out.confidence, evidence=out.evidence,
-                     rationale=out.rationale, deciding_attribute=attribute, precedent=precedent,
-                     written_by=WrittenBy.rule if written else None)
+                     evidence_rule=rule, rationale=out.rationale, deciding_attribute=attribute, precedent=precedent,
+                     written_by=WrittenBy.rule if written else None, gate_reason=gate, **voted)
 
 
 def classify_cn8_lines(inp: Cn8Input, kb: Any, client: StructuredCaller | None, exclude_refs: frozenset[str] = frozenset(),

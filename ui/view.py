@@ -14,7 +14,7 @@ from typing import Any
 
 from agent.config import MAX_DESC_CHARS
 from agent.routing import cn8_precedent_conflict
-from agent.schemas import ChosenHow, DecisionRoute, FlagKind, TaricRule, WrittenBy
+from agent.schemas import ChosenHow, Cn8Gate, DecisionRoute, FlagKind, TaricRule, WrittenBy
 from agent.schemas import LineStatus as CheckStatus
 from tools.parsers import split_mixed
 
@@ -377,13 +377,27 @@ def _hs6_how(line: Any) -> str:
             ChosenHow.other_candidate: "chosen by you", ChosenHow.typed: "typed by you"}[d.chosen_how]
 
 
+def _votes(c: Any, cn8: str | None) -> tuple[int, int]:
+    """Feature 006: the nearest rulings at the CN-8, and the rulings that voted."""
+    return sum(len(v.countries) for v in c.competing if v.cn8 == cn8), sum(len(v.countries) for v in c.competing)
+
+
+def _rulings(c: Any) -> str:
+    """Feature 006: the CN-8 lines the nearest rulings sit at, with the issuing country of every ruling, so the clerk
+    can weigh them: "9403 20 80 (XI, IE, FR), 9403 20 20 (DE, FR)"."""
+    return ", ".join(f"{spaced(v.cn8)} ({', '.join(k or '?' for k in v.countries)})" for v in c.competing)
+
+
 def _decided(store: Any, line: Any) -> str:
     v = line.current
     parts = [f"HS-6 {spaced(store.decided_code(line)[0])}, {_hs6_how(line)}"]
     cn8, c = store.decided_cn8(line), v.cn8
     if cn8:
+        n, m = _votes(c, cn8)
         how = ("confirmed by you" if c.written_by == WrittenBy.clerk else
-               "single CN-8 line" if len(c.options) == 1 else f"written by rule at {c.confidence} %")
+               "single CN-8 line" if len(c.options) == 1 else
+               f"written by rule, {n} of {m} nearest rulings agree" if c.gate_reason == Cn8Gate.vote_agrees else
+               f"written by rule at a model estimate of {c.confidence} %")
         parts.append(f"CN-8 {spaced(cn8)}, {how}")
     t10, t = store.decided_taric10(line), v.taric
     if t10:
@@ -423,8 +437,16 @@ def explain_a(store: Any, line: Any, kind: str) -> tuple[str, str]:
     p = c.precedent
     if p is not None and cn8_precedent_conflict(c.cn8, p.code):
         return first, f"CN-8 to confirm: the cited ruling {p.reference} classifies under {spaced(p.code[:8])}, not this CN-8."
-    return first, (f"CN-8 to confirm: its confidence ({c.confidence} %) is under the {threshold} % threshold. TARIC runs "
-                   "after your pick.")
+    after = "TARIC runs after your pick."
+    if c.gate_reason == Cn8Gate.vote_disagrees:          # constitution 1.4.0: the nearest rulings decide, not the estimate
+        return first, f"Rulings disagree: model {spaced(c.cn8)}, nearest rulings {_rulings(c)}. {after}"
+    if c.gate_reason == Cn8Gate.vote_tie:
+        return first, f"Rulings split: model {spaced(c.cn8)}, nearest rulings {_rulings(c)}. {after}"
+    if c.gate_reason == Cn8Gate.vote_share_low:
+        n, m = _votes(c, c.cn8)
+        return first, f"Rulings too spread: model {spaced(c.cn8)} has {n} of {m} nearest rulings; {_rulings(c)}. {after}"
+    return first, (f"CN-8 to confirm: no ruling vote, and its model estimate ({c.confidence} %) is under the {threshold} % "
+                   f"threshold. {after}")
 
 
 # --------------------------------------------------------------------------- §6 kind (b) rows

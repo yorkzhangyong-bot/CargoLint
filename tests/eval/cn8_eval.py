@@ -1,6 +1,8 @@
 """CN-8 evaluation (feature 004, SC-002): run the CN-8 step on the fixed EBTI set and count top-1 hits.
 
     python tests/eval/cn8_eval.py --iteration 2 --change "what changed since the last iteration"
+    python tests/eval/cn8_eval.py --repeat 3                               # stability: 3 independent runs
+    python tests/eval/cn8_eval.py --repeat 3 --temperature 0 --seed 42     # the same with model overrides
 
 Live: needs OPENROUTER_API_KEY and the full knowledge base, and spends credits, so run it only when the author asks.
 Each ruling's goods description is the line text and its HS-6 the decided HS-6; its own reference is never a precedent
@@ -8,24 +10,58 @@ Each ruling's goods description is the line text and its HS-6 the decided HS-6; 
 confirm; a question or a failure counts as a miss. Writes tests/eval/cn8_eval.json (this run, line by line), records
 the iteration in tests/eval/cn8_eval_history.json, renders the report tests/eval/cn8_eval.md, and exits non-zero below
 60 of 120.
+
+Every row also keeps the rulings sent to the model for its line: reference, CN-8 and rank (the order they were sent,
+nearest first by embedding when the BTI vectors are loaded), recorded around tools.classify_cn8.select_rulings for the
+run only, and whether one of them is at the expected CN-8. The report gives for each entry the share of wrong results
+(line × run) in which a ruling at the expected CN-8 was among those sent. Each row also keeps the model's raw CN-8 output
+before the code's checks (cn8, attribute_visible, confidence, evidence, precedent, rationale), the outcome of the evidence
+check (passed; rejected; not run, when the model declined), the rule that passed it (exact or fuzzy) and the final
+route, recorded around the client and tools.classify_cn8.evidence_match the same way;
+tests/eval/cn8_evidence_diagnosis.py reads them.
+
+Feature 006 (specs/006-stability-baseline/plan-ruling-vote.md): each row also keeps nearest_hits, the uncapped vector
+hits select_rulings ranks (top 40 under the HS-6), each with reference, CN-8, cosine distance, issuing country and
+whether it was eligible to be sent (valid on the set's date, at a CN-8 line of the HS-6, not the line's own ruling);
+the issuing country of each ruling sent; and the product's CN-8 gate (constitution 1.4.0): majority_cn8 (none on a
+tie) and majority_share of its vote of the 5 nearest eligible rulings, each counted once, model_agrees_with_majority
+(the model's raw CN-8) and gate_reason, the rule that decided whether the CN-8 was written. The route is the gate's
+real route. Query embeddings are cached for the life of the knowledge base, so
+the runs of one command send the same rulings; only the model calls are drawn anew. The results file keeps each row's
+nearest_hits on one line to stay small.
+
+--repeat N (N > 1) classifies every line N times, independently, and adds the stability of the CN-8 step. The HS-6 is
+fixed by the set, so top-1 means the CN-8. Measures: the share of lines whose top-1 is the same in all N runs; the share
+whose decision is the same (auto_accept: written by rule; review: to confirm, or failed, as route_line routes a failed
+CN-8 step; ask_shipper: a question); the accuracy of the majority top-1 (a tie goes to the earliest run); and the lines
+whose top-1 differed. The entry is appended to the history with "repeat": N and a tag, "baseline-stability" unless
+--tag names another; its usual fields describe run 1. Without --iteration it takes the next number, as the validation
+run did. --temperature and --seed override the chat model for this run only; agent/llm.py and agent/config.py stay as
+they are. --note keeps a note with the history entry; the report shows it in the stability section.
 """
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
+import threading
 import time
+from collections import Counter
 from datetime import date
 from pathlib import Path
+from types import SimpleNamespace
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from agent.config import get_settings  # noqa: E402
-from agent.llm import get_client  # noqa: E402
+from agent.llm import OpenRouterRawClient, get_chat_model, get_client, set_client_factory  # noqa: E402
 from agent.schemas import Cn8Line, Usage  # noqa: E402
 from rag.loader import open_knowledge_base  # noqa: E402
-from tools.classify_cn8 import choose_cn8  # noqa: E402
+import tools.classify_cn8 as classify_cn8  # noqa: E402
+from tools.classify_cn8 import Rulings, choose_cn8  # noqa: E402
 from tools.common import run_per_line  # noqa: E402
 
 SET = ROOT / "tests" / "eval" / "cn8_eval_set.json"
@@ -34,6 +70,169 @@ HISTORY = ROOT / "tests" / "eval" / "cn8_eval_history.json"
 REPORT = ROOT / "tests" / "eval" / "cn8_eval.md"
 THRESHOLD = 85
 TARGET = 60
+TAG = "baseline-stability"
+_rec = threading.local()   # per worker thread, for the line in hand: rulings sent, vector hits, raw output, evidence check
+_NOT_RUN = object()   # the model declined, so the code checks no quote
+
+
+class OverriddenClient(OpenRouterRawClient):
+    """The real OpenRouter backend whose chat model carries this run's temperature or seed."""
+
+    def __init__(self, settings: Any, overrides: dict) -> None:
+        super().__init__(settings)
+        self._model = get_chat_model(settings, **overrides)
+
+
+def decision(row: dict) -> str:
+    """The CN-8 step's decision for one line, in route terms."""
+    if row["question"]:
+        return "ask_shipper"
+    return "auto_accept" if row["written"] else "review"
+
+
+def majority(values: list) -> Any:
+    """The most frequent value; a tie goes to the value seen first."""
+    counts = Counter(values)
+    return next(v for v in values if counts[v] == max(counts.values()))
+
+
+def stability(runs: list[list[dict]]) -> dict:
+    """Consistency across N runs of the same lines; `runs` holds each run's rows in set order."""
+    n = len(runs[0])
+    same_code = same_decision = majority_hits = 0
+    unstable = []
+    for seen in zip(*runs):
+        codes = [r["chosen"] for r in seen]
+        same_code += len(set(codes)) == 1
+        same_decision += len({decision(r) for r in seen}) == 1
+        majority_hits += majority(codes) == seen[0]["expected"]
+        if len(set(codes)) > 1:
+            unstable.append({"reference": seen[0]["reference"], "hs6": seen[0]["hs6"], "expected": seen[0]["expected"],
+                             "seen": [{"cn8": r["chosen"], "confidence": r["confidence"], "decision": decision(r)}
+                                      for r in seen]})
+    return {"same_code": same_code, "code_consistency": round(same_code / n, 4), "same_decision": same_decision,
+            "decision_consistency": round(same_decision / n, 4), "majority_top1": majority_hits, "unstable": unstable}
+
+
+def _recording(fn: Any, slot: str) -> Any:
+    """fn, also keeping for the calling thread what it returns, as _rec.<slot>."""
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        result = fn(*args, **kwargs)
+        setattr(_rec, slot, result)
+        return result
+    return wrapper
+
+
+def _raw(out: Any) -> dict | None:
+    """The CN-8 output as the model returned it, before the code's checks."""
+    if out is None:
+        return None
+    return {"cn8": out.cn8, "attribute_visible": out.attribute_visible, "confidence": out.confidence,
+            "evidence": out.evidence, "precedent": out.precedent, "rationale": out.rationale}
+
+
+def _nearest_hits(hits: list, r: dict, kb: Any, as_of: date) -> list[dict]:
+    """The vector hits as ranked, each with what the store says about its ruling."""
+    allowed = {code for code, _ in kb.index.cn8_lines(r["hs6"])}
+    out = []
+    for doc_id, score in hits:
+        record = kb.bti.get(doc_id) or {}
+        reference, cn8 = doc_id.removeprefix("bti:"), (record.get("cn_code") or "")[:8]
+        out.append({"reference": reference, "cn8": cn8, "distance": round(1.0 - score, 6),
+                    "country": record.get("member_state") or "",
+                    "eligible": reference != r["reference"] and cn8 in allowed and kb.bti.get(doc_id, as_of) is not None})
+    return out
+
+
+def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: int) -> tuple[list[dict], float]:
+    """One pass of the CN-8 step over the set: one row per ruling, with the rulings sent to the model and the vector
+    hits behind them, its raw output, the evidence check and the route, and the elapsed seconds."""
+    recorder = SimpleNamespace(call=_recording(client.call, "raw")) if client is not None else None
+
+    def one(item):
+        i, r = item
+        _rec.rulings, _rec.hits, _rec.raw, _rec.check = Rulings([], []), [], None, _NOT_RUN   # one CN-8 line: none
+        line = Cn8Line(line_no=i, text_en=r["description"], hs6=r["hs6"])
+        choice = choose_cn8(line, r["hs6"], kb, recorder, THRESHOLD, as_of, exclude_refs=frozenset({r["reference"]}))
+        return choice, _rec.rulings, _rec.hits, _rec.raw, _rec.check
+
+    saved = classify_cn8.select_rulings, classify_cn8.evidence_match
+    classify_cn8.select_rulings = _recording(saved[0], "rulings")   # choose_cn8 looks both up on every call;
+    classify_cn8.evidence_match = _recording(saved[1], "check")     # recorded for this run only
+    vectors = getattr(kb, "bti_vectors", None)
+    own = vectors is not None and "search_by_vector" in vars(vectors)
+    if vectors is not None:
+        search = vectors.search_by_vector
+        vectors.search_by_vector = _recording(search, "hits")      # the instance only, for this run
+    t0 = time.perf_counter()
+    try:
+        results = run_per_line(list(enumerate(rulings, start=1)), one, lambda item, exc: None, workers=workers)
+    finally:
+        classify_cn8.select_rulings, classify_cn8.evidence_match = saved
+        if vectors is not None:
+            if own:
+                vectors.search_by_vector = search
+            else:
+                del vectors.search_by_vector
+    elapsed = time.perf_counter() - t0
+    rows = []
+    for r, res in zip(rulings, results):
+        c, found, hits, raw, check = res if res is not None else (None, Rulings([], []), [], None, _NOT_RUN)
+        sent = found.sent
+        row = {"reference": r["reference"], "chapter": r["chapter"], "hs6": r["hs6"], "expected": r["cn8"],
+               "language": r["language"], "options": len(c.options) if c else None,
+               "chosen": c.cn8 if c else None, "confidence": c.confidence if c else None,
+               "written": bool(c and c.cn8 and c.written_by), "question": c.question if c else None,
+               "error": (c.error if c else "timed out"), "precedent": c.precedent.reference if c and c.precedent else None,
+               "precedent_code": c.precedent.code if c and c.precedent else None,
+               "evidence": c.evidence if c else None, "hit": bool(c and c.cn8 == r["cn8"]),
+               "sent": [{"reference": p.reference, "cn8": p.code[:8], "rank": k, "country": p.member_state}
+                        for k, p in enumerate(sent, start=1)],
+               "sent_cn8": sorted({p.code[:8] for p in sent}), "expected_sent": any(p.code[:8] == r["cn8"] for p in sent),
+               "nearest_hits": _nearest_hits(hits, r, kb, as_of),
+               "raw": _raw(raw), "evidence_check": "not run" if check is _NOT_RUN else ("passed" if check else "rejected"),
+               "evidence_rule": check if check is not _NOT_RUN else None}
+        row["route"] = decision(row)
+        row["majority_cn8"], row["majority_share"] = (c.majority_cn8, c.majority_share) if c else (None, None)
+        row["gate_reason"] = c.gate_reason.value if c and c.gate_reason else None
+        pick = raw.cn8 if raw is not None else None
+        row["model_agrees_with_majority"] = None if pick is None else pick == row["majority_cn8"]
+        rows.append(row)
+    return rows, elapsed
+
+
+_HITS_TOKEN = re.compile(r'"@@nearest_hits_(\d+)@@"')
+
+
+def dump_results(report: dict) -> str:
+    """The results file: indented JSON, but each row's nearest_hits on one line without spaces, as 40 hits a row would
+    otherwise make it several megabytes."""
+    compact: list[str] = []
+
+    def shrink(row: dict) -> dict:
+        if "nearest_hits" not in row:
+            return row
+        compact.append(json.dumps(row["nearest_hits"], ensure_ascii=False, separators=(",", ":")))
+        return {**row, "nearest_hits": f"@@nearest_hits_{len(compact) - 1}@@"}
+
+    shown = dict(report, rows=[shrink(r) for r in report["rows"]])
+    if "runs" in report:
+        shown["runs"] = [[shrink(r) for r in run] for run in report["runs"]]
+    text = json.dumps(shown, ensure_ascii=False, indent=1)
+    return _HITS_TOKEN.sub(lambda m: compact[int(m.group(1))], text) + "\n"
+
+
+def expected_sent_share(runs: list[list[dict]]) -> dict:
+    """Over every wrong result (line × run; a question is a miss): how many had a ruling at the expected CN-8 among the
+    rulings sent to the model."""
+    wrong = [r for run in runs for r in run if not r["hit"]]
+    with_expected = sum(1 for r in wrong if r["expected_sent"])
+    return {"wrong": len(wrong), "with_expected": with_expected,
+            "share": round(with_expected / len(wrong), 4) if wrong else None}
+
+
+def _seen(entry: dict) -> str:
+    return " · ".join(f"{s['cn8'] or 'no code'} ({s['confidence']}, {s['decision']})" for s in entry["seen"])
 
 
 def render_report(history: list[dict], data: dict) -> str:
@@ -60,6 +259,38 @@ def render_report(history: list[dict], data: dict) -> str:
             "|---|" + "---|" * len(chapters)]
     for h in history:
         out.append(f"| {h['iteration']} | " + " | ".join(h["per_chapter"].get(c, "-") for c in chapters) + " |")
+    stable = [h for h in history if h.get("repeat", 1) > 1]
+    if stable:
+        out += ["", "## Stability (repeated runs)", "",
+                "Each line classified N times, independently. Same CN-8: the top-1 is identical in all runs. Same "
+                "decision: written by rule (auto_accept), to confirm or failed (review), or a question (ask_shipper) in "
+                "all runs. Majority: the most frequent top-1 taken as the answer (a tie goes to the earliest run). The "
+                "rows above show run 1 of these entries.", "",
+                "| Iteration | Run on | Tag | Temperature | Seed | Runs | Top-1 per run | Majority top-1 | Same CN-8 | "
+                "Same decision | Cost |",
+                "|---|---|---|---|---|---|---|---|---|---|---|"]
+        for h in stable:
+            n = h["n"]
+            seed = h["seed"] if h["seed"] is not None else "none"
+            out.append(f"| {h['iteration']} | {h['run_on']} | {h.get('tag', '-')} | {h['temperature']} | {seed} | {h['repeat']} | "
+                       f"{' / '.join(str(t) for t in h['top1_runs'])} of {n} | {h['majority_top1']}/{n} | "
+                       f"{h['code_consistency']:.1%} | {h['decision_consistency']:.1%} | "
+                       f"${h['cost_usd']:.4f} (€{h['cost_eur']:.4f}) |")
+        out += [line for h in stable if h.get("note") for line in ("", f"Note on iteration {h['iteration']}: {h['note']}")]
+        for h in stable:
+            k = len(h["unstable"])
+            out += ["", f"Iteration {h['iteration']}: {k} line{'' if k == 1 else 's'} whose top-1 differed between runs"
+                        + (" (chosen CN-8, confidence, decision per run):" if k else "."), ""]
+            out += [f"- {u['reference']} (HS-6 {u['hs6']}, expected {u['expected']}): {_seen(u)}" for u in h["unstable"]]
+    logged = [h for h in history if h.get("expected_sent")]
+    if logged:
+        out += ["", "## Rulings sent to the model", "",
+                "Wrong results (line × run; a question to the shipper is a miss) in which a ruling at the expected CN-8 was "
+                f"among the rulings sent to the model. Logged since iteration {logged[0]['iteration']}.", ""]
+        for h in logged:
+            s = h["expected_sent"]
+            share = f" ({s['share']:.1%})" if s["share"] is not None else ""
+            out.append(f"- Iteration {h['iteration']}: {s['with_expected']} of {s['wrong']} wrong results{share}.")
     out += ["", f"Model: {history[-1]['model'] if history else '-'}. Line-by-line results of the latest run: "
             "`tests/eval/cn8_eval.json`; earlier runs are in the git history of that file.", ""]
     return "\n".join(out)
@@ -67,36 +298,48 @@ def render_report(history: list[dict], data: dict) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--iteration", type=int, required=True, help="iteration number against the fixed set")
-    ap.add_argument("--change", required=True, help="what changed since the previous iteration")
+    ap.add_argument("--iteration", type=int, help="iteration number against the fixed set (a repeated run takes the next)")
+    ap.add_argument("--change", help="what changed since the previous iteration (generated for a repeated run)")
+    ap.add_argument("--repeat", type=int, default=1, help="classify every line N times, independently (default 1)")
+    ap.add_argument("--temperature", type=float, help="chat-model temperature for this run only")
+    ap.add_argument("--seed", type=int, help="chat-model seed for this run only")
+    ap.add_argument("--tag", help=f"tag of the history entry (a repeated run defaults to {TAG})")
+    ap.add_argument("--note", help="a note kept with the history entry and shown with it in the report")
     args = ap.parse_args(argv)
+    if args.repeat < 1:
+        ap.error("--repeat must be 1 or more")
+    if args.repeat == 1 and (args.iteration is None or args.change is None):
+        ap.error("a single run needs --iteration and --change")
     data = json.loads(SET.read_text(encoding="utf-8"))
     rulings = data["rulings"]
     as_of = date.fromisoformat(data["built_on"])
     settings = get_settings()
     usage = Usage()
     kb = open_knowledge_base(settings, usage_sink=usage.add)
+    overrides = {k: v for k, v in (("temperature", args.temperature), ("seed", args.seed)) if v is not None}
+    if overrides:
+        set_client_factory(lambda: OverriddenClient(settings, overrides))
     client = get_client(usage_sink=usage.add, settings=settings)
-    print(f"iteration {args.iteration}: {len(rulings)} rulings; BTI vectors "
-          f"{'loaded' if getattr(kb, 'bti_vectors', None) is not None else 'not loaded'}; model {settings.chat_model}")
+    model = client.raw._model
+    temperature, seed = getattr(model, "temperature", None), getattr(model, "seed", None)   # what the calls carry
+    history = json.loads(HISTORY.read_text(encoding="utf-8")) if HISTORY.exists() else []
+    iteration = args.iteration if args.iteration is not None else max((h["iteration"] for h in history), default=0) + 1
+    change = args.change or (f"stability baseline: {args.repeat} independent runs, temperature {temperature}, "
+                             f"seed {seed if seed is not None else 'none'}; the row shows run 1")
+    print(f"iteration {iteration}: {len(rulings)} rulings × {args.repeat} run(s); BTI vectors "
+          f"{'loaded' if getattr(kb, 'bti_vectors', None) is not None else 'not loaded'}; model {settings.chat_model}, "
+          f"temperature {temperature}, seed {seed}")
 
-    def one(item):
-        i, r = item
-        line = Cn8Line(line_no=i, text_en=r["description"], hs6=r["hs6"])
-        return choose_cn8(line, r["hs6"], kb, client, THRESHOLD, as_of, exclude_refs=frozenset({r["reference"]}))
-
-    t0 = time.perf_counter()
-    choices = run_per_line(list(enumerate(rulings, start=1)), one, lambda item, exc: None, workers=settings.workers)
-    elapsed = time.perf_counter() - t0
-    rows = []
-    for r, c in zip(rulings, choices):
-        rows.append({"reference": r["reference"], "chapter": r["chapter"], "hs6": r["hs6"], "expected": r["cn8"],
-                     "language": r["language"], "options": len(c.options) if c else None,
-                     "chosen": c.cn8 if c else None, "confidence": c.confidence if c else None,
-                     "written": bool(c and c.cn8 and c.written_by), "question": c.question if c else None,
-                     "error": (c.error if c else "timed out"), "precedent": c.precedent.reference if c and c.precedent else None,
-                     "precedent_code": c.precedent.code if c and c.precedent else None,
-                     "evidence": c.evidence if c else None, "hit": bool(c and c.cn8 == r["cn8"])})
+    runs, elapsed, costs = [], 0.0, []
+    for k in range(args.repeat):
+        before = usage.cost_eur
+        rows, seconds = run_once(rulings, kb, client, as_of, settings.workers)
+        runs.append(rows)
+        elapsed += seconds
+        costs.append(round(usage.cost_eur - before, 4))
+        if args.repeat > 1:
+            print(f"  run {k + 1}: top-1 {sum(r['hit'] for r in rows)}/{len(rows)}, {seconds:.0f} s, €{costs[-1]:.4f}")
+    rows = runs[0]
     hits = sum(r["hit"] for r in rows)
     written = [r for r in rows if r["written"]]
     per_chapter: dict[str, dict] = {}
@@ -105,7 +348,7 @@ def main(argv: list[str] | None = None) -> int:
         ch["n"] += 1
         ch["hits"] += r["hit"]
     summary = {
-        "iteration": args.iteration, "change": args.change, "top1": hits, "n": len(rows), "target": TARGET,
+        "iteration": iteration, "change": change, "top1": hits, "n": len(rows), "target": TARGET,
         "passed": hits >= TARGET, "questions": sum(1 for r in rows if r["question"]),
         "failures": sum(1 for r in rows if r["error"]), "written": len(written),
         "written_correct": sum(r["hit"] for r in written), "to_confirm": sum(1 for r in rows if r["chosen"] and not r["written"]),
@@ -114,24 +357,51 @@ def main(argv: list[str] | None = None) -> int:
         "usage": {"total_tokens": usage.total_tokens, "calls": usage.calls, "cost_usd": round(usage.cost_usd, 4),
                   "cost_eur": round(usage.cost_eur, 4)},
     }
-    OUT.write_text(json.dumps({"summary": summary, "rows": rows}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8",
-                   newline="\n")
-    history = json.loads(HISTORY.read_text(encoding="utf-8")) if HISTORY.exists() else []
-    history = [h for h in history if h["iteration"] != args.iteration] + [{
-        "iteration": args.iteration, "run_on": date.today().isoformat(), "change": args.change, "model": settings.chat_model,
+    entry = {
+        "iteration": iteration, "run_on": date.today().isoformat(), "change": change, "model": settings.chat_model,
         "threshold": THRESHOLD, "top1": hits, "n": len(rows), "written": len(written),
         "written_wrong": len(written) - summary["written_correct"], "to_confirm": summary["to_confirm"],
         "questions": summary["questions"], "failures": summary["failures"], "with_precedent": summary["with_precedent"],
         "per_chapter": {c: f"{v['hits']}/{v['n']}" for c, v in per_chapter.items()}, "elapsed_s": round(elapsed, 1),
-        "cost_usd": round(usage.cost_usd, 4), "cost_eur": round(usage.cost_eur, 4)}]
+        "cost_usd": round(usage.cost_usd, 4), "cost_eur": round(usage.cost_eur, 4)}
+    report: dict = {"summary": summary, "rows": rows}
+    sent = summary["expected_sent"] = entry["expected_sent"] = expected_sent_share(runs)
+    tag = args.tag or (TAG if args.repeat > 1 else None)
+    if tag:
+        entry["tag"] = tag
+    if args.note:
+        entry["note"] = args.note
+    if overrides or args.repeat > 1:
+        entry.update({"temperature": temperature, "seed": seed})
+    if args.repeat > 1:
+        st = stability(runs)
+        summary.update({"repeat": args.repeat, "top1_runs": [sum(r["hit"] for r in run) for run in runs],
+                        "cost_eur_runs": costs, **st})
+        entry.update({"repeat": args.repeat, "top1_runs": summary["top1_runs"],
+                      "majority_top1": st["majority_top1"], "code_consistency": st["code_consistency"],
+                      "decision_consistency": st["decision_consistency"], "unstable": st["unstable"]})
+        report["runs"] = runs
+        history.append(entry)        # appended: a stability run never replaces an iteration
+    else:
+        history = [h for h in history if h["iteration"] != iteration] + [entry]
+    OUT.write_text(dump_results(report), encoding="utf-8", newline="\n")
     history.sort(key=lambda h: h["iteration"])
     HISTORY.write_text(json.dumps(history, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
     REPORT.write_text(render_report(history, data), encoding="utf-8", newline="\n")
-    print(f"CN-8 top-1: {hits}/{len(rows)} (target {TARGET})")
+    print(f"CN-8 top-1: {hits}/{len(rows)} (target {TARGET})" + (" — run 1" if args.repeat > 1 else ""))
     print(f"  written by rule {summary['written']} (wrong {summary['written'] - summary['written_correct']}), "
           f"to confirm {summary['to_confirm']}, asked the shipper {summary['questions']}, failures {summary['failures']}, "
           f"with precedent {summary['with_precedent']}")
     print("  per chapter: " + ", ".join(f"{c} {v['hits']}/{v['n']}" for c, v in per_chapter.items()))
+    if args.repeat > 1:
+        n = len(rows)
+        print(f"stability over {args.repeat} runs: top-1 per run {summary['top1_runs']}; majority top-1 "
+              f"{st['majority_top1']}/{n}; same CN-8 in all runs {st['same_code']}/{n} ({st['code_consistency']:.1%}); "
+              f"same decision {st['same_decision']}/{n} ({st['decision_consistency']:.1%})")
+        for u in st["unstable"]:
+            print(f"  {u['reference']} (HS-6 {u['hs6']}, expected {u['expected']}): {_seen(u)}")
+    print(f"expected CN-8 among the rulings sent: {sent['with_expected']} of {sent['wrong']} wrong results"
+          + (f" ({sent['share']:.1%})" if sent["share"] is not None else ""))
     print(f"  {elapsed:.0f} s; usage {usage.total_tokens} tokens, {usage.calls} calls, ${usage.cost_usd:.4f} ≈ €{usage.cost_eur:.4f}")
     return 0 if hits >= TARGET else 1
 

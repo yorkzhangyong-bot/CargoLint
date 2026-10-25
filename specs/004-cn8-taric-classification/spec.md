@@ -15,7 +15,7 @@
 - Q: Does a pending TARIC-10 confirmation make the line "needs action"? → A: No. The line keeps its HS-6 route; a separate "TARIC-10 to confirm" marker and a count show the pending confirmations.
 - Q: Which link should be shown for checking the code, given that EZT-online has no stable per-code links? → A: Both: EZT-online's start page with the 10-digit code and the origin shown next to it for copying, and a direct link to the EU TARIC consultation page for the code and origin.
 - Q: Which trade-defence measure types require the clerk's confirmation? → A: 551, 552, 553, 554, 555 and 570: every type under which a trade-defence duty can be collected or must be controlled. 561, 564 and 565 are shown in the trade-defence group but do not force confirmation.
-- Q: When the CN-8 step chooses a CN-8, is it written to the line automatically, or does it wait for the clerk? → A: It is written automatically only when its confidence meets the auto-accept threshold (85 % by default). Below that it stays a suggestion with a "CN-8 to confirm" marker, the line keeps its HS-6 route, and its TARIC-10 can only be written once the CN-8 is.
+- Q: When the CN-8 step chooses a CN-8, is it written to the line automatically, or does it wait for the clerk? → A: It is written automatically only when its confidence meets the auto-accept threshold (85 % by default); superseded by constitution 1.4.0 (feature 006), under which the CN-8 gate is the vote of the nearest EBTI rulings (FR-001). Below that it stays a suggestion with a "CN-8 to confirm" marker, the line keeps its HS-6 route, and its TARIC-10 can only be written once the CN-8 is.
 - Q: With the CN-8 step included, must a check still meet feature 001's time and cost limits? → A: Yes. Feature 001's limits stay unchanged, measured with the CN-8 step included: a 12-line list in under 60 s, a 100-line list within 5 minutes, and under €0.10 for 12 lines plus two follow-up questions.
 - Q: How many EBTI rulings should the CN-8 evaluation set hold? → A: 100 rulings, 10 from each of the ten target chapters. Corrected in planning (2026-10-23): the target chapters are twelve, so the set holds 120 rulings, 10 from each, drawn only from subheadings with at least two CN-8 lines, with a target of 60.
 
@@ -31,13 +31,13 @@ Today the clerk gets a decided HS-6 subheading for each line and nothing finer. 
 
 **Acceptance Scenarios**:
 
-1. **Given** a line whose HS-6 is decided and whose text shows the attribute that separates the CN-8 lines under it, **When** the CN-8 step runs, **Then** one CN-8 under that HS-6 is chosen and shown with its confidence (0–100), the evidence from the line text, and the ruling cited as precedent (reference, description and validity), or "no ruling". It is written to the line when its confidence meets the auto-accept threshold.
+1. **Given** a line whose HS-6 is decided and whose text shows the attribute that separates the CN-8 lines under it, **When** the CN-8 step runs, **Then** one CN-8 under that HS-6 is chosen and shown with its confidence (0–100), the evidence from the line text, and the ruling cited as precedent (reference, description and validity), or "no ruling". It is written to the line when the CN-8 gate agrees (since constitution 1.4.0, feature 006: the evidence check passed, no cited ruling sits at another CN-8, and the CN-8 is the majority of the five nearest eligible EBTI rulings, each counted once, with a share of at least 0.5; with no eligible ruling, its confidence against the auto-accept threshold).
 2. **Given** a line whose text does not show that attribute, **When** the CN-8 step runs, **Then** no CN-8 is decided and the line routes to ask the shipper with a question naming the missing attribute.
 3. **Given** a decided HS-6 with a single CN-8 line in CN 2026, **When** the CN-8 step runs, **Then** that CN-8 is taken without a model judgement.
 4. **Given** a line whose HS-6 is not decided, for example a flagged line or one in review, **When** the check runs, **Then** no CN-8 step runs for it until its HS-6 is decided.
 5. **Given** a line with a CN-8, **When** the clerk decides a different HS-6, **Then** the CN-8 step runs again for that line only, and the earlier CN-8 and TARIC-10 no longer apply to the new version.
 6. **Given** any outcome of the CN-8 step, **When** a CN-8 is shown, **Then** it exists in CN 2026 under the decided HS-6; any other code is discarded and never shown.
-7. **Given** a chosen CN-8 whose confidence is below the auto-accept threshold, **When** the CN-8 step ends, **Then** it stays a suggestion with a "CN-8 to confirm" marker, the line keeps its HS-6 route, and no TARIC-10 is written. **When** the clerk confirms the CN-8, **Then** it is written, and the TARIC rules apply to it.
+7. **Given** a chosen CN-8 that the CN-8 gate does not accept (the nearest rulings disagree, or, with no eligible ruling, its confidence is below the auto-accept threshold), **When** the CN-8 step ends, **Then** it stays a suggestion with a "CN-8 to confirm" marker, the line keeps its HS-6 route, and no TARIC-10 is written. **When** the clerk confirms the CN-8, **Then** it is written, and the TARIC rules apply to it.
 
 ---
 
@@ -110,7 +110,7 @@ The TARIC origin, the country the goods come from, is China by default and can b
 
 ### User Story 5 - Export and audit the finer codes without touching HS-6 (Priority: P2)
 
-The export gains a CN-8 column and a TARIC-10 column. Each is filled only once the code is written. The CN-8 is written by the threshold rule or the clerk's confirmation, and the TARIC-10 by auto-completion or the clerk's confirmation. The HS-6 results, columns and routing stay as they are. The audit trail records each CN-8 and TARIC-10 outcome with the rule that applied and who acted.
+The export gains a CN-8 column and a TARIC-10 column. Each is filled only once the code is written. The CN-8 is written by the CN-8 gate (since constitution 1.4.0 the ruling vote) or the clerk's confirmation, and the TARIC-10 by auto-completion or the clerk's confirmation. The HS-6 results, columns and routing stay as they are. The audit trail records each CN-8 and TARIC-10 outcome with the rule that applied and who acted.
 
 **Why this priority**: the export is how the clerk's work leaves the app. Keeping HS-6 unchanged protects the ICS2 filing data that the MVP was built for.
 
@@ -120,7 +120,7 @@ The export gains a CN-8 column and a TARIC-10 column. Each is filled only once t
 
 1. **Given** a checked invoice, **When** it is exported to CSV or JSON, **Then** the existing columns and values are unchanged, and a CN-8 and a TARIC-10 column are added. The one exception is the route, and who set it, of a line re-routed by FR-003, by a failed CN-8 step or by a clerk action.
 2. **Given** a line whose CN-8 or TARIC-10 waits for confirmation, or whose TARIC-10 is not available, **When** it is exported, **Then** the column of each code not yet written is empty.
-3. **Given** any CN-8 or TARIC-10 outcome, **When** the audit trail is read, **Then** it shows the time, the line and version, the rule that applied, the snapshot date and the origin. The rules are: CN-8 written by the threshold rule, auto-completed, confirmed by the clerk, sent to ask the shipper, not available, and trade-defence confirmation.
+3. **Given** any CN-8 or TARIC-10 outcome, **When** the audit trail is read, **Then** it shows the time, the line and version, the rule that applied, the snapshot date and the origin. The rules are: CN-8 written by the CN-8 gate (the ruling vote, or the threshold rule when no eligible ruling exists), auto-completed, confirmed by the clerk, sent to ask the shipper, not available, and trade-defence confirmation.
 
 ---
 
@@ -135,7 +135,7 @@ The export gains a CN-8 column and a TARIC-10 column. Each is filled only once t
 - **Shipper reply**: re-runs the CN-8 and TARIC steps for that line only, after its HS-6 is decided again.
 - **HS-6 changed by the clerk after a TARIC-10 was written**: the new version starts without a CN-8 and TARIC-10; the CN-8 step runs again.
 - **Origin changed after confirmations**: confirmed TARIC-10 codes stay, since subdivision codes do not depend on origin. Auto-completed ones are re-evaluated, and the measures shown change.
-- **Auto-accept threshold changed in the sidebar**: CN-8 codes the clerk has not confirmed are re-evaluated against the new threshold, just as routes are. A CN-8 that falls below it becomes a suggestion again, together with any TARIC-10 auto-completed from it. Confirming a TARIC-10 also confirms the CN-8 it sits under, recorded as two audit entries (the CN-8, then the TARIC-10), so a threshold change never touches a CN-8 the clerk confirmed, directly or with its TARIC-10.
+- **Auto-accept threshold changed in the sidebar**: CN-8 codes the clerk has not confirmed are re-evaluated against the CN-8 gate, just as routes are; since constitution 1.4.0 the threshold only affects a CN-8 without an eligible ruling, whose gate falls back to its confidence. A CN-8 that falls below it becomes a suggestion again, together with any TARIC-10 auto-completed from it. Confirming a TARIC-10 also confirms the CN-8 it sits under, recorded as two audit entries (the CN-8, then the TARIC-10), so a threshold change never touches a CN-8 the clerk confirmed, directly or with its TARIC-10.
 - **Origin unknown to TARIC** (a valid two-letter code that belongs to no group): only its own measures and erga omnes measures apply, as feature 003 defines.
 - **EBTI ruling coded to fewer than 8 digits**: not a CN-8 precedent.
 - **Expired EBTI ruling**: filtered out, as for HS-6 precedent (constitution Principle III).
@@ -148,7 +148,7 @@ The export gains a CN-8 column and a TARIC-10 column. Each is filled only once t
 #### CN-8
 
 - **FR-001**: When a line's HS-6 is decided, the system MUST choose a CN-8 from the CN 2026 eight-digit lines under that HS-6. EBTI rulings coded to eight digits or more under that HS-6 serve as precedent, and the line text as evidence. An HS-6 is decided when the routing rule auto-accepts the line, or when the clerk accepts or chooses an HS-6.
-  - The chosen CN-8 MUST be written to the line only when its confidence meets the auto-accept threshold, a rule enforced in code, or when the clerk confirms it.
+  - The chosen CN-8 MUST be written to the line only when the CN-8 gate agrees (since constitution 1.4.0, feature 006: the evidence check passed, no cited ruling sits at another CN-8, and the CN-8 is the majority of the five nearest eligible EBTI rulings, each counted once, with a share of at least 0.5; with no eligible ruling, its confidence against the auto-accept threshold), a rule enforced in code, or when the clerk confirms it.
   - Until then it stays a suggestion with a "CN-8 to confirm" marker, the line keeps its HS-6 route, and no TARIC-10 is written.
   - The number of lines waiting for a CN-8 confirmation MUST be shown next to the routing counts, like the TARIC-10 count (FR-009), as confirmations, not as routes.
 - **FR-002**: Every CN-8 shown or written MUST exist in CN 2026 under the decided HS-6; any other code MUST be discarded and never shown.
@@ -203,7 +203,7 @@ The export gains a CN-8 column and a TARIC-10 column. Each is filled only once t
   - the rule that applied, and the actor (the rule or the clerk);
   - the snapshot date and the origin.
 - **FR-021**: The HS-6 path MUST stay unchanged: candidates, confidence, flags, HS-6 routing, the HS-6 code format, results and existing export columns. The one exception is the route, and who set it, of a line re-routed by FR-003, by a failed CN-8 step or by a clerk action.
-- **FR-022**: The CSV and JSON exports MUST gain a CN-8 and a TARIC-10 column, each filled only when its code is written. The CN-8 is written by the threshold rule or the clerk's confirmation, and the TARIC-10 by auto-completion or the clerk's confirmation.
+- **FR-022**: The CSV and JSON exports MUST gain a CN-8 and a TARIC-10 column, each filled only when its code is written. The CN-8 is written by the CN-8 gate or the clerk's confirmation, and the TARIC-10 by auto-completion or the clerk's confirmation.
 - **FR-023**: Nothing MUST be sent to a shipper or a customs system. "Asking the shipper" means routing the line to ask-shipper with the question for the clerk (constitution, out of scope).
 
 ### Key Entities
@@ -235,7 +235,7 @@ The export gains a CN-8 column and a TARIC-10 column. Each is filled only once t
 - **SC-004**: For the 20 acceptance codes of feature 002, the subdivisions and measures shown equal the snapshot lookup's output for the same CN-8 and origin: 20 of 20.
 - **SC-005**: Across the tests and the bundled sample, nothing is written without the clerk's confirmation where a rule requires it:
   - zero TARIC-10 codes when several subdivisions exist, a measure of type 551 to 555 or 570 applies, or the CN-8 is not yet written;
-  - zero CN-8 codes whose confidence is below the auto-accept threshold.
+  - zero CN-8 codes written by rule that the CN-8 gate does not accept (since constitution 1.4.0, feature 006).
 - **SC-006**: Zero CN-8 or TARIC-10 codes are shown that do not exist in CN 2026 under the decided HS-6, or among the snapshot's subdivisions for that CN-8.
 - **SC-007**: The full offline test suite passes without network access or secrets: the 432 existing tests and the tests this feature adds.
 - **SC-008**: Feature 001's time and cost limits still hold with the CN-8 step included (its SC-005 and SC-010):
@@ -266,7 +266,7 @@ The export gains a CN-8 column and a TARIC-10 column. Each is filled only once t
   - Principle I requires every CN-8 shown to exist in CN 2026, and every TARIC-10 and every measure shown to exist in the loaded TARIC snapshot, with the snapshot date displayed.
   - Principle I allows no subdivision to be written without the clerk's confirmation, except a single subdivision auto-completed with an audit entry. This spec is stricter: trade-defence measures always need confirmation (FR-011).
   - Principle I's schema rule names the code format for each level: HS-6 unchanged, CN-8 eight digits, TARIC-10 ten digits.
-  - Principle I's routing function takes the line's flag, its confidence against the threshold, and whether the attribute that decides its CN-8 is missing from the line text (FR-003).
+  - Principle I's routing function takes the line's flag, its confidence against the threshold, and whether the attribute that decides its CN-8 is missing from the line text (FR-003). Since constitution 1.4.0 the threshold governs the HS-6 only, and the CN-8 gate is the ruling vote (feature 006).
   - The architecture lists seven tools, including `classify_cn8` and `lookup_taric`.
   - Screen 1 describes the bundled sample as 12 lines with 6 needing action (v1.2.1).
 - **Design constraints set by the author, carried into planning**:

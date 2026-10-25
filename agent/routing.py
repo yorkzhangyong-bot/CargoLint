@@ -6,17 +6,22 @@ Principle I). Routing is never a tool and never a model decision.
 from __future__ import annotations
 
 import re
+import unicodedata
+from collections.abc import Sequence
+from dataclasses import dataclass
+from difflib import SequenceMatcher
 from typing import Any
 
 from pydantic import ValidationError
 
-from agent.config import THRESHOLD_MAX, THRESHOLD_MIN
-from agent.schemas import CN8_PATTERN, CODE_RE, TARIC10_PATTERN, Candidate, FlagKind, LineStatus, RankOut, Route
+from agent.config import CN8_VOTE_K, CN8_VOTE_SHARE, THRESHOLD_MAX, THRESHOLD_MIN
+from agent.schemas import CN8_PATTERN, CODE_RE, TARIC10_PATTERN, Candidate, Cn8Gate, FlagKind, LineStatus, RankOut, Route
 
 _CN8_RE = re.compile(CN8_PATTERN)
 _TARIC10_RE = re.compile(TARIC10_PATTERN)
 _PUNCT = re.compile(r"[^\w\s]")
 _CJK = re.compile(r"[\u3400-\u9fff\uf900-\ufaff]")   # CJK ideographs
+EVIDENCE_FUZZY = 0.90   # feature 006: a quoted fragment may match a run of words of the line at this difflib ratio
 
 
 class SchemaError(ValueError):
@@ -90,26 +95,117 @@ def hs6_auto_decided(flag_kind: FlagKind | str | None, top_confidence: int | Non
     return route_line(flag_kind, top_confidence, status, ever_flagged, threshold, ask_floor)[0] == Route.auto_accept
 
 
-def cn8_written_by_rule(confidence: int, threshold: int, single_line: bool, precedent_conflict: bool = False) -> bool:
-    """Feature 004, clarification Q4: a CN-8 is written by rule when it is the only line, or its confidence meets the
-    auto-accept threshold (at the threshold counts, as for HS-6 auto-accept). Iteration 2: a cited ruling at another
-    CN-8 keeps the choice to confirm, whatever the confidence."""
+@dataclass(frozen=True)
+class RulingVote:
+    """Feature 006: the vote of the nearest eligible EBTI rulings on a CN-8, each ruling counted once."""
+
+    majority_cn8: str | None                    # the CN-8 most of them sit at; None on a tie
+    majority_share: float                       # its rulings over the rulings that voted
+    competing: list[tuple[str, list[str]]]      # every CN-8 with a vote and the issuing country of each ruling, most first
+    model_is_majority: bool                     # the model's CN-8 is the majority
+    agrees: bool                                # ... and its share is at least the vote share
+
+
+def cn8_ruling_vote(nearest: Sequence[tuple[str, str]], model_cn8: str | None, k: int = CN8_VOTE_K,
+                    share: float = CN8_VOTE_SHARE) -> RulingVote | None:
+    """Feature 006, constitution 1.4.0: the vote of the k nearest eligible rulings, given nearest first as (CN-8,
+    issuing country). The majority is the CN-8 with the most rulings, none on a tie; the model's CN-8 agrees when it is
+    the majority with a share of at least `share` (exactly the share counts). None when no ruling is eligible."""
+    voters = list(nearest[:k])
+    if not voters:
+        return None
+    countries: dict[str, list[str]] = {}
+    for cn8, country in voters:
+        countries.setdefault(cn8, []).append(country)
+    top = max(len(c) for c in countries.values())
+    leaders = [cn8 for cn8, c in countries.items() if len(c) == top]
+    majority = leaders[0] if len(leaders) == 1 else None
+    competing = sorted(countries.items(), key=lambda item: -len(item[1]))   # ties keep the nearest-first order
+    is_majority = model_cn8 is not None and model_cn8 == majority
+    return RulingVote(majority, round(top / len(voters), 4), competing, is_majority,
+                      is_majority and top / len(voters) >= share)
+
+
+def cn8_gate(confidence: int, threshold: int, single_line: bool, precedent_conflict: bool = False,
+             vote: RulingVote | None = None) -> tuple[bool, Cn8Gate]:
+    """Whether a CN-8 is written by rule, and the rule that decided it (constitution 1.4.0): the only CN-8 line is
+    written; a cited ruling at another CN-8 keeps it to confirm (feature 004, iteration 2); otherwise the ruling vote
+    decides. Only without an eligible ruling does the model estimate meet the threshold, as feature 004 did (at the
+    threshold counts)."""
     if single_line:
-        return True
-    return not precedent_conflict and int(confidence) >= int(threshold)
+        return True, Cn8Gate.single_line
+    if precedent_conflict:
+        return False, Cn8Gate.precedent_conflict
+    if vote is None:
+        return int(confidence) >= int(threshold), Cn8Gate.no_rulings
+    if vote.agrees:
+        return True, Cn8Gate.vote_agrees
+    if vote.majority_cn8 is None:
+        return False, Cn8Gate.vote_tie
+    return False, (Cn8Gate.vote_share_low if vote.model_is_majority else Cn8Gate.vote_disagrees)
 
 
-def _words(text: str) -> list[str]:
-    return _PUNCT.sub(" ", (text or "").lower()).split()
+def cn8_written_by_rule(confidence: int, threshold: int, single_line: bool, precedent_conflict: bool = False,
+                        vote: RulingVote | None = None) -> bool:
+    """Whether cn8_gate writes the CN-8."""
+    return cn8_gate(confidence, threshold, single_line, precedent_conflict, vote)[0]
+
+
+def _normalise(text: str) -> str:
+    """Lower case, accents and punctuation stripped, whitespace and line breaks collapsed."""
+    plain = "".join(ch for ch in unicodedata.normalize("NFKD", (text or "").lower()) if not unicodedata.combining(ch))
+    return " ".join(_PUNCT.sub(" ", plain).split())
+
+
+def _found(fragment: str, line: str) -> bool:
+    """The fragment is a phrase of the line. Chinese has no spaces, so a Chinese fragment may sit inside a longer word."""
+    if _CJK.search(fragment):
+        return fragment in line
+    return f" {fragment} " in f" {line} "
+
+
+def _near(fragment: str, line: str) -> bool:
+    """A run of whole words of the line matches the fragment at a difflib ratio of EVIDENCE_FUZZY or more. Whole words,
+    so a short word never matches inside a longer one; only runs of about the fragment's length can reach the ratio."""
+    if _CJK.search(fragment):
+        return False
+    words, size = line.split(), len(fragment)
+    for start in range(len(words)):
+        run = ""
+        for word in words[start:]:
+            run = f"{run} {word}" if run else word
+            if len(run) > size * 1.25:
+                break
+            if len(run) >= size * 0.8:
+                m = SequenceMatcher(None, fragment, run, autojunk=False)
+                if m.quick_ratio() >= EVIDENCE_FUZZY and m.ratio() >= EVIDENCE_FUZZY:
+                    return True
+    return False
+
+
+def evidence_match(evidence: str, line_text: str) -> str | None:
+    """Feature 006: the rule that accepts a quote as words of the line, or None. Both sides are normalised (lower case,
+    accents and punctuation stripped, whitespace and line breaks collapsed) and the quote is split at ";". "exact":
+    every fragment is a phrase of the line; "fuzzy": every fragment is that or matches a run of words of the line at a
+    ratio of 90 % or more, and at least one needed the ratio. Only the line is compared, so a quote from a CN-8 label,
+    the HS-6 label or a ruling is rejected unless the line says the same. Empty evidence is no evidence."""
+    line = _normalise(line_text)
+    fragments = [f for f in (_normalise(part) for part in (evidence or "").split(";")) if f]
+    if not fragments:
+        return None
+    rule = "exact"
+    for fragment in fragments:
+        if _found(fragment, line):
+            continue
+        if not _near(fragment, line):
+            return None
+        rule = "fuzzy"
+    return rule
 
 
 def evidence_in_line(evidence: str, line_text: str) -> bool:
-    """Iteration 3: both sides are normalised (lower case, punctuation stripped, whitespace collapsed) and every word
-    of the evidence must be a word of the line, in any order. Chinese has no spaces, so a Chinese word may sit inside a
-    longer one. Empty evidence is no evidence."""
-    quoted, line = _words(evidence), _words(line_text)
-    words, text = set(line), " ".join(line)
-    return bool(quoted) and all(w in words or (_CJK.search(w) is not None and w in text) for w in quoted)
+    """Whether evidence_match accepts the quote."""
+    return evidence_match(evidence, line_text) is not None
 
 
 def cn8_precedent_conflict(cn8: str | None, precedent_code: str | None) -> bool:

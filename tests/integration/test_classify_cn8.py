@@ -23,8 +23,8 @@ FLASK = LineText(line_no=3, text_zh="不锈钢保温杯", text_en="Stainless ste
 MOTOR = "whether the toy cars incorporate a motor"
 
 
-def ruling(ref, cn_code, valid_from="2024-01-01", valid_to="2030-01-01", description=None):
-    return {"reference": ref, "member_state": "DE", "code": hs6_from_code(cn_code), "cn_code": cn_code,
+def ruling(ref, cn_code, valid_from="2024-01-01", valid_to="2030-01-01", description=None, member_state="DE"):
+    return {"reference": ref, "member_state": member_state, "code": hs6_from_code(cn_code), "cn_code": cn_code,
             "chapter": cn_code[:2], "description": description or f"goods of ruling {ref}", "reasoning": "",
             "valid_from": valid_from, "valid_to": valid_to, "language": "EN"}
 
@@ -181,9 +181,41 @@ class TestChooseCn8:
         client, fake = fake_client({key(TOYS): out(None, visible=False, attribute=MOTOR)})
         choose_cn8(TOYS, "9503.00", kb, client, 85, AS_OF)
         prompt = fake.prompts_for("Cn8Out")[0]
-        assert re.search(r'<data line="6">塑料玩具车 / Plastic toy cars</data>', prompt)
-        assert prompt.index('<data line="6">') < prompt.index('<data line="ruling DE-TOY-1">')
+        assert re.search(r'<goods line="6">塑料玩具车 / Plastic toy cars</goods>', prompt)   # feature 006: its own tag
+        assert prompt.index('<goods line="6">') < prompt.index('<data line="ruling DE-TOY-1">')
         assert re.search(r'<data line="ruling DE-TOY-1">[^<]*Toy car with an electric motor', prompt)
+
+    def test_the_cn8_lines_and_the_hs6_label_stay_untagged_and_the_shipper_facts_are_goods_too(self, fake_client,
+                                                                                               make_kb):
+        from agent.schemas import Cn8Line, Extracted
+        from tools.classify_cn8 import choose_cn8
+
+        line = Cn8Line(line_no=6, text_zh=TOYS.text_zh, text_en=TOYS.text_en, hs6="9503.00",
+                       extracted=Extracted(material="plastics", use="toy <motor>"))
+        client, fake = fake_client({key(TOYS): out(None, visible=False, attribute=MOTOR)})
+        choose_cn8(line, "9503.00", make_kb(), client, 85, AS_OF)
+        prompt = fake.prompts_for("Cn8Out")[0]
+        assert prompt.index("<goods") == prompt.index('<goods line="6">塑料玩具车')            # the description comes first
+        assert 'Confirmed by the shipper: <goods line="6">material: plastics; part: ; use: toy &lt;motor&gt;</goods>' in prompt
+        assert "Decided HS-6 subheading: 9503.00 - " in prompt and "- 95030075 - " in prompt   # no tag around them
+        assert re.search(r"^- 95030075 - [^<]+$", prompt, re.M)
+
+    @pytest.mark.parametrize("evidence,rule", [("bicycle frames", "exact"), ("cycle frames", "fuzzy")])
+    def test_the_choice_keeps_the_rule_that_accepted_the_quote(self, fake_client, make_kb, evidence, rule):
+        from tools.classify_cn8 import choose_cn8
+
+        client, _ = fake_client({key(FRAMES): out("87149110", evidence=evidence)})
+        choice = choose_cn8(FRAMES, "8714.91", make_kb(), client, 85, AS_OF)
+        assert (choice.cn8, choice.evidence_rule) == ("87149110", rule)
+
+    def test_a_quote_from_a_ruling_sent_with_the_line_still_asks_the_shipper(self, fake_client, make_kb):
+        from tools.classify_cn8 import choose_cn8
+
+        kb = make_kb([ruling("DE-FORK-1", "8714913000", description="Front forks for racing bicycles, of carbon")])
+        client, fake = fake_client({key(FRAMES): out("87149110", evidence="Front forks for racing bicycles")})
+        choice = choose_cn8(FRAMES, "8714.91", kb, client, 85, AS_OF)
+        assert "Front forks for racing bicycles" in fake.prompts_for("Cn8Out")[0]   # the quote was in the request
+        assert choice.cn8 is None and choice.question and choice.evidence_rule is None
 
 
 class TestClassifyCn8Lines:
@@ -223,4 +255,74 @@ class TestClassifyCn8Tool:
         assert s.get_line(1).current.cn8.cn8 == "87149110"
         assert s.get_line(2).current.cn8 is None           # flagged: its HS-6 is not decided
         prompts = fake_llm.prompts_for("Cn8Out")
-        assert len(prompts) == 1 and '<data line="1">' in prompts[0] and '<data line="2">' not in prompts[0]
+        assert len(prompts) == 1 and '<goods line="1">' in prompts[0] and '<goods line="2">' not in prompts[0]
+
+
+class FixedHits:
+    """The BTI vector search with fixed hits, nearest first: (doc id, relevance)."""
+
+    def __init__(self, hits):
+        self.hits = hits
+
+    def embed_query_cached(self, text):
+        return [1.0]
+
+    def search_by_vector(self, vector, k, chapter_filter=None, where=None):
+        return list(self.hits)
+
+
+FRAME_RULINGS = [ruling("R1", "8714911000", member_state="DE"), ruling("R2", "8714911000", member_state="FR"),
+                 ruling("R3", "8714913000", member_state="IE"), ruling("R4", "8714919000", member_state="PL")]
+
+
+class TestCn8RulingVoteGate:
+    """Feature 006, constitution 1.4.0: the nearest eligible rulings vote; the model estimate is no routing input."""
+
+    def kb(self, make_kb, hits=(("bti:R1", 0.9), ("bti:R2", 0.8), ("bti:R3", 0.7))):
+        kb = make_kb(FRAME_RULINGS)
+        kb.bti_vectors = FixedHits(list(hits))
+        return kb
+
+    def test_the_majority_writes_the_cn8_whatever_the_model_estimate(self, fake_client, make_kb):
+        from agent.schemas import Cn8Gate, VoteCode
+        from tools.classify_cn8 import choose_cn8
+
+        client, _ = fake_client({key(FRAMES): out("87149110", 60, evidence="bicycle frames")})
+        choice = choose_cn8(FRAMES, "8714.91", self.kb(make_kb), client, 85, AS_OF)
+        assert (choice.cn8, choice.written_by, choice.gate_reason) == ("87149110", WrittenBy.rule, Cn8Gate.vote_agrees)
+        assert (choice.majority_cn8, choice.majority_share, choice.confidence) == ("87149110", 0.6667, 60)
+        # R4 is in the pool but not among the nearest hits: it was sent to the model (if room) but does not vote
+        assert choice.competing == [VoteCode(cn8="87149110", countries=["DE", "FR"]), VoteCode(cn8="87149130", countries=["IE"])]
+
+    def test_a_majority_at_another_cn8_keeps_a_confident_pick_to_confirm(self, fake_client, make_kb):
+        from agent.schemas import Cn8Gate
+        from tools.classify_cn8 import choose_cn8
+
+        client, _ = fake_client({key(FRAMES): out("87149130", 98, evidence="bicycle frames")})
+        choice = choose_cn8(FRAMES, "8714.91", self.kb(make_kb), client, 85, AS_OF)
+        assert (choice.cn8, choice.written_by, choice.gate_reason) == ("87149130", None, Cn8Gate.vote_disagrees)
+
+    def test_the_lines_own_ruling_and_rulings_out_of_the_pool_never_vote(self, fake_client, make_kb):
+        from tools.classify_cn8 import choose_cn8
+
+        hits = (("bti:R3", 0.95), ("bti:XX", 0.9), ("bti:R1", 0.8), ("bti:R2", 0.7))   # XX: unknown to the store
+        client, _ = fake_client({key(FRAMES): out("87149110", 90, evidence="bicycle frames")})
+        choice = choose_cn8(FRAMES, "8714.91", self.kb(make_kb, hits), client, 85, AS_OF, exclude_refs=frozenset({"R3"}))
+        assert (choice.majority_cn8, choice.majority_share, choice.written_by) == ("87149110", 1.0, WrittenBy.rule)
+
+    def test_without_eligible_rulings_the_model_estimate_meets_the_threshold(self, fake_client, make_kb):
+        from agent.schemas import Cn8Gate
+        from tools.classify_cn8 import choose_cn8
+
+        client, _ = fake_client({key(FRAMES): out("87149110", 85, evidence="bicycle frames")})
+        choice = choose_cn8(FRAMES, "8714.91", make_kb(FRAME_RULINGS), client, 85, AS_OF)   # no BTI vectors: no vote
+        assert (choice.written_by, choice.gate_reason, choice.majority_cn8) == (WrittenBy.rule, Cn8Gate.no_rulings, None)
+        assert choose_cn8(FRAMES, "8714.91", make_kb(FRAME_RULINGS), client, 86, AS_OF).written_by is None
+
+    def test_a_question_keeps_the_vote_for_the_record_and_no_gate(self, fake_client, make_kb):
+        from tools.classify_cn8 import choose_cn8
+
+        client, _ = fake_client({key(FRAMES): out("87149110", 90, evidence="carbon fibre")})   # not words of the line
+        choice = choose_cn8(FRAMES, "8714.91", self.kb(make_kb), client, 85, AS_OF)
+        assert choice.question and choice.cn8 is None and choice.gate_reason is None
+        assert choice.majority_cn8 == "87149110"
