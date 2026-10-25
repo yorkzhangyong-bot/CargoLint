@@ -653,3 +653,70 @@ class TestFinerCodeAudit:
         rec = _last(s, ChangeKind.cn8_pending, 2)
         assert (rec.new, rec.actor) == ("87149110", Actor.routing_rule)
         assert rec.note == "to confirm: the cited ruling DE-FORK-1 classifies under 87149130, not 87149110"
+
+
+# --------------------------------------------------------------------------- feature 005: the clerk's edit (contracts/backend.md §1)
+from agent.config import MAX_DESC_CHARS  # noqa: E402
+
+
+class TestClerkEdit:
+    def test_the_edit_adds_a_pending_clerk_version_and_keeps_the_earlier_one(self, populated):
+        line = populated.get_line(3)
+        before = line.versions[0].model_dump()
+        v = populated.update_description(3, " 刹车片 ", " Brake pads for bicycles, steel ")
+        line = populated.get_line(3)
+        assert line.current.version_no == v.version_no == 2
+        assert (v.created_by, v.status, v.text_zh, v.text_en) == (CreatedBy.clerk, LineStatus.pending, "刹车片",
+                                                                  "Brake pads for bicycles, steel")
+        assert v.flag is None and not v.candidates and v.cn8 is None and v.taric is None and v.decision is None
+        assert line.versions[0].model_dump() == before
+
+    def test_one_audit_record_for_the_edit(self, populated):
+        old = populated.get_line(3).current.display_text
+        start = len(populated.shipment.audit)
+        populated.update_description(3, "刹车片", "Brake pads for bicycles, steel")
+        added = [r for r in populated.shipment.audit[start:] if r.actor == Actor.clerk]
+        assert len(added) == 1
+        r = added[0]
+        assert (r.change, r.previous, r.new, r.note, r.version_no) == (
+            ChangeKind.version_added, old, "刹车片 / Brake pads for bicycles, steel", "description updated by clerk", 2)
+        populated.update_description(3, "刹车片", "Brake pads for bicycles, steel")
+        again = [r for r in populated.shipment.audit if r.actor == Actor.clerk][-1]
+        assert (again.note, again.previous, again.new) == ("re-checked by clerk, description unchanged",
+                                                           again.new, "刹车片 / Brake pads for bicycles, steel")
+
+    @pytest.mark.parametrize("zh, en, message", [
+        ("  ", "", "write the goods description"),
+        ("长" * (MAX_DESC_CHARS + 1), "Brake pads", str(MAX_DESC_CHARS)),
+        ("", "x" * (MAX_DESC_CHARS + 1), str(MAX_DESC_CHARS)),
+    ])
+    def test_an_empty_or_over_cap_edit_is_refused(self, populated, zh, en, message):
+        versions, records = len(populated.get_line(3).versions), len(populated.shipment.audit)
+        with pytest.raises(ValueError, match=message):
+            populated.update_description(3, zh, en)
+        assert (len(populated.get_line(3).versions), len(populated.shipment.audit)) == (versions, records)
+
+    def test_an_unknown_line_raises_key_error(self, populated):
+        with pytest.raises(KeyError):
+            populated.update_description(99, "", "Brake pads")
+
+    def test_an_ever_flagged_line_still_needs_the_clerks_click(self, populated):
+        populated.update_description(3, "", "Oak dining tables")             # line 3 was flagged vague
+        populated.update_check(3, _check(3, FlagKind.ok))
+        populated.update_classification(3, _classify(3, [("9403.60", 95)]))
+        line = populated.get_line(3)
+        assert line.current.computed_route == Route.review and populated.ready_to_accept(line)
+        assert populated.effective_route(line) != Route.auto_accept
+
+    def test_a_never_flagged_line_may_auto_accept(self, populated):
+        populated.update_description(2, "LED台灯", "LED desk lamp, USB powered")   # line 2 was never flagged
+        populated.update_check(2, _check(2, FlagKind.ok))
+        populated.update_classification(2, _classify(2, [("9405.21", 95)]))
+        assert populated.get_line(2).current.computed_route == Route.auto_accept
+
+    def test_a_reply_version_records_as_before(self, populated):
+        start = len(populated.shipment.audit)
+        populated.add_version(2, LineVersion(created_by=CreatedBy.shipper_reply, text_en="steel desk lamp"))
+        records = [r for r in populated.shipment.audit[start:] if r.change == ChangeKind.reply_applied]
+        assert len(records) == 1
+        assert (records[0].actor, records[0].previous, records[0].new) == (Actor.shipper_reply, "review", None)

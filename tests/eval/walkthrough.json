@@ -1,0 +1,519 @@
+{
+  "mode": "offline",
+  "run_on": "2026-10-24",
+  "lines": 12,
+  "clerk_actions": 57,
+  "jobs": 12,
+  "ui_seconds": 1.94,
+  "ui_max_seconds": 0.066,
+  "job_seconds": 0.42,
+  "total_machine_seconds": 2.36,
+  "limit_seconds": 1.0,
+  "over_limit": [],
+  "final": {
+    "accepted": 12,
+    "green": 12,
+    "yellow": 0,
+    "red": 0,
+    "grey": 0
+  },
+  "note": "Machine time only. The email is drafted while the red lines wait for the shipper; the answers are scripted. The clerk's reading time is the author's timed run in the browser (T051).",
+  "actions": [
+    {
+      "step": "1 open the sample",
+      "action": "Try the sample invoice",
+      "line": null,
+      "kind": "click",
+      "seconds": 0.012
+    },
+    {
+      "step": "1 open the sample",
+      "action": "check job",
+      "line": null,
+      "kind": "job",
+      "seconds": 0.384,
+      "error": null
+    },
+    {
+      "step": "1 accept the ready lines",
+      "action": "Accept all 1 ready",
+      "line": null,
+      "kind": "click",
+      "seconds": 0.025
+    },
+    {
+      "step": "2 choose and confirm the yellow lines",
+      "action": "open line 2 (Pick: 1 candidate)",
+      "line": 2,
+      "kind": "click",
+      "seconds": 0.03
+    },
+    {
+      "step": "2 choose and confirm the yellow lines",
+      "action": "Confirm 9405 21 (line 2)",
+      "line": 2,
+      "kind": "click",
+      "seconds": 0.033
+    },
+    {
+      "step": "2 choose and confirm the yellow lines",
+      "action": "finer_codes job, line 2",
+      "line": 2,
+      "kind": "job",
+      "seconds": 0.002,
+      "error": null
+    },
+    {
+      "step": "2 choose and confirm the yellow lines",
+      "action": "open line 5 (Pick: 10 or 90)",
+      "line": 5,
+      "kind": "click",
+      "seconds": 0.039
+    },
+    {
+      "step": "2 choose and confirm the yellow lines",
+      "action": "Confirm 6109 10 00 10 (line 5)",
+      "line": 5,
+      "kind": "click",
+      "seconds": 0.043
+    },
+    {
+      "step": "2 choose and confirm the yellow lines",
+      "action": "open line 8 (Pick: 10 or 90)",
+      "line": 8,
+      "kind": "click",
+      "seconds": 0.035
+    },
+    {
+      "step": "2 choose and confirm the yellow lines",
+      "action": "Confirm 8518 30 00 10 (line 8)",
+      "line": 8,
+      "kind": "click",
+      "seconds": 0.044
+    },
+    {
+      "step": "2 choose and confirm the yellow lines",
+      "action": "open line 10 (Pick: 9 options, 3 AD)",
+      "line": 10,
+      "kind": "click",
+      "seconds": 0.045
+    },
+    {
+      "step": "2 choose and confirm the yellow lines",
+      "action": "Confirm 8714 91 10 21 (line 10)",
+      "line": 10,
+      "kind": "click",
+      "seconds": 0.055
+    },
+    {
+      "step": "2 choose and confirm the yellow lines",
+      "action": "open line 11 (Pick: 3 options)",
+      "line": 11,
+      "kind": "click",
+      "seconds": 0.043
+    },
+    {
+      "step": "2 choose and confirm the yellow lines",
+      "action": "Confirm 4016 93 00 10 (line 11)",
+      "line": 11,
+      "kind": "click",
+      "seconds": 0.049
+    },
+    {
+      "step": "2 choose and confirm the yellow lines",
+      "action": "open line 12 (Pick: 14 options)",
+      "line": 12,
+      "kind": "click",
+      "seconds": 0.066
+    },
+    {
+      "step": "2 choose and confirm the yellow lines",
+      "action": "Confirm 3926 90 97 05 (line 12)",
+      "line": 12,
+      "kind": "click",
+      "seconds": 0.059
+    },
+    {
+      "step": "3 draft the email to the shipper",
+      "action": "Draft shipper email (6 lines)",
+      "line": null,
+      "kind": "click",
+      "seconds": 0.062
+    },
+    {
+      "step": "3 draft the email to the shipper",
+      "action": "中文",
+      "line": null,
+      "kind": "click",
+      "seconds": 0.026
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "open line 1",
+      "line": 1,
+      "kind": "click",
+      "seconds": 0.03
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "Copy question (line 1)",
+      "line": 1,
+      "kind": "browser",
+      "seconds": 0.0
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "type the shipper's answer (line 1)",
+      "line": 1,
+      "kind": "input",
+      "seconds": 0.033
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "Re-check line 1",
+      "line": 1,
+      "kind": "click",
+      "seconds": 0.037
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "recheck job, line 1",
+      "line": 1,
+      "kind": "job",
+      "seconds": 0.003,
+      "error": null
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "open line 2",
+      "line": 2,
+      "kind": "click",
+      "seconds": 0.048
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "Copy question (line 2)",
+      "line": 2,
+      "kind": "browser",
+      "seconds": 0.0
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "type the shipper's answer (line 2)",
+      "line": 2,
+      "kind": "input",
+      "seconds": 0.03
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "Re-check line 2",
+      "line": 2,
+      "kind": "click",
+      "seconds": 0.037
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "recheck job, line 2",
+      "line": 2,
+      "kind": "job",
+      "seconds": 0.003,
+      "error": null
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "open line 4",
+      "line": 4,
+      "kind": "click",
+      "seconds": 0.029
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "Copy question (line 4)",
+      "line": 4,
+      "kind": "browser",
+      "seconds": 0.0
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "type the shipper's answer (line 4)",
+      "line": 4,
+      "kind": "input",
+      "seconds": 0.03
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "Re-check line 4",
+      "line": 4,
+      "kind": "click",
+      "seconds": 0.037
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "recheck job, line 4",
+      "line": 4,
+      "kind": "job",
+      "seconds": 0.003,
+      "error": null
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "open line 6",
+      "line": 6,
+      "kind": "click",
+      "seconds": 0.031
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "Copy question (line 6)",
+      "line": 6,
+      "kind": "browser",
+      "seconds": 0.0
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "type the shipper's answer (line 6)",
+      "line": 6,
+      "kind": "input",
+      "seconds": 0.032
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "Re-check line 6",
+      "line": 6,
+      "kind": "click",
+      "seconds": 0.043
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "recheck job, line 6",
+      "line": 6,
+      "kind": "job",
+      "seconds": 0.003,
+      "error": null
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "open line 7",
+      "line": 7,
+      "kind": "click",
+      "seconds": 0.049
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "Copy question (line 7)",
+      "line": 7,
+      "kind": "browser",
+      "seconds": 0.0
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "type the shipper's answer (line 7)",
+      "line": 7,
+      "kind": "input",
+      "seconds": 0.03
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "Re-check line 7",
+      "line": 7,
+      "kind": "click",
+      "seconds": 0.043
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "recheck job, line 7",
+      "line": 7,
+      "kind": "job",
+      "seconds": 0.004,
+      "error": null
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "open line 9",
+      "line": 9,
+      "kind": "click",
+      "seconds": 0.03
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "Copy question (line 9)",
+      "line": 9,
+      "kind": "browser",
+      "seconds": 0.0
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "type the shipper's answer (line 9)",
+      "line": 9,
+      "kind": "input",
+      "seconds": 0.04
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "Re-check line 9",
+      "line": 9,
+      "kind": "click",
+      "seconds": 0.045
+    },
+    {
+      "step": "4 answer and re-check the red lines",
+      "action": "recheck job, line 9",
+      "line": 9,
+      "kind": "job",
+      "seconds": 0.004,
+      "error": null
+    },
+    {
+      "step": "4 confirm the re-checked lines",
+      "action": "open line 1 (Confirm: 8452 90)",
+      "line": 1,
+      "kind": "click",
+      "seconds": 0.028
+    },
+    {
+      "step": "4 confirm the re-checked lines",
+      "action": "Confirm 8452 90 00 (line 1)",
+      "line": 1,
+      "kind": "click",
+      "seconds": 0.032
+    },
+    {
+      "step": "4 confirm the re-checked lines",
+      "action": "finer_codes job, line 1",
+      "line": 1,
+      "kind": "job",
+      "seconds": 0.002,
+      "error": null
+    },
+    {
+      "step": "4 confirm the re-checked lines",
+      "action": "open line 4 (Confirm: 3926 90)",
+      "line": 4,
+      "kind": "click",
+      "seconds": 0.03
+    },
+    {
+      "step": "4 confirm the re-checked lines",
+      "action": "Confirm 3926 90 (line 4)",
+      "line": 4,
+      "kind": "click",
+      "seconds": 0.035
+    },
+    {
+      "step": "4 confirm the re-checked lines",
+      "action": "finer_codes job, line 4",
+      "line": 4,
+      "kind": "job",
+      "seconds": 0.003,
+      "error": null
+    },
+    {
+      "step": "4 confirm the re-checked lines",
+      "action": "open line 4 (Pick: 14 options)",
+      "line": 4,
+      "kind": "click",
+      "seconds": 0.046
+    },
+    {
+      "step": "4 confirm the re-checked lines",
+      "action": "Confirm 3926 90 97 05 (line 4)",
+      "line": 4,
+      "kind": "click",
+      "seconds": 0.056
+    },
+    {
+      "step": "4 confirm the re-checked lines",
+      "action": "open line 6 (Pick: 3 options)",
+      "line": 6,
+      "kind": "click",
+      "seconds": 0.035
+    },
+    {
+      "step": "4 confirm the re-checked lines",
+      "action": "Confirm 9503 00 95 30 (line 6)",
+      "line": 6,
+      "kind": "click",
+      "seconds": 0.041
+    },
+    {
+      "step": "4 confirm the re-checked lines",
+      "action": "open line 7 (Confirm: 8518 30)",
+      "line": 7,
+      "kind": "click",
+      "seconds": 0.03
+    },
+    {
+      "step": "4 confirm the re-checked lines",
+      "action": "Confirm 8518 30 00 (line 7)",
+      "line": 7,
+      "kind": "click",
+      "seconds": 0.039
+    },
+    {
+      "step": "4 confirm the re-checked lines",
+      "action": "finer_codes job, line 7",
+      "line": 7,
+      "kind": "job",
+      "seconds": 0.002,
+      "error": null
+    },
+    {
+      "step": "4 confirm the re-checked lines",
+      "action": "open line 7 (Pick: 10 or 90)",
+      "line": 7,
+      "kind": "click",
+      "seconds": 0.042
+    },
+    {
+      "step": "4 confirm the re-checked lines",
+      "action": "Confirm 8518 30 00 10 (line 7)",
+      "line": 7,
+      "kind": "click",
+      "seconds": 0.04
+    },
+    {
+      "step": "4 confirm the re-checked lines",
+      "action": "open line 9 (Confirm: 9403 60)",
+      "line": 9,
+      "kind": "click",
+      "seconds": 0.029
+    },
+    {
+      "step": "4 confirm the re-checked lines",
+      "action": "Confirm 9403 60 00 (line 9)",
+      "line": 9,
+      "kind": "click",
+      "seconds": 0.047
+    },
+    {
+      "step": "4 confirm the re-checked lines",
+      "action": "finer_codes job, line 9",
+      "line": 9,
+      "kind": "job",
+      "seconds": 0.003,
+      "error": null
+    },
+    {
+      "step": "5 accept the lines that became ready",
+      "action": "Accept all 3 ready",
+      "line": null,
+      "kind": "click",
+      "seconds": 0.031
+    },
+    {
+      "step": "5 export",
+      "action": "Export CSV",
+      "line": null,
+      "kind": "click",
+      "seconds": 0.035
+    },
+    {
+      "step": "5 export",
+      "action": "Export JSON",
+      "line": null,
+      "kind": "click",
+      "seconds": 0.028
+    }
+  ],
+  "failure": null
+}

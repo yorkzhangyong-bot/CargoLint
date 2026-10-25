@@ -231,6 +231,19 @@ class NomenclatureIndex:
                 return line.split("—", 1)[-1].strip()
         return ch.text.splitlines()[0]
 
+    def label_path(self, code: str) -> list[str]:
+        """Feature 005: the heading and subheading labels of an HS-6, for a reader who sees one row at a time (the
+        subheading label alone is often "Other" or "Of cotton"). One label when the heading is not subdivided (".00")
+        or the subheading label already repeats it; [] for an unknown subheading. Read-only."""
+        ch = self._by_code.get(code)
+        if ch is None:
+            return []
+        heading = next((line.split("—", 1)[-1].strip() for line in ch.text.splitlines() if line.startswith("Heading ")), "")
+        sub = self.subheading_text(code)
+        if not heading or code.endswith(".00") or sub.lower().startswith(heading.lower()):
+            return [sub]
+        return [heading, sub]
+
     def chapter_of(self, code: str) -> str:
         return code[:2]
 
