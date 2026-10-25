@@ -43,9 +43,11 @@ def test_each_row_keeps_the_rulings_sent_for_its_own_line():
                           KB, CLIENT, AS_OF, workers=2)
     assert classify_cn8.select_rulings is original                       # the recording ends with the run
     a, b, q = rows
-    assert a["sent"] == [{"reference": "X", "cn8": "87149130", "rank": 1}, {"reference": "B", "cn8": "87149190", "rank": 2}]
+    assert a["sent"] == [{"reference": "X", "cn8": "87149130", "rank": 1, "country": ""},          # the store gives none
+                         {"reference": "B", "cn8": "87149190", "rank": 2, "country": ""}]
     assert (a["hit"], a["expected_sent"]) == (True, False)               # its own ruling A is never sent
-    assert b["sent"] == [{"reference": "A", "cn8": "87149110", "rank": 1}, {"reference": "X", "cn8": "87149130", "rank": 2}]
+    assert b["sent"] == [{"reference": "A", "cn8": "87149110", "rank": 1, "country": ""},
+                         {"reference": "X", "cn8": "87149130", "rank": 2, "country": ""}]
     assert (b["hit"], b["expected_sent"]) == (False, False)
     assert [s["reference"] for s in q["sent"]] == ["A", "X", "B"] and [s["rank"] for s in q["sent"]] == [1, 2, 3]
     assert (q["hit"], q["expected_sent"]) == (False, True)               # X is at the expected 87149130
@@ -77,6 +79,72 @@ def test_each_row_keeps_the_raw_output_the_evidence_check_and_the_route():
     assert (q["raw"]["attribute_visible"], q["raw"]["cn8"]) == (False, None)
     assert (q["evidence_check"], q["route"]) == ("not run", "ask_shipper")   # the code checks no quote the model withheld
     assert a["sent_cn8"] == ["87149130", "87149190"] and q["sent_cn8"] == ["87149110", "87149130", "87149190"]
+
+
+RECORDS = {   # reference: (CN code, issuing country, valid to); the store behind the fake vector search below
+    "Q": ("8714913000", "IE", "2030-01-01"), "X": ("87149130", "FR", "2030-01-01"), "OLD": ("8714911000", "DE", "2024-01-01"),
+    "A": ("8714911000", "DE", "2030-01-01"), "B": ("8714919000", "FR", "2030-01-01")}
+
+
+class VectorBti:
+    """by_cn8 and get as BTIStore has them, over RECORDS: valid rulings only for by_cn8, validity checked by get(as_of)."""
+
+    def _valid(self, ref, as_of):
+        return as_of is None or date.fromisoformat(RECORDS[ref][2]) >= as_of
+
+    def by_cn8(self, hs6, as_of):
+        out = {}
+        for ref, (code, country, _) in RECORDS.items():
+            if self._valid(ref, as_of):
+                out.setdefault(code[:8], []).append(Precedent(reference=ref, code=code, member_state=country))
+        return out
+
+    def get(self, ruling_id, as_of=None):
+        ref = ruling_id.removeprefix("bti:")
+        if ref not in RECORDS or not self._valid(ref, as_of):
+            return None
+        code, country, valid_to = RECORDS[ref]
+        return {"reference": ref, "cn_code": code, "member_state": country, "valid_to": valid_to}
+
+
+class FakeVectors:
+    """The BTI vector search: the same hits, nearest first, for every query (relevance = 1 - distance)."""
+
+    def __init__(self, hits):
+        self.hits, self.texts = hits, []
+
+    def embed_query_cached(self, text):
+        self.texts.append(text)
+        return [1.0]
+
+    def search_by_vector(self, vector, k, chapter_filter=None, where=None):
+        return list(self.hits)
+
+
+def test_each_row_keeps_the_nearest_hits_and_the_vote_of_the_rulings_sent():
+    vectors = FakeVectors([("bti:Q", 0.99), ("bti:X", 0.90), ("bti:OLD", 0.85), ("bti:A", 0.80), ("bti:B", 0.70)])
+    kb = SimpleNamespace(index=KB.index, bti=VectorBti(), bti_vectors=vectors)
+    original = vectors.search_by_vector
+    (q,), _ = ev.run_once([eval_line("Q", "87149130")], kb, CLIENT, AS_OF, workers=1)
+    assert vectors.search_by_vector == original and "search_by_vector" not in vars(vectors)   # recorded for the run only
+    assert q["nearest_hits"] == [
+        {"reference": "Q", "cn8": "87149130", "distance": 0.01, "country": "IE", "eligible": False},   # its own ruling
+        {"reference": "X", "cn8": "87149130", "distance": 0.1, "country": "FR", "eligible": True},
+        {"reference": "OLD", "cn8": "87149110", "distance": 0.15, "country": "DE", "eligible": False},  # expired
+        {"reference": "A", "cn8": "87149110", "distance": 0.2, "country": "DE", "eligible": True},
+        {"reference": "B", "cn8": "87149190", "distance": 0.3, "country": "FR", "eligible": True}]
+    assert [(s["reference"], s["country"]) for s in q["sent"]] == [("X", "FR"), ("A", "DE"), ("B", "FR")]   # nearest first
+    # the vote of the rulings sent: DE weighs 3, FR 1 each; the model (always 87149110) agrees with the majority
+    assert (q["majority_cn8"], q["majority_share"], q["model_agrees_with_majority"]) == ("87149110", 0.6, True)
+
+
+@pytest.mark.parametrize("sent,expected", [
+    ([], (None, None)),
+    ([("87149110", "FR"), ("87149130", "FR")], (None, 0.5)),                   # a tie has no majority
+    ([("87149110", "DE"), ("87149130", "FR"), ("87149130", "FR")], ("87149110", 0.6)),
+    ([("87149130", "XI"), ("87149130", "IE")], ("87149130", 1.0))])
+def test_the_vote_weighs_the_entry_country_three_times(sent, expected):
+    assert ev.ruling_vote([{"cn8": c, "country": k} for c, k in sent]) == expected
 
 
 def test_the_share_counts_every_wrong_result_of_every_run():

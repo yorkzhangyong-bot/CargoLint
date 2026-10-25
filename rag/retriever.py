@@ -6,6 +6,10 @@ import json
 import math
 import pickle
 import re
+import threading
+import unicodedata
+from array import array
+from collections import OrderedDict
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -71,8 +75,26 @@ class BM25Index:
 class VectorSearch(Protocol):
     def search(self, query: str, k: int, chapter_filter: list[str] | None) -> list[tuple[str, float]]: ...
     def embed_queries(self, queries: list[str]) -> list[list[float]]: ...
+    def embed_query_cached(self, text: str) -> list[float]: ...
     def search_by_vector(self, vector: list[float], k: int, chapter_filter: list[str] | None,
                          where: dict | None = None) -> list[tuple[str, float]]: ...
+
+
+DISTANCE_DECIMALS = 4      # feature 006: distances this close count as equal and are ordered by id
+QUERY_CACHE_SIZE = 256     # query embeddings kept per vector search; a 4096-dimension vector is 32 KB as an array
+
+
+def stable_order(hits: list[tuple[str, float]]) -> list[str]:
+    """Feature 006: the ids of vector hits nearest first, by cosine distance (1 - the relevance score search_by_vector
+    returns) rounded to DISTANCE_DECIMALS, then by id. Hits whose distances differ only in later decimals keep one order
+    from call to call; a jitter across a rounding edge can still swap two of them."""
+    return [doc_id for doc_id, _ in sorted(hits, key=lambda hit: (round(1.0 - hit[1], DISTANCE_DECIMALS), hit[0]))]
+
+
+def normalise_query(text: str) -> str:
+    """A query as it is cached and embedded: Unicode NFC, whitespace and line breaks collapsed. Case is kept, as the
+    embedding model reads it."""
+    return " ".join(unicodedata.normalize("NFC", text or "").split())
 
 
 def _embed_queries(embeddings: Any, queries: list[str]) -> list[list[float]]:
@@ -82,10 +104,38 @@ def _embed_queries(embeddings: Any, queries: list[str]) -> list[list[float]]:
     return [embeddings.embed_query(q) for q in queries]
 
 
-class InMemoryVectorSearch:
+class _QueryCache:
+    """Feature 006: one embedding per normalised query text for the life of the vector search (the knowledge base: one
+    app process, one eval command), so repeated lines get the same rulings. The least recently used text drops out
+    beyond query_cache_size. When two threads ask for a new text at once, both get the vector stored first."""
+
+    query_cache_size = QUERY_CACHE_SIZE
+
+    def _init_query_cache(self) -> None:
+        self._query_cache: OrderedDict[str, array] = OrderedDict()
+        self._query_lock = threading.Lock()
+
+    def embed_query_cached(self, text: str) -> list[float]:
+        key = normalise_query(text)
+        with self._query_lock:
+            found = self._query_cache.get(key)
+            if found is not None:
+                self._query_cache.move_to_end(key)
+                return list(found)
+        vector = array("d", self.embed_queries([key])[0])
+        with self._query_lock:
+            vector = self._query_cache.setdefault(key, vector)
+            self._query_cache.move_to_end(key)
+            while len(self._query_cache) > self.query_cache_size:
+                self._query_cache.popitem(last=False)
+        return list(vector)
+
+
+class InMemoryVectorSearch(_QueryCache):
     """Cosine search over precomputed vectors; used in tests and for small demo indexes."""
 
     def __init__(self, docs: list[tuple[str, str, dict]], embeddings: Any) -> None:
+        self._init_query_cache()
         self.ids = [d[0] for d in docs]
         self.meta = {d[0]: d[2] for d in docs}
         self.embeddings = embeddings
@@ -118,12 +168,13 @@ class InMemoryVectorSearch:
         return self.search_by_vector(self.embeddings.embed_query(query), k, chapter_filter)
 
 
-class ChromaVectorSearch:
+class ChromaVectorSearch(_QueryCache):
     """Persisted Chroma collection (cosine space) behind the VectorSearch protocol."""
 
     def __init__(self, persist_dir: Path | str, embeddings: Any, collection_name: str = "cn2026") -> None:
         from langchain_chroma import Chroma
 
+        self._init_query_cache()
         self.embeddings = embeddings
         self.store = Chroma(collection_name=collection_name, embedding_function=embeddings, persist_directory=str(persist_dir),
                             collection_metadata={"hnsw:space": "cosine"})

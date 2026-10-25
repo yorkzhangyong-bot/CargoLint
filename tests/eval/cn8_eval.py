@@ -20,6 +20,14 @@ check (passed; rejected; not run, when the model declined), the rule that passed
 route, recorded around the client and tools.classify_cn8.evidence_match the same way;
 tests/eval/cn8_evidence_diagnosis.py reads them.
 
+Feature 006 (specs/006-stability-baseline/plan-ruling-vote.md): each row also keeps nearest_hits, the uncapped vector
+hits select_rulings ranks (top 40 under the HS-6), each with reference, CN-8, cosine distance, issuing country and
+whether it was eligible to be sent (valid on the set's date, at a CN-8 line of the HS-6, not the line's own ruling);
+the issuing country of each ruling sent; and the vote of the rulings sent, for later analysis only: majority_cn8 (none
+on a tie), majority_share (its share of the weight; a ruling from the entry country DE weighs 3, any other 1) and
+model_agrees_with_majority (the model's raw CN-8). Query embeddings are cached for the life of the knowledge base, so
+the runs of one command send the same rulings; only the model calls are drawn anew.
+
 --repeat N (N > 1) classifies every line N times, independently, and adds the stability of the CN-8 step. The HS-6 is
 fixed by the set, so top-1 means the CN-8. Measures: the share of lines whose top-1 is the same in all N runs; the share
 whose decision is the same (auto_accept: written by rule; review: to confirm, or failed, as route_line routes a failed
@@ -60,7 +68,8 @@ REPORT = ROOT / "tests" / "eval" / "cn8_eval.md"
 THRESHOLD = 85
 TARGET = 60
 TAG = "baseline-stability"
-_rec = threading.local()   # per worker thread, for the line in hand: the rulings sent, the raw output, the evidence check
+VOTE_ENTRY_COUNTRY, VOTE_ENTRY_WEIGHT = "DE", 3   # plan-ruling-vote.md §1; recorded for analysis, routing ignores it
+_rec = threading.local()   # per worker thread, for the line in hand: rulings sent, vector hits, raw output, evidence check
 _NOT_RUN = object()   # the model declined, so the code checks no quote
 
 
@@ -120,30 +129,66 @@ def _raw(out: Any) -> dict | None:
             "evidence": out.evidence, "precedent": out.precedent, "rationale": out.rationale}
 
 
+def ruling_vote(sent: list[dict]) -> tuple[str | None, float | None]:
+    """The weighted vote of the rulings sent (plan-ruling-vote.md §1): the majority CN-8, none on a tie, and its share
+    of the weight; a ruling from the entry country weighs VOTE_ENTRY_WEIGHT, any other 1."""
+    weight: Counter = Counter()
+    for s in sent:
+        weight[s["cn8"]] += VOTE_ENTRY_WEIGHT if s["country"] == VOTE_ENTRY_COUNTRY else 1
+    if not weight:
+        return None, None
+    top = max(weight.values())
+    leaders = [code for code, w in weight.items() if w == top]
+    return (leaders[0] if len(leaders) == 1 else None), round(top / sum(weight.values()), 4)
+
+
+def _nearest_hits(hits: list, r: dict, kb: Any, as_of: date) -> list[dict]:
+    """The vector hits as ranked, each with what the store says about its ruling."""
+    allowed = {code for code, _ in kb.index.cn8_lines(r["hs6"])}
+    out = []
+    for doc_id, score in hits:
+        record = kb.bti.get(doc_id) or {}
+        reference, cn8 = doc_id.removeprefix("bti:"), (record.get("cn_code") or "")[:8]
+        out.append({"reference": reference, "cn8": cn8, "distance": round(1.0 - score, 6),
+                    "country": record.get("member_state") or "",
+                    "eligible": reference != r["reference"] and cn8 in allowed and kb.bti.get(doc_id, as_of) is not None})
+    return out
+
+
 def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: int) -> tuple[list[dict], float]:
-    """One pass of the CN-8 step over the set: one row per ruling, with the rulings sent to the model, its raw output,
-    the evidence check and the route, and the elapsed seconds."""
+    """One pass of the CN-8 step over the set: one row per ruling, with the rulings sent to the model and the vector
+    hits behind them, its raw output, the evidence check and the route, and the elapsed seconds."""
     recorder = SimpleNamespace(call=_recording(client.call, "raw")) if client is not None else None
 
     def one(item):
         i, r = item
-        _rec.rulings, _rec.raw, _rec.check = [], None, _NOT_RUN   # a subheading with one CN-8 line sends none
+        _rec.rulings, _rec.hits, _rec.raw, _rec.check = [], [], None, _NOT_RUN   # one CN-8 line: no rulings, no hits
         line = Cn8Line(line_no=i, text_en=r["description"], hs6=r["hs6"])
         choice = choose_cn8(line, r["hs6"], kb, recorder, THRESHOLD, as_of, exclude_refs=frozenset({r["reference"]}))
-        return choice, _rec.rulings, _rec.raw, _rec.check
+        return choice, _rec.rulings, _rec.hits, _rec.raw, _rec.check
 
     saved = classify_cn8.select_rulings, classify_cn8.evidence_match
     classify_cn8.select_rulings = _recording(saved[0], "rulings")   # choose_cn8 looks both up on every call;
     classify_cn8.evidence_match = _recording(saved[1], "check")     # recorded for this run only
+    vectors = getattr(kb, "bti_vectors", None)
+    own = vectors is not None and "search_by_vector" in vars(vectors)
+    if vectors is not None:
+        search = vectors.search_by_vector
+        vectors.search_by_vector = _recording(search, "hits")      # the instance only, for this run
     t0 = time.perf_counter()
     try:
         results = run_per_line(list(enumerate(rulings, start=1)), one, lambda item, exc: None, workers=workers)
     finally:
         classify_cn8.select_rulings, classify_cn8.evidence_match = saved
+        if vectors is not None:
+            if own:
+                vectors.search_by_vector = search
+            else:
+                del vectors.search_by_vector
     elapsed = time.perf_counter() - t0
     rows = []
     for r, res in zip(rulings, results):
-        c, sent, raw, check = res if res is not None else (None, [], None, None)
+        c, sent, hits, raw, check = res if res is not None else (None, [], [], None, _NOT_RUN)
         row = {"reference": r["reference"], "chapter": r["chapter"], "hs6": r["hs6"], "expected": r["cn8"],
                "language": r["language"], "options": len(c.options) if c else None,
                "chosen": c.cn8 if c else None, "confidence": c.confidence if c else None,
@@ -151,11 +196,16 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
                "error": (c.error if c else "timed out"), "precedent": c.precedent.reference if c and c.precedent else None,
                "precedent_code": c.precedent.code if c and c.precedent else None,
                "evidence": c.evidence if c else None, "hit": bool(c and c.cn8 == r["cn8"]),
-               "sent": [{"reference": p.reference, "cn8": p.code[:8], "rank": k} for k, p in enumerate(sent, start=1)],
+               "sent": [{"reference": p.reference, "cn8": p.code[:8], "rank": k, "country": p.member_state}
+                        for k, p in enumerate(sent, start=1)],
                "sent_cn8": sorted({p.code[:8] for p in sent}), "expected_sent": any(p.code[:8] == r["cn8"] for p in sent),
+               "nearest_hits": _nearest_hits(hits, r, kb, as_of),
                "raw": _raw(raw), "evidence_check": "not run" if check is _NOT_RUN else ("passed" if check else "rejected"),
                "evidence_rule": check if check is not _NOT_RUN else None}
         row["route"] = decision(row)
+        row["majority_cn8"], row["majority_share"] = ruling_vote(row["sent"])
+        pick = raw.cn8 if raw is not None else None
+        row["model_agrees_with_majority"] = None if pick is None else pick == row["majority_cn8"]
         rows.append(row)
     return rows, elapsed
 

@@ -17,6 +17,7 @@ from agent.llm import StructuredCaller
 from agent.prompts import CN8_SYSTEM, cn8_user
 from agent.routing import cn8_precedent_conflict, cn8_written_by_rule, evidence_match, validate_cn8
 from agent.schemas import Cn8Choice, Cn8Input, Cn8Line, Cn8Out, Cn8Result, Precedent, WrittenBy
+from rag.retriever import stable_order
 from tools import register
 from tools.common import get_context, run_per_line
 
@@ -44,9 +45,9 @@ def select_rulings(text: str, hs6: str, options: list[tuple[str, str]], kb: Any,
         return []
     vectors = getattr(kb, "bti_vectors", None)
     if vectors is not None:
-        vec = vectors.embed_queries([text])[0]   # one embedding request per line
+        vec = vectors.embed_query_cached(text)   # feature 006: one embedding request per line text, then from the cache
         hits = vectors.search_by_vector(vec, VECTOR_K, None, where={"code": hs6})
-        rank = {doc_id.removeprefix("bti:"): i for i, (doc_id, _) in enumerate(hits)}
+        rank = {doc_id.removeprefix("bti:"): i for i, doc_id in enumerate(stable_order(hits))}
         ordered = sorted((p for ps in pool.values() for p in ps), key=lambda p: rank.get(p.reference, len(rank)))
     else:
         ordered = [ps[depth] for depth in range(RULINGS_PER_CN8) for cn8, ps in sorted(pool.items()) if depth < len(ps)]
