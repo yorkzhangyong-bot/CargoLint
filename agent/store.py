@@ -34,6 +34,7 @@ from agent.schemas import (
     ChosenHow,
     Classification,
     Cn8Choice,
+    Cn8Gate,
     CreatedBy,
     Decision,
     DecisionRecord,
@@ -70,6 +71,47 @@ class NoShipmentError(Exception):
 
 
 ACCEPTED_ROUTES = ("auto_accept", "accepted")
+
+
+def _rulings_note(choice: Cn8Choice, skip: str | None = None) -> str:
+    """The CN-8 lines the nearest rulings sit at, each with the issuing country of every ruling: "87149110 (DE, FR)"."""
+    return ", ".join(f"{v.cn8} ({', '.join(c or '?' for c in v.countries)})" for v in choice.competing if v.cn8 != skip)
+
+
+def _votes_at(choice: Cn8Choice, cn8: str | None) -> tuple[int, int]:
+    """The rulings at the CN-8 and the rulings that voted."""
+    return (sum(len(v.countries) for v in choice.competing if v.cn8 == cn8), sum(len(v.countries) for v in choice.competing))
+
+
+def _written_note(choice: Cn8Choice, threshold: int) -> str:
+    """Why the CN-8 step wrote a CN-8 by rule (constitution 1.4.0)."""
+    if len(choice.options) == 1:
+        return "single CN-8 line"
+    if choice.gate_reason == Cn8Gate.vote_agrees:
+        n, m = _votes_at(choice, choice.cn8)
+        countries = next(", ".join(c or "?" for c in v.countries) for v in choice.competing if v.cn8 == choice.cn8)
+        return f"written by rule: {n} of {m} nearest rulings at {choice.cn8} ({countries})"
+    return f"written by rule (no ruling vote; model estimate {choice.confidence} ≥ threshold {threshold})"
+
+
+def _pending_note(choice: Cn8Choice, threshold: int) -> str:
+    """Why the CN-8 step left a CN-8 for the clerk to confirm."""
+    p = choice.precedent
+    if cn8_precedent_conflict(choice.cn8, p.code if p else None):
+        return f"to confirm: the cited ruling {p.reference} classifies under {p.code[:8]}, not {choice.cn8}"
+    others = _rulings_note(choice, skip=choice.majority_cn8)
+    if choice.gate_reason == Cn8Gate.vote_disagrees:
+        at = next(v for v in choice.competing if v.cn8 == choice.majority_cn8)
+        return (f"to confirm: the nearest rulings sit at {at.cn8} ({', '.join(c or '?' for c in at.countries)}), "
+                f"not {choice.cn8}" + (f"; also {others}" if others else ""))
+    if choice.gate_reason == Cn8Gate.vote_tie:
+        return f"to confirm: the nearest rulings are split: {_rulings_note(choice)}"
+    if choice.gate_reason == Cn8Gate.vote_share_low:
+        n, m = _votes_at(choice, choice.cn8)
+        return f"to confirm: only {n} of {m} nearest rulings at {choice.cn8}" + (f"; also {others}" if others else "")
+    if choice.confidence < threshold:
+        return f"to confirm: no ruling vote; model estimate {choice.confidence} < threshold {threshold}"
+    return "to confirm"
 
 
 class LineStore:
@@ -402,18 +444,11 @@ class LineStore:
         if choice.question:
             self._record_code(line, ChangeKind.cn8_question, None, Actor.routing_rule, choice.question)
         elif choice.cn8 and choice.written_by == WrittenBy.rule:
-            note = ("single CN-8 line" if len(choice.options) == 1
-                    else f"written by rule (confidence {choice.confidence} ≥ threshold {self.shipment.threshold})")
-            self._record_code(line, ChangeKind.cn8_written, choice.cn8, Actor.routing_rule, note)
+            self._record_code(line, ChangeKind.cn8_written, choice.cn8, Actor.routing_rule,
+                              _written_note(choice, self.shipment.threshold))
         elif choice.cn8 and choice.written_by is None and not choice.error:   # FR-020: a suggestion is an outcome too
-            p = choice.precedent
-            if cn8_precedent_conflict(choice.cn8, p.code if p else None):
-                note = f"to confirm: the cited ruling {p.reference} classifies under {p.code[:8]}, not {choice.cn8}"
-            elif choice.confidence < self.shipment.threshold:
-                note = f"to confirm: confidence {choice.confidence} < threshold {self.shipment.threshold}"
-            else:
-                note = "to confirm"
-            self._record_code(line, ChangeKind.cn8_pending, choice.cn8, Actor.routing_rule, note)
+            self._record_code(line, ChangeKind.cn8_pending, choice.cn8, Actor.routing_rule,
+                              _pending_note(choice, self.shipment.threshold))
         self._recompute(line, Actor.routing_rule)
 
     def confirm_cn8(self, line_no: int, cn8: str) -> None:
@@ -432,8 +467,9 @@ class LineStore:
         previous_route = self.effective_route(line)
         base = v.cn8 if same else Cn8Choice(hs6=hs6, options=options)
         update = {"cn8": cn8, "written_by": WrittenBy.clerk, "question": None, "error": None}
-        if previous_cn8 != cn8:   # the model's estimate, evidence and ruling were about another code, or none
-            update |= {"confidence": 0, "evidence": "", "evidence_rule": None, "rationale": "", "precedent": None}
+        if previous_cn8 != cn8:   # the model's estimate, evidence, ruling and gate were about another code, or none
+            update |= {"confidence": 0, "evidence": "", "evidence_rule": None, "rationale": "", "precedent": None,
+                       "gate_reason": None}
         v.cn8 = base.model_copy(update=update)
         if previous_cn8 != cn8:   # another CN-8: its TARIC outcome no longer applies; the TARIC step runs again
             v.taric = None
@@ -476,17 +512,19 @@ class LineStore:
             return
         if c.hs6 != self.decided_code(line)[0]:
             return
+        if c.gate_reason not in (None, Cn8Gate.no_rulings):   # constitution 1.4.0: the vote, a citation or one line decided
+            return
         written = cn8_written_by_rule(c.confidence, threshold, len(c.options) == 1,
                                       precedent_conflict=cn8_precedent_conflict(c.cn8, c.precedent.code if c.precedent else None))
         if written and c.written_by is None:
             line.current.cn8 = c.model_copy(update={"written_by": WrittenBy.rule})
             self._record_code(line, ChangeKind.cn8_written, c.cn8, actor,
-                              f"written by rule (confidence {c.confidence} ≥ threshold {threshold})")
+                              f"written by rule (no ruling vote; model estimate {c.confidence} ≥ threshold {threshold})")
         elif not written and c.written_by == WrittenBy.rule:
             line.current.cn8 = c.model_copy(update={"written_by": None})
             self._record_code(line, ChangeKind.threshold_recomputed, None, actor,
-                              f"CN-8 {c.cn8} back to a suggestion (confidence {c.confidence} < threshold {threshold})",
-                              previous=c.cn8)
+                              f"CN-8 {c.cn8} back to a suggestion (no ruling vote; model estimate {c.confidence} < "
+                              f"threshold {threshold})", previous=c.cn8)
 
     def _record_code(self, line: Line, change: ChangeKind, new: str | None, actor: Actor, note: str,
                      previous: str | None = None) -> None:

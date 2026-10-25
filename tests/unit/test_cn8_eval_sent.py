@@ -135,17 +135,9 @@ def test_each_row_keeps_the_nearest_hits_and_the_vote_of_the_rulings_sent():
         {"reference": "A", "cn8": "87149110", "distance": 0.2, "country": "DE", "eligible": True},
         {"reference": "B", "cn8": "87149190", "distance": 0.3, "country": "FR", "eligible": True}]
     assert [(s["reference"], s["country"]) for s in q["sent"]] == [("X", "FR"), ("A", "DE"), ("B", "FR")]   # nearest first
-    # the vote of the rulings sent: DE weighs 3, FR 1 each; the model (always 87149110) agrees with the majority
-    assert (q["majority_cn8"], q["majority_share"], q["model_agrees_with_majority"]) == ("87149110", 0.6, True)
-
-
-@pytest.mark.parametrize("sent,expected", [
-    ([], (None, None)),
-    ([("87149110", "FR"), ("87149130", "FR")], (None, 0.5)),                   # a tie has no majority
-    ([("87149110", "DE"), ("87149130", "FR"), ("87149130", "FR")], ("87149110", 0.6)),
-    ([("87149130", "XI"), ("87149130", "IE")], ("87149130", 1.0))])
-def test_the_vote_weighs_the_entry_country_three_times(sent, expected):
-    assert ev.ruling_vote([{"cn8": c, "country": k} for c, k in sent]) == expected
+    # the product's vote (constitution 1.4.0): the nearest eligible rulings X, A and B, one each at three CN-8 lines, tie
+    assert (q["majority_cn8"], q["majority_share"], q["model_agrees_with_majority"]) == (None, 0.3333, False)
+    assert (q["gate_reason"], q["route"]) == ("vote_tie", "review")      # a confident model pick is not enough
 
 
 def test_the_share_counts_every_wrong_result_of_every_run():

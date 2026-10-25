@@ -27,9 +27,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from tests.eval.cn8_eval import OUT, VOTE_ENTRY_COUNTRY, VOTE_ENTRY_WEIGHT, majority  # noqa: E402
+from tests.eval.cn8_eval import OUT, majority  # noqa: E402
 
 REPORT = ROOT / "tests" / "eval" / "cn8_vote_analysis.md"
+# The weighted variants of the iteration-10 analysis. The product's vote is unweighted (constitution 1.4.0): the DE
+# weight showed no benefit, and the eval, whose rulings come from many states, cannot validate it.
+VOTE_ENTRY_COUNTRY, VOTE_ENTRY_WEIGHT = "DE", 3
 KS = (3, 5, 10, 20)
 SHARES = (0.5, 0.6, 0.67)
 MAX_WRONG_PER_RUN = 3

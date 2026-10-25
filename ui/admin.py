@@ -47,9 +47,10 @@ def _rules(store: Any) -> None:
         st.session_state["threshold"] = store.shipment.threshold if has else DEFAULT_THRESHOLD
     if "hybrid" not in st.session_state:
         st.session_state["hybrid"] = store.shipment.hybrid_search if has else True
-    st.slider("Auto-accept threshold", THRESHOLD_MIN, THRESHOLD_MAX, key="threshold", format="%d %%",
+    st.slider("HS-6 auto-accept threshold", THRESHOLD_MIN, THRESHOLD_MAX, key="threshold", format="%d %%",
               persist_state="session", on_change=_threshold_changed, args=(store,))
-    st.caption("Re-routes every unconfirmed line, no model call; clerk-confirmed lines are never touched.")
+    st.caption("Re-routes every unconfirmed line, no model call; clerk-confirmed lines are never touched. A CN-8 is "
+               "written when the nearest EBTI rulings agree with it; the threshold only applies when no ruling can vote.")
     st.toggle("Hybrid search (BM25 and vectors)", key="hybrid", persist_state="session", on_change=_hybrid_changed,
               args=(store,))
 

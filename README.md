@@ -83,8 +83,11 @@ Once a line's HS-6 is decided, auto-accepted or accepted by the clerk, two more 
   lines, every quoted word against the description, and the cited ruling against the rulings sent.
   - When the deciding attribute is not in the text, the line routes to **ask the shipper** with a question naming
     it; for the sample's "Plastic toy cars" that is whether a motor is fitted.
-  - The CN-8 is written when its confidence meets the auto-accept threshold and the cited ruling does not sit at
-    another CN-8. Otherwise it waits as "CN-8 to confirm".
+  - The CN-8 is written when its quote passed the evidence check, the cited ruling does not sit at another CN-8,
+    and it is the majority of the 5 nearest eligible EBTI rulings, each counted once, at a share of at least 0.5
+    (constitution 1.4.0, feature 006). Otherwise it waits as "CN-8 to confirm", with the rulings and their issuing
+    countries as the reason. The model's confidence is shown as a "model estimate" and only decides when no ruling
+    can vote.
 - **TARIC-10** (`tools/lookup_taric.py`, tool 7). The CN-8 is looked up in the snapshot for the invoice's origin:
   CN by default, set per invoice in the Origin field of the main page. Exactly one rule applies, in code
   (`agent/taric_rules.py`):

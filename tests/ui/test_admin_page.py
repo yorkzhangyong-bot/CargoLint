@@ -89,7 +89,9 @@ def test_rules_start_at_85_and_on_even_when_admin_opens_first(kb, recorder):
     at = admin_app(empty_store(), kb)
     slider = at.slider(key="threshold")
     assert (slider.value, slider.min, slider.max) == (85, 60, 99) and at.toggle(key="hybrid").value is True
-    assert "Re-routes every unconfirmed line, no model call; clerk-confirmed lines are never touched." in texts(at)
+    assert slider.label == "HS-6 auto-accept threshold"                 # constitution 1.4.0: the HS-6 step only
+    assert ("Re-routes every unconfirmed line, no model call; clerk-confirmed lines are never touched. A CN-8 is written "
+            "when the nearest EBTI rulings agree with it; the threshold only applies when no ruling can vote.") in texts(at)
 
 
 def test_the_threshold_reroutes_unconfirmed_lines_only(kb, recorder):

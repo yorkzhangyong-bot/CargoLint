@@ -20,6 +20,16 @@ codes. Confidence was 85 or more in 359 of 360 outputs, so it tells us nothing (
   - its share of the total weight;
   - the competing codes with their issuing countries.
 
+**Decision (2026-10-25, after the iteration-10 analysis):** the DE weight was dropped and no `ENTRY_COUNTRY` exists;
+the product is not tied to one entry country.
+- The weight showed no benefit in `tests/eval/cn8_vote_analysis.md`. For example, 5-nearest at share ≥ 0.5 let through
+  15 wrong auto-accept rows either way, and lost 27 right ones unweighted against 30 weighted.
+- The eval cannot validate a country weight, because its expected codes come from many issuing states.
+- The gate built (constitution 1.4.0) is the unweighted vote of the 5 nearest eligible rulings among the vector hits,
+  not of the rulings sent. The model's CN-8 must be the majority at a share of at least 0.5 (`CN8_VOTE_K`,
+  `CN8_VOTE_SHARE`).
+- `tests/eval/cn8_vote_analysis.py` and its report stay as the record of that decision.
+
 ## 2. Routing rule (as briefed)
 
 - **Auto-accept** needs all four: the evidence check passed, no cited ruling conflicts, the model's CN-8 equals the

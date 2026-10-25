@@ -197,3 +197,58 @@ class TestCn8ConfidenceSignal:
         assert R.cn8_written_by_rule(98, T, False, precedent_conflict=True) is False
         assert R.cn8_written_by_rule(98, T, False) is True
         assert R.cn8_written_by_rule(10, T, True, precedent_conflict=True) is True   # a single line has nothing to choose
+
+
+class TestCn8RulingVote:
+    """Feature 006, constitution 1.4.0: the CN-8 is written by rule when the model's CN-8 is the majority of the nearest
+    eligible EBTI rulings, each counted once, with a share at or above CN8_VOTE_SHARE; with no eligible ruling the
+    model estimate against the threshold decides, as before."""
+
+    def test_the_majority_its_share_and_the_countries_of_every_ruling(self):
+        vote = R.cn8_ruling_vote([("94032080", "XI"), ("94032020", "DE"), ("94032080", "IE"), ("94032080", "FR"),
+                                  ("94032020", "FR")], "94032080")
+        assert (vote.majority_cn8, vote.majority_share, vote.model_is_majority, vote.agrees) == ("94032080", 0.6, True, True)
+        assert vote.competing == [("94032080", ["XI", "IE", "FR"]), ("94032020", ["DE", "FR"])]   # most votes first
+
+    def test_only_the_k_nearest_vote(self):
+        nearest = [("A0000000", "DE")] * 2 + [("B0000000", "FR")] * 3 + [("A0000000", "DE")] * 5
+        assert R.cn8_ruling_vote(nearest, "B0000000").majority_cn8 == "B0000000"     # the first five: 3 B, 2 A
+        assert R.cn8_ruling_vote(nearest, "B0000000", k=10).majority_cn8 == "A0000000"
+
+    def test_at_exactly_the_share_the_vote_agrees(self):
+        vote = R.cn8_ruling_vote([("A0000000", "DE"), ("A0000000", "FR"), ("B0000000", "IE"), ("C0000000", "XI")], "A0000000")
+        assert (vote.majority_share, vote.agrees) == (0.5, True)
+
+    def test_below_the_share_the_majority_is_not_enough(self):
+        vote = R.cn8_ruling_vote([("A0000000", "DE"), ("A0000000", "FR"), ("B0000000", "IE"), ("C0000000", "XI"),
+                                  ("D0000000", "PL")], "A0000000")
+        assert (vote.majority_cn8, vote.majority_share, vote.model_is_majority, vote.agrees) == ("A0000000", 0.4, True, False)
+
+    def test_a_tie_has_no_majority(self):
+        vote = R.cn8_ruling_vote([("A0000000", "DE"), ("B0000000", "FR")], "A0000000")
+        assert (vote.majority_cn8, vote.model_is_majority, vote.agrees) == (None, False, False)
+
+    def test_a_model_cn8_outside_the_majority_disagrees(self):
+        vote = R.cn8_ruling_vote([("A0000000", "DE"), ("A0000000", "FR"), ("B0000000", "IE")], "B0000000")
+        assert (vote.majority_cn8, vote.model_is_majority, vote.agrees) == ("A0000000", False, False)
+
+    def test_no_eligible_ruling_is_no_vote(self):
+        assert R.cn8_ruling_vote([], "A0000000") is None
+
+    @pytest.mark.parametrize("vote_input,model,conf,expected", [
+        ([("A0000000", "DE"), ("A0000000", "FR")], "A0000000", 40, (True, "vote_agrees")),          # confidence is no input
+        ([("B0000000", "DE"), ("B0000000", "FR")], "A0000000", 99, (False, "vote_disagrees")),
+        ([("A0000000", "DE"), ("B0000000", "FR")], "A0000000", 99, (False, "vote_tie")),
+        ([("A0000000", "DE"), ("A0000000", "FR"), ("B0000000", "IE"), ("C0000000", "XI"), ("D0000000", "PL")],
+         "A0000000", 99, (False, "vote_share_low")),
+        ([], "A0000000", 85, (True, "no_rulings")),                                                  # the fallback at the threshold
+        ([], "A0000000", 84, (False, "no_rulings"))])
+    def test_the_gate(self, vote_input, model, conf, expected):
+        written, gate = R.cn8_gate(conf, T, False, vote=R.cn8_ruling_vote(vote_input, model))
+        assert (written, gate.value) == expected
+        assert R.cn8_written_by_rule(conf, T, False, vote=R.cn8_ruling_vote(vote_input, model)) is expected[0]
+
+    def test_a_single_line_and_a_conflicting_citation_come_before_the_vote(self):
+        agree = R.cn8_ruling_vote([("A0000000", "DE")] * 5, "A0000000")
+        assert R.cn8_gate(10, T, True, precedent_conflict=True, vote=agree)[1].value == "single_line"
+        assert R.cn8_gate(99, T, False, precedent_conflict=True, vote=agree) == (False, R.Cn8Gate.precedent_conflict)

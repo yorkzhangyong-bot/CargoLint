@@ -242,13 +242,32 @@ class Decision(BaseModel):
         return self
 
 
+class Cn8Gate(str, Enum):
+    """Feature 006, constitution 1.4.0: the rule that decided whether a CN-8 was written."""
+
+    single_line = "single_line"                 # the only CN-8 line under the HS-6
+    vote_agrees = "vote_agrees"                 # the nearest rulings' majority, at or above the share
+    vote_disagrees = "vote_disagrees"           # the majority is another CN-8
+    vote_tie = "vote_tie"                       # no majority
+    vote_share_low = "vote_share_low"           # the model's CN-8 leads, below the share
+    precedent_conflict = "precedent_conflict"   # the cited ruling sits at another CN-8
+    no_rulings = "no_rulings"                   # no eligible ruling: the model estimate against the threshold
+
+
+class VoteCode(BaseModel):
+    """Feature 006: one CN-8 among the nearest eligible rulings and the issuing country of each ruling at it."""
+
+    cn8: str = Field(pattern=CN8_PATTERN)
+    countries: list[str] = Field(default_factory=list)          # nearest first, one per ruling
+
+
 class Cn8Choice(BaseModel):
     """Feature 004 data-model §3: the CN-8 step's result for one line version."""
 
     hs6: str = Field(pattern=CODE_PATTERN)                      # the decided HS-6 it was chosen under
     options: list[tuple[Cn8Code, str]] = Field(default_factory=list)   # (cn8, label path) in code order
     cn8: str | None = Field(default=None, pattern=CN8_PATTERN)  # null when the deciding attribute is missing or the step failed
-    confidence: int = Field(default=0, ge=0, le=100)
+    confidence: int = Field(default=0, ge=0, le=100)            # the model estimate; no routing input (constitution 1.4.0)
     evidence: str = ""
     evidence_rule: str | None = None                            # feature 006: "exact" or "fuzzy", the check that accepted it
     rationale: str = ""
@@ -257,6 +276,10 @@ class Cn8Choice(BaseModel):
     precedent: Precedent | None = None
     written_by: WrittenBy | None = None                         # null while it is a suggestion
     error: str | None = None                                    # the step failed; the line routes to review
+    majority_cn8: str | None = Field(default=None, pattern=CN8_PATTERN)   # feature 006: the nearest rulings' majority
+    majority_share: float | None = Field(default=None, ge=0, le=1)       # its share of the rulings that voted
+    competing: list[VoteCode] = Field(default_factory=list)     # every CN-8 among them, most rulings first
+    gate_reason: Cn8Gate | None = None                          # the rule that decided whether it was written
 
 
 class TaricSuggestion(BaseModel):

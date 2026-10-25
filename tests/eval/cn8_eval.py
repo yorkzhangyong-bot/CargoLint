@@ -23,9 +23,10 @@ tests/eval/cn8_evidence_diagnosis.py reads them.
 Feature 006 (specs/006-stability-baseline/plan-ruling-vote.md): each row also keeps nearest_hits, the uncapped vector
 hits select_rulings ranks (top 40 under the HS-6), each with reference, CN-8, cosine distance, issuing country and
 whether it was eligible to be sent (valid on the set's date, at a CN-8 line of the HS-6, not the line's own ruling);
-the issuing country of each ruling sent; and the vote of the rulings sent, for later analysis only: majority_cn8 (none
-on a tie), majority_share (its share of the weight; a ruling from the entry country DE weighs 3, any other 1) and
-model_agrees_with_majority (the model's raw CN-8). Query embeddings are cached for the life of the knowledge base, so
+the issuing country of each ruling sent; and the product's CN-8 gate (constitution 1.4.0): majority_cn8 (none on a
+tie) and majority_share of its vote of the 5 nearest eligible rulings, each counted once, model_agrees_with_majority
+(the model's raw CN-8) and gate_reason, the rule that decided whether the CN-8 was written. The route is the gate's
+real route. Query embeddings are cached for the life of the knowledge base, so
 the runs of one command send the same rulings; only the model calls are drawn anew. The results file keeps each row's
 nearest_hits on one line to stay small.
 
@@ -60,7 +61,7 @@ from agent.llm import OpenRouterRawClient, get_chat_model, get_client, set_clien
 from agent.schemas import Cn8Line, Usage  # noqa: E402
 from rag.loader import open_knowledge_base  # noqa: E402
 import tools.classify_cn8 as classify_cn8  # noqa: E402
-from tools.classify_cn8 import choose_cn8  # noqa: E402
+from tools.classify_cn8 import Rulings, choose_cn8  # noqa: E402
 from tools.common import run_per_line  # noqa: E402
 
 SET = ROOT / "tests" / "eval" / "cn8_eval_set.json"
@@ -70,7 +71,6 @@ REPORT = ROOT / "tests" / "eval" / "cn8_eval.md"
 THRESHOLD = 85
 TARGET = 60
 TAG = "baseline-stability"
-VOTE_ENTRY_COUNTRY, VOTE_ENTRY_WEIGHT = "DE", 3   # plan-ruling-vote.md §1; recorded for analysis, routing ignores it
 _rec = threading.local()   # per worker thread, for the line in hand: rulings sent, vector hits, raw output, evidence check
 _NOT_RUN = object()   # the model declined, so the code checks no quote
 
@@ -131,19 +131,6 @@ def _raw(out: Any) -> dict | None:
             "evidence": out.evidence, "precedent": out.precedent, "rationale": out.rationale}
 
 
-def ruling_vote(sent: list[dict]) -> tuple[str | None, float | None]:
-    """The weighted vote of the rulings sent (plan-ruling-vote.md §1): the majority CN-8, none on a tie, and its share
-    of the weight; a ruling from the entry country weighs VOTE_ENTRY_WEIGHT, any other 1."""
-    weight: Counter = Counter()
-    for s in sent:
-        weight[s["cn8"]] += VOTE_ENTRY_WEIGHT if s["country"] == VOTE_ENTRY_COUNTRY else 1
-    if not weight:
-        return None, None
-    top = max(weight.values())
-    leaders = [code for code, w in weight.items() if w == top]
-    return (leaders[0] if len(leaders) == 1 else None), round(top / sum(weight.values()), 4)
-
-
 def _nearest_hits(hits: list, r: dict, kb: Any, as_of: date) -> list[dict]:
     """The vector hits as ranked, each with what the store says about its ruling."""
     allowed = {code for code, _ in kb.index.cn8_lines(r["hs6"])}
@@ -164,7 +151,7 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
 
     def one(item):
         i, r = item
-        _rec.rulings, _rec.hits, _rec.raw, _rec.check = [], [], None, _NOT_RUN   # one CN-8 line: no rulings, no hits
+        _rec.rulings, _rec.hits, _rec.raw, _rec.check = Rulings([], []), [], None, _NOT_RUN   # one CN-8 line: none
         line = Cn8Line(line_no=i, text_en=r["description"], hs6=r["hs6"])
         choice = choose_cn8(line, r["hs6"], kb, recorder, THRESHOLD, as_of, exclude_refs=frozenset({r["reference"]}))
         return choice, _rec.rulings, _rec.hits, _rec.raw, _rec.check
@@ -190,7 +177,8 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
     elapsed = time.perf_counter() - t0
     rows = []
     for r, res in zip(rulings, results):
-        c, sent, hits, raw, check = res if res is not None else (None, [], [], None, _NOT_RUN)
+        c, found, hits, raw, check = res if res is not None else (None, Rulings([], []), [], None, _NOT_RUN)
+        sent = found.sent
         row = {"reference": r["reference"], "chapter": r["chapter"], "hs6": r["hs6"], "expected": r["cn8"],
                "language": r["language"], "options": len(c.options) if c else None,
                "chosen": c.cn8 if c else None, "confidence": c.confidence if c else None,
@@ -205,7 +193,8 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
                "raw": _raw(raw), "evidence_check": "not run" if check is _NOT_RUN else ("passed" if check else "rejected"),
                "evidence_rule": check if check is not _NOT_RUN else None}
         row["route"] = decision(row)
-        row["majority_cn8"], row["majority_share"] = ruling_vote(row["sent"])
+        row["majority_cn8"], row["majority_share"] = (c.majority_cn8, c.majority_share) if c else (None, None)
+        row["gate_reason"] = c.gate_reason.value if c and c.gate_reason else None
         pick = raw.cn8 if raw is not None else None
         row["model_agrees_with_majority"] = None if pick is None else pick == row["majority_cn8"]
         rows.append(row)

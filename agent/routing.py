@@ -7,13 +7,15 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from collections.abc import Sequence
+from dataclasses import dataclass
 from difflib import SequenceMatcher
 from typing import Any
 
 from pydantic import ValidationError
 
-from agent.config import THRESHOLD_MAX, THRESHOLD_MIN
-from agent.schemas import CN8_PATTERN, CODE_RE, TARIC10_PATTERN, Candidate, FlagKind, LineStatus, RankOut, Route
+from agent.config import CN8_VOTE_K, CN8_VOTE_SHARE, THRESHOLD_MAX, THRESHOLD_MIN
+from agent.schemas import CN8_PATTERN, CODE_RE, TARIC10_PATTERN, Candidate, Cn8Gate, FlagKind, LineStatus, RankOut, Route
 
 _CN8_RE = re.compile(CN8_PATTERN)
 _TARIC10_RE = re.compile(TARIC10_PATTERN)
@@ -93,13 +95,60 @@ def hs6_auto_decided(flag_kind: FlagKind | str | None, top_confidence: int | Non
     return route_line(flag_kind, top_confidence, status, ever_flagged, threshold, ask_floor)[0] == Route.auto_accept
 
 
-def cn8_written_by_rule(confidence: int, threshold: int, single_line: bool, precedent_conflict: bool = False) -> bool:
-    """Feature 004, clarification Q4: a CN-8 is written by rule when it is the only line, or its confidence meets the
-    auto-accept threshold (at the threshold counts, as for HS-6 auto-accept). Iteration 2: a cited ruling at another
-    CN-8 keeps the choice to confirm, whatever the confidence."""
+@dataclass(frozen=True)
+class RulingVote:
+    """Feature 006: the vote of the nearest eligible EBTI rulings on a CN-8, each ruling counted once."""
+
+    majority_cn8: str | None                    # the CN-8 most of them sit at; None on a tie
+    majority_share: float                       # its rulings over the rulings that voted
+    competing: list[tuple[str, list[str]]]      # every CN-8 with a vote and the issuing country of each ruling, most first
+    model_is_majority: bool                     # the model's CN-8 is the majority
+    agrees: bool                                # ... and its share is at least the vote share
+
+
+def cn8_ruling_vote(nearest: Sequence[tuple[str, str]], model_cn8: str | None, k: int = CN8_VOTE_K,
+                    share: float = CN8_VOTE_SHARE) -> RulingVote | None:
+    """Feature 006, constitution 1.4.0: the vote of the k nearest eligible rulings, given nearest first as (CN-8,
+    issuing country). The majority is the CN-8 with the most rulings, none on a tie; the model's CN-8 agrees when it is
+    the majority with a share of at least `share` (exactly the share counts). None when no ruling is eligible."""
+    voters = list(nearest[:k])
+    if not voters:
+        return None
+    countries: dict[str, list[str]] = {}
+    for cn8, country in voters:
+        countries.setdefault(cn8, []).append(country)
+    top = max(len(c) for c in countries.values())
+    leaders = [cn8 for cn8, c in countries.items() if len(c) == top]
+    majority = leaders[0] if len(leaders) == 1 else None
+    competing = sorted(countries.items(), key=lambda item: -len(item[1]))   # ties keep the nearest-first order
+    is_majority = model_cn8 is not None and model_cn8 == majority
+    return RulingVote(majority, round(top / len(voters), 4), competing, is_majority,
+                      is_majority and top / len(voters) >= share)
+
+
+def cn8_gate(confidence: int, threshold: int, single_line: bool, precedent_conflict: bool = False,
+             vote: RulingVote | None = None) -> tuple[bool, Cn8Gate]:
+    """Whether a CN-8 is written by rule, and the rule that decided it (constitution 1.4.0): the only CN-8 line is
+    written; a cited ruling at another CN-8 keeps it to confirm (feature 004, iteration 2); otherwise the ruling vote
+    decides. Only without an eligible ruling does the model estimate meet the threshold, as feature 004 did (at the
+    threshold counts)."""
     if single_line:
-        return True
-    return not precedent_conflict and int(confidence) >= int(threshold)
+        return True, Cn8Gate.single_line
+    if precedent_conflict:
+        return False, Cn8Gate.precedent_conflict
+    if vote is None:
+        return int(confidence) >= int(threshold), Cn8Gate.no_rulings
+    if vote.agrees:
+        return True, Cn8Gate.vote_agrees
+    if vote.majority_cn8 is None:
+        return False, Cn8Gate.vote_tie
+    return False, (Cn8Gate.vote_share_low if vote.model_is_majority else Cn8Gate.vote_disagrees)
+
+
+def cn8_written_by_rule(confidence: int, threshold: int, single_line: bool, precedent_conflict: bool = False,
+                        vote: RulingVote | None = None) -> bool:
+    """Whether cn8_gate writes the CN-8."""
+    return cn8_gate(confidence, threshold, single_line, precedent_conflict, vote)[0]
 
 
 def _normalise(text: str) -> str:

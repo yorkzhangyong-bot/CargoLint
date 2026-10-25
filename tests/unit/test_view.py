@@ -410,7 +410,8 @@ def test_change_forms(states, name, forms):
      "after your pick."),
     ("no_candidate", "a_hs6", "", "No valid candidate was found. Type the HS-6 code, or ask the shipper what the goods are."),
     ("cn8_pending", "a_cn8", "The HS-6 is 9503 00; its subheading has 19 CN-8 lines.",
-     "CN-8 to confirm: its confidence (70 %) is under the 85 % threshold. TARIC runs after your pick."),
+     "CN-8 to confirm: no ruling vote, and its model estimate (70 %) is under the 85 % threshold. TARIC runs after your "
+     "pick."),
     ("cn8_error", "a_cn8", "The HS-6 is 6109 10; its subheading has 1 CN-8 line.",
      "The CN-8 step failed: invalid output after one retry. Pick the CN-8."),
     ("cn8_missing", "a_cn8", "The HS-6 is 9503 00; its subheading has 19 CN-8 lines.",
@@ -422,7 +423,8 @@ def test_change_forms(states, name, forms):
      "available", "Pick another code to override it. The later steps run again after your pick."),
     ("accepted", "a_change", "Decided: HS-6 9617 00, auto-accepted at 92 %, accepted by you · CN-8 9617 00 00, confirmed "
      "by you · TARIC not available", "Pick another code to override it. The later steps run again after your pick."),
-    ("ready_taric", "a_change", "Decided: HS-6 7318 15, auto-accepted at 92 % · CN-8 7318 15 68, written by rule at 95 % · "
+    ("ready_taric", "a_change", "Decided: HS-6 7318 15, auto-accepted at 92 % · CN-8 7318 15 68, written by rule at a model "
+     "estimate of 95 % · "
      "TARIC-10 7318 15 68 00, auto-completed", "Pick another code to override it. The later steps run again after your pick."),
     ("accepted_taric", "a_change", "Decided: HS-6 7318 15, auto-accepted at 92 %, accepted by you · CN-8 7318 15 58, "
      "confirmed by you · TARIC-10 7318 15 58 10, confirmed by you",
@@ -444,6 +446,40 @@ def test_explain_a_a_ruling_against_the_cn8(kb):
                                       confidence=95, precedent=ruling))
     assert view.explain_a(store, store.get_line(n), "a_cn8")[1] == \
         "CN-8 to confirm: the cited ruling DE-TOY-0001 classifies under 9503 00 75, not this CN-8."
+
+
+def _voted_toys(kb, cn8, gate, written_by=None, majority="95030075"):
+    """A toy line whose five nearest rulings voted: three at 9503 00 75 (XI, IE, FR), two at 9503 00 95 (DE, FR)."""
+    from agent.schemas import Cn8Choice, VoteCode
+
+    store, n = one_line(kb, "Plastic toy figures", [("9503.00", 92)])
+    store.set_cn8_result(n, Cn8Choice(hs6="9503.00", options=store.index.cn8_lines("9503.00"), cn8=cn8, confidence=95,
+                                      written_by=written_by, gate_reason=gate, majority_cn8=majority, majority_share=0.6,
+                                      competing=[VoteCode(cn8="95030075", countries=["XI", "IE", "FR"]),
+                                                 VoteCode(cn8="95030095", countries=["DE", "FR"])]))
+    return store, store.get_line(n)
+
+
+@pytest.mark.parametrize("gate, majority, text", [
+    ("vote_disagrees", "95030075", "Rulings disagree: model 9503 00 95, nearest rulings 9503 00 75 (XI, IE, FR), 9503 00 95 "
+     "(DE, FR). TARIC runs after your pick."),
+    ("vote_tie", None, "Rulings split: model 9503 00 95, nearest rulings 9503 00 75 (XI, IE, FR), 9503 00 95 (DE, FR). "
+     "TARIC runs after your pick."),
+    ("vote_share_low", "95030095", "Rulings too spread: model 9503 00 95 has 2 of 5 nearest rulings; 9503 00 75 (XI, IE, "
+     "FR), 9503 00 95 (DE, FR). TARIC runs after your pick.")])
+def test_feature_006_the_reason_names_the_nearest_rulings_and_their_countries(kb, gate, majority, text):
+    from agent.schemas import Cn8Gate
+
+    store, line = _voted_toys(kb, "95030095", Cn8Gate(gate), majority=majority)
+    assert view.explain_a(store, line, "a_cn8")[1] == text
+
+
+def test_feature_006_a_cn8_the_vote_wrote_says_how_many_rulings_agree(kb):
+    from agent.schemas import Cn8Gate, WrittenBy
+
+    store, line = _voted_toys(kb, "95030075", Cn8Gate.vote_agrees, WrittenBy.rule)
+    assert view.explain_a(store, line, "a_change")[0].startswith(
+        "Decided: HS-6 9503 00, auto-accepted at 92 % · CN-8 9503 00 75, written by rule, 3 of 5 nearest rulings agree")
 
 
 @pytest.mark.parametrize("code, how", [("9405.21", "confirmed by you"), ("8543.70", "chosen by you"),
