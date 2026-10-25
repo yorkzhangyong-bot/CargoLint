@@ -192,11 +192,17 @@ Rules:
 - Choose only one of the listed CN-8 codes, written as eight digits. Never invent a code.
 - deciding_attribute: name what separates the listed lines, for example the material, whether a motor is fitted, or
   the use.
-- evidence: copy the exact words of the description that decide between the listed lines (several fragments may be
-  separated by ";"). Never paraphrase. If no words of the description decide it, set attribute_visible to false and
-  cn8 to null: the clerk will ask the shipper.
-- attribute_visible: true only when the description states that attribute or clearly implies it. Never infer it from
-  what such goods usually are.
+- attribute_visible and evidence: settle the deciding attribute at one of three levels. evidence holds only exact words
+  of the description (several fragments may be separated by ";"). Never paraphrase.
+  a) The description states the attribute directly: use it, set attribute_visible to true and copy the words that
+     state it into evidence.
+  b) The attribute follows from stated facts by one plain step: use it, set attribute_visible to true, copy the words
+     that state those facts into evidence, and state the step in one sentence in rationale. Examples: "no TV tuner,
+     USB-C powered from PC" settles "of a kind used with an automatic data-processing machine"; "tensile strength
+     less than 800 MPa" settles the tensile-strength split; "to be worn when doing sports" settles use.
+  c) Only when the attribute is neither stated nor follows from stated facts: set attribute_visible to false and cn8
+     to null, and name the missing fact in deciding_attribute: the clerk will ask the shipper. Never fill the
+     attribute in from what such goods usually are.
 - precedent: the reference of one listed ruling at your chosen CN-8 that supports your choice, or null. Cite only
   listed rulings, and only a ruling at the CN-8 you chose.
 - confidence: 85-98 only when the evidence words state the deciding attribute; 70-84 when the choice is inferred

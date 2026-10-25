@@ -11,19 +11,26 @@ confirm; a question or a failure counts as a miss. Writes tests/eval/cn8_eval.js
 the iteration in tests/eval/cn8_eval_history.json, renders the report tests/eval/cn8_eval.md, and exits non-zero below
 60 of 120.
 
+Every row also keeps the rulings sent to the model for its line: reference, CN-8 and rank (the order they were sent,
+nearest first by embedding when the BTI vectors are loaded), recorded around tools.classify_cn8.select_rulings for the
+run only, and whether one of them is at the expected CN-8. The report gives for each entry the share of wrong results
+(line × run) in which a ruling at the expected CN-8 was among those sent.
+
 --repeat N (N > 1) classifies every line N times, independently, and adds the stability of the CN-8 step. The HS-6 is
 fixed by the set, so top-1 means the CN-8. Measures: the share of lines whose top-1 is the same in all N runs; the share
 whose decision is the same (auto_accept: written by rule; review: to confirm, or failed, as route_line routes a failed
 CN-8 step; ask_shipper: a question); the accuracy of the majority top-1 (a tie goes to the earliest run); and the lines
-whose top-1 differed. The entry is appended to the history with "tag": "baseline-stability" and "repeat": N; its
-usual fields describe run 1. Without --iteration it takes the next number, as the validation run did.
---temperature and --seed override the chat model for this run only; agent/llm.py and agent/config.py stay as they are.
+whose top-1 differed. The entry is appended to the history with "repeat": N and a tag, "baseline-stability" unless
+--tag names another; its usual fields describe run 1. Without --iteration it takes the next number, as the validation
+run did. --temperature and --seed override the chat model for this run only; agent/llm.py and agent/config.py stay as
+they are.
 """
 from __future__ import annotations
 
 import argparse
 import json
 import sys
+import threading
 import time
 from collections import Counter
 from datetime import date
@@ -37,6 +44,7 @@ from agent.config import get_settings  # noqa: E402
 from agent.llm import OpenRouterRawClient, get_chat_model, get_client, set_client_factory  # noqa: E402
 from agent.schemas import Cn8Line, Usage  # noqa: E402
 from rag.loader import open_knowledge_base  # noqa: E402
+import tools.classify_cn8 as classify_cn8  # noqa: E402
 from tools.classify_cn8 import choose_cn8  # noqa: E402
 from tools.common import run_per_line  # noqa: E402
 
@@ -47,6 +55,7 @@ REPORT = ROOT / "tests" / "eval" / "cn8_eval.md"
 THRESHOLD = 85
 TARGET = 60
 TAG = "baseline-stability"
+_sent = threading.local()   # per worker thread: the rulings select_rulings returned for the line in hand
 
 
 class OverriddenClient(OpenRouterRawClient):
@@ -88,26 +97,54 @@ def stability(runs: list[list[dict]]) -> dict:
             "decision_consistency": round(same_decision / n, 4), "majority_top1": majority_hits, "unstable": unstable}
 
 
+def _recording(select: Any) -> Any:
+    """select_rulings that also keeps, for the calling thread, what it returns: the rulings sent to the model."""
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        _sent.rulings = select(*args, **kwargs)
+        return _sent.rulings
+    return wrapper
+
+
 def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: int) -> tuple[list[dict], float]:
-    """One pass of the CN-8 step over the set: one row per ruling, and the elapsed seconds."""
+    """One pass of the CN-8 step over the set: one row per ruling, with the rulings sent to the model, and the elapsed
+    seconds."""
     def one(item):
         i, r = item
+        _sent.rulings = []   # a subheading with one CN-8 line sends none
         line = Cn8Line(line_no=i, text_en=r["description"], hs6=r["hs6"])
-        return choose_cn8(line, r["hs6"], kb, client, THRESHOLD, as_of, exclude_refs=frozenset({r["reference"]}))
+        choice = choose_cn8(line, r["hs6"], kb, client, THRESHOLD, as_of, exclude_refs=frozenset({r["reference"]}))
+        return choice, _sent.rulings
 
+    select = classify_cn8.select_rulings
+    classify_cn8.select_rulings = _recording(select)   # choose_cn8 looks it up on every call; recorded for this run only
     t0 = time.perf_counter()
-    choices = run_per_line(list(enumerate(rulings, start=1)), one, lambda item, exc: None, workers=workers)
+    try:
+        results = run_per_line(list(enumerate(rulings, start=1)), one, lambda item, exc: None, workers=workers)
+    finally:
+        classify_cn8.select_rulings = select
     elapsed = time.perf_counter() - t0
     rows = []
-    for r, c in zip(rulings, choices):
+    for r, res in zip(rulings, results):
+        c, sent = res if res is not None else (None, [])
         rows.append({"reference": r["reference"], "chapter": r["chapter"], "hs6": r["hs6"], "expected": r["cn8"],
                      "language": r["language"], "options": len(c.options) if c else None,
                      "chosen": c.cn8 if c else None, "confidence": c.confidence if c else None,
                      "written": bool(c and c.cn8 and c.written_by), "question": c.question if c else None,
                      "error": (c.error if c else "timed out"), "precedent": c.precedent.reference if c and c.precedent else None,
                      "precedent_code": c.precedent.code if c and c.precedent else None,
-                     "evidence": c.evidence if c else None, "hit": bool(c and c.cn8 == r["cn8"])})
+                     "evidence": c.evidence if c else None, "hit": bool(c and c.cn8 == r["cn8"]),
+                     "sent": [{"reference": p.reference, "cn8": p.code[:8], "rank": k} for k, p in enumerate(sent, start=1)],
+                     "expected_sent": any(p.code[:8] == r["cn8"] for p in sent)})
     return rows, elapsed
+
+
+def expected_sent_share(runs: list[list[dict]]) -> dict:
+    """Over every wrong result (line × run; a question is a miss): how many had a ruling at the expected CN-8 among the
+    rulings sent to the model."""
+    wrong = [r for run in runs for r in run if not r["hit"]]
+    with_expected = sum(1 for r in wrong if r["expected_sent"])
+    return {"wrong": len(wrong), "with_expected": with_expected,
+            "share": round(with_expected / len(wrong), 4) if wrong else None}
 
 
 def _seen(entry: dict) -> str:
@@ -138,20 +175,20 @@ def render_report(history: list[dict], data: dict) -> str:
             "|---|" + "---|" * len(chapters)]
     for h in history:
         out.append(f"| {h['iteration']} | " + " | ".join(h["per_chapter"].get(c, "-") for c in chapters) + " |")
-    stable = [h for h in history if h.get("tag") == TAG]
+    stable = [h for h in history if h.get("repeat", 1) > 1]
     if stable:
         out += ["", "## Stability (repeated runs)", "",
                 "Each line classified N times, independently. Same CN-8: the top-1 is identical in all runs. Same "
                 "decision: written by rule (auto_accept), to confirm or failed (review), or a question (ask_shipper) in "
                 "all runs. Majority: the most frequent top-1 taken as the answer (a tie goes to the earliest run). The "
                 "rows above show run 1 of these entries.", "",
-                "| Iteration | Run on | Temperature | Seed | Runs | Top-1 per run | Majority top-1 | Same CN-8 | "
+                "| Iteration | Run on | Tag | Temperature | Seed | Runs | Top-1 per run | Majority top-1 | Same CN-8 | "
                 "Same decision | Cost |",
-                "|---|---|---|---|---|---|---|---|---|---|"]
+                "|---|---|---|---|---|---|---|---|---|---|---|"]
         for h in stable:
             n = h["n"]
             seed = h["seed"] if h["seed"] is not None else "none"
-            out.append(f"| {h['iteration']} | {h['run_on']} | {h['temperature']} | {seed} | {h['repeat']} | "
+            out.append(f"| {h['iteration']} | {h['run_on']} | {h.get('tag', '-')} | {h['temperature']} | {seed} | {h['repeat']} | "
                        f"{' / '.join(str(t) for t in h['top1_runs'])} of {n} | {h['majority_top1']}/{n} | "
                        f"{h['code_consistency']:.1%} | {h['decision_consistency']:.1%} | "
                        f"${h['cost_usd']:.4f} (€{h['cost_eur']:.4f}) |")
@@ -160,6 +197,15 @@ def render_report(history: list[dict], data: dict) -> str:
             out += ["", f"Iteration {h['iteration']}: {k} line{'' if k == 1 else 's'} whose top-1 differed between runs"
                         + (" (chosen CN-8, confidence, decision per run):" if k else "."), ""]
             out += [f"- {u['reference']} (HS-6 {u['hs6']}, expected {u['expected']}): {_seen(u)}" for u in h["unstable"]]
+    logged = [h for h in history if h.get("expected_sent")]
+    if logged:
+        out += ["", "## Rulings sent to the model", "",
+                "Wrong results (line × run; a question to the shipper is a miss) in which a ruling at the expected CN-8 was "
+                f"among the rulings sent to the model. Logged since iteration {logged[0]['iteration']}.", ""]
+        for h in logged:
+            s = h["expected_sent"]
+            share = f" ({s['share']:.1%})" if s["share"] is not None else ""
+            out.append(f"- Iteration {h['iteration']}: {s['with_expected']} of {s['wrong']} wrong results{share}.")
     out += ["", f"Model: {history[-1]['model'] if history else '-'}. Line-by-line results of the latest run: "
             "`tests/eval/cn8_eval.json`; earlier runs are in the git history of that file.", ""]
     return "\n".join(out)
@@ -172,6 +218,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--repeat", type=int, default=1, help="classify every line N times, independently (default 1)")
     ap.add_argument("--temperature", type=float, help="chat-model temperature for this run only")
     ap.add_argument("--seed", type=int, help="chat-model seed for this run only")
+    ap.add_argument("--tag", help=f"tag of the history entry (a repeated run defaults to {TAG})")
     args = ap.parse_args(argv)
     if args.repeat < 1:
         ap.error("--repeat must be 1 or more")
@@ -232,13 +279,17 @@ def main(argv: list[str] | None = None) -> int:
         "per_chapter": {c: f"{v['hits']}/{v['n']}" for c, v in per_chapter.items()}, "elapsed_s": round(elapsed, 1),
         "cost_usd": round(usage.cost_usd, 4), "cost_eur": round(usage.cost_eur, 4)}
     report: dict = {"summary": summary, "rows": rows}
+    sent = summary["expected_sent"] = entry["expected_sent"] = expected_sent_share(runs)
+    tag = args.tag or (TAG if args.repeat > 1 else None)
+    if tag:
+        entry["tag"] = tag
     if overrides or args.repeat > 1:
         entry.update({"temperature": temperature, "seed": seed})
     if args.repeat > 1:
         st = stability(runs)
         summary.update({"repeat": args.repeat, "top1_runs": [sum(r["hit"] for r in run) for run in runs],
                         "cost_eur_runs": costs, **st})
-        entry.update({"tag": TAG, "repeat": args.repeat, "top1_runs": summary["top1_runs"],
+        entry.update({"repeat": args.repeat, "top1_runs": summary["top1_runs"],
                       "majority_top1": st["majority_top1"], "code_consistency": st["code_consistency"],
                       "decision_consistency": st["decision_consistency"], "unstable": st["unstable"]})
         report["runs"] = runs
@@ -261,6 +312,8 @@ def main(argv: list[str] | None = None) -> int:
               f"same decision {st['same_decision']}/{n} ({st['decision_consistency']:.1%})")
         for u in st["unstable"]:
             print(f"  {u['reference']} (HS-6 {u['hs6']}, expected {u['expected']}): {_seen(u)}")
+    print(f"expected CN-8 among the rulings sent: {sent['with_expected']} of {sent['wrong']} wrong results"
+          + (f" ({sent['share']:.1%})" if sent["share"] is not None else ""))
     print(f"  {elapsed:.0f} s; usage {usage.total_tokens} tokens, {usage.calls} calls, ${usage.cost_usd:.4f} ≈ €{usage.cost_eur:.4f}")
     return 0 if hits >= TARGET else 1
 

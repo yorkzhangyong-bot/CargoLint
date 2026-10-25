@@ -12,6 +12,7 @@
 | 4 | 2026-10-23 | T060 validation run: no change to the CN-8 step since iteration 3 (tuning closed); shows run-to-run variation | 93/120 | 107 | 14 | 1 | 12 | 0 | $0.0380 (€0.0349), 106 s |
 | 5 | 2026-10-25 | stability baseline: 3 independent runs, temperature 0.0, seed none; the row shows run 1 | 92/120 | 107 | 15 | 1 | 12 | 0 | $0.1139 (€0.1048), 304 s |
 | 6 | 2026-10-25 | stability baseline: 3 independent runs, temperature 0.0, seed 42; the row shows run 1 | 91/120 | 104 | 13 | 2 | 14 | 0 | $0.1135 (€0.1045), 254 s |
+| 7 | 2026-10-25 | prompt-evidence-v2: three-level attribute rule in the CN-8 prompt (stated, one plain step from stated facts, else ask the shipper); confidence rules unchanged; 3 runs, the row shows run 1 | 91/120 | 103 | 12 | 4 | 13 | 0 | $0.1198 (€0.1102), 220 s |
 
 ## Top-1 per chapter
 
@@ -23,15 +24,17 @@
 | 4 | 10/10 | 6/10 | 8/10 | 9/10 | 9/10 | 6/10 | 7/10 | 8/10 | 7/10 | 7/10 | 9/10 | 7/10 |
 | 5 | 10/10 | 6/10 | 8/10 | 9/10 | 9/10 | 8/10 | 6/10 | 8/10 | 6/10 | 7/10 | 9/10 | 6/10 |
 | 6 | 9/10 | 6/10 | 8/10 | 9/10 | 9/10 | 8/10 | 6/10 | 8/10 | 7/10 | 7/10 | 8/10 | 6/10 |
+| 7 | 9/10 | 6/10 | 7/10 | 8/10 | 8/10 | 8/10 | 8/10 | 8/10 | 6/10 | 7/10 | 8/10 | 8/10 |
 
 ## Stability (repeated runs)
 
 Each line classified N times, independently. Same CN-8: the top-1 is identical in all runs. Same decision: written by rule (auto_accept), to confirm or failed (review), or a question (ask_shipper) in all runs. Majority: the most frequent top-1 taken as the answer (a tie goes to the earliest run). The rows above show run 1 of these entries.
 
-| Iteration | Run on | Temperature | Seed | Runs | Top-1 per run | Majority top-1 | Same CN-8 | Same decision | Cost |
-|---|---|---|---|---|---|---|---|---|---|
-| 5 | 2026-10-25 | 0.0 | none | 3 | 92 / 92 / 94 of 120 | 93/120 | 91.7% | 90.8% | $0.1139 (€0.1048) |
-| 6 | 2026-10-25 | 0.0 | 42 | 3 | 91 / 92 / 90 of 120 | 90/120 | 95.0% | 93.3% | $0.1135 (€0.1045) |
+| Iteration | Run on | Tag | Temperature | Seed | Runs | Top-1 per run | Majority top-1 | Same CN-8 | Same decision | Cost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 5 | 2026-10-25 | baseline-stability | 0.0 | none | 3 | 92 / 92 / 94 of 120 | 93/120 | 91.7% | 90.8% | $0.1139 (€0.1048) |
+| 6 | 2026-10-25 | baseline-stability | 0.0 | 42 | 3 | 91 / 92 / 90 of 120 | 90/120 | 95.0% | 93.3% | $0.1135 (€0.1045) |
+| 7 | 2026-10-25 | prompt-evidence-v2 | 0.0 | none | 3 | 91 / 94 / 91 of 120 | 92/120 | 90.8% | 91.7% | $0.1198 (€0.1102) |
 
 Iteration 5: 10 lines whose top-1 differed between runs (chosen CN-8, confidence, decision per run):
 
@@ -54,5 +57,25 @@ Iteration 6: 6 lines whose top-1 differed between runs (chosen CN-8, confidence,
 - IEBTIIENEN004-2025-BTI38 (HS-6 9503.00, expected 95030041): 95030049 (85, auto_accept) · no code (0, ask_shipper) · no code (0, ask_shipper)
 - IEBTIIENEN004-2025-BTI393 (HS-6 9503.00, expected 95030049): no code (0, ask_shipper) · 95030049 (85, auto_accept) · no code (0, ask_shipper)
 - IEBTIIENEN004-2026-BTI222 (HS-6 9609.10, expected 96091090): 96091010 (85, auto_accept) · 96091010 (85, auto_accept) · no code (0, ask_shipper)
+
+Iteration 7: 11 lines whose top-1 differed between runs (chosen CN-8, confidence, decision per run):
+
+- IEBTIIENEN004-2024-BTI132 (HS-6 6102.30, expected 61023090): no code (0, ask_shipper) · 61023090 (85, auto_accept) · no code (0, ask_shipper)
+- IEBTIIENEN004-2026-BTI75 (HS-6 6212.10, expected 62121090): 62121090 (85, auto_accept) · 62121090 (85, auto_accept) · no code (0, ask_shipper)
+- DEBTI16524/26-1 (HS-6 6402.99, expected 64029998): no code (0, ask_shipper) · 64029998 (85, auto_accept) · no code (0, ask_shipper)
+- IEBTIIENEN004-2025-BTI77 (HS-6 7318.15, expected 73181552): 73181535 (85, auto_accept) · no code (0, ask_shipper) · no code (0, ask_shipper)
+- IEBTIIENEN004-2025-BTI378 (HS-6 7317.00, expected 73170020): 73170060 (85, auto_accept) · no code (0, ask_shipper) · 73170060 (85, auto_accept)
+- XIBTI505059567 (HS-6 8504.40, expected 85044060): no code (0, ask_shipper) · 85044083 (85, auto_accept) · 85044083 (85, auto_accept)
+- SEBTITV-2024-01674 (HS-6 9401.99, expected 94019980): 94019980 (95, auto_accept) · 94019980 (95, auto_accept) · no code (0, ask_shipper)
+- IEBTIIENEN004-2025-BTI393 (HS-6 9503.00, expected 95030049): no code (0, ask_shipper) · 95030049 (85, auto_accept) · 95030049 (85, auto_accept)
+- IEBTIIENEN004-2026-BTI72 (HS-6 9619.00, expected 96190050): 96190040 (85, review) · 96190050 (85, auto_accept) · 96190040 (85, review)
+- DEBTI47340/24-1 (HS-6 9603.90, expected 96039099): 96039091 (85, review) · 96039091 (85, review) · 96039099 (85, auto_accept)
+- DEBTI59675/24-1 (HS-6 9603.90, expected 96039099): 96039099 (85, auto_accept) · 96039091 (85, auto_accept) · 96039099 (85, auto_accept)
+
+## Rulings sent to the model
+
+Wrong results (line × run; a question to the shipper is a miss) in which a ruling at the expected CN-8 was among the rulings sent to the model. Logged since iteration 7.
+
+- Iteration 7: 84 of 84 wrong results (100.0%).
 
 Model: openai/gpt-4o-mini. Line-by-line results of the latest run: `tests/eval/cn8_eval.json`; earlier runs are in the git history of that file.
