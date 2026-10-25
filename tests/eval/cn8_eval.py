@@ -1,6 +1,8 @@
 """CN-8 evaluation (feature 004, SC-002): run the CN-8 step on the fixed EBTI set and count top-1 hits.
 
     python tests/eval/cn8_eval.py --iteration 2 --change "what changed since the last iteration"
+    python tests/eval/cn8_eval.py --repeat 3                               # stability: 3 independent runs
+    python tests/eval/cn8_eval.py --repeat 3 --temperature 0 --seed 42     # the same with model overrides
 
 Live: needs OPENROUTER_API_KEY and the full knowledge base, and spends credits, so run it only when the author asks.
 Each ruling's goods description is the line text and its HS-6 the decided HS-6; its own reference is never a precedent
@@ -8,6 +10,14 @@ Each ruling's goods description is the line text and its HS-6 the decided HS-6; 
 confirm; a question or a failure counts as a miss. Writes tests/eval/cn8_eval.json (this run, line by line), records
 the iteration in tests/eval/cn8_eval_history.json, renders the report tests/eval/cn8_eval.md, and exits non-zero below
 60 of 120.
+
+--repeat N (N > 1) classifies every line N times, independently, and adds the stability of the CN-8 step. The HS-6 is
+fixed by the set, so top-1 means the CN-8. Measures: the share of lines whose top-1 is the same in all N runs; the share
+whose decision is the same (auto_accept: written by rule; review: to confirm, or failed, as route_line routes a failed
+CN-8 step; ask_shipper: a question); the accuracy of the majority top-1 (a tie goes to the earliest run); and the lines
+whose top-1 differed. The entry is appended to the history with "tag": "baseline-stability" and "repeat": N; its
+usual fields describe run 1. Without --iteration it takes the next number, as the validation run did.
+--temperature and --seed override the chat model for this run only; agent/llm.py and agent/config.py stay as they are.
 """
 from __future__ import annotations
 
@@ -15,14 +25,16 @@ import argparse
 import json
 import sys
 import time
+from collections import Counter
 from datetime import date
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from agent.config import get_settings  # noqa: E402
-from agent.llm import get_client  # noqa: E402
+from agent.llm import OpenRouterRawClient, get_chat_model, get_client, set_client_factory  # noqa: E402
 from agent.schemas import Cn8Line, Usage  # noqa: E402
 from rag.loader import open_knowledge_base  # noqa: E402
 from tools.classify_cn8 import choose_cn8  # noqa: E402
@@ -34,6 +46,72 @@ HISTORY = ROOT / "tests" / "eval" / "cn8_eval_history.json"
 REPORT = ROOT / "tests" / "eval" / "cn8_eval.md"
 THRESHOLD = 85
 TARGET = 60
+TAG = "baseline-stability"
+
+
+class OverriddenClient(OpenRouterRawClient):
+    """The real OpenRouter backend whose chat model carries this run's temperature or seed."""
+
+    def __init__(self, settings: Any, overrides: dict) -> None:
+        super().__init__(settings)
+        self._model = get_chat_model(settings, **overrides)
+
+
+def decision(row: dict) -> str:
+    """The CN-8 step's decision for one line, in route terms."""
+    if row["question"]:
+        return "ask_shipper"
+    return "auto_accept" if row["written"] else "review"
+
+
+def majority(values: list) -> Any:
+    """The most frequent value; a tie goes to the value seen first."""
+    counts = Counter(values)
+    return next(v for v in values if counts[v] == max(counts.values()))
+
+
+def stability(runs: list[list[dict]]) -> dict:
+    """Consistency across N runs of the same lines; `runs` holds each run's rows in set order."""
+    n = len(runs[0])
+    same_code = same_decision = majority_hits = 0
+    unstable = []
+    for seen in zip(*runs):
+        codes = [r["chosen"] for r in seen]
+        same_code += len(set(codes)) == 1
+        same_decision += len({decision(r) for r in seen}) == 1
+        majority_hits += majority(codes) == seen[0]["expected"]
+        if len(set(codes)) > 1:
+            unstable.append({"reference": seen[0]["reference"], "hs6": seen[0]["hs6"], "expected": seen[0]["expected"],
+                             "seen": [{"cn8": r["chosen"], "confidence": r["confidence"], "decision": decision(r)}
+                                      for r in seen]})
+    return {"same_code": same_code, "code_consistency": round(same_code / n, 4), "same_decision": same_decision,
+            "decision_consistency": round(same_decision / n, 4), "majority_top1": majority_hits, "unstable": unstable}
+
+
+def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: int) -> tuple[list[dict], float]:
+    """One pass of the CN-8 step over the set: one row per ruling, and the elapsed seconds."""
+    def one(item):
+        i, r = item
+        line = Cn8Line(line_no=i, text_en=r["description"], hs6=r["hs6"])
+        return choose_cn8(line, r["hs6"], kb, client, THRESHOLD, as_of, exclude_refs=frozenset({r["reference"]}))
+
+    t0 = time.perf_counter()
+    choices = run_per_line(list(enumerate(rulings, start=1)), one, lambda item, exc: None, workers=workers)
+    elapsed = time.perf_counter() - t0
+    rows = []
+    for r, c in zip(rulings, choices):
+        rows.append({"reference": r["reference"], "chapter": r["chapter"], "hs6": r["hs6"], "expected": r["cn8"],
+                     "language": r["language"], "options": len(c.options) if c else None,
+                     "chosen": c.cn8 if c else None, "confidence": c.confidence if c else None,
+                     "written": bool(c and c.cn8 and c.written_by), "question": c.question if c else None,
+                     "error": (c.error if c else "timed out"), "precedent": c.precedent.reference if c and c.precedent else None,
+                     "precedent_code": c.precedent.code if c and c.precedent else None,
+                     "evidence": c.evidence if c else None, "hit": bool(c and c.cn8 == r["cn8"])})
+    return rows, elapsed
+
+
+def _seen(entry: dict) -> str:
+    return " · ".join(f"{s['cn8'] or 'no code'} ({s['confidence']}, {s['decision']})" for s in entry["seen"])
 
 
 def render_report(history: list[dict], data: dict) -> str:
@@ -60,6 +138,28 @@ def render_report(history: list[dict], data: dict) -> str:
             "|---|" + "---|" * len(chapters)]
     for h in history:
         out.append(f"| {h['iteration']} | " + " | ".join(h["per_chapter"].get(c, "-") for c in chapters) + " |")
+    stable = [h for h in history if h.get("tag") == TAG]
+    if stable:
+        out += ["", "## Stability (repeated runs)", "",
+                "Each line classified N times, independently. Same CN-8: the top-1 is identical in all runs. Same "
+                "decision: written by rule (auto_accept), to confirm or failed (review), or a question (ask_shipper) in "
+                "all runs. Majority: the most frequent top-1 taken as the answer (a tie goes to the earliest run). The "
+                "rows above show run 1 of these entries.", "",
+                "| Iteration | Run on | Temperature | Seed | Runs | Top-1 per run | Majority top-1 | Same CN-8 | "
+                "Same decision | Cost |",
+                "|---|---|---|---|---|---|---|---|---|---|"]
+        for h in stable:
+            n = h["n"]
+            seed = h["seed"] if h["seed"] is not None else "none"
+            out.append(f"| {h['iteration']} | {h['run_on']} | {h['temperature']} | {seed} | {h['repeat']} | "
+                       f"{' / '.join(str(t) for t in h['top1_runs'])} of {n} | {h['majority_top1']}/{n} | "
+                       f"{h['code_consistency']:.1%} | {h['decision_consistency']:.1%} | "
+                       f"${h['cost_usd']:.4f} (€{h['cost_eur']:.4f}) |")
+        for h in stable:
+            k = len(h["unstable"])
+            out += ["", f"Iteration {h['iteration']}: {k} line{'' if k == 1 else 's'} whose top-1 differed between runs"
+                        + (" (chosen CN-8, confidence, decision per run):" if k else "."), ""]
+            out += [f"- {u['reference']} (HS-6 {u['hs6']}, expected {u['expected']}): {_seen(u)}" for u in h["unstable"]]
     out += ["", f"Model: {history[-1]['model'] if history else '-'}. Line-by-line results of the latest run: "
             "`tests/eval/cn8_eval.json`; earlier runs are in the git history of that file.", ""]
     return "\n".join(out)
@@ -67,36 +167,46 @@ def render_report(history: list[dict], data: dict) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--iteration", type=int, required=True, help="iteration number against the fixed set")
-    ap.add_argument("--change", required=True, help="what changed since the previous iteration")
+    ap.add_argument("--iteration", type=int, help="iteration number against the fixed set (a repeated run takes the next)")
+    ap.add_argument("--change", help="what changed since the previous iteration (generated for a repeated run)")
+    ap.add_argument("--repeat", type=int, default=1, help="classify every line N times, independently (default 1)")
+    ap.add_argument("--temperature", type=float, help="chat-model temperature for this run only")
+    ap.add_argument("--seed", type=int, help="chat-model seed for this run only")
     args = ap.parse_args(argv)
+    if args.repeat < 1:
+        ap.error("--repeat must be 1 or more")
+    if args.repeat == 1 and (args.iteration is None or args.change is None):
+        ap.error("a single run needs --iteration and --change")
     data = json.loads(SET.read_text(encoding="utf-8"))
     rulings = data["rulings"]
     as_of = date.fromisoformat(data["built_on"])
     settings = get_settings()
     usage = Usage()
     kb = open_knowledge_base(settings, usage_sink=usage.add)
+    overrides = {k: v for k, v in (("temperature", args.temperature), ("seed", args.seed)) if v is not None}
+    if overrides:
+        set_client_factory(lambda: OverriddenClient(settings, overrides))
     client = get_client(usage_sink=usage.add, settings=settings)
-    print(f"iteration {args.iteration}: {len(rulings)} rulings; BTI vectors "
-          f"{'loaded' if getattr(kb, 'bti_vectors', None) is not None else 'not loaded'}; model {settings.chat_model}")
+    model = client.raw._model
+    temperature, seed = getattr(model, "temperature", None), getattr(model, "seed", None)   # what the calls carry
+    history = json.loads(HISTORY.read_text(encoding="utf-8")) if HISTORY.exists() else []
+    iteration = args.iteration if args.iteration is not None else max((h["iteration"] for h in history), default=0) + 1
+    change = args.change or (f"stability baseline: {args.repeat} independent runs, temperature {temperature}, "
+                             f"seed {seed if seed is not None else 'none'}; the row shows run 1")
+    print(f"iteration {iteration}: {len(rulings)} rulings × {args.repeat} run(s); BTI vectors "
+          f"{'loaded' if getattr(kb, 'bti_vectors', None) is not None else 'not loaded'}; model {settings.chat_model}, "
+          f"temperature {temperature}, seed {seed}")
 
-    def one(item):
-        i, r = item
-        line = Cn8Line(line_no=i, text_en=r["description"], hs6=r["hs6"])
-        return choose_cn8(line, r["hs6"], kb, client, THRESHOLD, as_of, exclude_refs=frozenset({r["reference"]}))
-
-    t0 = time.perf_counter()
-    choices = run_per_line(list(enumerate(rulings, start=1)), one, lambda item, exc: None, workers=settings.workers)
-    elapsed = time.perf_counter() - t0
-    rows = []
-    for r, c in zip(rulings, choices):
-        rows.append({"reference": r["reference"], "chapter": r["chapter"], "hs6": r["hs6"], "expected": r["cn8"],
-                     "language": r["language"], "options": len(c.options) if c else None,
-                     "chosen": c.cn8 if c else None, "confidence": c.confidence if c else None,
-                     "written": bool(c and c.cn8 and c.written_by), "question": c.question if c else None,
-                     "error": (c.error if c else "timed out"), "precedent": c.precedent.reference if c and c.precedent else None,
-                     "precedent_code": c.precedent.code if c and c.precedent else None,
-                     "evidence": c.evidence if c else None, "hit": bool(c and c.cn8 == r["cn8"])})
+    runs, elapsed, costs = [], 0.0, []
+    for k in range(args.repeat):
+        before = usage.cost_eur
+        rows, seconds = run_once(rulings, kb, client, as_of, settings.workers)
+        runs.append(rows)
+        elapsed += seconds
+        costs.append(round(usage.cost_eur - before, 4))
+        if args.repeat > 1:
+            print(f"  run {k + 1}: top-1 {sum(r['hit'] for r in rows)}/{len(rows)}, {seconds:.0f} s, €{costs[-1]:.4f}")
+    rows = runs[0]
     hits = sum(r["hit"] for r in rows)
     written = [r for r in rows if r["written"]]
     per_chapter: dict[str, dict] = {}
@@ -105,7 +215,7 @@ def main(argv: list[str] | None = None) -> int:
         ch["n"] += 1
         ch["hits"] += r["hit"]
     summary = {
-        "iteration": args.iteration, "change": args.change, "top1": hits, "n": len(rows), "target": TARGET,
+        "iteration": iteration, "change": change, "top1": hits, "n": len(rows), "target": TARGET,
         "passed": hits >= TARGET, "questions": sum(1 for r in rows if r["question"]),
         "failures": sum(1 for r in rows if r["error"]), "written": len(written),
         "written_correct": sum(r["hit"] for r in written), "to_confirm": sum(1 for r in rows if r["chosen"] and not r["written"]),
@@ -114,24 +224,43 @@ def main(argv: list[str] | None = None) -> int:
         "usage": {"total_tokens": usage.total_tokens, "calls": usage.calls, "cost_usd": round(usage.cost_usd, 4),
                   "cost_eur": round(usage.cost_eur, 4)},
     }
-    OUT.write_text(json.dumps({"summary": summary, "rows": rows}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8",
-                   newline="\n")
-    history = json.loads(HISTORY.read_text(encoding="utf-8")) if HISTORY.exists() else []
-    history = [h for h in history if h["iteration"] != args.iteration] + [{
-        "iteration": args.iteration, "run_on": date.today().isoformat(), "change": args.change, "model": settings.chat_model,
+    entry = {
+        "iteration": iteration, "run_on": date.today().isoformat(), "change": change, "model": settings.chat_model,
         "threshold": THRESHOLD, "top1": hits, "n": len(rows), "written": len(written),
         "written_wrong": len(written) - summary["written_correct"], "to_confirm": summary["to_confirm"],
         "questions": summary["questions"], "failures": summary["failures"], "with_precedent": summary["with_precedent"],
         "per_chapter": {c: f"{v['hits']}/{v['n']}" for c, v in per_chapter.items()}, "elapsed_s": round(elapsed, 1),
-        "cost_usd": round(usage.cost_usd, 4), "cost_eur": round(usage.cost_eur, 4)}]
+        "cost_usd": round(usage.cost_usd, 4), "cost_eur": round(usage.cost_eur, 4)}
+    report: dict = {"summary": summary, "rows": rows}
+    if overrides or args.repeat > 1:
+        entry.update({"temperature": temperature, "seed": seed})
+    if args.repeat > 1:
+        st = stability(runs)
+        summary.update({"repeat": args.repeat, "top1_runs": [sum(r["hit"] for r in run) for run in runs],
+                        "cost_eur_runs": costs, **st})
+        entry.update({"tag": TAG, "repeat": args.repeat, "top1_runs": summary["top1_runs"],
+                      "majority_top1": st["majority_top1"], "code_consistency": st["code_consistency"],
+                      "decision_consistency": st["decision_consistency"], "unstable": st["unstable"]})
+        report["runs"] = runs
+        history.append(entry)        # appended: a stability run never replaces an iteration
+    else:
+        history = [h for h in history if h["iteration"] != iteration] + [entry]
+    OUT.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
     history.sort(key=lambda h: h["iteration"])
     HISTORY.write_text(json.dumps(history, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
     REPORT.write_text(render_report(history, data), encoding="utf-8", newline="\n")
-    print(f"CN-8 top-1: {hits}/{len(rows)} (target {TARGET})")
+    print(f"CN-8 top-1: {hits}/{len(rows)} (target {TARGET})" + (" — run 1" if args.repeat > 1 else ""))
     print(f"  written by rule {summary['written']} (wrong {summary['written'] - summary['written_correct']}), "
           f"to confirm {summary['to_confirm']}, asked the shipper {summary['questions']}, failures {summary['failures']}, "
           f"with precedent {summary['with_precedent']}")
     print("  per chapter: " + ", ".join(f"{c} {v['hits']}/{v['n']}" for c, v in per_chapter.items()))
+    if args.repeat > 1:
+        n = len(rows)
+        print(f"stability over {args.repeat} runs: top-1 per run {summary['top1_runs']}; majority top-1 "
+              f"{st['majority_top1']}/{n}; same CN-8 in all runs {st['same_code']}/{n} ({st['code_consistency']:.1%}); "
+              f"same decision {st['same_decision']}/{n} ({st['decision_consistency']:.1%})")
+        for u in st["unstable"]:
+            print(f"  {u['reference']} (HS-6 {u['hs6']}, expected {u['expected']}): {_seen(u)}")
     print(f"  {elapsed:.0f} s; usage {usage.total_tokens} tokens, {usage.calls} calls, ${usage.cost_usd:.4f} ≈ €{usage.cost_eur:.4f}")
     return 0 if hits >= TARGET else 1
 
