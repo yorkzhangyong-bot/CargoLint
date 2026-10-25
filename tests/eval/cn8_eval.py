@@ -26,7 +26,8 @@ whether it was eligible to be sent (valid on the set's date, at a CN-8 line of t
 the issuing country of each ruling sent; and the vote of the rulings sent, for later analysis only: majority_cn8 (none
 on a tie), majority_share (its share of the weight; a ruling from the entry country DE weighs 3, any other 1) and
 model_agrees_with_majority (the model's raw CN-8). Query embeddings are cached for the life of the knowledge base, so
-the runs of one command send the same rulings; only the model calls are drawn anew.
+the runs of one command send the same rulings; only the model calls are drawn anew. The results file keeps each row's
+nearest_hits on one line to stay small.
 
 --repeat N (N > 1) classifies every line N times, independently, and adds the stability of the CN-8 step. The HS-6 is
 fixed by the set, so top-1 means the CN-8. Measures: the share of lines whose top-1 is the same in all N runs; the share
@@ -35,12 +36,13 @@ CN-8 step; ask_shipper: a question); the accuracy of the majority top-1 (a tie g
 whose top-1 differed. The entry is appended to the history with "repeat": N and a tag, "baseline-stability" unless
 --tag names another; its usual fields describe run 1. Without --iteration it takes the next number, as the validation
 run did. --temperature and --seed override the chat model for this run only; agent/llm.py and agent/config.py stay as
-they are.
+they are. --note keeps a note with the history entry; the report shows it in the stability section.
 """
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import threading
 import time
@@ -210,6 +212,27 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
     return rows, elapsed
 
 
+_HITS_TOKEN = re.compile(r'"@@nearest_hits_(\d+)@@"')
+
+
+def dump_results(report: dict) -> str:
+    """The results file: indented JSON, but each row's nearest_hits on one line without spaces, as 40 hits a row would
+    otherwise make it several megabytes."""
+    compact: list[str] = []
+
+    def shrink(row: dict) -> dict:
+        if "nearest_hits" not in row:
+            return row
+        compact.append(json.dumps(row["nearest_hits"], ensure_ascii=False, separators=(",", ":")))
+        return {**row, "nearest_hits": f"@@nearest_hits_{len(compact) - 1}@@"}
+
+    shown = dict(report, rows=[shrink(r) for r in report["rows"]])
+    if "runs" in report:
+        shown["runs"] = [[shrink(r) for r in run] for run in report["runs"]]
+    text = json.dumps(shown, ensure_ascii=False, indent=1)
+    return _HITS_TOKEN.sub(lambda m: compact[int(m.group(1))], text) + "\n"
+
+
 def expected_sent_share(runs: list[list[dict]]) -> dict:
     """Over every wrong result (line × run; a question is a miss): how many had a ruling at the expected CN-8 among the
     rulings sent to the model."""
@@ -264,6 +287,7 @@ def render_report(history: list[dict], data: dict) -> str:
                        f"{' / '.join(str(t) for t in h['top1_runs'])} of {n} | {h['majority_top1']}/{n} | "
                        f"{h['code_consistency']:.1%} | {h['decision_consistency']:.1%} | "
                        f"${h['cost_usd']:.4f} (€{h['cost_eur']:.4f}) |")
+        out += [line for h in stable if h.get("note") for line in ("", f"Note on iteration {h['iteration']}: {h['note']}")]
         for h in stable:
             k = len(h["unstable"])
             out += ["", f"Iteration {h['iteration']}: {k} line{'' if k == 1 else 's'} whose top-1 differed between runs"
@@ -291,6 +315,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--temperature", type=float, help="chat-model temperature for this run only")
     ap.add_argument("--seed", type=int, help="chat-model seed for this run only")
     ap.add_argument("--tag", help=f"tag of the history entry (a repeated run defaults to {TAG})")
+    ap.add_argument("--note", help="a note kept with the history entry and shown with it in the report")
     args = ap.parse_args(argv)
     if args.repeat < 1:
         ap.error("--repeat must be 1 or more")
@@ -355,6 +380,8 @@ def main(argv: list[str] | None = None) -> int:
     tag = args.tag or (TAG if args.repeat > 1 else None)
     if tag:
         entry["tag"] = tag
+    if args.note:
+        entry["note"] = args.note
     if overrides or args.repeat > 1:
         entry.update({"temperature": temperature, "seed": seed})
     if args.repeat > 1:
@@ -368,7 +395,7 @@ def main(argv: list[str] | None = None) -> int:
         history.append(entry)        # appended: a stability run never replaces an iteration
     else:
         history = [h for h in history if h["iteration"] != iteration] + [entry]
-    OUT.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
+    OUT.write_text(dump_results(report), encoding="utf-8", newline="\n")
     history.sort(key=lambda h: h["iteration"])
     HISTORY.write_text(json.dumps(history, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
     REPORT.write_text(render_report(history, data), encoding="utf-8", newline="\n")

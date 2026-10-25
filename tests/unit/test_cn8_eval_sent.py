@@ -2,6 +2,7 @@
 small fake knowledge base (no BTI vectors, so rulings go round-robin in CN-8 order) and a fake model client."""
 from __future__ import annotations
 
+import json
 from datetime import date
 from types import SimpleNamespace
 
@@ -168,3 +169,30 @@ def test_the_report_shows_every_repeated_run_with_its_tag_and_the_share():
     assert "| 5 | 2026-10-25 | baseline-stability | 0.0 | none | 3 |" in report
     assert "| 7 | 2026-10-25 | prompt-evidence-v2 | 0.0 | none | 3 |" in report
     assert "Iteration 7: 63 of 84 wrong results (75.0%)" in report
+
+
+def test_a_note_on_an_entry_shows_in_the_stability_section():
+    base = {"run_on": "2026-10-25", "model": "m", "threshold": 85, "top1": 92, "n": 120, "written": 107, "written_wrong": 15,
+            "to_confirm": 1, "questions": 12, "failures": 0, "with_precedent": 103, "per_chapter": {"39": "10/10"},
+            "elapsed_s": 300.0, "cost_usd": 0.11, "cost_eur": 0.1, "repeat": 3, "temperature": 0.0, "seed": None,
+            "top1_runs": [92, 92, 94], "majority_top1": 93, "code_consistency": 0.9, "decision_consistency": 0.9,
+            "unstable": []}
+    history = [dict(base, iteration=9, change="x", tag="a"),
+               dict(base, iteration=10, change="y", tag="b", note="A first attempt was discarded.")]
+    report = ev.render_report(history, {"rulings": [{}] * 120, "per_chapter": 10, "built_on": "2026-10-23", "seed": 7})
+    section = report[report.index("## Stability"):]
+    assert "Note on iteration 10: A first attempt was discarded." in section
+    assert "Note on iteration 9" not in report
+
+
+def test_the_results_file_keeps_each_rows_nearest_hits_on_one_line():
+    hits = [{"reference": "A", "cn8": "87149110", "distance": 0.1, "country": "DE", "eligible": True},
+            {"reference": "B", "cn8": "87149130", "distance": 0.2, "country": "FR", "eligible": False}]
+    rows = [{"reference": "L1", "hit": True, "nearest_hits": hits}, {"reference": "L2", "hit": False, "nearest_hits": []}]
+    report = {"summary": {"iteration": 10}, "rows": rows, "runs": [rows, rows]}
+    text = ev.dump_results(report)
+    assert json.loads(text) == report and text.endswith("}\n")
+    lines = [line for line in text.splitlines() if '"nearest_hits"' in line]
+    assert len(lines) == 6 and all(line.rstrip().endswith(("],", "]")) for line in lines)   # opened and closed on one line
+    assert '"reference":"A","cn8":"87149110"' in text                                      # no indentation inside
+    assert '\n   "reference": "L1"' in text                                                # the rest stays indented

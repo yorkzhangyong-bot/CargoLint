@@ -26,6 +26,35 @@ def test_a_clearly_nearer_hit_comes_first_whatever_its_reference():
     assert stable_order([("bti:A", 0.70), ("bti:Z", 0.90)]) == ["bti:Z", "bti:A"]
 
 
+class FixedEmbeddings:
+    """Two-dimensional vectors, so the nearest document is known."""
+
+    VECTORS = {"near": [1.0, 0.0], "mid": [0.8, 0.6], "far": [0.0, 1.0]}
+
+    def embed_documents(self, texts):
+        return [self.VECTORS[t] for t in texts]
+
+    def embed_query(self, text):
+        return self.VECTORS[text]
+
+
+@pytest.mark.integration
+def test_both_vector_searches_score_higher_for_nearer_hits_and_keep_them_first(tmp_path):
+    """Regression: langchain_chroma returns cosine distances from similarity_search_by_vector_with_relevance_scores,
+    and stable_order once ranked the farthest of 40 hits first."""
+    from rag.retriever import ChromaVectorSearch
+
+    docs = [("bti:FAR", "far", {"code": "8714.91"}), ("bti:NEAR", "near", {"code": "8714.91"}),
+            ("bti:MID", "mid", {"code": "8714.91"})]
+    chroma = ChromaVectorSearch(tmp_path / "chroma", FixedEmbeddings(), "regression")
+    chroma.add(docs)
+    for vectors in (chroma, InMemoryVectorSearch(docs, FixedEmbeddings())):
+        hits = vectors.search_by_vector([1.0, 0.0], 3, None, where={"code": "8714.91"})
+        assert [doc_id for doc_id, _ in hits] == ["bti:NEAR", "bti:MID", "bti:FAR"], type(vectors).__name__
+        assert hits[0][1] > hits[1][1] > hits[2][1], type(vectors).__name__        # relevance: higher is nearer
+        assert stable_order(hits) == ["bti:NEAR", "bti:MID", "bti:FAR"], type(vectors).__name__
+
+
 class CountingEmbeddings:
     def __init__(self) -> None:
         self.calls: list[list[str]] = []

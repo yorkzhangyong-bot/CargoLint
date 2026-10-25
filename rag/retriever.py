@@ -187,7 +187,9 @@ class ChromaVectorSearch(_QueryCache):
         clauses = ([{"chapter": {"$in": list(chapter_filter)}}] if chapter_filter else []) + [{key: value} for key, value in (where or {}).items()]
         flt = None if not clauses else clauses[0] if len(clauses) == 1 else {"$and": clauses}
         results = self.store.similarity_search_by_vector_with_relevance_scores(embedding=vector, k=k, filter=flt)
-        return [((getattr(doc, "id", None) or doc.metadata.get("id")), float(score)) for doc, score in results]
+        # despite its name, langchain_chroma returns the cosine distance here; give the relevance (1 - distance), so
+        # that, as in search() and InMemoryVectorSearch, a higher score is a nearer hit
+        return [((getattr(doc, "id", None) or doc.metadata.get("id")), 1.0 - float(distance)) for doc, distance in results]
 
     def add(self, docs: list[tuple[str, str, dict]], batch_size: int = 256) -> int:
         n = 0
