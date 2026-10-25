@@ -15,6 +15,7 @@
 | 7 | 2026-10-25 | prompt-evidence-v2: three-level attribute rule in the CN-8 prompt (stated, one plain step from stated facts, else ask the shipper); confidence rules unchanged; 3 runs, the row shows run 1 | 91/120 | 103 | 12 | 4 | 13 | 0 | $0.1198 (€0.1102), 220 s |
 | 8 | 2026-10-25 | evidence diagnosis: the prompt and settings of iteration 7, re-run to log the raw CN-8 output, the evidence check and the route; 3 runs, the row shows run 1 | 92/120 | 106 | 14 | 2 | 12 | 0 | $0.1198 (€0.1102), 259 s |
 | 9 | 2026-10-25 | evidence-source-v1: goods description in its own <goods> block; the prompt allows quotes only from it, with new level-b examples (knife, hose, desk lamp); the evidence check normalises accents and line breaks and accepts a fragment found as a phrase or a run of words at 90 %; 3 runs, the row shows run 1 | 96/120 | 108 | 12 | 5 | 7 | 0 | $0.1235 (€0.1136), 218 s |
+| 10 | 2026-10-25 | nearest-hits logging: deterministic retrieval order and query embeddings cached per line text (bd7f97d, order fixed in a4ec6c7); logs the top-40 vector hits; 3 runs, the row shows run 1 | 95/120 | 108 | 13 | 4 | 8 | 0 | $0.1231 (€0.1132), 173 s |
 
 ## Top-1 per chapter
 
@@ -29,6 +30,7 @@
 | 7 | 9/10 | 6/10 | 7/10 | 8/10 | 8/10 | 8/10 | 8/10 | 8/10 | 6/10 | 7/10 | 8/10 | 8/10 |
 | 8 | 9/10 | 6/10 | 8/10 | 8/10 | 8/10 | 8/10 | 7/10 | 8/10 | 6/10 | 7/10 | 9/10 | 8/10 |
 | 9 | 9/10 | 6/10 | 8/10 | 10/10 | 8/10 | 8/10 | 8/10 | 8/10 | 6/10 | 7/10 | 9/10 | 9/10 |
+| 10 | 9/10 | 6/10 | 8/10 | 10/10 | 8/10 | 7/10 | 8/10 | 8/10 | 6/10 | 7/10 | 9/10 | 9/10 |
 
 ## Stability (repeated runs)
 
@@ -41,6 +43,9 @@ Each line classified N times, independently. Same CN-8: the top-1 is identical i
 | 7 | 2026-10-25 | prompt-evidence-v2 | 0.0 | none | 3 | 91 / 94 / 91 of 120 | 92/120 | 90.8% | 91.7% | $0.1198 (€0.1102) |
 | 8 | 2026-10-25 | evidence-diagnosis | 0.0 | none | 3 | 92 / 89 / 91 of 120 | 91/120 | 91.7% | 90.0% | $0.1198 (€0.1102) |
 | 9 | 2026-10-25 | evidence-source-v1 | 0.0 | none | 3 | 96 / 93 / 93 of 120 | 94/120 | 94.2% | 93.3% | $0.1235 (€0.1136) |
+| 10 | 2026-10-25 | nearest-hits-logging | 0.0 | none | 3 | 95 / 97 / 97 of 120 | 97/120 | 95.8% | 95.8% | $0.1231 (€0.1132) |
+
+Note on iteration 10: The first attempt at iteration 10 was discarded: bd7f97d inverted the retrieval order (Chroma returns a distance, not a relevance score, so the farthest of the 40 hits went first). The eval caught it as a drop from 94 to 89 majority accuracy and from 37 to 60 wrong auto-accepts; fixed in a4ec6c7 with a regression test on a real Chroma collection.
 
 Iteration 5: 10 lines whose top-1 differed between runs (chosen CN-8, confidence, decision per run):
 
@@ -101,6 +106,14 @@ Iteration 9: 7 lines whose top-1 differed between runs (chosen CN-8, confidence,
 - IEBTIIENEN004-2023-BTI579 (HS-6 8528.52, expected 85285210): 85285291 (85, auto_accept) · no code (0, ask_shipper) · 85285291 (85, auto_accept)
 - IEBTIIENEN004-2026-BTI72 (HS-6 9619.00, expected 96190050): 96190050 (85, auto_accept) · 96190040 (85, review) · 96190040 (85, review)
 
+Iteration 10: 5 lines whose top-1 differed between runs (chosen CN-8, confidence, decision per run):
+
+- IEBTIIENEN004-2025-BTI351 (HS-6 3925.90, expected 39259010): 39259010 (85, auto_accept) · no code (0, ask_shipper) · 39259010 (85, auto_accept)
+- FRBTIFR-BTI-2025-08672 (HS-6 6111.20, expected 61112090): no code (0, ask_shipper) · 61112090 (85, auto_accept) · 61112090 (85, auto_accept)
+- IEBTIIENEN004-2024-BTI128 (HS-6 6404.19, expected 64041990): no code (0, ask_shipper) · 64041990 (85, auto_accept) · no code (0, ask_shipper)
+- DEBTI16524/26-1 (HS-6 6402.99, expected 64029998): 64029950 (85, review) · 64029998 (85, auto_accept) · 64029998 (85, auto_accept)
+- IEBTIIENEN004-2023-BTI579 (HS-6 8528.52, expected 85285210): 85285291 (85, auto_accept) · 85285291 (85, auto_accept) · no code (0, ask_shipper)
+
 ## Rulings sent to the model
 
 Wrong results (line × run; a question to the shipper is a miss) in which a ruling at the expected CN-8 was among the rulings sent to the model. Logged since iteration 7.
@@ -108,5 +121,6 @@ Wrong results (line × run; a question to the shipper is a miss) in which a ruli
 - Iteration 7: 84 of 84 wrong results (100.0%).
 - Iteration 8: 88 of 88 wrong results (100.0%).
 - Iteration 9: 78 of 78 wrong results (100.0%).
+- Iteration 10: 71 of 71 wrong results (100.0%).
 
 Model: openai/gpt-4o-mini. Line-by-line results of the latest run: `tests/eval/cn8_eval.json`; earlier runs are in the git history of that file.

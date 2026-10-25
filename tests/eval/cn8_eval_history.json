@@ -1339,5 +1339,167 @@
     ]
    }
   ]
+ },
+ {
+  "iteration": 10,
+  "run_on": "2026-10-25",
+  "change": "nearest-hits logging: deterministic retrieval order and query embeddings cached per line text (bd7f97d, order fixed in a4ec6c7); logs the top-40 vector hits; 3 runs, the row shows run 1",
+  "model": "openai/gpt-4o-mini",
+  "threshold": 85,
+  "top1": 95,
+  "n": 120,
+  "written": 108,
+  "written_wrong": 13,
+  "to_confirm": 4,
+  "questions": 8,
+  "failures": 0,
+  "with_precedent": 107,
+  "per_chapter": {
+   "39": "9/10",
+   "42": "6/10",
+   "61": "8/10",
+   "62": "10/10",
+   "63": "8/10",
+   "64": "7/10",
+   "73": "8/10",
+   "84": "8/10",
+   "85": "6/10",
+   "94": "7/10",
+   "95": "9/10",
+   "96": "9/10"
+  },
+  "elapsed_s": 173.1,
+  "cost_usd": 0.1231,
+  "cost_eur": 0.1132,
+  "expected_sent": {
+   "wrong": 71,
+   "with_expected": 71,
+   "share": 1.0
+  },
+  "tag": "nearest-hits-logging",
+  "note": "The first attempt at iteration 10 was discarded: bd7f97d inverted the retrieval order (Chroma returns a distance, not a relevance score, so the farthest of the 40 hits went first). The eval caught it as a drop from 94 to 89 majority accuracy and from 37 to 60 wrong auto-accepts; fixed in a4ec6c7 with a regression test on a real Chroma collection.",
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 3,
+  "top1_runs": [
+   95,
+   97,
+   97
+  ],
+  "majority_top1": 97,
+  "code_consistency": 0.9583,
+  "decision_consistency": 0.9583,
+  "unstable": [
+   {
+    "reference": "IEBTIIENEN004-2025-BTI351",
+    "hs6": "3925.90",
+    "expected": "39259010",
+    "seen": [
+     {
+      "cn8": "39259010",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "39259010",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "FRBTIFR-BTI-2025-08672",
+    "hs6": "6111.20",
+    "expected": "61112090",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "61112090",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "61112090",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI128",
+    "hs6": "6404.19",
+    "expected": "64041990",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "64041990",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI16524/26-1",
+    "hs6": "6402.99",
+    "expected": "64029998",
+    "seen": [
+     {
+      "cn8": "64029950",
+      "confidence": 85,
+      "decision": "review"
+     },
+     {
+      "cn8": "64029998",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "64029998",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2023-BTI579",
+    "hs6": "8528.52",
+    "expected": "85285210",
+    "seen": [
+     {
+      "cn8": "85285291",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "85285291",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   }
+  ]
  }
 ]
