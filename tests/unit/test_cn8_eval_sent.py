@@ -52,6 +52,32 @@ def test_each_row_keeps_the_rulings_sent_for_its_own_line():
     assert ev.expected_sent_share([rows]) == {"wrong": 2, "with_expected": 1, "share": 0.5}
 
 
+def answer_by_line(schema, system, user, max_retries=0):
+    """The raw CN-8 output for each line of the next test, keyed on words of its description."""
+    if "Aluminium" in user:   # evidence: words of the line
+        return Cn8Out(cn8="87149110", confidence=95, attribute_visible=True, evidence="bicycle frames", rationale="frames")
+    if "Steel" in user:       # evidence: a CN-8 label, not words of the line
+        return Cn8Out(cn8="87149130", confidence=85, attribute_visible=True, evidence="Front forks", precedent="X",
+                      rationale="forks")
+    return Cn8Out(cn8=None, confidence=0, attribute_visible=False, deciding_attribute="the part", rationale="not stated")
+
+
+def test_each_row_keeps_the_raw_output_the_evidence_check_and_the_route():
+    lines = [dict(eval_line(ref, "87149110"), description=text)
+             for ref, text in (("A", "Aluminium bicycle frames"), ("B", "Steel bicycle frames"), ("Q", "Bicycle parts"))]
+    original = classify_cn8.evidence_in_line
+    a, b, q = ev.run_once(lines, KB, SimpleNamespace(call=answer_by_line), AS_OF, workers=2)[0]
+    assert classify_cn8.evidence_in_line is original                     # the recording ends with the run
+    assert a["raw"] == {"cn8": "87149110", "attribute_visible": True, "confidence": 95, "evidence": "bicycle frames",
+                        "precedent": None, "rationale": "frames"}
+    assert (a["evidence_check"], a["route"], a["chosen"]) == ("passed", "auto_accept", "87149110")
+    assert b["raw"]["cn8"] == "87149130" and b["raw"]["precedent"] == "X"   # what the model said before the check
+    assert (b["evidence_check"], b["route"], b["chosen"]) == ("rejected", "ask_shipper", None)
+    assert (q["raw"]["attribute_visible"], q["raw"]["cn8"]) == (False, None)
+    assert (q["evidence_check"], q["route"]) == ("not run", "ask_shipper")   # the code checks no quote the model withheld
+    assert a["sent_cn8"] == ["87149130", "87149190"] and q["sent_cn8"] == ["87149110", "87149130", "87149190"]
+
+
 def test_the_share_counts_every_wrong_result_of_every_run():
     def run(*pairs):
         return [{"hit": hit, "expected_sent": sent} for hit, sent in pairs]

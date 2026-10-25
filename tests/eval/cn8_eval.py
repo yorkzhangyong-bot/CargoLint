@@ -14,7 +14,10 @@ the iteration in tests/eval/cn8_eval_history.json, renders the report tests/eval
 Every row also keeps the rulings sent to the model for its line: reference, CN-8 and rank (the order they were sent,
 nearest first by embedding when the BTI vectors are loaded), recorded around tools.classify_cn8.select_rulings for the
 run only, and whether one of them is at the expected CN-8. The report gives for each entry the share of wrong results
-(line × run) in which a ruling at the expected CN-8 was among those sent.
+(line × run) in which a ruling at the expected CN-8 was among those sent. Each row also keeps the model's raw CN-8 output
+before the code's checks (cn8, attribute_visible, confidence, evidence, precedent, rationale), the outcome of the evidence
+check (passed; rejected; not run, when the model declined) and the final route, recorded around the client and
+tools.classify_cn8.evidence_in_line the same way; tests/eval/cn8_evidence_diagnosis.py reads them.
 
 --repeat N (N > 1) classifies every line N times, independently, and adds the stability of the CN-8 step. The HS-6 is
 fixed by the set, so top-1 means the CN-8. Measures: the share of lines whose top-1 is the same in all N runs; the share
@@ -35,6 +38,7 @@ import time
 from collections import Counter
 from datetime import date
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -55,7 +59,8 @@ REPORT = ROOT / "tests" / "eval" / "cn8_eval.md"
 THRESHOLD = 85
 TARGET = 60
 TAG = "baseline-stability"
-_sent = threading.local()   # per worker thread: the rulings select_rulings returned for the line in hand
+_rec = threading.local()   # per worker thread, for the line in hand: the rulings sent, the raw output, the evidence check
+CHECK = {True: "passed", False: "rejected", None: "not run"}   # not run: the model declined, so the code checks no quote
 
 
 class OverriddenClient(OpenRouterRawClient):
@@ -97,44 +102,59 @@ def stability(runs: list[list[dict]]) -> dict:
             "decision_consistency": round(same_decision / n, 4), "majority_top1": majority_hits, "unstable": unstable}
 
 
-def _recording(select: Any) -> Any:
-    """select_rulings that also keeps, for the calling thread, what it returns: the rulings sent to the model."""
+def _recording(fn: Any, slot: str) -> Any:
+    """fn, also keeping for the calling thread what it returns, as _rec.<slot>."""
     def wrapper(*args: Any, **kwargs: Any) -> Any:
-        _sent.rulings = select(*args, **kwargs)
-        return _sent.rulings
+        result = fn(*args, **kwargs)
+        setattr(_rec, slot, result)
+        return result
     return wrapper
 
 
+def _raw(out: Any) -> dict | None:
+    """The CN-8 output as the model returned it, before the code's checks."""
+    if out is None:
+        return None
+    return {"cn8": out.cn8, "attribute_visible": out.attribute_visible, "confidence": out.confidence,
+            "evidence": out.evidence, "precedent": out.precedent, "rationale": out.rationale}
+
+
 def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: int) -> tuple[list[dict], float]:
-    """One pass of the CN-8 step over the set: one row per ruling, with the rulings sent to the model, and the elapsed
-    seconds."""
+    """One pass of the CN-8 step over the set: one row per ruling, with the rulings sent to the model, its raw output,
+    the evidence check and the route, and the elapsed seconds."""
+    recorder = SimpleNamespace(call=_recording(client.call, "raw")) if client is not None else None
+
     def one(item):
         i, r = item
-        _sent.rulings = []   # a subheading with one CN-8 line sends none
+        _rec.rulings, _rec.raw, _rec.check = [], None, None   # a subheading with one CN-8 line sends none
         line = Cn8Line(line_no=i, text_en=r["description"], hs6=r["hs6"])
-        choice = choose_cn8(line, r["hs6"], kb, client, THRESHOLD, as_of, exclude_refs=frozenset({r["reference"]}))
-        return choice, _sent.rulings
+        choice = choose_cn8(line, r["hs6"], kb, recorder, THRESHOLD, as_of, exclude_refs=frozenset({r["reference"]}))
+        return choice, _rec.rulings, _rec.raw, _rec.check
 
-    select = classify_cn8.select_rulings
-    classify_cn8.select_rulings = _recording(select)   # choose_cn8 looks it up on every call; recorded for this run only
+    saved = classify_cn8.select_rulings, classify_cn8.evidence_in_line
+    classify_cn8.select_rulings = _recording(saved[0], "rulings")   # choose_cn8 looks both up on every call;
+    classify_cn8.evidence_in_line = _recording(saved[1], "check")   # recorded for this run only
     t0 = time.perf_counter()
     try:
         results = run_per_line(list(enumerate(rulings, start=1)), one, lambda item, exc: None, workers=workers)
     finally:
-        classify_cn8.select_rulings = select
+        classify_cn8.select_rulings, classify_cn8.evidence_in_line = saved
     elapsed = time.perf_counter() - t0
     rows = []
     for r, res in zip(rulings, results):
-        c, sent = res if res is not None else (None, [])
-        rows.append({"reference": r["reference"], "chapter": r["chapter"], "hs6": r["hs6"], "expected": r["cn8"],
-                     "language": r["language"], "options": len(c.options) if c else None,
-                     "chosen": c.cn8 if c else None, "confidence": c.confidence if c else None,
-                     "written": bool(c and c.cn8 and c.written_by), "question": c.question if c else None,
-                     "error": (c.error if c else "timed out"), "precedent": c.precedent.reference if c and c.precedent else None,
-                     "precedent_code": c.precedent.code if c and c.precedent else None,
-                     "evidence": c.evidence if c else None, "hit": bool(c and c.cn8 == r["cn8"]),
-                     "sent": [{"reference": p.reference, "cn8": p.code[:8], "rank": k} for k, p in enumerate(sent, start=1)],
-                     "expected_sent": any(p.code[:8] == r["cn8"] for p in sent)})
+        c, sent, raw, check = res if res is not None else (None, [], None, None)
+        row = {"reference": r["reference"], "chapter": r["chapter"], "hs6": r["hs6"], "expected": r["cn8"],
+               "language": r["language"], "options": len(c.options) if c else None,
+               "chosen": c.cn8 if c else None, "confidence": c.confidence if c else None,
+               "written": bool(c and c.cn8 and c.written_by), "question": c.question if c else None,
+               "error": (c.error if c else "timed out"), "precedent": c.precedent.reference if c and c.precedent else None,
+               "precedent_code": c.precedent.code if c and c.precedent else None,
+               "evidence": c.evidence if c else None, "hit": bool(c and c.cn8 == r["cn8"]),
+               "sent": [{"reference": p.reference, "cn8": p.code[:8], "rank": k} for k, p in enumerate(sent, start=1)],
+               "sent_cn8": sorted({p.code[:8] for p in sent}), "expected_sent": any(p.code[:8] == r["cn8"] for p in sent),
+               "raw": _raw(raw), "evidence_check": CHECK[check]}
+        row["route"] = decision(row)
+        rows.append(row)
     return rows, elapsed
 
 
