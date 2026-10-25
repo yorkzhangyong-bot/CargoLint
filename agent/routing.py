@@ -6,6 +6,8 @@ Principle I). Routing is never a tool and never a model decision.
 from __future__ import annotations
 
 import re
+import unicodedata
+from difflib import SequenceMatcher
 from typing import Any
 
 from pydantic import ValidationError
@@ -17,6 +19,7 @@ _CN8_RE = re.compile(CN8_PATTERN)
 _TARIC10_RE = re.compile(TARIC10_PATTERN)
 _PUNCT = re.compile(r"[^\w\s]")
 _CJK = re.compile(r"[\u3400-\u9fff\uf900-\ufaff]")   # CJK ideographs
+EVIDENCE_FUZZY = 0.90   # feature 006: a quoted fragment may match a run of words of the line at this difflib ratio
 
 
 class SchemaError(ValueError):
@@ -99,17 +102,61 @@ def cn8_written_by_rule(confidence: int, threshold: int, single_line: bool, prec
     return not precedent_conflict and int(confidence) >= int(threshold)
 
 
-def _words(text: str) -> list[str]:
-    return _PUNCT.sub(" ", (text or "").lower()).split()
+def _normalise(text: str) -> str:
+    """Lower case, accents and punctuation stripped, whitespace and line breaks collapsed."""
+    plain = "".join(ch for ch in unicodedata.normalize("NFKD", (text or "").lower()) if not unicodedata.combining(ch))
+    return " ".join(_PUNCT.sub(" ", plain).split())
+
+
+def _found(fragment: str, line: str) -> bool:
+    """The fragment is a phrase of the line. Chinese has no spaces, so a Chinese fragment may sit inside a longer word."""
+    if _CJK.search(fragment):
+        return fragment in line
+    return f" {fragment} " in f" {line} "
+
+
+def _near(fragment: str, line: str) -> bool:
+    """A run of whole words of the line matches the fragment at a difflib ratio of EVIDENCE_FUZZY or more. Whole words,
+    so a short word never matches inside a longer one; only runs of about the fragment's length can reach the ratio."""
+    if _CJK.search(fragment):
+        return False
+    words, size = line.split(), len(fragment)
+    for start in range(len(words)):
+        run = ""
+        for word in words[start:]:
+            run = f"{run} {word}" if run else word
+            if len(run) > size * 1.25:
+                break
+            if len(run) >= size * 0.8:
+                m = SequenceMatcher(None, fragment, run, autojunk=False)
+                if m.quick_ratio() >= EVIDENCE_FUZZY and m.ratio() >= EVIDENCE_FUZZY:
+                    return True
+    return False
+
+
+def evidence_match(evidence: str, line_text: str) -> str | None:
+    """Feature 006: the rule that accepts a quote as words of the line, or None. Both sides are normalised (lower case,
+    accents and punctuation stripped, whitespace and line breaks collapsed) and the quote is split at ";". "exact":
+    every fragment is a phrase of the line; "fuzzy": every fragment is that or matches a run of words of the line at a
+    ratio of 90 % or more, and at least one needed the ratio. Only the line is compared, so a quote from a CN-8 label,
+    the HS-6 label or a ruling is rejected unless the line says the same. Empty evidence is no evidence."""
+    line = _normalise(line_text)
+    fragments = [f for f in (_normalise(part) for part in (evidence or "").split(";")) if f]
+    if not fragments:
+        return None
+    rule = "exact"
+    for fragment in fragments:
+        if _found(fragment, line):
+            continue
+        if not _near(fragment, line):
+            return None
+        rule = "fuzzy"
+    return rule
 
 
 def evidence_in_line(evidence: str, line_text: str) -> bool:
-    """Iteration 3: both sides are normalised (lower case, punctuation stripped, whitespace collapsed) and every word
-    of the evidence must be a word of the line, in any order. Chinese has no spaces, so a Chinese word may sit inside a
-    longer one. Empty evidence is no evidence."""
-    quoted, line = _words(evidence), _words(line_text)
-    words, text = set(line), " ".join(line)
-    return bool(quoted) and all(w in words or (_CJK.search(w) is not None and w in text) for w in quoted)
+    """Whether evidence_match accepts the quote."""
+    return evidence_match(evidence, line_text) is not None
 
 
 def cn8_precedent_conflict(cn8: str | None, precedent_code: str | None) -> bool:

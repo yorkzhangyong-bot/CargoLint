@@ -1134,5 +1134,210 @@
     ]
    }
   ]
+ },
+ {
+  "iteration": 9,
+  "run_on": "2026-10-25",
+  "change": "evidence-source-v1: goods description in its own <goods> block; the prompt allows quotes only from it, with new level-b examples (knife, hose, desk lamp); the evidence check normalises accents and line breaks and accepts a fragment found as a phrase or a run of words at 90 %; 3 runs, the row shows run 1",
+  "model": "openai/gpt-4o-mini",
+  "threshold": 85,
+  "top1": 96,
+  "n": 120,
+  "written": 108,
+  "written_wrong": 12,
+  "to_confirm": 5,
+  "questions": 7,
+  "failures": 0,
+  "with_precedent": 109,
+  "per_chapter": {
+   "39": "9/10",
+   "42": "6/10",
+   "61": "8/10",
+   "62": "10/10",
+   "63": "8/10",
+   "64": "8/10",
+   "73": "8/10",
+   "84": "8/10",
+   "85": "6/10",
+   "94": "7/10",
+   "95": "9/10",
+   "96": "9/10"
+  },
+  "elapsed_s": 217.7,
+  "cost_usd": 0.1235,
+  "cost_eur": 0.1136,
+  "expected_sent": {
+   "wrong": 78,
+   "with_expected": 78,
+   "share": 1.0
+  },
+  "tag": "evidence-source-v1",
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 3,
+  "top1_runs": [
+   96,
+   93,
+   93
+  ],
+  "majority_top1": 94,
+  "code_consistency": 0.9417,
+  "decision_consistency": 0.9333,
+  "unstable": [
+   {
+    "reference": "IEBTIIENEN004-2025-BTI351",
+    "hs6": "3925.90",
+    "expected": "39259010",
+    "seen": [
+     {
+      "cn8": "39259010",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI74",
+    "hs6": "6212.10",
+    "expected": "62121090",
+    "seen": [
+     {
+      "cn8": "62121090",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "62121090",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI354",
+    "hs6": "6404.19",
+    "expected": "64041910",
+    "seen": [
+     {
+      "cn8": "64041910",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "64041910",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI128",
+    "hs6": "6404.19",
+    "expected": "64041990",
+    "seen": [
+     {
+      "cn8": "64041990",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "64041990",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505060394",
+    "hs6": "7326.90",
+    "expected": "73269098",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "73269098",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2023-BTI579",
+    "hs6": "8528.52",
+    "expected": "85285210",
+    "seen": [
+     {
+      "cn8": "85285291",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "85285291",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI72",
+    "hs6": "9619.00",
+    "expected": "96190050",
+    "seen": [
+     {
+      "cn8": "96190050",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "96190040",
+      "confidence": 85,
+      "decision": "review"
+     },
+     {
+      "cn8": "96190040",
+      "confidence": 85,
+      "decision": "review"
+     }
+    ]
+   }
+  ]
  }
 ]

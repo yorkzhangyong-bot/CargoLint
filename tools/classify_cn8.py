@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 
 from agent.llm import StructuredCaller
 from agent.prompts import CN8_SYSTEM, cn8_user
-from agent.routing import cn8_precedent_conflict, cn8_written_by_rule, evidence_in_line, validate_cn8
+from agent.routing import cn8_precedent_conflict, cn8_written_by_rule, evidence_match, validate_cn8
 from agent.schemas import Cn8Choice, Cn8Input, Cn8Line, Cn8Out, Cn8Result, Precedent, WrittenBy
 from tools import register
 from tools.common import get_context, run_per_line
@@ -86,7 +86,8 @@ def choose_cn8(line: Any, hs6: str, kb: Any, client: StructuredCaller | None, th
     attribute = out.deciding_attribute.strip()
     ex = getattr(line, "extracted", None)
     words = text if ex is None else f"{text} / {ex.material} {ex.part_name} {ex.use}"   # what the shipper confirmed counts too
-    if not out.attribute_visible or out.cn8 is None or not evidence_in_line(out.evidence, words):
+    rule = evidence_match(out.evidence, words) if out.attribute_visible and out.cn8 is not None else None
+    if rule is None:
         # FR-003: decide nothing and ask the shipper; without words of the line as evidence the attribute is not visible
         attribute = attribute or "the attribute that separates the CN-8 lines"
         return Cn8Choice(hs6=hs6, options=options, deciding_attribute=attribute, question=f"Ask the shipper for: {attribute}",
@@ -98,7 +99,7 @@ def choose_cn8(line: Any, hs6: str, kb: Any, client: StructuredCaller | None, th
     conflict = cn8_precedent_conflict(out.cn8, precedent.code if precedent else None)   # no ruling is no conflict
     written = cn8_written_by_rule(out.confidence, threshold, single_line=False, precedent_conflict=conflict)
     return Cn8Choice(hs6=hs6, options=options, cn8=out.cn8, confidence=out.confidence, evidence=out.evidence,
-                     rationale=out.rationale, deciding_attribute=attribute, precedent=precedent,
+                     evidence_rule=rule, rationale=out.rationale, deciding_attribute=attribute, precedent=precedent,
                      written_by=WrittenBy.rule if written else None)
 
 

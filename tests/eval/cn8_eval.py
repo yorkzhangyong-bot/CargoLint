@@ -16,8 +16,9 @@ nearest first by embedding when the BTI vectors are loaded), recorded around too
 run only, and whether one of them is at the expected CN-8. The report gives for each entry the share of wrong results
 (line × run) in which a ruling at the expected CN-8 was among those sent. Each row also keeps the model's raw CN-8 output
 before the code's checks (cn8, attribute_visible, confidence, evidence, precedent, rationale), the outcome of the evidence
-check (passed; rejected; not run, when the model declined) and the final route, recorded around the client and
-tools.classify_cn8.evidence_in_line the same way; tests/eval/cn8_evidence_diagnosis.py reads them.
+check (passed; rejected; not run, when the model declined), the rule that passed it (exact or fuzzy) and the final
+route, recorded around the client and tools.classify_cn8.evidence_match the same way;
+tests/eval/cn8_evidence_diagnosis.py reads them.
 
 --repeat N (N > 1) classifies every line N times, independently, and adds the stability of the CN-8 step. The HS-6 is
 fixed by the set, so top-1 means the CN-8. Measures: the share of lines whose top-1 is the same in all N runs; the share
@@ -60,7 +61,7 @@ THRESHOLD = 85
 TARGET = 60
 TAG = "baseline-stability"
 _rec = threading.local()   # per worker thread, for the line in hand: the rulings sent, the raw output, the evidence check
-CHECK = {True: "passed", False: "rejected", None: "not run"}   # not run: the model declined, so the code checks no quote
+_NOT_RUN = object()   # the model declined, so the code checks no quote
 
 
 class OverriddenClient(OpenRouterRawClient):
@@ -126,19 +127,19 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
 
     def one(item):
         i, r = item
-        _rec.rulings, _rec.raw, _rec.check = [], None, None   # a subheading with one CN-8 line sends none
+        _rec.rulings, _rec.raw, _rec.check = [], None, _NOT_RUN   # a subheading with one CN-8 line sends none
         line = Cn8Line(line_no=i, text_en=r["description"], hs6=r["hs6"])
         choice = choose_cn8(line, r["hs6"], kb, recorder, THRESHOLD, as_of, exclude_refs=frozenset({r["reference"]}))
         return choice, _rec.rulings, _rec.raw, _rec.check
 
-    saved = classify_cn8.select_rulings, classify_cn8.evidence_in_line
+    saved = classify_cn8.select_rulings, classify_cn8.evidence_match
     classify_cn8.select_rulings = _recording(saved[0], "rulings")   # choose_cn8 looks both up on every call;
-    classify_cn8.evidence_in_line = _recording(saved[1], "check")   # recorded for this run only
+    classify_cn8.evidence_match = _recording(saved[1], "check")     # recorded for this run only
     t0 = time.perf_counter()
     try:
         results = run_per_line(list(enumerate(rulings, start=1)), one, lambda item, exc: None, workers=workers)
     finally:
-        classify_cn8.select_rulings, classify_cn8.evidence_in_line = saved
+        classify_cn8.select_rulings, classify_cn8.evidence_match = saved
     elapsed = time.perf_counter() - t0
     rows = []
     for r, res in zip(rulings, results):
@@ -152,7 +153,8 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
                "evidence": c.evidence if c else None, "hit": bool(c and c.cn8 == r["cn8"]),
                "sent": [{"reference": p.reference, "cn8": p.code[:8], "rank": k} for k, p in enumerate(sent, start=1)],
                "sent_cn8": sorted({p.code[:8] for p in sent}), "expected_sent": any(p.code[:8] == r["cn8"] for p in sent),
-               "raw": _raw(raw), "evidence_check": CHECK[check]}
+               "raw": _raw(raw), "evidence_check": "not run" if check is _NOT_RUN else ("passed" if check else "rejected"),
+               "evidence_rule": check if check is not _NOT_RUN else None}
         row["route"] = decision(row)
         rows.append(row)
     return rows, elapsed

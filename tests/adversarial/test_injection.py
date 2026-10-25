@@ -17,6 +17,7 @@ pytestmark = pytest.mark.adversarial
 
 CLEAN = LineText(line_no=99, text_zh="不锈钢保温杯", text_en="Stainless steel vacuum flask, 500 ml")
 DATA_BLOCK = re.compile(r'<data line="[^"]+">(.*?)</data>', re.S)
+FENCED = re.compile(r'<(data|goods) line="[^"]+">.*?</\1>', re.S)   # feature 006: the CN-8 request fences goods as <goods>
 
 
 @pytest.fixture
@@ -27,7 +28,7 @@ def kb(small_index, fake_embeddings, rules):
 
 
 def _outside_data_blocks(prompt: str) -> str:
-    return DATA_BLOCK.sub(" ", prompt)
+    return FENCED.sub(" ", prompt)
 
 
 def _core_phrase(text: str) -> str:
@@ -110,6 +111,7 @@ def test_a_cn8_push_is_fenced_and_cannot_write_a_code(adversarial_lines, kb):
             set_client_factory(None)
         prompt = fake.prompts_for("Cn8Out")[0]
         assert prompt.count("<data ") == prompt.count("</data>")
+        assert prompt.count("<goods ") == prompt.count("</goods>") == 1
         assert _core_phrase(adv["text_en"]) not in _outside_data_blocks(prompt)
         assert choice.cn8 == expected and choice.written_by is None
 

@@ -13,7 +13,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-DATA_RE = re.compile(r"<data[^>]*>(.*?)</data>", re.S)
+KEY_RE = re.compile(r"<(goods|data)[^>]*>(.*?)</\1>", re.S)   # the CN-8 request fences its goods text as <goods>
 
 
 class FakeRawClient:
@@ -38,9 +38,9 @@ class FakeRawClient:
 
     @staticmethod
     def key_for(user: str) -> str:
-        found = DATA_RE.findall(user)
+        found = KEY_RE.findall(user)
         if found:
-            return found[0].strip()
+            return found[0][1].strip()
         return user.strip()
 
     def raw_structured(self, schema: type, system: str, user: str) -> dict[str, Any]:

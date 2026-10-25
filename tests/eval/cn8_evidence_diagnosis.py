@@ -189,9 +189,8 @@ def render(summary: dict, rows: int, asks: dict, rulings: dict, conf: dict) -> s
         "# CN-8 evidence diagnosis: why lines go to the shipper",
         "",
         f"Data: iteration {summary['iteration']} (tag \"{summary.get('tag', '-')}\"), {summary.get('repeat', 1)} runs of "
-        f"{summary['n']} lines of the fixed EBTI set. Same prompt (prompt-evidence-v2) and settings as iteration 7, run "
-        "again because iteration 7 did not log the model's raw output. Offline analysis of `tests/eval/cn8_eval.json` by "
-        "`tests/eval/cn8_evidence_diagnosis.py`; no API call.",
+        f"{summary['n']} lines of the fixed EBTI set; {summary['change']}. Offline analysis of `tests/eval/cn8_eval.json` "
+        "by `tests/eval/cn8_evidence_diagnosis.py`; no API call.",
         "",
         "## 1. Asks by cause",
         "",

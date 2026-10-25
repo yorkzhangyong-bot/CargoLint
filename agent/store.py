@@ -433,7 +433,7 @@ class LineStore:
         base = v.cn8 if same else Cn8Choice(hs6=hs6, options=options)
         update = {"cn8": cn8, "written_by": WrittenBy.clerk, "question": None, "error": None}
         if previous_cn8 != cn8:   # the model's estimate, evidence and ruling were about another code, or none
-            update |= {"confidence": 0, "evidence": "", "rationale": "", "precedent": None}
+            update |= {"confidence": 0, "evidence": "", "evidence_rule": None, "rationale": "", "precedent": None}
         v.cn8 = base.model_copy(update=update)
         if previous_cn8 != cn8:   # another CN-8: its TARIC outcome no longer applies; the TARIC step runs again
             v.taric = None

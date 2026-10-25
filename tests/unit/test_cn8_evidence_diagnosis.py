@@ -9,7 +9,7 @@ from tests.eval import cn8_evidence_diagnosis as dx
 
 pytestmark = pytest.mark.unit
 
-DESCRIPTION = ("Pumps mit Absatz, Riemen aus Kunststoff mit Schnallen-\nverschluss.\n"
+DESCRIPTION = ("Pumps mit Absatz, Riemen aus Kunststoff mit Kunststoffschnallenverschluss.\n"
                "To be worn when doing sports and exercise.")
 LABELS = ["Other > With uppers of plastics > Footwear with a vamp made of straps", "Covering the ankle"]
 EXCERPT = "Sandalen mit Oberteil aus Kunststoff, destinado a un uso deportivo"
@@ -24,8 +24,10 @@ def raw(evidence, cn8="64029190", visible=True):
 @pytest.mark.parametrize("evidence, expected", [
     ("With uppers of plastics > Footwear with a vamp made of straps", "source-confusion"),   # a CN-8 label path
     ("Riemen aus Kunststoff; destinado a un uso deportivo", "source-confusion"),   # one fragment from a ruling excerpt
-    ("Schnallenverschluss", "near-miss"),             # one word in the quote, split by a line break in the description
-    ("to be worn when doing sport and exercise", "near-miss"),   # fuzzy: "sport" for "sports"
+    # the evidence check (feature 006) accepts whole-word runs at 90 %; what it still rejects can be a near-miss inside
+    # a long word: part of a compound, or a compound with a typo
+    ("Verschluss", "near-miss"),                      # inside "Kunststoffschnallenverschluss", once spaces are removed
+    ("Schnalenverschluss", "near-miss"),              # fuzzy: one "l" short of "...schnallenverschluss"
     ("made of carbon fibre", "other"),
     ("", "other"),                                    # an answer without a quote
 ])
@@ -40,8 +42,8 @@ def test_a_model_that_declined_is_counted_as_such_whatever_it_quoted():
 
 
 def test_source_confusion_comes_before_near_miss():
-    sources = SOURCES + ["The garment is to be worn when doing sport and exercise."]   # a near-miss that a ruling also says
-    assert dx.classify_ask(raw("to be worn when doing sport and exercise"), DESCRIPTION, sources) == "source-confusion"
+    sources = SOURCES + ["Pumps mit Verschluss aus Metall"]   # a near-miss that a ruling also says
+    assert dx.classify_ask(raw("Verschluss"), DESCRIPTION, sources) == "source-confusion"
 
 
 def test_a_phrase_must_appear_whole_in_a_source():

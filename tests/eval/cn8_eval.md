@@ -14,6 +14,7 @@
 | 6 | 2026-10-25 | stability baseline: 3 independent runs, temperature 0.0, seed 42; the row shows run 1 | 91/120 | 104 | 13 | 2 | 14 | 0 | $0.1135 (€0.1045), 254 s |
 | 7 | 2026-10-25 | prompt-evidence-v2: three-level attribute rule in the CN-8 prompt (stated, one plain step from stated facts, else ask the shipper); confidence rules unchanged; 3 runs, the row shows run 1 | 91/120 | 103 | 12 | 4 | 13 | 0 | $0.1198 (€0.1102), 220 s |
 | 8 | 2026-10-25 | evidence diagnosis: the prompt and settings of iteration 7, re-run to log the raw CN-8 output, the evidence check and the route; 3 runs, the row shows run 1 | 92/120 | 106 | 14 | 2 | 12 | 0 | $0.1198 (€0.1102), 259 s |
+| 9 | 2026-10-25 | evidence-source-v1: goods description in its own <goods> block; the prompt allows quotes only from it, with new level-b examples (knife, hose, desk lamp); the evidence check normalises accents and line breaks and accepts a fragment found as a phrase or a run of words at 90 %; 3 runs, the row shows run 1 | 96/120 | 108 | 12 | 5 | 7 | 0 | $0.1235 (€0.1136), 218 s |
 
 ## Top-1 per chapter
 
@@ -27,6 +28,7 @@
 | 6 | 9/10 | 6/10 | 8/10 | 9/10 | 9/10 | 8/10 | 6/10 | 8/10 | 7/10 | 7/10 | 8/10 | 6/10 |
 | 7 | 9/10 | 6/10 | 7/10 | 8/10 | 8/10 | 8/10 | 8/10 | 8/10 | 6/10 | 7/10 | 8/10 | 8/10 |
 | 8 | 9/10 | 6/10 | 8/10 | 8/10 | 8/10 | 8/10 | 7/10 | 8/10 | 6/10 | 7/10 | 9/10 | 8/10 |
+| 9 | 9/10 | 6/10 | 8/10 | 10/10 | 8/10 | 8/10 | 8/10 | 8/10 | 6/10 | 7/10 | 9/10 | 9/10 |
 
 ## Stability (repeated runs)
 
@@ -38,6 +40,7 @@ Each line classified N times, independently. Same CN-8: the top-1 is identical i
 | 6 | 2026-10-25 | baseline-stability | 0.0 | 42 | 3 | 91 / 92 / 90 of 120 | 90/120 | 95.0% | 93.3% | $0.1135 (€0.1045) |
 | 7 | 2026-10-25 | prompt-evidence-v2 | 0.0 | none | 3 | 91 / 94 / 91 of 120 | 92/120 | 90.8% | 91.7% | $0.1198 (€0.1102) |
 | 8 | 2026-10-25 | evidence-diagnosis | 0.0 | none | 3 | 92 / 89 / 91 of 120 | 91/120 | 91.7% | 90.0% | $0.1198 (€0.1102) |
+| 9 | 2026-10-25 | evidence-source-v1 | 0.0 | none | 3 | 96 / 93 / 93 of 120 | 94/120 | 94.2% | 93.3% | $0.1235 (€0.1136) |
 
 Iteration 5: 10 lines whose top-1 differed between runs (chosen CN-8, confidence, decision per run):
 
@@ -88,11 +91,22 @@ Iteration 8: 10 lines whose top-1 differed between runs (chosen CN-8, confidence
 - IEBTIIENEN004-2026-BTI72 (HS-6 9619.00, expected 96190050): 96190050 (85, auto_accept) · 96190040 (85, review) · 96190040 (85, review)
 - IEBTIIENEN004-2026-BTI222 (HS-6 9609.10, expected 96091090): 96091090 (85, auto_accept) · 96091090 (85, auto_accept) · no code (0, ask_shipper)
 
+Iteration 9: 7 lines whose top-1 differed between runs (chosen CN-8, confidence, decision per run):
+
+- IEBTIIENEN004-2025-BTI351 (HS-6 3925.90, expected 39259010): 39259010 (85, auto_accept) · no code (0, ask_shipper) · no code (0, ask_shipper)
+- IEBTIIENEN004-2026-BTI74 (HS-6 6212.10, expected 62121090): 62121090 (85, auto_accept) · no code (0, ask_shipper) · 62121090 (85, auto_accept)
+- IEBTIIENEN004-2024-BTI354 (HS-6 6404.19, expected 64041910): 64041910 (85, auto_accept) · no code (0, ask_shipper) · 64041910 (85, auto_accept)
+- IEBTIIENEN004-2024-BTI128 (HS-6 6404.19, expected 64041990): 64041990 (85, auto_accept) · 64041990 (85, auto_accept) · no code (0, ask_shipper)
+- XIBTI505060394 (HS-6 7326.90, expected 73269098): no code (0, ask_shipper) · 73269098 (85, auto_accept) · no code (0, ask_shipper)
+- IEBTIIENEN004-2023-BTI579 (HS-6 8528.52, expected 85285210): 85285291 (85, auto_accept) · no code (0, ask_shipper) · 85285291 (85, auto_accept)
+- IEBTIIENEN004-2026-BTI72 (HS-6 9619.00, expected 96190050): 96190050 (85, auto_accept) · 96190040 (85, review) · 96190040 (85, review)
+
 ## Rulings sent to the model
 
 Wrong results (line × run; a question to the shipper is a miss) in which a ruling at the expected CN-8 was among the rulings sent to the model. Logged since iteration 7.
 
 - Iteration 7: 84 of 84 wrong results (100.0%).
 - Iteration 8: 88 of 88 wrong results (100.0%).
+- Iteration 9: 78 of 78 wrong results (100.0%).
 
 Model: openai/gpt-4o-mini. Line-by-line results of the latest run: `tests/eval/cn8_eval.json`; earlier runs are in the git history of that file.

@@ -150,11 +150,14 @@ class TestCn8ConfidenceSignal:
 
     @pytest.mark.parametrize("evidence,expected", [
         ("bicycle frames", True), ("Bicycle  Frames", True), ("aluminium alloy; frames", True), ("自行车架", True),
-        ("“Bicycle frames.”", True), ("frames, bicycle", True), ("aluminium-alloy frames", True),
+        ("“Bicycle frames.”", True), ("aluminium-alloy bicycle", True),
+        ("frames, bicycle", False),          # feature 006: a fragment is a phrase of the line, so word order counts
+        ("aluminium-alloy frames", False),   # words of the line, but not one run of them (ratio 0.76)
+        ("cycle frames", True),              # a run of words of the line at a ratio of 0.92 ("bicycle frames")
         ("the goods are frames for bicycles", False), ("", False), ("   ", False), ("…", False),
-        ("frames; carbon fibre", False), ("cycle frames", False), ("碳纤维", False),
+        ("frames; carbon fibre", False), ("碳纤维", False),
         ("Front forks", False)])   # a CN-8 label (8714 91 30), not words of the line
-    def test_every_word_of_the_evidence_must_occur_in_the_line(self, evidence, expected):
+    def test_every_fragment_of_the_evidence_must_be_found_in_the_line(self, evidence, expected):
         assert R.evidence_in_line(evidence, "铝合金自行车架 / Aluminium alloy bicycle frames") is expected
 
     @pytest.mark.parametrize("evidence,line", [("99.9% Polyester", "Woven fabric of 99.9 % polyester, dyed"),
@@ -162,6 +165,28 @@ class TestCn8ConfidenceSignal:
                                                ("toy cars", "塑料玩具车 / Plastic toy cars.")])
     def test_case_punctuation_and_spacing_are_normalised_on_both_sides(self, evidence, line):
         assert R.evidence_in_line(evidence, line) is True
+
+    @pytest.mark.parametrize("evidence,line,rule", [
+        ("vetement pour bebes", "Accessoire du vêtement pour bébés", "exact"),             # accents stripped
+        ("to be worn when doing sports", "Sports bra\nTo be worn\nwhen doing sports.", "exact"),   # line breaks
+        ("aluminium alloy; bicycle frames", "Aluminium alloy bicycle frames", "exact"),
+        ("Schnallenverschluss", "Riemen aus Kunststoff mit Schnallen-\nverschluss", "fuzzy"),   # 0.97
+        ("gants de protection", "gant de protection pour tous métiers", "fuzzy"),             # 0.97
+        ("aluminium alloy; cycle frames", "Aluminium alloy bicycle frames", "fuzzy"),         # one fragment needs it
+        ("tin", "tinted glass panels", None),        # a short word inside a longer one is no match
+        ("bicycle frames; carbon fibre", "Aluminium alloy bicycle frames", None)])   # every fragment must pass
+    def test_feature_006_names_the_rule_that_accepts_a_quote(self, evidence, line, rule):
+        assert R.evidence_match(evidence, line) == rule
+        assert R.evidence_in_line(evidence, line) is (rule is not None)
+
+    def test_feature_006_a_quote_from_a_cn8_label_or_a_ruling_is_still_rejected(self):
+        line = "Seam free wireless sports bra\nTo be worn when doing sports and exercise.\nMade of elastic knitted nylon fabric"
+        assert R.evidence_match("Of a weight, per garment, not exceeding 1 kg", line) is None        # a CN-8 label
+        assert R.evidence_match("It is made of knitted synthetic fabric", line) is None             # another ruling
+        assert R.evidence_match("destinado a un uso deportivo", line) is None                       # a ruling in Spanish
+        monitor = "14” portable LCD colour monitor. The monitor does not have TV signal reception capability."
+        assert R.evidence_match("Of a kind solely or principally used in an automatic data-processing system "
+                                "of heading 8471", monitor) is None                                  # a CN-8 label
 
     @pytest.mark.parametrize("cn8,code,expected", [("87149110", "8714911000", False), ("87149110", "8714913000", True),
                                                    ("87149110", None, False), (None, "8714913000", False)])

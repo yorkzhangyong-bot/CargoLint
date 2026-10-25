@@ -250,6 +250,7 @@ class Cn8Choice(BaseModel):
     cn8: str | None = Field(default=None, pattern=CN8_PATTERN)  # null when the deciding attribute is missing or the step failed
     confidence: int = Field(default=0, ge=0, le=100)
     evidence: str = ""
+    evidence_rule: str | None = None                            # feature 006: "exact" or "fuzzy", the check that accepted it
     rationale: str = ""
     deciding_attribute: str = ""
     question: str | None = None                                 # "Ask the shipper for: <attribute>"; a routing input

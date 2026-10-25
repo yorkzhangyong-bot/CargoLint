@@ -181,9 +181,41 @@ class TestChooseCn8:
         client, fake = fake_client({key(TOYS): out(None, visible=False, attribute=MOTOR)})
         choose_cn8(TOYS, "9503.00", kb, client, 85, AS_OF)
         prompt = fake.prompts_for("Cn8Out")[0]
-        assert re.search(r'<data line="6">塑料玩具车 / Plastic toy cars</data>', prompt)
-        assert prompt.index('<data line="6">') < prompt.index('<data line="ruling DE-TOY-1">')
+        assert re.search(r'<goods line="6">塑料玩具车 / Plastic toy cars</goods>', prompt)   # feature 006: its own tag
+        assert prompt.index('<goods line="6">') < prompt.index('<data line="ruling DE-TOY-1">')
         assert re.search(r'<data line="ruling DE-TOY-1">[^<]*Toy car with an electric motor', prompt)
+
+    def test_the_cn8_lines_and_the_hs6_label_stay_untagged_and_the_shipper_facts_are_goods_too(self, fake_client,
+                                                                                               make_kb):
+        from agent.schemas import Cn8Line, Extracted
+        from tools.classify_cn8 import choose_cn8
+
+        line = Cn8Line(line_no=6, text_zh=TOYS.text_zh, text_en=TOYS.text_en, hs6="9503.00",
+                       extracted=Extracted(material="plastics", use="toy <motor>"))
+        client, fake = fake_client({key(TOYS): out(None, visible=False, attribute=MOTOR)})
+        choose_cn8(line, "9503.00", make_kb(), client, 85, AS_OF)
+        prompt = fake.prompts_for("Cn8Out")[0]
+        assert prompt.index("<goods") == prompt.index('<goods line="6">塑料玩具车')            # the description comes first
+        assert 'Confirmed by the shipper: <goods line="6">material: plastics; part: ; use: toy &lt;motor&gt;</goods>' in prompt
+        assert "Decided HS-6 subheading: 9503.00 - " in prompt and "- 95030075 - " in prompt   # no tag around them
+        assert re.search(r"^- 95030075 - [^<]+$", prompt, re.M)
+
+    @pytest.mark.parametrize("evidence,rule", [("bicycle frames", "exact"), ("cycle frames", "fuzzy")])
+    def test_the_choice_keeps_the_rule_that_accepted_the_quote(self, fake_client, make_kb, evidence, rule):
+        from tools.classify_cn8 import choose_cn8
+
+        client, _ = fake_client({key(FRAMES): out("87149110", evidence=evidence)})
+        choice = choose_cn8(FRAMES, "8714.91", make_kb(), client, 85, AS_OF)
+        assert (choice.cn8, choice.evidence_rule) == ("87149110", rule)
+
+    def test_a_quote_from_a_ruling_sent_with_the_line_still_asks_the_shipper(self, fake_client, make_kb):
+        from tools.classify_cn8 import choose_cn8
+
+        kb = make_kb([ruling("DE-FORK-1", "8714913000", description="Front forks for racing bicycles, of carbon")])
+        client, fake = fake_client({key(FRAMES): out("87149110", evidence="Front forks for racing bicycles")})
+        choice = choose_cn8(FRAMES, "8714.91", kb, client, 85, AS_OF)
+        assert "Front forks for racing bicycles" in fake.prompts_for("Cn8Out")[0]   # the quote was in the request
+        assert choice.cn8 is None and choice.question and choice.evidence_rule is None
 
 
 class TestClassifyCn8Lines:
@@ -223,4 +255,4 @@ class TestClassifyCn8Tool:
         assert s.get_line(1).current.cn8.cn8 == "87149110"
         assert s.get_line(2).current.cn8 is None           # flagged: its HS-6 is not decided
         prompts = fake_llm.prompts_for("Cn8Out")
-        assert len(prompts) == 1 and '<data line="1">' in prompts[0] and '<data line="2">' not in prompts[0]
+        assert len(prompts) == 1 and '<goods line="1">' in prompts[0] and '<goods line="2">' not in prompts[0]

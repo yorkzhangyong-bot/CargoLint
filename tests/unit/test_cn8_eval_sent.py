@@ -65,9 +65,10 @@ def answer_by_line(schema, system, user, max_retries=0):
 def test_each_row_keeps_the_raw_output_the_evidence_check_and_the_route():
     lines = [dict(eval_line(ref, "87149110"), description=text)
              for ref, text in (("A", "Aluminium bicycle frames"), ("B", "Steel bicycle frames"), ("Q", "Bicycle parts"))]
-    original = classify_cn8.evidence_in_line
+    original = classify_cn8.evidence_match
     a, b, q = ev.run_once(lines, KB, SimpleNamespace(call=answer_by_line), AS_OF, workers=2)[0]
-    assert classify_cn8.evidence_in_line is original                     # the recording ends with the run
+    assert classify_cn8.evidence_match is original                       # the recording ends with the run
+    assert (a["evidence_rule"], b["evidence_rule"], q["evidence_rule"]) == ("exact", None, None)
     assert a["raw"] == {"cn8": "87149110", "attribute_visible": True, "confidence": 95, "evidence": "bicycle frames",
                         "precedent": None, "rationale": "frames"}
     assert (a["evidence_check"], a["route"], a["chosen"]) == ("passed", "auto_accept", "87149110")
