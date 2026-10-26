@@ -55,11 +55,12 @@ files touched
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.* Checked against constitution 1.5.0.
+*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.* First checked against constitution 1.5.0,
+where Principle I was a planned violation; re-checked against 1.6.0, which task A1 adopted on 2026-10-26.
 
 | Principle | Check | Status |
 |---|---|---|
-| I. Guardrails live in code | The override is a pure case of the HS-6 gate in `route_line`, decided by code from the stored vote and candidates. But 1.5.0 auto-accepts an HS-6 only when the model's top candidate is the rulings' majority, and sends a majority at the second or third candidate to review. | **Violation until 1.6.0**: justified below, resolved by task A1 before any routing code |
+| I. Guardrails live in code | The override is a pure case of the HS-6 gate in `route_line`, decided by code from the stored vote and candidates. Constitution 1.6.0 allows it: the rulings' majority confirms the top candidate or, with the switch on, overrides it to candidate 2 or 3 at `OVERRIDE_MIN` of 5. | Pass (1.6.0) |
 | II. Untrusted input | No new text reaches the model; the override reads the vote and the candidates the store already holds. | Pass |
 | III. Grounded, cited | The override cites the agreeing rulings (N of M, and their issuing countries in the detail row) and only ever chooses one of the model's own candidates, so no new code appears. | Pass |
 | IV. Hybrid retrieval | Retrieval and the vote's rulings are unchanged. | Pass |
@@ -69,8 +70,7 @@ files touched
 | Architecture: the UI reads only the store, routing is one function | The decided code comes from `LineStore.decided_code`, the route from `route_line`. | Pass |
 
 **Post-design re-check** (after research, data model and contracts): unchanged. The design adds no tool, no prompt
-and no UI element, and it keeps routing in `route_line`. The one violation, Principle I, is still resolved by task A1,
-which runs before the routing code (tasks C3, C4).
+and no UI element, and it keeps routing in `route_line`. Principle I passes since constitution 1.6.0 (task A1).
 
 ## Project Structure
 
@@ -203,6 +203,6 @@ Suggested companion changes, your call (1.5.0 made the same kind of change):
 
 ## Complexity Tracking
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|---|---|---|
-| Principle I (1.5.0) allows the HS-6 auto-accept only for a top candidate that the rulings' majority confirms. | The feature's purpose (FR-001): when 4 or 5 of 5 rulings agree on the model's second or third candidate, the clerk should not have to pick it by hand. | Keeping today's rule leaves that pick to the clerk on every such line. The amendment (1.6.0, task A1) runs before the routing code, as 1.4.0 and 1.5.0 did in feature 006. |
+Pass (1.6.0): no violation remains. The one recorded against 1.5.0 was Principle I, which allowed the HS-6
+auto-accept only for a top candidate the rulings' majority confirms. Task A1 amended it to 1.6.0 before any routing
+code, as 1.4.0 and 1.5.0 were amended in feature 006.

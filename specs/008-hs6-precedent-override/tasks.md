@@ -281,12 +281,29 @@ what follows from them differ; the reports show on against off.
 
 ## Phase 7: Polish and Cross-Cutting Concerns
 
-- [ ] T023 [P] Correct feature 001, doc only (plan task A2). Add the override wording of
-  specs/008-hs6-precedent-override/plan.md ("…or, when the precedent override (feature 008, switched on) decided it, the
-  second or third candidate on which at least OVERRIDE_MIN of the five nearest eligible rulings agree") to:
-  - the vocabulary paragraph's "decided code" in specs/001-packing-list-check/spec.md;
-  - FR-020's last sentence in the same file;
-  - footnote ¹ of §9 in specs/001-packing-list-check/data-model.md.
+- [ ] T023 [P] Correct features 001 and 004, doc only (plan task A2 and the 1.6.0 consistency review). Add the
+  override wording of specs/008-hs6-precedent-override/plan.md ("…or, when the precedent override (feature 008,
+  switched on) decided it, the second or third candidate on which at least OVERRIDE_MIN of the five nearest eligible
+  rulings agree").
+  - **specs/001-packing-list-check/spec.md**:
+    - the vocabulary paragraph's "decided code";
+    - FR-020: add the override case to "OK → auto-accept when the HS-6 gate accepts the top candidate", and make the
+      last sentence "An auto-accepted line's decided code is its top candidate, or the candidate the precedent
+      override chose";
+    - US1 acceptance scenario 3, "whose top candidate the HS-6 gate does not accept …": add to the condition "and,
+      with the precedent override switched on, fewer than OVERRIDE_MIN of the rulings sit at its second or third
+      candidate";
+    - US2 acceptance scenario 5, "(the top candidate is preselected; …)": "(the top candidate is preselected, or, on
+      a line the precedent override decided, the candidate it chose; …)".
+  - **specs/001-packing-list-check/data-model.md**:
+    - footnote ¹ of §9: add the override and the hint, with the switch on;
+    - the `ready_to_accept` definition, "the HS-6 gate passes — since constitution 1.5.0 the ruling vote, …": add
+      "since 1.6.0 also the precedent override, when switched on";
+    - the invariant "the decided code is the top candidate with `chosen_how=auto` (FR-020)": "the top candidate, or
+      the candidate the precedent override chose, with `chosen_how=auto` (FR-020)".
+  - **specs/004-cn8-taric-classification/data-model.md**, "HS-6 decided": the helper's signature
+    `hs6_auto_decided(flag_kind, top_confidence, status, ever_flagged, threshold, ask_floor)` gains `hs6_vote`
+    (missing since feature 006) and `hs6_override_min` (feature 008).
 
   Depends on T001.
 - [ ] T024 [P] Update feature 005's view contract to the current texts, doc only (the author's addition), in
