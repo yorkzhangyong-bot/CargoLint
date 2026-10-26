@@ -1,5 +1,5 @@
-"""Rule lists (firm stop-words, the two ICS2 lists, bilingual aliases), deterministic matching,
-the pure-stop-word test and shipper profiles (FR-007 … FR-011, FR-016, FR-042)."""
+"""Rule lists (firm stop-words, the two ICS2 lists, bilingual aliases), deterministic matching on the goods name
+(feature 007), the pure-stop-word test and shipper profiles (FR-007 … FR-011, FR-016, FR-042)."""
 from __future__ import annotations
 
 import json
@@ -32,24 +32,12 @@ def default_ask_for(kind: FlagKind | str) -> list[str]:
     return [] if FlagKind(kind) == FlagKind.ok else list(ASK_FOR_DEFAULT)
 
 
-def _word_match(text_lower: str, term_lower: str) -> bool:
-    """Whole-term, case-insensitive match for Latin terms ('gift' does not match 'gifted')."""
-    pattern = r"(?<![a-z0-9])" + re.escape(term_lower) + r"(?![a-z0-9])"
-    return re.search(pattern, text_lower) is not None
-
-
-def _term_matches(text_zh: str, text_en: str, term: str, lang: str) -> bool:
-    if lang == "zh" or _CJK.search(term):
-        return term in text_zh or term in text_en
-    t = term.lower()
-    return _word_match(text_en.lower(), t) or _word_match(text_zh.lower(), t)
-
-
 class RuleSet:
     def __init__(self, firm: RuleList, ics2_lists: list[RuleList], aliases: list[Alias]) -> None:
         self.firm = firm
         self.ics2_lists = ics2_lists
         self.aliases = aliases
+        self.terms = _terms(self)
 
     @classmethod
     def load(cls, rules_dir: Path | str | None = None) -> "RuleSet":
@@ -88,58 +76,123 @@ def _source_for(list_name: str) -> RuleSource:
             "ics2_stop_words": RuleSource.ics2_stop_words}.get(list_name, RuleSource.ics2_unacceptable)
 
 
-FILLER = {"of", "for", "and", "the", "a", "an", "in", "with", "various", "misc", "etc", "products", "product", "goods",
-          "items", "item", "articles", "article", "general", "all", "kind", "kinds", "type", "types", "other", "others",
-          "assorted", "mixed", "pcs", "pc", "ctn", "ctns", "set", "sets", "new", "used"}
+# --------------------------------------------------------------------------- matching on the goods name (feature 007)
+# A listed term locks a line only when the goods name is nothing but listed terms and filler words. ICS2 rejects a
+# general term used as the description ("Parts", "Various goods"), not one that sits in a property ("T-shirts in
+# various sizes") or that the goods name qualifies: the DG TAXUD guidance accepts "Poultry equipment" and "Lighting and
+# electrical accessories". The rule is the same for every list, with no exception: the guidance gives the firm list's
+# catch-alls ("various", "personal effects", "gifts") as general terms too, and its fixed phrases ("gift box", "machine
+# parts", "auto parts", "various goods") are listed terms of their own, so they still lock a goods name that is nothing
+# else. One point is looser than the guidance's examples: for parts it names the part itself ("Pump, Seals, Engines"),
+# while "spare parts for pumps" passes here and is left to the model's judgement, which follows every unflagged line.
+_NAME_END = re.compile(
+    r"[,;:!?()\[\]{}\r\n，；：。！？（）【】、]|\.(?=\s|$)|\s[-–—]\s"
+    r"|(?:^|\s)(?:in|with|made|available|including|which|that|as|at|from)(?=\s)", re.I)
+_WORD = re.compile(r"[a-z0-9]+(?:[-'][a-z0-9]+)*")
+CJK_FILLER = ("其他", "其它", "各类", "货物", "产品", "物品", "商品", "用品", "套装", "尺寸", "颜色", "规格", "型号", "款式",
+              "的", "和", "及", "与", "等", "类")
 
 
-def _residual_count(text_zh: str, text_en: str, term: str) -> int:
-    """Meaningful tokens left once the matched term is removed (Latin words outside FILLER + CJK characters)."""
-    zh, en = (text_zh or ""), (text_en or "")
-    if _CJK.search(term):
-        zh, en = zh.replace(term, " "), en.replace(term, " ")
-    else:
-        pat = re.compile(r"(?<![a-z0-9])" + re.escape(term.lower()) + r"(?![a-z0-9])", re.I)
-        zh, en = pat.sub(" ", zh), pat.sub(" ", en)
-    joined = zh + " " + en
-    latin = [w for w in re.findall(r"[a-z0-9]+(?:[-'][a-z0-9]+)*", joined.lower()) if len(w) >= 2 and w not in FILLER]
-    return len(latin) + len(_CJK.findall(joined))
+def goods_name(text: str) -> str:
+    """The goods name: the description's leading phrase, up to the first punctuation mark (a full stop, not a decimal
+    point), spaced dash or word that opens a property ("in various sizes", "made from", "available in", "that vary").
+    Empty when the description opens with a property."""
+    text = (text or "").strip()
+    end = _NAME_END.search(text)
+    return (text[:end.start()] if end else text).strip()
 
 
-def _is_essentially(text_zh: str, text_en: str, term: str) -> bool:
-    return _residual_count(text_zh, text_en, term) < 2
+def _singular(word: str) -> str:
+    """One form for both numbers, as the ICS2 stop-word list uses them interchangeably ("parts" and "part", "boxes" and
+    "box", "accessories" and "accessory")."""
+    if len(word) > 4 and word.endswith("ies"):
+        return word[:-3] + "y"
+    if len(word) > 4 and word.endswith(("sses", "xes", "ches", "shes")):
+        return word[:-2]
+    if len(word) > 3 and word.endswith("s") and not word.endswith(("ss", "us", "is")):
+        return word[:-1]
+    return word
+
+
+def _words(text: str) -> list[str]:
+    return [_singular(w) for w in _WORD.findall((text or "").lower())]
+
+
+FILLER = {_singular(w) for w in (
+    "of", "for", "and", "or", "the", "a", "an", "in", "with", "to", "on", "by", "per", "various", "misc", "etc",
+    "products", "product", "goods", "items", "item", "articles", "article", "general", "all", "kind", "kinds", "type",
+    "types", "sort", "other", "others", "assorted", "mixed", "pcs", "pc", "ctn", "ctns", "set", "sets", "pair", "unit",
+    "dozen", "qty", "kg", "mm", "cm", "ml", "new", "used", "size", "colour", "color", "style", "model", "shape", "design")}
+
+
+@dataclass(frozen=True)
+class _Term:
+    """A listed term (or an alias of one) and what a flag on it cites."""
+
+    text: str                     # what is looked for
+    words: tuple[str, ...]        # its words, one form for both numbers; empty for a Chinese term
+    kind: FlagKind
+    rule_list: RuleList
+    matched_term: str
+    reason: str
+
+
+def _terms(rules: RuleSet) -> list[_Term]:
+    """Every term in the order the lists take precedence: the firm list (Stop-word), the two ICS2 lists, then the
+    aliases of their terms (Vague); within a list the longest first, so "spare parts" before "parts", and of two forms
+    of one term the list's shorter ("gift" before "gifts")."""
+    def ordered(items: list[tuple[str, _Term]]) -> list[_Term]:
+        return [t for _, t in sorted(items, key=lambda it: (-len(" ".join(it[1].words) or it[1].text), len(it[0])))]
+
+    def term(text: str, kind: FlagKind, rl: RuleList, shown: str, reason: str) -> tuple[str, _Term]:
+        words = () if _CJK.search(text) else tuple(_words(text))
+        return text, _Term(text, words, kind, rl, shown, reason)
+
+    out = ordered([term(e.term, FlagKind.stop_word, rules.firm, e.term, f"\"{e.term}\" is on the firm stop-word list")
+                   for e in rules.firm.entries])
+    for rl in rules.ics2_lists:
+        out += ordered([term(e.term, FlagKind.vague, rl, e.term.lower(),
+                             f"\"{e.term}\" is listed by ICS2 as an unacceptable goods description") for e in rl.entries])
+    out += ordered([term(a.alias, FlagKind.vague, rl, a.term.lower(),
+                         f"\"{a.alias}\" means \"{a.term}\", which ICS2 lists as an unacceptable goods description")
+                    for a in rules.aliases if (rl := rules.ics2_list_for(a.term)) is not None])
+    return [t for t in out if t.words or _CJK.search(t.text)]   # a term of punctuation alone can name no goods
 
 
 def check_rules(text_zh: str, text_en: str, rules: RuleSet) -> RuleMatch | None:
-    """Deterministic rule match: firm list first (Stop-word), then the ICS2 lists and the bilingual
-    aliases (Vague). Returns None when no rule matches (judgement follows in the tool)."""
-    text_zh = text_zh or ""
-    text_en = text_en or ""
-    # 1. firm stop-words → Stop-word (precedence)
-    for e in sorted(rules.firm.entries, key=lambda e: -len(e.term)):
-        if _term_matches(text_zh, text_en, e.term, e.lang):
-            return RuleMatch(kind=FlagKind.stop_word, rule_source=RuleSource.firm_stop_words, matched_term=e.term,
-                             list_name=rules.firm.list, source_doc=rules.firm.source_doc, source_date=rules.firm.source_date,
-                             reason=f"\"{e.term}\" is on the firm stop-word list")
-    # 2. ICS2 lists → Vague, when the description is essentially nothing but the generic term
-    #    ("Parts", "spare parts for compressors") — not when it merely contains it
-    #    ("stainless steel vacuum flask" with the ICS2 term "steel").
-    for rl in rules.ics2_lists:
-        for e in sorted(rl.entries, key=lambda e: -len(e.term)):
-            if _term_matches(text_zh, text_en, e.term, e.lang) and _is_essentially(text_zh, text_en, e.term):
-                return RuleMatch(kind=FlagKind.vague, rule_source=_source_for(rl.list), matched_term=e.term.lower(),
-                                 list_name=rl.list, source_doc=rl.source_doc, source_date=rl.source_date,
-                                 reason=f"\"{e.term}\" is listed by ICS2 as an unacceptable goods description")
-    # 3. aliases (Chinese and English variants) → canonical ICS2 term, same rule
-    for a in sorted(rules.aliases, key=lambda a: -len(a.alias)):
-        if _term_matches(text_zh, text_en, a.alias, a.lang) and _is_essentially(text_zh, text_en, a.alias):
-            rl = rules.ics2_list_for(a.term)
-            if rl is None:
-                continue
-            return RuleMatch(kind=FlagKind.vague, rule_source=_source_for(rl.list), matched_term=a.term.lower(),
-                             list_name=rl.list, source_doc=rl.source_doc, source_date=rl.source_date,
-                             reason=f"\"{a.alias}\" means \"{a.term}\", which ICS2 lists as an unacceptable goods description")
-    return None
+    """Deterministic rule match on the goods name (feature 007), the Chinese and the English one together: flagged
+    only when it is nothing but listed terms and filler words, or when there is none and a listed term appears in the
+    description. The flag cites the first term found, the firm list first (Stop-word), then the ICS2 lists and the
+    bilingual aliases (Vague). Returns None when no rule matches (judgement follows in the tool)."""
+    name_zh, name_en = goods_name(text_zh), goods_name(text_en)
+    named = bool(name_zh or name_en)
+    scope = f"{name_zh} {name_en}" if named else f"{text_zh or ''} {text_en or ''}"
+    words, cjk = _words(scope), scope
+    covered = [False] * len(words)
+    first: _Term | None = None
+    for t in rules.terms:
+        if t.words:
+            n = len(t.words)
+            starts = [i for i in range(len(words) - n + 1) if tuple(words[i:i + n]) == t.words]
+            for i in starts:
+                covered[i:i + n] = [True] * n
+            found = bool(starts)
+        else:
+            found = t.text in cjk
+            cjk = cjk.replace(t.text, " ")
+        if found and first is None:
+            first = t
+    if first is None:
+        return None
+    if named:
+        rest = [w for w, c in zip(words, covered) if not c and w[0].isalpha() and len(w) > 1 and w not in FILLER]
+        for filler in CJK_FILLER:
+            cjk = cjk.replace(filler, " ")
+        if rest or _CJK.search(cjk):
+            return None
+    rl = first.rule_list
+    return RuleMatch(kind=first.kind, rule_source=_source_for(rl.list), matched_term=first.matched_term, list_name=rl.list,
+                     source_doc=rl.source_doc, source_date=rl.source_date, reason=first.reason)
 
 
 def is_pure_stop_word(text_zh: str, text_en: str, match: RuleMatch | None, rules: RuleSet) -> bool:

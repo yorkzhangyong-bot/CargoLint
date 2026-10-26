@@ -226,6 +226,26 @@ def test_the_report_shows_the_entry():
     assert "| 1 / 2 / 0 of 4 | 0 / 0 / 0 | - | $0.0100" in text and "### Vote gate" not in text   # an entry before the gate
 
 
+def test_each_run_keeps_its_own_results_file_next_to_the_latest(tmp_path):
+    out = tmp_path / "hs6_eval.json"
+    first = {"summary": {"iteration": 7}, "rows": [{"reference": "A", "nearest_hits": [{"reference": "B"}]}]}
+    own = ev.write_results(first, out, "hs6-test")
+    assert own == tmp_path / "hs6_eval_hs6-test.json"
+    assert own.read_text(encoding="utf-8") == out.read_text(encoding="utf-8")
+    assert json.loads(own.read_text(encoding="utf-8"))["rows"][0]["nearest_hits"] == [{"reference": "B"}]
+    ev.write_results({"summary": {"iteration": 8}, "rows": []}, out, "iteration8")             # a later run
+    assert json.loads(own.read_text(encoding="utf-8"))["summary"]["iteration"] == 7             # left alone
+    assert json.loads(out.read_text(encoding="utf-8"))["summary"]["iteration"] == 8             # the latest
+    assert (tmp_path / "hs6_eval_iteration8.json").exists()
+
+
+def test_a_tag_must_name_a_file():
+    assert all(ev.TAG_RE.fullmatch(t) for t in ("hs6-baseline", "hs6-gemini25-flash", "e2e.v2", "run_3"))
+    assert not any(ev.TAG_RE.fullmatch(t) for t in ("a/b", "..\\x", "two words", "", "-x"))
+    with pytest.raises(SystemExit):   # before anything runs: the offline guard would fail a test that reached OpenRouter
+        ev.main(["--tag", "a/b"])
+
+
 def test_the_report_shows_the_vote_gate():
     runs = [[{**r, "route_by_confidence": r["route"], "gate": "no_rulings"} for r in run] for run in HS6_RUNS]
     entry = {"iteration": 2, "run_on": "2026-10-26", "tag": "hs6-vote-gate", "repeat": 3, "n": 4, "model": "m",

@@ -18,6 +18,7 @@
     {"term": "footwear", "acceptable_example": "women's leather boots"},
     {"term": "furniture", "acceptable_example": "wooden dining tables"},
     {"term": "gift", "acceptable_example": "state the actual goods"},
+    {"term": "gift box", "acceptable_example": "(See other specific examples in the table)"},
     {"term": "hardware", "acceptable_example": "stainless steel hinges"},
     {"term": "household goods", "acceptable_example": "plastic storage boxes"},
     {"term": "machinery", "acceptable_example": "industrial sewing machines"},
