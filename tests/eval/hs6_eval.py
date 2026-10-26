@@ -39,6 +39,17 @@ by run, whose right-right cell per run is the end-to-end estimate, and the cost.
 With the gate it also keeps per run the gate reasons, the lines no ruling voted on that went to review, the right
 auto-accepts, and those the gate lost against the confidence rule.
 
+Feature 008, the precedent override: a row's fields above are the switch off, so the history stays comparable. Its vote
+also keeps its counts ([[HS-6, rulings], ...], most first), from which the switch on is replayed with the routing
+functions at OVERRIDE_MIN: `supported` (the model's candidate 2 or 3 the rulings' majority sits at, and whether it is the
+correct HS-6) and `on` (the gate, the route, the rank and code of the HS-6 chosen, and whether it is right). The run
+makes no second model call. The entry adds override_min and an `on` block with the same measures on the chosen HS-6,
+its end-to-end estimate among them, the overrides that fired (each with the HS-6 it chose and whether it was right), and
+how often the supported candidate was right; the report shows the switch off against on. `--replay FILE
+--override-min N` replays a results file's stored answers with the switch on at another OVERRIDE_MIN, with no model
+call; the replay keeps its own results file (hs6_eval.json stays the latest paid run) and a history entry marked as a
+replay.
+
 The line-by-line results go to tests/eval/hs6_eval.json, the latest run, and to the run's own
 tests/eval/hs6_eval_<tag>.json (hs6_eval_iteration<N>.json without --tag), which a run with another tag leaves alone,
 as the CN-8 iteration files keep earlier CN-8 runs (feature 007).
@@ -73,10 +84,10 @@ sys.path.insert(0, str(ROOT))
 from pydantic import ValidationError  # noqa: E402
 
 from agent.config import (ASK_FLOOR, DEFAULT_THRESHOLD, HS6_VOTE_K, HS6_VOTE_MIN_SIMILARITY, HS6_VOTE_SHARE,  # noqa: E402
-                          RETRIEVAL_K, get_settings)
+                          OVERRIDE_MIN, RETRIEVAL_K, get_settings)
 from agent.llm import get_client, set_client_factory  # noqa: E402
-from agent.routing import SchemaError, hs6_gate, route_line  # noqa: E402
-from agent.schemas import FlagKind, LineStatus, RankOut, SourceKind, Usage  # noqa: E402
+from agent.routing import SchemaError, hs6_choice, hs6_gate, hs6_ruling_vote, route_line  # noqa: E402
+from agent.schemas import FlagKind, Hs6Vote, LineStatus, RankOut, SourceKind, Usage  # noqa: E402
 from rag.loader import open_knowledge_base  # noqa: E402
 from rag.retriever import DISTANCE_DECIMALS  # noqa: E402
 from rag.translate import clear_cache as clear_translations  # noqa: E402
@@ -280,13 +291,41 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
             "route_by_confidence": by_confidence.value,
             "gate": hs6_gate(conf, DEFAULT_THRESHOLD, vote)[1].value if gated else "not_gated",
             "vote": None if vote is None else {"majority": vote.majority, "share": vote.majority_share,
-                                               "voters": sum(len(c) for _, c in vote.competing), "candidate": vote.candidate},
+                                               "voters": sum(len(c) for _, c in vote.competing), "candidate": vote.candidate,
+                                               "counts": [[code, len(c)] for code, c in vote.competing]},
             "status": status.value, "error": error,
             "precedent_codes": cls.retrieval_trace.precedent_codes if cls is not None and cls.retrieval_trace else [],
             "expected_sent": f"hs:{expected}" in shown,
             "own_rank": next((k for k, h in enumerate(hits, start=1) if h["reference"] == r["reference"]), None),
             "nearest_hits": hits})
+        rows[-1].update(override_fields(rows[-1]))   # feature 008: the switch on, from the same answers
     return rows, elapsed
+
+
+def replay_vote(row: dict) -> Hs6Vote | None:
+    """Feature 008: a row's vote as the routing functions take it, rebuilt from its counts by the product's own vote
+    (the rulings' countries do not route)."""
+    v = row["vote"]
+    if v is None:
+        return None
+    return hs6_ruling_vote([(code, "") for code, k in v["counts"] for _ in range(k)], row["top3"])
+
+
+def override_fields(row: dict, override_min: int = OVERRIDE_MIN) -> dict:
+    """Feature 008: a row's `supported` and `on` fields, from what it keeps (its flag, status, confidence, top 3 and vote
+    counts) through the routing functions with the switch on at `override_min`; its other fields stay the switch off."""
+    vote = replay_vote(row)
+    kind = None if row["flag"] == "failed" else FlagKind(row["flag"])
+    conf = row["confidence"]
+    route, _ = route_line(kind, conf, row["status"], kind not in (None, FlagKind.ok), DEFAULT_THRESHOLD, ASK_FLOOR,
+                          hs6_vote=vote, hs6_override_min=override_min)
+    gated = row["status"] == LineStatus.checked.value and kind == FlagKind.ok and (conf or 0) > 0   # as run_once
+    gate = hs6_gate(conf, DEFAULT_THRESHOLD, vote, override_min)[1] if gated else None
+    rank, chosen = hs6_choice([SimpleNamespace(code=code) for code in row["top3"]], vote, gate)
+    supported = vote.candidate if vote is not None else None
+    return {"supported": {"rank": supported, "right": row["top3"][supported - 1] == row["expected"] if supported else None},
+            "on": {"gate": gate.value if gate is not None else "not_gated", "route": route.value, "rank": rank,
+                   "chosen": chosen, "hit": chosen is not None and chosen == row["expected"]}}
 
 
 def _seen(r: dict) -> dict:
@@ -337,6 +376,46 @@ def own_ruling(runs: list[list[dict]]) -> dict:
     return {"nearest_runs": [sum(r["own_rank"] == 1 for r in run) for run in runs],
             "searched_runs": [sum(r["own_rank"] is not None and r["own_rank"] <= SEARCHED for r in run) for run in runs],
             "logged_runs": [sum(r["own_rank"] is not None for r in run) for run in runs], "searched": SEARCHED}
+
+
+def replay_runs(report: dict, override_min: int) -> list[list[dict]]:
+    """Feature 008: a results file's runs with the switch on recomputed at `override_min` from each row's stored
+    answers (override_fields); nothing else changes."""
+    return [[{**r, **override_fields(r, override_min)} for r in run] for run in (report.get("runs") or [report["rows"]])]
+
+
+def entry_measures(runs: list[list[dict]], cn8: dict[str, dict], cn8_data: dict, cn8_path: str,
+                   override_min: int = OVERRIDE_MIN) -> tuple[dict, dict]:
+    """The history entry's measures of `runs`, and the cross-layer table they include (with its lines)."""
+    x = cross_layer(runs, cn8)
+    return {**measures(runs), **gate_measures(runs), **override_measures(runs, cn8, override_min),
+            "expected_sent": expected_sent_share(runs), "own_ruling": own_ruling(runs),
+            "cn8_iteration": cn8_data["summary"].get("iteration"), "cn8_source": Path(cn8_path).name,
+            "cross_layer": {key: x[key] for key in ("majority", "runs", "end_to_end_runs")}}, x
+
+
+def on_rows(run: list[dict]) -> list[dict]:
+    """Feature 008: a run's rows with the switch on: the HS-6 chosen in place of the top-1, with its route and gate."""
+    return [{**r, "top1": r["on"]["chosen"], "hit": r["on"]["hit"], "route": r["on"]["route"], "gate": r["on"]["gate"]}
+            for r in run]
+
+
+def override_measures(runs: list[list[dict]], cn8: dict[str, dict], override_min: int = OVERRIDE_MIN) -> dict:
+    """Feature 008: the switch on, from the same rows (their `on` fields computed at `override_min`): the HS-6 measures
+    and the end-to-end estimate on the HS-6 chosen, the overrides that fired, and the lines whose rulings supported the
+    model's candidate 2 or 3 with how often it was right."""
+    on = [on_rows(run) for run in runs]
+    m, x = measures(on), cross_layer(on, cn8)
+    return {"override_min": override_min,
+            "on": {"top1_runs": m["top1_runs"], "majority_top1": m["majority_top1"], "routes_runs": m["routes_runs"],
+                   "wrong_auto_runs": m["wrong_auto_runs"],
+                   "right_auto_runs": [sum(r["hit"] and r["route"] == "auto_accept" for r in run) for run in on],
+                   "cross_layer": {key: x[key] for key in ("majority", "runs", "end_to_end_runs")}},
+            "overrides_runs": [[{"reference": r["reference"], "expected": r["expected"], "top1": r["top1"],
+                                 "chosen": r["on"]["chosen"], "rank": r["on"]["rank"], "hit": r["on"]["hit"]}
+                                for r in run if r["on"]["gate"] == "vote_override"] for run in runs],
+            "supported_runs": [{"lines": sum(r["supported"]["rank"] is not None for r in run),
+                                "right": sum(r["supported"]["right"] is True for r in run)} for run in runs]}
 
 
 def write_results(report: dict, out: Path, name: str) -> Path:
@@ -420,6 +499,10 @@ def _wrong_auto(wrong_auto_runs: list[list[dict]]) -> list[str]:
 def _entry_sections(h: dict, descriptions: dict[str, str]) -> list[str]:
     n, x = h["n"], h["cross_layer"]
     out = ["", f"## Iteration {h['iteration']} ({h.get('tag', '-')}, {h['model']}, {h['run_on']})"]
+    if h.get("replay_of"):
+        r = h["replay_of"]
+        out += ["", f"Replay of iteration {r['iteration']} ({r.get('tag') or '-'}) at OVERRIDE_MIN {h['override_min']}, "
+                    "from its stored answers: no model call."]
     if h.get("note"):
         out += ["", f"Note: {h['note']}"]
     if h.get("parse"):
@@ -473,7 +556,35 @@ def _entry_sections(h: dict, descriptions: dict[str, str]) -> list[str]:
     out += ["", f"### Lines wrong in every run ({len(wrong)})"] + ([""] + wrong if wrong else [])
     out += ["", f"### Lines whose top-1 differed between runs ({len(differed)})"] + ([""] + differed if differed else [])
     out += ["", "### Wrong but auto-accepted (the HS-6 layer)", ""] + _wrong_auto(h["wrong_auto_runs"])
+    if "on" in h:
+        out += _override_section(h)
     return out
+
+
+def _override_section(h: dict) -> list[str]:
+    """Feature 008: the switch off (the entry above) against on, replayed from the same answers."""
+    n, o = h["n"], h["on"]
+    off_e2e, on_e2e = h["cross_layer"]["end_to_end_runs"], o["cross_layer"]["end_to_end_runs"]
+    out = ["", "### Precedent override (feature 008)", "",
+           f"With the switch on, at least {h['override_min']} of the nearest rulings at the model's candidate 2 or 3 choose "
+           "that candidate and auto-accept it. The entry above is the switch off; the switch on is replayed from the same "
+           "model answers and rulings, so the two differ only where an override fired. HS-6 right: the HS-6 chosen, the "
+           "top-1 when no override fired.", "",
+           "| Run | Switch | HS-6 right | Auto-accepted | Wrong, auto-accepted | Right auto-accepts | End to end (estimate) |",
+           "|---|---|---|---|---|---|---|"]
+    for k in range(len(h["top1_runs"])):
+        for switch, m, e2e in (("off", h, off_e2e), ("on", o, on_e2e)):
+            out.append(f"| {k + 1} | {switch} | {m['top1_runs'][k]}/{n} | {m['routes_runs'][k]['auto_accept']} | "
+                       f"{len(m['wrong_auto_runs'][k])} | {m['right_auto_runs'][k]} | "
+                       f"{f'{e2e[k]}/{n}' if k < len(e2e) else '-'} |")
+    fired = h["overrides_runs"]
+    out += ["", f"Overrides that fired per run: {_runs(len(f) for f in fired)}, of which chose the right HS-6: "
+                f"{_runs(sum(x['hit'] for x in f) for f in fired)}. The rulings' majority supported the model's candidate 2 "
+                f"or 3 on {_runs(s['lines'] for s in h['supported_runs'])} lines per run; that candidate was the right HS-6 "
+                f"on {_runs(s['right'] for s in h['supported_runs'])}."]
+    listed = [f"- run {k}: {x['reference']} (expected {x['expected']}): candidate {x['rank']}, {x['chosen']}, instead of "
+              f"{x['top1']}; {'right' if x['hit'] else 'wrong'}" for k, f in enumerate(fired, start=1) for x in f]
+    return out + ([""] + listed if listed else [])
 
 
 def render_report(history: list[dict], data: dict) -> str:
@@ -518,6 +629,48 @@ def render_report(history: list[dict], data: dict) -> str:
     return "\n".join(out)
 
 
+def replay_main(args: argparse.Namespace, data: dict, cn8: dict[str, dict], cn8_data: dict, override_min: int) -> int:
+    """Feature 008: a stored run's answers with the switch on at `override_min`, with no model call. The replay keeps its
+    own results file (hs6_eval.json stays the latest paid run), a history entry marked as a replay, and the report."""
+    source = json.loads(Path(args.replay).read_text(encoding="utf-8"))
+    s = source["summary"]
+    runs = replay_runs(source, override_min)
+    history = json.loads(HISTORY.read_text(encoding="utf-8")) if HISTORY.exists() else []
+    iteration = max((h["iteration"] for h in history), default=0) + 1
+    m, x = entry_measures(runs, cn8, cn8_data, args.cn8, override_min)
+    entry = {"iteration": iteration, "run_on": date.today().isoformat(),
+             "change": f"replay of iteration {s['iteration']} at OVERRIDE_MIN {override_min}; no model call",
+             **({"tag": args.tag} if args.tag else {}),
+             **{k: s[k] for k in ("model", "reasoning", "threshold", "ask_floor", "temperature", "seed", "repeat", "n")
+                if k in s},
+             "replay_of": {"iteration": s["iteration"], "tag": s.get("tag")}, **m,
+             **({"parse": s["parse"]} if "parse" in s else {}), "confidence": confidence_table(runs),
+             "elapsed_s": 0.0, "cost_usd": 0.0, "cost_eur": 0.0, "cost_eur_runs": [0.0] * len(runs)}
+    if args.note:
+        entry["note"] = args.note
+    report: dict = {"summary": {**entry, "set_built_on": data["built_on"], "cn8_lines": x["lines"]}, "rows": runs[0]}
+    if len(runs) > 1:
+        report["runs"] = runs
+    history = sorted([h for h in history if h["iteration"] != iteration] + [entry], key=lambda h: h["iteration"])
+    if args.dry_run:
+        print("\n== tests/eval/hs6_eval.md:\n" + render_report(history, data))
+        print("dry run: nothing written")
+    else:
+        own = OUT.with_name(f"{OUT.stem}_{args.tag or f'iteration{iteration}'}{OUT.suffix}")
+        own.write_text(dump_results(report), encoding="utf-8", newline="\n")
+        HISTORY.write_text(json.dumps(history, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
+        REPORT.write_text(render_report(history, data), encoding="utf-8", newline="\n")
+    on, fired, n = entry["on"], entry["overrides_runs"], entry.get("n", len(runs[0]))
+    print(f"HS-6 replay of iteration {s['iteration']} at OVERRIDE_MIN {override_min}, no model call")
+    print(f"  switch off: top-1 per run {m['top1_runs']} of {n}; auto-accepted {[r['auto_accept'] for r in m['routes_runs']]}; "
+          f"wrong but auto-accepted {[len(w) for w in m['wrong_auto_runs']]}; end to end {x['end_to_end_runs']}")
+    print(f"  switch on:  top-1 per run {on['top1_runs']} of {n}; auto-accepted "
+          f"{[r['auto_accept'] for r in on['routes_runs']]}; wrong but auto-accepted {[len(w) for w in on['wrong_auto_runs']]}; "
+          f"end to end {on['cross_layer']['end_to_end_runs']}; overrides {[len(f) for f in fired]}, right "
+          f"{[sum(o['hit'] for o in f) for f in fired]}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")   # German and Chinese text; a redirected Windows console is cp1252
@@ -533,6 +686,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--cn8", default=str(CN8_RESULTS), help="the CN-8 eval results the cross-layer table reads")
     ap.add_argument("--limit", type=int, help="only the first N lines of the set (with --dry-run)")
     ap.add_argument("--dry-run", action="store_true", help="print a row, the history entry and the report; write nothing")
+    ap.add_argument("--replay", help="feature 008: a results file whose stored answers are replayed at --override-min, "
+                                     "with no model call")
+    ap.add_argument("--override-min", type=int, help=f"the OVERRIDE_MIN of a --replay (default {OVERRIDE_MIN})")
     args = ap.parse_args(argv)
     if args.repeat < 1:
         ap.error("--repeat must be 1 or more")
@@ -540,6 +696,10 @@ def main(argv: list[str] | None = None) -> int:
         ap.error("--limit is for a dry run: the history keeps whole-set runs only")
     if args.tag is not None and not TAG_RE.fullmatch(args.tag):
         ap.error("--tag names the run's results file: letters, digits, '.', '_' and '-'")
+    if args.override_min is not None and not args.replay:
+        ap.error("--override-min is for a --replay: a run computes the switch on at OVERRIDE_MIN")
+    if args.replay and not 1 <= (args.override_min or OVERRIDE_MIN) <= HS6_VOTE_K:
+        ap.error(f"--override-min must be between 1 and {HS6_VOTE_K}")
     data = json.loads(SET.read_text(encoding="utf-8"))
     rulings = data["rulings"][:args.limit] if args.limit else data["rulings"]
     cn8_data = json.loads(Path(args.cn8).read_text(encoding="utf-8"))
@@ -547,6 +707,8 @@ def main(argv: list[str] | None = None) -> int:
     missing = [r["reference"] for r in rulings if r["reference"] not in cn8]
     if missing:
         ap.error(f"{len(missing)} lines are missing from {args.cn8}, such as {missing[0]}")
+    if args.replay:
+        return replay_main(args, data, cn8, cn8_data, args.override_min or OVERRIDE_MIN)
     as_of = date.fromisoformat(data["built_on"])
     settings, found = run_settings(get_settings(), args.model)
     reasoning = {"enabled": False} if settings.reasoning_off else None   # what the calls carry
@@ -581,14 +743,12 @@ def main(argv: list[str] | None = None) -> int:
         costs.append(round(usage.cost_eur - before, 4))
         print(f"  run {k + 1}: top-1 {sum(r['hit'] for r in rows)}/{len(rows)}, in top 3 {sum(r['in_top3'] for r in rows)}, "
               f"{seconds:.0f} s, €{costs[-1]:.4f}; invalid answers {parsed[-1]}")
-    m, x = measures(runs), cross_layer(runs, cn8)
+    m, x = entry_measures(runs, cn8, cn8_data, args.cn8)
     entry = {
         "iteration": iteration, "run_on": date.today().isoformat(), "change": change,
         **({"tag": args.tag} if args.tag else {}), "model": settings.chat_model, "reasoning": reasoning,
         "threshold": DEFAULT_THRESHOLD, "ask_floor": ASK_FLOOR, "temperature": temperature, "seed": seed,
-        "repeat": args.repeat, "n": len(rulings), **m, **gate_measures(runs), "expected_sent": expected_sent_share(runs),
-        "own_ruling": own_ruling(runs), "cn8_iteration": cn8_data["summary"].get("iteration"), "cn8_source": Path(args.cn8).name,
-        "cross_layer": {key: x[key] for key in ("majority", "runs", "end_to_end_runs")},
+        "repeat": args.repeat, "n": len(rulings), **m,
         "parse": {"retry_limit": client.max_retries, "runs": parsed}, "confidence": confidence_table(runs),
         "elapsed_s": round(elapsed, 1), "cost_usd": round(usage.cost_usd, 4), "cost_eur": round(usage.cost_eur, 4),
         "cost_eur_runs": costs}
@@ -624,6 +784,11 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  gate per run {entry['gate_runs']}; no ruling, to review {entry['no_rulings_review_runs']}; right "
           f"auto-accepts {entry['right_auto_runs']}; lost {entry['lost_runs']}")
     print(f"  cross-layer (majority) {mx}; end to end per run {x['end_to_end_runs']} of {n}")
+    on, fired = entry["on"], entry["overrides_runs"]
+    print(f"  switch on (OVERRIDE_MIN {entry['override_min']}): top-1 per run {on['top1_runs']}; auto-accepted per run "
+          f"{[routes['auto_accept'] for routes in on['routes_runs']]}; wrong but auto-accepted per run "
+          f"{[len(w) for w in on['wrong_auto_runs']]}; end to end per run {on['cross_layer']['end_to_end_runs']} of {n}; "
+          f"overrides per run {[len(f) for f in fired]}, right {[sum(x['hit'] for x in f) for f in fired]}")
     print(f"  own ruling nearest per run {entry['own_ruling']['nearest_runs']}")
     print(f"  model {settings.chat_model}, reasoning {reasoning}; invalid answers per run (retried at most "
           f"{client.max_retries} times) {parsed}")

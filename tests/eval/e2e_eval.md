@@ -8,6 +8,8 @@
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | 1 | 2026-10-26 | e2e-baseline | google/gemini-2.5-flash | 3 | 64 / 64 / 65 of 120 | 64/120 | 53 / 52 / 53 | 8 / 7 / 7 | 55 / 56 / 55 | 12 / 12 / 12 | $0.7920 (€0.7286), 263 s |
 | 2 | 2026-10-26 | e2e-stopword-fix | google/gemini-2.5-flash | 1 | 68 of 120 | 68/120 | 56 | 7 | 57 | 7 | $0.2674 (€0.2460), 134 s |
+| 3 | 2026-10-26 | e2e-override | google/gemini-2.5-flash | 1 | 74 of 120 | 74/120 | 64 | 8 | 49 | 7 | $0.2771 (€0.2550), 225 s |
+| 4 | 2026-10-26 | e2e-override-min5 | google/gemini-2.5-flash | 1 | 69 of 120 | 69/120 | 59 | 8 | 54 | 7 | $0.0000 (€0.0000), 0 s |
 
 ## Iteration 1 (e2e-baseline, google/gemini-2.5-flash, 2026-10-26)
 
@@ -176,5 +178,207 @@ Invalid answers (retried at most 2 times): run 1: 0 retried, 0 calls still inval
 - IEBTIIENEN004-2026-BTI72 (expected 96190050): 96190040 (review, wrong CN-8) in every run
 - IEBTIIENEN004-2026-BTI71 (expected 96190050): 61082100 (review, wrong HS-6) in every run
 - IEBTIIENEN004-2026-BTI222 (expected 96091090): 96099090 (review, wrong HS-6) in every run
+
+## Iteration 3 (e2e-override, google/gemini-2.5-flash, 2026-10-26)
+
+| Run | Right end to end | Auto-accepted | Wrong auto-accepts | Review | Ask the shipper | From the HS-6 step (wrong / flagged / failed / no candidate) | From the CN-8 step (wrong / question / failed) | Time (upload, in all) | Cost |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | 74/120 | 64 | 8 | 49 | 7 | 34 (26 / 8 / 0 / 0) | 12 (4 / 8 / 0) | 195 s, 225 s | €0.2550 |
+
+Majority (the most frequent CN-8 pick of each line; a tie goes to the earliest run): 74 of 120 right end to end; of the 46 others, 34 went wrong at the HS-6 step and 12 at the CN-8 step.
+
+By layer, per run: the HS-6 top-1 right in 80 of 120; a wrong HS-6 decided by the gate in 9; the CN-8 right where the HS-6 it ran on was right in 74 of 86.
+
+Cut at 300 characters: 71 of 120 lines. Right end to end per run: 40 of the cut lines, 34 of the other 49.
+
+Same CN-8 pick in all runs: 120/120; same route: 120/120. Right auto-accepts per run: 56.
+
+Invalid answers (retried at most 2 times): run 1: 0 retried, 0 calls still invalid, 0 lines failed.
+
+### Wrong auto-accepts (8 lines)
+
+- XIBTI505068468 (expected 39269097): run 1: 73218100 under 7321.81, wrong HS-6
+- IEBTIIENEN004-2024-BTI284 (expected 42021291): run 1: 42029219 under 4202.92, wrong HS-6
+- DEBTI36175/25-1 (expected 61161020): run 1: 61169200 under 6116.92, wrong HS-6
+- IEBTIIENEN004-2024-BTI356 (expected 64052091): run 1: 64041910 under 6404.19, wrong HS-6
+- IEBTIIENEN004-2026-BTI68 (expected 84798997): run 1: 84198998 under 8419.89, wrong HS-6
+- MTBTI2024-002 (expected 84248970): run 1: 84798997 under 8479.89, wrong HS-6
+- MTBTI2025-011 (expected 94054231): run 1: 94051140 under 9405.11, wrong HS-6
+- IEBTIIENEN004-2025-BTI38 (expected 95030041): run 1: 95030049 under 9503.00, wrong CN-8
+
+### Lines wrong in every run (46)
+
+- IEBTIIENEN004-2025-BTI245 (expected 39269097): no CN-8 (review, flagged, waits for the shipper) in every run
+- XIBTI505068468 (expected 39269097): 73218100 (auto_accept, wrong HS-6) in every run
+- IEBTIIENEN004-2023-BTI572 (expected 39231090): no CN-8 (review, flagged, waits for the shipper) in every run
+- IEBTIIENEN004-2024-BTI284 (expected 42021291): 42029219 (auto_accept, wrong HS-6) in every run
+- IEBTIIENEN004-2025-BTI449 (expected 42029219): 42021211 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2025-BTI264 (expected 42029291): no CN-8 (ask_shipper, CN-8 question) in every run
+- IEBTIIENEN004-2025-BTI227 (expected 42029298): 42022290 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2024-BTI261 (expected 42029219): 42021250 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2024-BTI132 (expected 61023090): 61013090 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2024-BTI208 (expected 61099020): 61143000 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2024-BTI90 (expected 61013090): 61043300 (review, wrong HS-6) in every run
+- DEBTI45301/24-1 (expected 61102099): no CN-8 (ask_shipper, CN-8 question) in every run
+- DEBTI36175/25-1 (expected 61161020): 61169200 (auto_accept, wrong HS-6) in every run
+- DEBTI23122/26-1 (expected 61161080): no CN-8 (ask_shipper, flagged, waits for the shipper) in every run
+- DEBTI7623/25-1 (expected 62024010): 62043390 (review, wrong HS-6) in every run
+- DEBTI43065/25-1 (expected 62101098): no CN-8 (ask_shipper, CN-8 question) in every run
+- IEBTIIENEN004-2026-BTI228 (expected 63079098): 33049900 (review, wrong HS-6) in every run
+- SEBTITV-2026-01096 (expected 63079010): 95030041 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2024-BTI7 (expected 63079098): 46029000 (review, wrong HS-6) in every run
+- XIBTI505066180 (expected 63079010): 87082190 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2024-BTI356 (expected 64052091): 64041910 (auto_accept, wrong HS-6) in every run
+- IEBTIIENEN004-2024-BTI122 (expected 64029939): 64041990 (review, wrong HS-6) in every run
+- DEBTI16524/26-1 (expected 64029998): 64041910 (review, wrong HS-6) in every run
+- DEBTI37155/24-1 (expected 64029190): 64029998 (review, wrong HS-6) in every run
+- XIBTI505060394 (expected 73269098): no CN-8 (review, flagged, waits for the shipper) in every run
+- IEBTIIENEN004-2025-BTI77 (expected 73181552): no CN-8 (review, CN-8 question) in every run
+- IEBTIIENEN004-2024-BTI92 (expected 73209090): no CN-8 (review, CN-8 question) in every run
+- IEBTIIENEN004-2026-BTI279 (expected 73181542): no CN-8 (ask_shipper, CN-8 question) in every run
+- IEBTIIENEN004-2025-BTI378 (expected 73170020): no CN-8 (ask_shipper, CN-8 question) in every run
+- IEBTIIENEN004-2025-BTI173 (expected 73269098): no CN-8 (ask_shipper, CN-8 question) in every run
+- IEBTIIENEN004-2025-BTI301 (expected 73259990): 85389099 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2026-BTI19 (expected 84151010): 84152000 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2025-BTI249 (expected 84213925): no CN-8 (review, flagged, waits for the shipper) in every run
+- IEBTIIENEN004-2025-BTI293 (expected 84249080): 84818099 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2026-BTI68 (expected 84798997): 84198998 (auto_accept, wrong HS-6) in every run
+- IEBTIIENEN004-2026-BTI124 (expected 84314980): no CN-8 (review, flagged, waits for the shipper) in every run
+- IEBTIIENEN004-2026-BTI105 (expected 84749090): no CN-8 (review, flagged, waits for the shipper) in every run
+- MTBTI2024-002 (expected 84248970): 84798997 (auto_accept, wrong HS-6) in every run
+- IEBTIIENEN004-2026-BTI60 (expected 85389099): no CN-8 (review, wrong HS-6) in every run
+- XIBTI505068566 (expected 85044083): no CN-8 (review, flagged, waits for the shipper) in every run
+- IEBTIIENEN004-2023-BTI561 (expected 85371098): 85363030 (review, wrong HS-6) in every run
+- MTBTI2025-011 (expected 94054231): 94051140 (auto_accept, wrong HS-6) in every run
+- IEBTIIENEN004-2025-BTI38 (expected 95030041): 95030049 (auto_accept, wrong CN-8) in every run
+- IEBTIIENEN004-2026-BTI72 (expected 96190050): 96190040 (review, wrong CN-8) in every run
+- IEBTIIENEN004-2026-BTI71 (expected 96190050): 96190040 (review, wrong CN-8) in every run
+- IEBTIIENEN004-2026-BTI222 (expected 96091090): 96091010 (review, wrong CN-8) in every run
+
+### Precedent override (feature 008)
+
+The run was made with the switch on (OVERRIDE_MIN 4), so the entry above is the switch on. The switch off is replayed from the same answers: on a line the override decided, the HS-6 goes to review, the clerk confirms the top candidate, and its CN-8 is the CN-8 step's answer under it, asked in the same run (outside the run time, inside the cost).
+
+| Run | Switch | Right end to end | Auto-accepted | Wrong auto-accepts | Review | Ask the shipper |
+|---|---|---|---|---|---|---|
+| 1 | off | 67/120 | 57 | 8 | 56 | 7 |
+| 1 | on | 74/120 | 64 | 8 | 49 | 7 |
+
+Overrides that fired per run: 11, of which chose the right HS-6: 10. The rulings' majority supported the model's candidate 2 or 3 on 25 lines per run; that candidate was the right HS-6 on 16.
+
+Lines whose outcome differs between the two states: 11.
+
+- run 1: IEBTIIENEN004-2024-BTI145 (expected 42029291): off 42022290 under 4202.22 (review, wrong); on 42029291 under 4202.92, candidate 3 (review, right)
+- run 1: IEBTIIENEN004-2026-BTI106 (expected 62121090): off 61124190 under 6112.41 (review, wrong); on 62121090 under 6212.10, candidate 2 (auto_accept, right)
+- run 1: IEBTIIENEN004-2026-BTI108 (expected 62121090): off no CN-8 under 6112.41 (review, wrong); on 62121090 under 6212.10, candidate 2 (auto_accept, right)
+- run 1: IEBTIIENEN004-2026-BTI107 (expected 62121090): off no CN-8 under 6112.41 (review, wrong); on 62121090 under 6212.10, candidate 2 (auto_accept, right)
+- run 1: IEBTIIENEN004-2024-BTI5 (expected 63079098): off 46021990 under 4602.19 (review, wrong); on 63079098 under 6307.90, candidate 2 (auto_accept, right)
+- run 1: IEBTIIENEN004-2024-BTI8 (expected 63079098): off 46029000 under 4602.90 (review, wrong); on 63079098 under 6307.90, candidate 2 (auto_accept, right)
+- run 1: MTBTI2025-017 (expected 63079098): off 63059000 under 6305.90 (review, wrong); on 63079098 under 6307.90, candidate 3 (auto_accept, right)
+- run 1: IEBTIIENEN004-2024-BTI122 (expected 64029939): off 64029939 under 6402.99 (review, right); on 64041990 under 6404.19, candidate 2 (review, wrong)
+- run 1: IEBTIIENEN004-2025-BTI336 (expected 85389099): off 39259010 under 3925.90 (review, wrong); on 85389099 under 8538.90, candidate 2 (auto_accept, right)
+- run 1: IEBTIIENEN004-2026-BTI71 (expected 96190050): off 61082100 under 6108.21 (review, wrong); on 96190040 under 9619.00, candidate 2 (review, wrong)
+- run 1: IEBTIIENEN004-2026-BTI222 (expected 96091090): off 96099090 under 9609.90 (review, wrong); on 96091010 under 9609.10, candidate 2 (review, wrong)
+
+## Iteration 4 (e2e-override-min5, google/gemini-2.5-flash, 2026-10-26)
+
+Replay of iteration 3 (e2e-override) at OVERRIDE_MIN 5, from its stored answers: no model call; the CN-8 answers below were asked in that run.
+
+| Run | Right end to end | Auto-accepted | Wrong auto-accepts | Review | Ask the shipper | From the HS-6 step (wrong / flagged / failed / no candidate) | From the CN-8 step (wrong / question / failed) | Time (upload, in all) | Cost |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | 69/120 | 59 | 8 | 54 | 7 | 39 (31 / 8 / 0 / 0) | 12 (4 / 8 / 0) | 0 s, 0 s | €0.0000 |
+
+Majority (the most frequent CN-8 pick of each line; a tie goes to the earliest run): 69 of 120 right end to end; of the 51 others, 39 went wrong at the HS-6 step and 12 at the CN-8 step.
+
+By layer, per run: the HS-6 top-1 right in 80 of 120; a wrong HS-6 decided by the gate in 8; the CN-8 right where the HS-6 it ran on was right in 69 of 81.
+
+Cut at 300 characters: 71 of 120 lines. Right end to end per run: 40 of the cut lines, 29 of the other 49.
+
+Same CN-8 pick in all runs: 120/120; same route: 120/120. Right auto-accepts per run: 51.
+
+Invalid answers (retried at most 2 times): run 1: 0 retried, 0 calls still invalid, 0 lines failed.
+
+### Wrong auto-accepts (8 lines)
+
+- XIBTI505068468 (expected 39269097): run 1: 73218100 under 7321.81, wrong HS-6
+- IEBTIIENEN004-2024-BTI284 (expected 42021291): run 1: 42029219 under 4202.92, wrong HS-6
+- DEBTI36175/25-1 (expected 61161020): run 1: 61169200 under 6116.92, wrong HS-6
+- IEBTIIENEN004-2024-BTI356 (expected 64052091): run 1: 64041910 under 6404.19, wrong HS-6
+- IEBTIIENEN004-2026-BTI68 (expected 84798997): run 1: 84198998 under 8419.89, wrong HS-6
+- MTBTI2024-002 (expected 84248970): run 1: 84798997 under 8479.89, wrong HS-6
+- MTBTI2025-011 (expected 94054231): run 1: 94051140 under 9405.11, wrong HS-6
+- IEBTIIENEN004-2025-BTI38 (expected 95030041): run 1: 95030049 under 9503.00, wrong CN-8
+
+### Lines wrong in every run (51)
+
+- IEBTIIENEN004-2025-BTI245 (expected 39269097): no CN-8 (review, flagged, waits for the shipper) in every run
+- XIBTI505068468 (expected 39269097): 73218100 (auto_accept, wrong HS-6) in every run
+- IEBTIIENEN004-2023-BTI572 (expected 39231090): no CN-8 (review, flagged, waits for the shipper) in every run
+- IEBTIIENEN004-2024-BTI284 (expected 42021291): 42029219 (auto_accept, wrong HS-6) in every run
+- IEBTIIENEN004-2024-BTI145 (expected 42029291): 42022290 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2025-BTI449 (expected 42029219): 42021211 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2025-BTI264 (expected 42029291): no CN-8 (ask_shipper, CN-8 question) in every run
+- IEBTIIENEN004-2025-BTI227 (expected 42029298): 42022290 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2024-BTI261 (expected 42029219): 42021250 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2024-BTI132 (expected 61023090): 61013090 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2024-BTI208 (expected 61099020): 61143000 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2024-BTI90 (expected 61013090): 61043300 (review, wrong HS-6) in every run
+- DEBTI45301/24-1 (expected 61102099): no CN-8 (ask_shipper, CN-8 question) in every run
+- DEBTI36175/25-1 (expected 61161020): 61169200 (auto_accept, wrong HS-6) in every run
+- DEBTI23122/26-1 (expected 61161080): no CN-8 (ask_shipper, flagged, waits for the shipper) in every run
+- IEBTIIENEN004-2026-BTI106 (expected 62121090): 61124190 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2026-BTI108 (expected 62121090): no CN-8 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2026-BTI107 (expected 62121090): no CN-8 (review, wrong HS-6) in every run
+- DEBTI7623/25-1 (expected 62024010): 62043390 (review, wrong HS-6) in every run
+- DEBTI43065/25-1 (expected 62101098): no CN-8 (ask_shipper, CN-8 question) in every run
+- IEBTIIENEN004-2026-BTI228 (expected 63079098): 33049900 (review, wrong HS-6) in every run
+- SEBTITV-2026-01096 (expected 63079010): 95030041 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2024-BTI7 (expected 63079098): 46029000 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2024-BTI5 (expected 63079098): 46021990 (review, wrong HS-6) in every run
+- XIBTI505066180 (expected 63079010): 87082190 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2024-BTI356 (expected 64052091): 64041910 (auto_accept, wrong HS-6) in every run
+- DEBTI16524/26-1 (expected 64029998): 64041910 (review, wrong HS-6) in every run
+- DEBTI37155/24-1 (expected 64029190): 64029998 (review, wrong HS-6) in every run
+- XIBTI505060394 (expected 73269098): no CN-8 (review, flagged, waits for the shipper) in every run
+- IEBTIIENEN004-2025-BTI77 (expected 73181552): no CN-8 (review, CN-8 question) in every run
+- IEBTIIENEN004-2024-BTI92 (expected 73209090): no CN-8 (review, CN-8 question) in every run
+- IEBTIIENEN004-2026-BTI279 (expected 73181542): no CN-8 (ask_shipper, CN-8 question) in every run
+- IEBTIIENEN004-2025-BTI378 (expected 73170020): no CN-8 (ask_shipper, CN-8 question) in every run
+- IEBTIIENEN004-2025-BTI173 (expected 73269098): no CN-8 (ask_shipper, CN-8 question) in every run
+- IEBTIIENEN004-2025-BTI301 (expected 73259990): 85389099 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2026-BTI19 (expected 84151010): 84152000 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2025-BTI249 (expected 84213925): no CN-8 (review, flagged, waits for the shipper) in every run
+- IEBTIIENEN004-2025-BTI293 (expected 84249080): 84818099 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2026-BTI68 (expected 84798997): 84198998 (auto_accept, wrong HS-6) in every run
+- IEBTIIENEN004-2026-BTI124 (expected 84314980): no CN-8 (review, flagged, waits for the shipper) in every run
+- IEBTIIENEN004-2026-BTI105 (expected 84749090): no CN-8 (review, flagged, waits for the shipper) in every run
+- MTBTI2024-002 (expected 84248970): 84798997 (auto_accept, wrong HS-6) in every run
+- IEBTIIENEN004-2026-BTI60 (expected 85389099): no CN-8 (review, wrong HS-6) in every run
+- IEBTIIENEN004-2025-BTI336 (expected 85389099): 39259010 (review, wrong HS-6) in every run
+- XIBTI505068566 (expected 85044083): no CN-8 (review, flagged, waits for the shipper) in every run
+- IEBTIIENEN004-2023-BTI561 (expected 85371098): 85363030 (review, wrong HS-6) in every run
+- MTBTI2025-011 (expected 94054231): 94051140 (auto_accept, wrong HS-6) in every run
+- IEBTIIENEN004-2025-BTI38 (expected 95030041): 95030049 (auto_accept, wrong CN-8) in every run
+- IEBTIIENEN004-2026-BTI72 (expected 96190050): 96190040 (review, wrong CN-8) in every run
+- IEBTIIENEN004-2026-BTI71 (expected 96190050): 96190040 (review, wrong CN-8) in every run
+- IEBTIIENEN004-2026-BTI222 (expected 96091090): 96091010 (review, wrong CN-8) in every run
+
+### Precedent override (feature 008)
+
+The run was made with the switch on (OVERRIDE_MIN 5), so the entry above is the switch on. The switch off is replayed from the same answers: on a line the override decided, the HS-6 goes to review, the clerk confirms the top candidate, and its CN-8 is the CN-8 step's answer under it, asked in the same run (outside the run time, inside the cost).
+
+| Run | Switch | Right end to end | Auto-accepted | Wrong auto-accepts | Review | Ask the shipper |
+|---|---|---|---|---|---|---|
+| 1 | off | 67/120 | 57 | 8 | 56 | 7 |
+| 1 | on | 69/120 | 59 | 8 | 54 | 7 |
+
+Overrides that fired per run: 4, of which chose the right HS-6: 4. The rulings' majority supported the model's candidate 2 or 3 on 25 lines per run; that candidate was the right HS-6 on 16.
+
+Lines whose outcome differs between the two states: 4.
+
+- run 1: IEBTIIENEN004-2024-BTI8 (expected 63079098): off 46029000 under 4602.90 (review, wrong); on 63079098 under 6307.90, candidate 2 (auto_accept, right)
+- run 1: MTBTI2025-017 (expected 63079098): off 63059000 under 6305.90 (review, wrong); on 63079098 under 6307.90, candidate 3 (auto_accept, right)
+- run 1: IEBTIIENEN004-2026-BTI71 (expected 96190050): off 61082100 under 6108.21 (review, wrong); on 96190040 under 9619.00, candidate 2 (review, wrong)
+- run 1: IEBTIIENEN004-2026-BTI222 (expected 96091090): off 96099090 under 9609.90 (review, wrong); on 96091010 under 9609.10, candidate 2 (review, wrong)
 
 Line-by-line results of the latest run: `tests/eval/e2e_eval.json`; each run also keeps its own, `tests/eval/e2e_eval_<tag>.json`.

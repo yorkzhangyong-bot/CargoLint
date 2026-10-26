@@ -9007,5 +9007,1581 @@
   "cost_eur_runs": [
    0.5766
   ]
+ },
+ {
+  "iteration": 7,
+  "run_on": "2026-10-26",
+  "change": "1 independent run, temperature 0.0, seed none",
+  "tag": "hs6-override",
+  "model": "google/gemini-2.5-flash",
+  "reasoning": {
+   "enabled": false
+  },
+  "threshold": 85,
+  "ask_floor": 50,
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 1,
+  "n": 120,
+  "top1_runs": [
+   83
+  ],
+  "majority_top1": 83,
+  "top3_runs": [
+   108
+  ],
+  "same_top1": 120,
+  "top1_consistency": 1.0,
+  "same_route": 120,
+  "route_consistency": 1.0,
+  "routes_runs": [
+   {
+    "auto_accept": 67,
+    "review": 53,
+    "ask_shipper": 0
+   }
+  ],
+  "wrong_auto_runs": [
+   [
+    {
+     "reference": "IEBTIIENEN004-2024-BTI356",
+     "expected": "6405.20",
+     "top1": "6404.19",
+     "confidence": 95
+    },
+    {
+     "reference": "MTBTI2024-002",
+     "expected": "8424.89",
+     "top1": "8479.89",
+     "confidence": 95
+    },
+    {
+     "reference": "MTBTI2025-011",
+     "expected": "9405.42",
+     "top1": "9405.11",
+     "confidence": 95
+    }
+   ]
+  ],
+  "always_wrong": [
+   {
+    "reference": "XIBTI505068468",
+    "chapter": "39",
+    "expected": "3926.90",
+    "seen": [
+     {
+      "top1": "7322.90",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI284",
+    "chapter": "42",
+    "expected": "4202.12",
+    "seen": [
+     {
+      "top1": "4202.32",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI145",
+    "chapter": "42",
+    "expected": "4202.92",
+    "seen": [
+     {
+      "top1": "4202.22",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI449",
+    "chapter": "42",
+    "expected": "4202.92",
+    "seen": [
+     {
+      "top1": "4202.12",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "FRBTIFR-BTI-2025-02100",
+    "chapter": "42",
+    "expected": "4203.29",
+    "seen": [
+     {
+      "top1": "6116.10",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI227",
+    "chapter": "42",
+    "expected": "4202.92",
+    "seen": [
+     {
+      "top1": "4202.22",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI261",
+    "chapter": "42",
+    "expected": "4202.92",
+    "seen": [
+     {
+      "top1": "4202.12",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI132",
+    "chapter": "61",
+    "expected": "6102.30",
+    "seen": [
+     {
+      "top1": "6101.30",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI208",
+    "chapter": "61",
+    "expected": "6109.90",
+    "seen": [
+     {
+      "top1": "6114.30",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI90",
+    "chapter": "61",
+    "expected": "6101.30",
+    "seen": [
+     {
+      "top1": "6104.33",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI106",
+    "chapter": "62",
+    "expected": "6212.10",
+    "seen": [
+     {
+      "top1": "6112.41",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI108",
+    "chapter": "62",
+    "expected": "6212.10",
+    "seen": [
+     {
+      "top1": "6112.41",
+      "confidence": 98,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI107",
+    "chapter": "62",
+    "expected": "6212.10",
+    "seen": [
+     {
+      "top1": "6112.41",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI7623/25-1",
+    "chapter": "62",
+    "expected": "6202.40",
+    "seen": [
+     {
+      "top1": "6204.33",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI228",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "3304.99",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "SEBTITV-2026-01096",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI7",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "4602.19",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI5",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "4602.19",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI8",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "4602.90",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505066180",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "8708.21",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "MTBTI2025-017",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "6305.90",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "CZBTI47/152108/2024-580000-04/01",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI356",
+    "chapter": "64",
+    "expected": "6405.20",
+    "seen": [
+     {
+      "top1": "6404.19",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505060394",
+    "chapter": "73",
+    "expected": "7326.90",
+    "seen": [
+     {
+      "top1": "8303.00",
+      "confidence": 59,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI19",
+    "chapter": "84",
+    "expected": "8415.10",
+    "seen": [
+     {
+      "top1": "8415.82",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI293",
+    "chapter": "84",
+    "expected": "8424.90",
+    "seen": [
+     {
+      "top1": "8481.90",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI68",
+    "chapter": "84",
+    "expected": "8479.89",
+    "seen": [
+     {
+      "top1": "8419.89",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI124",
+    "chapter": "84",
+    "expected": "8431.49",
+    "seen": [
+     {
+      "top1": "7308.90",
+      "confidence": 59,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI105",
+    "chapter": "84",
+    "expected": "8474.90",
+    "seen": [
+     {
+      "top1": "3926.90",
+      "confidence": 59,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "MTBTI2024-002",
+    "chapter": "84",
+    "expected": "8424.89",
+    "seen": [
+     {
+      "top1": "8479.89",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI60",
+    "chapter": "85",
+    "expected": "8538.90",
+    "seen": [
+     {
+      "top1": "8536.30",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI336",
+    "chapter": "85",
+    "expected": "8538.90",
+    "seen": [
+     {
+      "top1": "3925.90",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505059567",
+    "chapter": "85",
+    "expected": "8504.40",
+    "seen": [
+     {
+      "top1": "8471.80",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505068566",
+    "chapter": "85",
+    "expected": "8504.40",
+    "seen": [
+     {
+      "top1": "8504.31",
+      "confidence": 59,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2023-BTI561",
+    "chapter": "85",
+    "expected": "8537.10",
+    "seen": [
+     {
+      "top1": "8536.30",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "MTBTI2025-011",
+    "chapter": "94",
+    "expected": "9405.42",
+    "seen": [
+     {
+      "top1": "9405.11",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI222",
+    "chapter": "96",
+    "expected": "9609.10",
+    "seen": [
+     {
+      "top1": "9609.90",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   }
+  ],
+  "unstable": [],
+  "gate_runs": [
+   {
+    "vote_agrees": 67,
+    "vote_disagrees": 33,
+    "vote_tie": 10,
+    "vote_share_low": 4,
+    "no_rulings": 0,
+    "not_gated": 6
+   }
+  ],
+  "no_rulings_review_runs": [
+   0
+  ],
+  "right_auto_runs": [
+   64
+  ],
+  "lost_runs": [
+   17
+  ],
+  "override_min": 4,
+  "on": {
+   "top1_runs": [
+    92
+   ],
+   "majority_top1": 92,
+   "routes_runs": [
+    {
+     "auto_accept": 81,
+     "review": 39,
+     "ask_shipper": 0
+    }
+   ],
+   "wrong_auto_runs": [
+    [
+     {
+      "reference": "XIBTI505068468",
+      "expected": "3926.90",
+      "top1": "7321.81",
+      "confidence": 95
+     },
+     {
+      "reference": "IEBTIIENEN004-2024-BTI356",
+      "expected": "6405.20",
+      "top1": "6404.19",
+      "confidence": 95
+     },
+     {
+      "reference": "IEBTIIENEN004-2024-BTI122",
+      "expected": "6402.99",
+      "top1": "6404.19",
+      "confidence": 95
+     },
+     {
+      "reference": "IEBTIIENEN004-2024-BTI128",
+      "expected": "6404.19",
+      "top1": "6402.99",
+      "confidence": 95
+     },
+     {
+      "reference": "MTBTI2024-002",
+      "expected": "8424.89",
+      "top1": "8479.89",
+      "confidence": 95
+     },
+     {
+      "reference": "MTBTI2025-011",
+      "expected": "9405.42",
+      "top1": "9405.11",
+      "confidence": 95
+     }
+    ]
+   ],
+   "right_auto_runs": [
+    75
+   ],
+   "cross_layer": {
+    "majority": {
+     "hs6_right_cn8_right": 82,
+     "hs6_right_cn8_wrong": 10,
+     "hs6_wrong_cn8_right": 21,
+     "hs6_wrong_cn8_wrong": 7
+    },
+    "runs": [
+     {
+      "hs6_right_cn8_right": 82,
+      "hs6_right_cn8_wrong": 10,
+      "hs6_wrong_cn8_right": 20,
+      "hs6_wrong_cn8_wrong": 8
+     }
+    ],
+    "end_to_end_runs": [
+     82
+    ]
+   }
+  },
+  "overrides_runs": [
+   [
+    {
+     "reference": "XIBTI505068468",
+     "expected": "3926.90",
+     "top1": "7322.90",
+     "chosen": "7321.81",
+     "rank": 2,
+     "hit": false
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI145",
+     "expected": "4202.92",
+     "top1": "4202.22",
+     "chosen": "4202.92",
+     "rank": 3,
+     "hit": true
+    },
+    {
+     "reference": "FRBTIFR-BTI-2025-02100",
+     "expected": "4203.29",
+     "top1": "6116.10",
+     "chosen": "4203.29",
+     "rank": 2,
+     "hit": true
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI106",
+     "expected": "6212.10",
+     "top1": "6112.41",
+     "chosen": "6212.10",
+     "rank": 2,
+     "hit": true
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI108",
+     "expected": "6212.10",
+     "top1": "6112.41",
+     "chosen": "6212.10",
+     "rank": 2,
+     "hit": true
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI107",
+     "expected": "6212.10",
+     "top1": "6112.41",
+     "chosen": "6212.10",
+     "rank": 2,
+     "hit": true
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI5",
+     "expected": "6307.90",
+     "top1": "4602.19",
+     "chosen": "6307.90",
+     "rank": 2,
+     "hit": true
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI8",
+     "expected": "6307.90",
+     "top1": "4602.90",
+     "chosen": "6307.90",
+     "rank": 2,
+     "hit": true
+    },
+    {
+     "reference": "MTBTI2025-017",
+     "expected": "6307.90",
+     "top1": "6305.90",
+     "chosen": "6307.90",
+     "rank": 3,
+     "hit": true
+    },
+    {
+     "reference": "CZBTI47/152108/2024-580000-04/01",
+     "expected": "6307.90",
+     "top1": "9503.00",
+     "chosen": "6307.90",
+     "rank": 2,
+     "hit": true
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI122",
+     "expected": "6402.99",
+     "top1": "6402.99",
+     "chosen": "6404.19",
+     "rank": 2,
+     "hit": false
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI128",
+     "expected": "6404.19",
+     "top1": "6404.19",
+     "chosen": "6402.99",
+     "rank": 2,
+     "hit": false
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI336",
+     "expected": "8538.90",
+     "top1": "3925.90",
+     "chosen": "8538.90",
+     "rank": 2,
+     "hit": true
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI222",
+     "expected": "9609.10",
+     "top1": "9609.90",
+     "chosen": "9609.10",
+     "rank": 2,
+     "hit": true
+    }
+   ]
+  ],
+  "supported_runs": [
+   {
+    "lines": 27,
+    "right": 16
+   }
+  ],
+  "expected_sent": {
+   "wrong": 37,
+   "with_expected": 28,
+   "share": 0.7568
+  },
+  "own_ruling": {
+   "nearest_runs": [
+    111
+   ],
+   "searched_runs": [
+    120
+   ],
+   "logged_runs": [
+    120
+   ],
+   "searched": 12
+  },
+  "cn8_iteration": 12,
+  "cn8_source": "cn8_eval_iteration12.json",
+  "cross_layer": {
+   "majority": {
+    "hs6_right_cn8_right": 74,
+    "hs6_right_cn8_wrong": 9,
+    "hs6_wrong_cn8_right": 29,
+    "hs6_wrong_cn8_wrong": 8
+   },
+   "runs": [
+    {
+     "hs6_right_cn8_right": 74,
+     "hs6_right_cn8_wrong": 9,
+     "hs6_wrong_cn8_right": 28,
+     "hs6_wrong_cn8_wrong": 9
+    }
+   ],
+   "end_to_end_runs": [
+    74
+   ]
+  },
+  "parse": {
+   "retry_limit": 2,
+   "runs": [
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    }
+   ]
+  },
+  "confidence": {
+   "98": {
+    "right": 26,
+    "wrong": 1
+   },
+   "95": {
+    "right": 56,
+    "wrong": 32
+   },
+   "90": {
+    "right": 0,
+    "wrong": 2
+   },
+   "85": {
+    "right": 1,
+    "wrong": 1
+   },
+   "80": {
+    "right": 0,
+    "wrong": 1
+   }
+  },
+  "elapsed_s": 169.2,
+  "cost_usd": 0.1749,
+  "cost_eur": 0.1609,
+  "cost_eur_runs": [
+   0.1609
+  ]
+ },
+ {
+  "iteration": 8,
+  "run_on": "2026-10-26",
+  "change": "replay of iteration 7 at OVERRIDE_MIN 5; no model call",
+  "tag": "hs6-override-min5",
+  "model": "google/gemini-2.5-flash",
+  "reasoning": {
+   "enabled": false
+  },
+  "threshold": 85,
+  "ask_floor": 50,
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 1,
+  "n": 120,
+  "replay_of": {
+   "iteration": 7,
+   "tag": "hs6-override"
+  },
+  "top1_runs": [
+   83
+  ],
+  "majority_top1": 83,
+  "top3_runs": [
+   108
+  ],
+  "same_top1": 120,
+  "top1_consistency": 1.0,
+  "same_route": 120,
+  "route_consistency": 1.0,
+  "routes_runs": [
+   {
+    "auto_accept": 67,
+    "review": 53,
+    "ask_shipper": 0
+   }
+  ],
+  "wrong_auto_runs": [
+   [
+    {
+     "reference": "IEBTIIENEN004-2024-BTI356",
+     "expected": "6405.20",
+     "top1": "6404.19",
+     "confidence": 95
+    },
+    {
+     "reference": "MTBTI2024-002",
+     "expected": "8424.89",
+     "top1": "8479.89",
+     "confidence": 95
+    },
+    {
+     "reference": "MTBTI2025-011",
+     "expected": "9405.42",
+     "top1": "9405.11",
+     "confidence": 95
+    }
+   ]
+  ],
+  "always_wrong": [
+   {
+    "reference": "XIBTI505068468",
+    "chapter": "39",
+    "expected": "3926.90",
+    "seen": [
+     {
+      "top1": "7322.90",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI284",
+    "chapter": "42",
+    "expected": "4202.12",
+    "seen": [
+     {
+      "top1": "4202.32",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI145",
+    "chapter": "42",
+    "expected": "4202.92",
+    "seen": [
+     {
+      "top1": "4202.22",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI449",
+    "chapter": "42",
+    "expected": "4202.92",
+    "seen": [
+     {
+      "top1": "4202.12",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "FRBTIFR-BTI-2025-02100",
+    "chapter": "42",
+    "expected": "4203.29",
+    "seen": [
+     {
+      "top1": "6116.10",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI227",
+    "chapter": "42",
+    "expected": "4202.92",
+    "seen": [
+     {
+      "top1": "4202.22",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI261",
+    "chapter": "42",
+    "expected": "4202.92",
+    "seen": [
+     {
+      "top1": "4202.12",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI132",
+    "chapter": "61",
+    "expected": "6102.30",
+    "seen": [
+     {
+      "top1": "6101.30",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI208",
+    "chapter": "61",
+    "expected": "6109.90",
+    "seen": [
+     {
+      "top1": "6114.30",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI90",
+    "chapter": "61",
+    "expected": "6101.30",
+    "seen": [
+     {
+      "top1": "6104.33",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI106",
+    "chapter": "62",
+    "expected": "6212.10",
+    "seen": [
+     {
+      "top1": "6112.41",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI108",
+    "chapter": "62",
+    "expected": "6212.10",
+    "seen": [
+     {
+      "top1": "6112.41",
+      "confidence": 98,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI107",
+    "chapter": "62",
+    "expected": "6212.10",
+    "seen": [
+     {
+      "top1": "6112.41",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI7623/25-1",
+    "chapter": "62",
+    "expected": "6202.40",
+    "seen": [
+     {
+      "top1": "6204.33",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI228",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "3304.99",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "SEBTITV-2026-01096",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI7",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "4602.19",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI5",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "4602.19",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI8",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "4602.90",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505066180",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "8708.21",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "MTBTI2025-017",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "6305.90",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "CZBTI47/152108/2024-580000-04/01",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI356",
+    "chapter": "64",
+    "expected": "6405.20",
+    "seen": [
+     {
+      "top1": "6404.19",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505060394",
+    "chapter": "73",
+    "expected": "7326.90",
+    "seen": [
+     {
+      "top1": "8303.00",
+      "confidence": 59,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI19",
+    "chapter": "84",
+    "expected": "8415.10",
+    "seen": [
+     {
+      "top1": "8415.82",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI293",
+    "chapter": "84",
+    "expected": "8424.90",
+    "seen": [
+     {
+      "top1": "8481.90",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI68",
+    "chapter": "84",
+    "expected": "8479.89",
+    "seen": [
+     {
+      "top1": "8419.89",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI124",
+    "chapter": "84",
+    "expected": "8431.49",
+    "seen": [
+     {
+      "top1": "7308.90",
+      "confidence": 59,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI105",
+    "chapter": "84",
+    "expected": "8474.90",
+    "seen": [
+     {
+      "top1": "3926.90",
+      "confidence": 59,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "MTBTI2024-002",
+    "chapter": "84",
+    "expected": "8424.89",
+    "seen": [
+     {
+      "top1": "8479.89",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI60",
+    "chapter": "85",
+    "expected": "8538.90",
+    "seen": [
+     {
+      "top1": "8536.30",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI336",
+    "chapter": "85",
+    "expected": "8538.90",
+    "seen": [
+     {
+      "top1": "3925.90",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505059567",
+    "chapter": "85",
+    "expected": "8504.40",
+    "seen": [
+     {
+      "top1": "8471.80",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505068566",
+    "chapter": "85",
+    "expected": "8504.40",
+    "seen": [
+     {
+      "top1": "8504.31",
+      "confidence": 59,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2023-BTI561",
+    "chapter": "85",
+    "expected": "8537.10",
+    "seen": [
+     {
+      "top1": "8536.30",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "MTBTI2025-011",
+    "chapter": "94",
+    "expected": "9405.42",
+    "seen": [
+     {
+      "top1": "9405.11",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI222",
+    "chapter": "96",
+    "expected": "9609.10",
+    "seen": [
+     {
+      "top1": "9609.90",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   }
+  ],
+  "unstable": [],
+  "gate_runs": [
+   {
+    "vote_agrees": 67,
+    "vote_disagrees": 33,
+    "vote_tie": 10,
+    "vote_share_low": 4,
+    "no_rulings": 0,
+    "not_gated": 6
+   }
+  ],
+  "no_rulings_review_runs": [
+   0
+  ],
+  "right_auto_runs": [
+   64
+  ],
+  "lost_runs": [
+   17
+  ],
+  "override_min": 5,
+  "on": {
+   "top1_runs": [
+    87
+   ],
+   "majority_top1": 87,
+   "routes_runs": [
+    {
+     "auto_accept": 71,
+     "review": 49,
+     "ask_shipper": 0
+    }
+   ],
+   "wrong_auto_runs": [
+    [
+     {
+      "reference": "IEBTIIENEN004-2024-BTI356",
+      "expected": "6405.20",
+      "top1": "6404.19",
+      "confidence": 95
+     },
+     {
+      "reference": "MTBTI2024-002",
+      "expected": "8424.89",
+      "top1": "8479.89",
+      "confidence": 95
+     },
+     {
+      "reference": "MTBTI2025-011",
+      "expected": "9405.42",
+      "top1": "9405.11",
+      "confidence": 95
+     }
+    ]
+   ],
+   "right_auto_runs": [
+    68
+   ],
+   "cross_layer": {
+    "majority": {
+     "hs6_right_cn8_right": 77,
+     "hs6_right_cn8_wrong": 10,
+     "hs6_wrong_cn8_right": 26,
+     "hs6_wrong_cn8_wrong": 7
+    },
+    "runs": [
+     {
+      "hs6_right_cn8_right": 77,
+      "hs6_right_cn8_wrong": 10,
+      "hs6_wrong_cn8_right": 25,
+      "hs6_wrong_cn8_wrong": 8
+     }
+    ],
+    "end_to_end_runs": [
+     77
+    ]
+   }
+  },
+  "overrides_runs": [
+   [
+    {
+     "reference": "FRBTIFR-BTI-2025-02100",
+     "expected": "4203.29",
+     "top1": "6116.10",
+     "chosen": "4203.29",
+     "rank": 2,
+     "hit": true
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI8",
+     "expected": "6307.90",
+     "top1": "4602.90",
+     "chosen": "6307.90",
+     "rank": 2,
+     "hit": true
+    },
+    {
+     "reference": "MTBTI2025-017",
+     "expected": "6307.90",
+     "top1": "6305.90",
+     "chosen": "6307.90",
+     "rank": 3,
+     "hit": true
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI222",
+     "expected": "9609.10",
+     "top1": "9609.90",
+     "chosen": "9609.10",
+     "rank": 2,
+     "hit": true
+    }
+   ]
+  ],
+  "supported_runs": [
+   {
+    "lines": 27,
+    "right": 16
+   }
+  ],
+  "expected_sent": {
+   "wrong": 37,
+   "with_expected": 28,
+   "share": 0.7568
+  },
+  "own_ruling": {
+   "nearest_runs": [
+    111
+   ],
+   "searched_runs": [
+    120
+   ],
+   "logged_runs": [
+    120
+   ],
+   "searched": 12
+  },
+  "cn8_iteration": 12,
+  "cn8_source": "cn8_eval_iteration12.json",
+  "cross_layer": {
+   "majority": {
+    "hs6_right_cn8_right": 74,
+    "hs6_right_cn8_wrong": 9,
+    "hs6_wrong_cn8_right": 29,
+    "hs6_wrong_cn8_wrong": 8
+   },
+   "runs": [
+    {
+     "hs6_right_cn8_right": 74,
+     "hs6_right_cn8_wrong": 9,
+     "hs6_wrong_cn8_right": 28,
+     "hs6_wrong_cn8_wrong": 9
+    }
+   ],
+   "end_to_end_runs": [
+    74
+   ]
+  },
+  "parse": {
+   "retry_limit": 2,
+   "runs": [
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    }
+   ]
+  },
+  "confidence": {
+   "98": {
+    "right": 26,
+    "wrong": 1
+   },
+   "95": {
+    "right": 56,
+    "wrong": 32
+   },
+   "90": {
+    "right": 0,
+    "wrong": 2
+   },
+   "85": {
+    "right": 1,
+    "wrong": 1
+   },
+   "80": {
+    "right": 0,
+    "wrong": 1
+   }
+  },
+  "elapsed_s": 0.0,
+  "cost_usd": 0.0,
+  "cost_eur": 0.0,
+  "cost_eur_runs": [
+   0.0
+  ]
  }
 ]

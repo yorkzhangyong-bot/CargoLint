@@ -105,7 +105,7 @@ email.
 
 | Line | Text |
 |---|---|
-| Review, `store.ready_to_accept(line)` | "Confirm: {top HS-6}" |
+| Review, `store.ready_to_accept(line)` | "Confirm: {chosen HS-6}": the top candidate, or the candidate the precedent override chose (feature 008) |
 | Review, no candidate | "Pick: no candidate" |
 | Review | "Pick: {n} candidates", "Pick: 1 candidate" (n = candidates shown, at most 3) |
 | TARIC-10, one subdivision (trade defence) | "Confirm: {TARIC-10}" |
@@ -198,7 +198,8 @@ form).
   more than one option). The other rows show none.
 
 **Pre-selection**:
-- `a_hs6`: the top candidate;
+- `a_hs6`: the top candidate, or the candidate the precedent override chose (feature 008, on a line flagged or updated
+  before); never a hint's code;
 - `a_cn8`: `c.cn8` when set, else the first line;
 - `a_change`: the decided HS-6 in the HS-6 form, the decided CN-8 in the CN-8 form, and the written TARIC-10 in the
   TARIC-10 form. When the decided HS-6 was typed and is not among the candidates, "Other HS-6 code…" is
@@ -217,15 +218,35 @@ In every form, "Confirm" is disabled while the pick is the decided code. A code 
 `explain_a(store, line, kind) -> tuple[str, str]`: the two explanation lines of FR-014.
 - **First line**:
   - for `a_hs6`, the top candidate's rationale, cut at 200 characters;
-  - for `a_cn8`, "The HS-6 is {hs6}; its subheading has {n} CN-8 lines."
+  - for `a_cn8`, "The HS-6 is {hs6}; its subheading has {n} CN-8 lines."; when the precedent override decided the HS-6
+    (feature 008), "The HS-6 is {hs6}; rulings overrode the model: {N} of {M} agree on {hs6}; its subheading has {n}
+    CN-8 lines."
 - **Second line**:
-  - review below the threshold: "Top candidate leads ({conf} %) but is under the {threshold} % auto-accept threshold, so
-    you decide. TARIC runs after your pick."
-  - ready to accept: "Top candidate leads ({conf} %), but this line was flagged before its update, so it needs your
-    confirmation. TARIC runs after your pick."
+  - review with no ruling vote, below the threshold: "Top candidate leads ({conf} %) but is under the {threshold} %
+    auto-accept threshold, so you decide. TARIC runs after your pick."
+  - review by the HS-6 ruling vote (feature 006), `{rulings}` being each HS-6 the nearest rulings sit at with the issuing
+    country of every ruling, "9405 21 (XI, IE, FR), 9503 00 (DE, FR)", and "?" for an unknown country:
+    - the rulings' majority is another HS-6: "Rulings disagree: model {top}, nearest rulings {rulings}.[ Precedents
+      support candidate {n}.] TARIC runs after your pick.", the bracketed sentence when the majority is the model's
+      candidate 2 or 3. With the precedent override switched on (feature 008) and at least OVERRIDE_MIN rulings at a
+      code outside the candidates, the line ends with " Hint: {N} of {M} nearest rulings agree on {code}, which is not
+      among the candidates.";
+    - a tie: "Rulings split: model {top}, nearest rulings {rulings}. TARIC runs after your pick.";
+    - the top candidate leads below the share: "Rulings too spread: model {top} has {n} of {m} nearest rulings;
+      {rulings}. TARIC runs after your pick."
+  - ready to accept: "Top candidate leads ({conf} %), but {why}, so it needs your confirmation. TARIC runs after your
+    pick.", `{why}` being "this line was flagged before its update" or "this line was updated from the shipper's
+    reply";
+  - ready to accept the candidate the precedent override chose (feature 008): "Candidate {rank}, {code}, is chosen
+    because the rulings overrode the model ({N} of {M} agree on it: {countries}), but {why}, so it needs your
+    confirmation. TARIC runs after your pick.", `{countries}` being the issuing country of each agreeing ruling;
   - no candidate: "No valid candidate was found. Type the HS-6 code, or ask the shipper what the goods are."
-  - CN-8 suggestion below the threshold: "CN-8 to confirm: its confidence ({conf} %) is under the {threshold} %
-    threshold. TARIC runs after your pick."
+  - CN-8 suggestion with no ruling vote, below the threshold: "CN-8 to confirm: no ruling vote, and its model estimate
+    ({conf} %) is under the {threshold} % threshold. TARIC runs after your pick."
+  - CN-8 suggestion by the CN-8 ruling vote (feature 006), `{rulings}` as above with the CN-8 lines: "Rulings disagree:
+    model {cn8}, nearest rulings {rulings}. TARIC runs after your pick."; "Rulings split: model {cn8}, nearest rulings
+    {rulings}. TARIC runs after your pick."; "Rulings too spread: model {cn8} has {n} of {m} nearest rulings;
+    {rulings}. TARIC runs after your pick."
   - CN-8 suggestion against its ruling: "CN-8 to confirm: the cited ruling {ref} classifies under {code}, not this
     CN-8."
   - CN-8 step failed: "The CN-8 step failed: {c.error}. Pick the CN-8."
@@ -240,8 +261,8 @@ In every form, "Confirm" is disabled while the pick is the decided code. A code 
 
 | Code | {how} |
 |---|---|
-| HS-6 | "auto-accepted at {conf} %" (no decision); "auto-accepted at {conf} %, accepted by you" (`chosen_how` auto); "confirmed by you" (top); "chosen by you" (another candidate); "typed by you" (typed) |
-| CN-8 | "confirmed by you" (clerk); "single CN-8 line" (rule, one option); "written by rule at {conf} %" (rule) |
+| HS-6 | "auto-accepted, {n} of {m} nearest rulings agree" (the ruling vote, feature 006); "auto-accepted at {conf} %" (no ruling vote); "candidate {rank} chosen, rulings overrode the model: {N} of {M} agree on {code} ({countries}); the model's top candidate was {top}" (the precedent override, feature 008); each followed by ", accepted by you" when the clerk accepted it (`chosen_how` auto); "confirmed by you" (top); "chosen by you" (another candidate); "typed by you" (typed) |
+| CN-8 | "confirmed by you" (clerk); "single CN-8 line" (rule, one option); "written by rule, {n} of {m} nearest rulings agree" (the ruling vote, feature 006); "written by rule at a model estimate of {conf} %" (no ruling vote) |
 | TARIC-10 | "confirmed by you" (clerk); "auto-completed" (rule) |
 
 ## 6. Kind (b) rows

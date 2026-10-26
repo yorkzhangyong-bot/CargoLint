@@ -13,6 +13,8 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field, StringConstraints, computed_field, field_validator, model_validator
 
+from agent.config import HS6_VOTE_K
+
 CODE_PATTERN = r"^\d{4}\.\d{2}$"
 CODE_RE = re.compile(CODE_PATTERN)
 CN8_PATTERN = r"^\d{8}$"           # feature 004: CN 2026 eight-digit line
@@ -263,6 +265,8 @@ class Hs6Gate(str, Enum):
     vote_share_low = "vote_share_low"           # the model's top HS-6 leads, below the share
     no_rulings = "no_rulings"                   # no eligible ruling at or above the similarity floor: the model estimate
                                                 # against the threshold
+    vote_override = "vote_override"             # feature 008: the majority is the model's candidate 2 or 3 with at least the
+                                                # shipment's hs6_override_min rulings; that candidate is decided
 
 
 class Hs6Vote(BaseModel):
@@ -422,6 +426,8 @@ class Shipment(BaseModel):
     threshold: int = Field(default=85, ge=60, le=99)
     ask_floor: int = Field(default=50, ge=0, le=100)
     hybrid_search: bool = True
+    hs6_override_min: int | None = Field(default=None, ge=1)   # feature 008: None, the switch is off. Otherwise the agreeing
+                                                               # rulings the override needs, 1 to HS6_VOTE_K
     taric_origin: str = Field(default="CN", pattern=ORIGIN_PATTERN)   # feature 004: the goods' origin for TARIC (not `origin`)
     source: SourceFile | None = None
     origin: str | None = None
@@ -437,6 +443,13 @@ class Shipment(BaseModel):
     @classmethod
     def _upper_origin(cls, v: Any) -> Any:
         return v.strip().upper() if isinstance(v, str) else v
+
+    @field_validator("hs6_override_min")
+    @classmethod
+    def _at_most_the_voters(cls, v: int | None) -> int | None:
+        if v is not None and v > HS6_VOTE_K:
+            raise ValueError(f"hs6_override_min must be at most HS6_VOTE_K ({HS6_VOTE_K}), got {v}")
+        return v
 
 
 # --------------------------------------------------------------------------- knowledge base records

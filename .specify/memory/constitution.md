@@ -9,16 +9,26 @@
   is missing from the line text, and the CN-8 gate below. Routing MUST NOT be a tool, a model
   decision, or logic that exists only in the UI.
 - At both layers the automatic decision MUST come from code-computed agreement with the k nearest
-  eligible EBTI rulings, each counted once: the model's code equals the rulings' majority code
-  (the first six digits for the HS-6, eight for the CN-8) with a share at or above the vote
-  threshold. A ruling is eligible when it is valid on the day and coded to the loaded
+  eligible EBTI rulings, each counted once: the model's code (at the HS-6, its top candidate or,
+  with the precedent override, its second or third) equals the rulings' majority code (the first
+  six digits for the HS-6, eight for the CN-8) with a share at or above the vote threshold. A
+  ruling is eligible when it is valid on the day and coded to the loaded
   nomenclature; for the HS-6 it MUST also be at least as similar to the line as the similarity
   floor. k, the share and the floor are named configuration constants. Behaviour at exactly the
   vote threshold and exactly the floor MUST be fixed in the spec and covered by a test.
-- An unflagged line's HS-6 MUST be auto-accepted only when the HS-6 gate passes. Otherwise the
-  line goes to `review` with the competing rulings and their issuing countries as the reason,
-  naming the model's candidate the rulings support when it is the second or third. A flagged
-  (vague or stop-word) line MUST NOT be routed to `auto_accept`.
+- An unflagged line's HS-6 MUST be auto-accepted only when the HS-6 gate passes. The rulings'
+  majority either confirms the model's top candidate or, with the precedent override switched on
+  (`HS6_OVERRIDE`), overrides it to the model's second or third candidate when at least
+  `OVERRIDE_MIN` (default 5: all five) of the 5 nearest eligible rulings sit there. That candidate
+  becomes the decided code, with the reason "rulings overrode the model: N of M agree on <code>",
+  M being the rulings that voted (5 unless fewer are eligible). Fewer than `OVERRIDE_MIN`, or
+  agreement on a code outside the model's top three, stays `review`; with the override switched
+  on, a code outside the top three is shown as a hint, never chosen. `OVERRIDE_MIN` is a named
+  configuration constant; behaviour at exactly `OVERRIDE_MIN` MUST be fixed in the spec and
+  covered by a test.
+  Otherwise the line goes to `review` with the competing rulings and their issuing countries as
+  the reason, naming the model's candidate the rulings support when it is the second or third. A
+  flagged (vague or stop-word) line MUST NOT be routed to `auto_accept`.
 - A CN-8 MUST be written by rule only when the model's quote passed the evidence check, no cited
   ruling sits at another CN-8, and the CN-8 gate passes. Otherwise it stays a suggestion for the
   clerk, with the competing rulings and their issuing countries as the reason; a failed evidence
@@ -158,8 +168,9 @@ came from, in a layout that feels native to Streamlit.
 ### VII. Test-First and Measured (NON-NEGOTIABLE for guardrail code)
 
 - Tests MUST be written first and seen to fail for the deterministic code that carries the
-  guardrails: routing and threshold enforcement, the HS-6 and CN-8 ruling-vote gates, with the
-  HS-6 similarity floor and the fallback when no ruling votes, the flagged-line lock,
+  guardrails: routing and threshold enforcement, the HS-6 and CN-8 ruling-vote gates and the
+  precedent override, with the HS-6 similarity floor and the fallback when no ruling votes, the
+  flagged-line lock,
   code-existence validation, schema validators, rule matching, file parsing and caps,
   reciprocal rank fusion, BTI expiry filtering, the single-line scope of `apply_shipper_reply`,
   and the prompt-injection fixtures. These tests are mandatory deliverables and override the
@@ -288,7 +299,9 @@ a listed element needs a spec change.
     expands in place into one of three kinds:
     - (a) choose the HS-6 or CN-8 from the top candidates, with confidence bars and EBTI precedent;
       for the HS-6 and the CN-8, the nearest rulings behind the vote with their issuing countries,
-      and for the HS-6 the candidate they support;
+      and for the HS-6 the candidate they support and, when the precedent override decided the
+      line, which candidate was chosen, with the issuing countries of the rulings that agree; with
+      the override switched on, a code outside the top three is shown as a hint;
     - (b) choose the TARIC-10 subdivision, with duty and anti-dumping columns, all measures and the
       EU TARIC link;
     - (c) ask the shipper: the question, the reason, "Copy question", the description to update and
@@ -383,5 +396,15 @@ to depart from; MAY is optional.
   2.5 Flash after a five-model comparison on the HS-6 eval (`tests/eval/hs6_eval.md`), and end to
   end rose from 56 to 74 of 120 (majority results, Gemini at both layers: HS-6 iteration 4 with
   CN-8 iteration 12).
+- 1.6.0 (2026-10-26): the precedent override at the HS-6 (feature 008; Principles I and VII, and
+  the UI Design Contract). With `HS6_OVERRIDE` on, at least `OVERRIDE_MIN` (4) of the 5 nearest
+  eligible rulings at the model's second or third candidate decide that candidate and auto-accept
+  it with the note "rulings overrode the model: N of M agree on <code>"; 3 of 5, or agreement
+  outside the top three, stays review. The switch ships off until the HS-6 and end-to-end evals,
+  each comparing the switch on and off on the same stored model answers, show more lines right
+  end to end and no more wrong auto-accepts. Note, same day, no version bump: the evals met that
+  bar at `OVERRIDE_MIN` 5 (right end to end 67 → 69 of 120, the HS-6 eval's end-to-end estimate
+  74 → 77, wrong auto-accepts unchanged) and not at 4 (wrong auto-accepts on the HS-6 eval 3 → 6),
+  so the switch ships on with a default of 5 of 5 (feature 008, T027).
 
-**Version**: 1.5.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-26
+**Version**: 1.6.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-26

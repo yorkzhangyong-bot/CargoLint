@@ -6,7 +6,7 @@ from pathlib import Path
 
 import streamlit as st
 
-from agent.config import DEFAULT_THRESHOLD, ROOT
+from agent.config import DEFAULT_THRESHOLD, OVERRIDE_MIN, ROOT, get_settings
 from agent.schemas import Usage
 from tools.parse_packing_list import load_into_store
 from tools.parsers import ParseError, check_caps
@@ -43,12 +43,14 @@ def busy() -> bool:
 
 def open_shipment(store, reference: str = ""):
     """The one way a new shipment opens: the old shipment's usage joins the session total, and the new one starts with
-    the Admin threshold and hybrid values and the kept origin (uploads, the sample, typed lines, the Admin chat)."""
+    the Admin threshold and hybrid values, the kept origin and the precedent override switch of feature 008 (uploads,
+    the sample, typed lines, the Admin chat)."""
     if store.has_shipment():
         st.session_state.setdefault("session_usage", Usage()).add(store.shipment.usage)
     st.session_state.pop("uploaded_file", None)   # `begin` sets it again for a file; typed lines name no file
     shipment = store.new_shipment(reference=reference, threshold=int(st.session_state.get("threshold", DEFAULT_THRESHOLD)),
-                                  hybrid=bool(st.session_state.get("hybrid", True)))
+                                  hybrid=bool(st.session_state.get("hybrid", True)),
+                                  hs6_override_min=OVERRIDE_MIN if get_settings().hs6_override else None)
     origin = st.session_state.get("origin_field") or "CN"
     try:
         store.set_taric_origin(origin)

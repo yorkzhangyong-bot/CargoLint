@@ -255,3 +255,122 @@ def test_the_report_shows_the_vote_gate():
     text = ev.render_report([entry], {"built_on": "2026-10-23", "rulings": []})
     assert "| 1 / 2 / 0 of 4 | 0 / 0 / 0 | 0 / 0 / 0 | $0.0100" in text
     assert "| 2 | 0 | 0 | 0 | 0 | 4 | 0 | 4 | 0 | 0 |" in text      # run 2: no ruling voted on any line, all to review
+
+
+# --------------------------------------------------------------------------- feature 008: the precedent override
+TOP3 = ["9503.00", "3926.90", "4202.92"]
+
+
+def voted(reference, counts, expected="3926.90", top3=TOP3, confidence=90, flag="ok", status="checked"):
+    """A row as run_once writes it with the switch off: its top 3, its flag and status, and its vote's counts (most
+    first); the vote and the gate are those the product computes from them."""
+    from agent.routing import hs6_gate, hs6_ruling_vote
+
+    vote = hs6_ruling_vote([(code, "IE") for code, k in counts for _ in range(k)], top3) if counts else None
+    gated = status == "checked" and flag == "ok" and (confidence or 0) > 0
+    return {**row(reference, top3[0] if top3 else None, expected=expected, top3=top3, confidence=confidence),
+            "confidences": [confidence, 60, 20][:len(top3)], "flag": flag, "status": status,
+            "gate": hs6_gate(confidence, 85, vote)[1].value if gated else "not_gated",
+            "vote": None if vote is None else {"majority": vote.majority, "share": vote.majority_share,
+                                               "voters": sum(k for _, k in counts), "candidate": vote.candidate,
+                                               "counts": counts}}
+
+
+@pytest.mark.parametrize("counts, kw, supported, on", [
+    ([["3926.90", 4], ["9503.00", 1]], {}, {"rank": 2, "right": True},
+     {"gate": "vote_override", "route": "auto_accept", "rank": 2, "chosen": "3926.90", "hit": True}),
+    ([["4202.92", 5]], {}, {"rank": 3, "right": False},
+     {"gate": "vote_override", "route": "auto_accept", "rank": 3, "chosen": "4202.92", "hit": False}),
+    ([["3926.90", 3], ["9503.00", 2]], {}, {"rank": 2, "right": True},            # 3 of 5: no override
+     {"gate": "vote_disagrees", "route": "review", "rank": 1, "chosen": "9503.00", "hit": False}),
+    ([["9617.00", 4], ["9503.00", 1]], {}, {"rank": None, "right": None},         # outside the candidates
+     {"gate": "vote_disagrees", "route": "review", "rank": 1, "chosen": "9503.00", "hit": False}),
+    ([], {"expected": "9503.00"}, {"rank": None, "right": None},                   # no ruling voted: the threshold
+     {"gate": "no_rulings", "route": "auto_accept", "rank": 1, "chosen": "9503.00", "hit": True}),
+    ([["3926.90", 4], ["9503.00", 1]], {"flag": "vague", "confidence": 55}, {"rank": 2, "right": True},
+     {"gate": "not_gated", "route": "review", "rank": 1, "chosen": "9503.00", "hit": False}),
+    ([], {"top3": [], "confidence": None}, {"rank": None, "right": None},
+     {"gate": "not_gated", "route": "review", "rank": None, "chosen": None, "hit": False})])
+def test_feature_008_the_switch_on_from_a_rows_own_fields(counts, kw, supported, on):
+    r = voted("A", counts, **kw)
+    before = json.dumps(r, sort_keys=True)
+    assert ev.override_fields(r, 4) == {"supported": supported, "on": on}
+    assert json.dumps(r, sort_keys=True) == before                     # the row's own fields stay the switch off
+
+
+OVERRIDE_RUNS = [[{**voted("A", [["3926.90", 4], ["9503.00", 1]]), "route": "review"},          # right on, wrong off
+                  {**voted("B", [["4202.92", 4], ["9503.00", 1]]), "route": "review"},          # a wrong override
+                  {**voted("C", [["9503.00", 5]], expected="9503.00"), "route": "auto_accept"},  # agrees: the same
+                  {**voted("D", [["3926.90", 3], ["9503.00", 2]]), "route": "review"}]]         # 3 of 5: the same
+
+
+def test_feature_008_the_measures_with_the_switch_on():
+    runs = [[{**r, **ev.override_fields(r, 4)} for r in run] for run in OVERRIDE_RUNS]
+    cn8 = ev.cn8_results({"rows": [cn8_row(r, "39269097") for r in "ABCD"]})                    # every CN-8 right
+    o = ev.override_measures(runs, cn8, 4)
+    assert o["override_min"] == 4
+    assert (o["on"]["top1_runs"], o["on"]["routes_runs"], o["on"]["right_auto_runs"]) == (
+        [2], [{"auto_accept": 3, "review": 1, "ask_shipper": 0}], [2])
+    assert [w["reference"] for w in o["on"]["wrong_auto_runs"][0]] == ["B"]
+    assert o["on"]["cross_layer"]["end_to_end_runs"] == [2]                                     # A and C, on the chosen
+    assert ev.cross_layer(runs, cn8)["end_to_end_runs"] == [1]                                  # off: C only
+    assert o["overrides_runs"] == [[
+        {"reference": "A", "expected": "3926.90", "top1": "9503.00", "chosen": "3926.90", "rank": 2, "hit": True},
+        {"reference": "B", "expected": "3926.90", "top1": "9503.00", "chosen": "4202.92", "rank": 3, "hit": False}]]
+    assert o["supported_runs"] == [{"lines": 3, "right": 2}]                                    # A, B and D; A and D right
+
+
+def test_feature_008_the_report_shows_the_switch_off_against_on():
+    runs = [[{**r, **ev.override_fields(r, 4), "route_by_confidence": r["route"]} for r in run] for run in OVERRIDE_RUNS]
+    cn8 = ev.cn8_results({"rows": [cn8_row(r, "39269097") for r in "ABCD"]})
+    entry = {"iteration": 7, "run_on": "2026-10-26", "tag": "hs6-override", "repeat": 1, "n": 4, "model": "m",
+             **ev.measures(runs), **ev.gate_measures(runs), "expected_sent": expected_sent_share(runs),
+             "own_ruling": ev.own_ruling(runs), "cn8_iteration": 12, "cross_layer": ev.cross_layer(runs, cn8),
+             **ev.override_measures(runs, cn8, 4), "elapsed_s": 10.0, "cost_usd": 0.01, "cost_eur": 0.0093}
+    text = ev.render_report([entry], {"built_on": "2026-10-23", "rulings": []})
+    assert "### Precedent override (feature 008)" in text
+    assert "| 1 | off | 1/4 | 1 | 0 | 1 | 1/4 |" in text and "| 1 | on | 2/4 | 3 | 1 | 2 | 2/4 |" in text
+    assert "Overrides that fired per run: 2, of which chose the right HS-6: 1." in text
+    assert "- run 1: B (expected 3926.90): candidate 3, 4202.92, instead of 9503.00; wrong" in text
+    assert "on 3 lines per run; that candidate was the right HS-6 on 2." in text
+
+
+REPLAYED = OVERRIDE_RUNS[0] + [{**voted("E", [["3926.90", 5]]), "route": "review"}]   # 5 of 5 at candidate 2
+
+
+def test_feature_008_a_replay_recomputes_the_switch_on_at_another_minimum():
+    stored = {"summary": {}, "rows": [{**r, **ev.override_fields(r, 4)} for r in REPLAYED]}
+    assert [r["on"]["gate"] for r in stored["rows"]] == [
+        "vote_override", "vote_override", "vote_agrees", "vote_disagrees", "vote_override"]
+    runs = ev.replay_runs(stored, 5)
+    assert [r["on"]["gate"] for r in runs[0]] == [
+        "vote_disagrees", "vote_disagrees", "vote_agrees", "vote_disagrees", "vote_override"]   # only 5 of 5 still fires
+    assert [r["supported"] for r in runs[0]] == [r["supported"] for r in stored["rows"]]
+    assert ev.override_measures(runs, ev.cn8_results({"rows": [cn8_row(r, "39269097") for r in "ABCDE"]}), 5)[
+        "override_min"] == 5
+
+
+def test_feature_008_a_replay_makes_no_model_call_and_writes_its_own_file_only(tmp_path, monkeypatch):
+    for name in ("OUT", "HISTORY", "REPORT"):
+        monkeypatch.setattr(ev, name, tmp_path / getattr(ev, name).name)
+    rows = [{**r, **ev.override_fields(r, 4), "route_by_confidence": r["route"]} for r in REPLAYED]
+    source = tmp_path / "hs6_eval_run.json"
+    source.write_text(json.dumps({"summary": {"iteration": 7, "tag": "run", "model": "m", "repeat": 1, "n": 5,
+                                              "override_min": 4}, "rows": rows}), encoding="utf-8")
+    refs = [r["reference"] for r in json.loads(ev.SET.read_text(encoding="utf-8"))["rulings"]] + list("ABCDE")
+    cn8 = tmp_path / "cn8.json"
+    cn8.write_text(json.dumps({"summary": {"iteration": 12}, "rows": [cn8_row(r, "39269097") for r in refs]}),
+                   encoding="utf-8")
+    assert ev.main(["--replay", str(source), "--override-min", "5", "--tag", "run-min5", "--cn8", str(cn8)]) == 0
+    assert not ev.OUT.exists()                                                  # the latest paid run's file stays
+    replayed = json.loads((tmp_path / "hs6_eval_run-min5.json").read_text(encoding="utf-8"))
+    assert [r["on"]["gate"] for r in replayed["rows"]][-1] == "vote_override"
+    entry = json.loads(ev.HISTORY.read_text(encoding="utf-8"))[-1]
+    assert (entry["tag"], entry["replay_of"], entry["override_min"], entry["cost_eur"]) == (
+        "run-min5", {"iteration": 7, "tag": "run"}, 5, 0.0)
+    assert "Replay of iteration 7 (run) at OVERRIDE_MIN 5" in ev.REPORT.read_text(encoding="utf-8")
+
+
+def test_feature_008_the_minimum_is_for_a_replay():
+    with pytest.raises(SystemExit):
+        ev.main(["--override-min", "5"])
