@@ -60,6 +60,14 @@ def test_one_failing_line_does_not_stop_the_others_and_order_is_kept(fake_llm, r
     assert out[0].flag.kind == FlagKind.ok and out[2].flag.kind == FlagKind.ok
 
 
+def test_a_stop_word_locks_a_line_only_as_its_goods_name(rules):
+    """Feature 007: the rule matches the goods name; what it lets through goes on to the model's judgement."""
+    out = check_descriptions([_line(1, "", "T-shirts in various sizes"), _line(2, "", "various goods"),
+                              _line(3, "", "spare parts for pumps"), _line(4, "", "parts")], rules=rules, client=None)
+    assert [r.flag.kind for r in out] == [FlagKind.ok, FlagKind.stop_word, FlagKind.ok, FlagKind.vague]
+    assert (out[1].flag.matched_term, out[3].flag.matched_term) == ("various", "parts")
+
+
 def test_without_a_client_rules_still_run_and_clear_lines_are_ok(rules):
     out = check_descriptions([_line(1, "礼品", "Gift"), _line(2, "不锈钢保温杯", "Stainless steel vacuum flask")], rules=rules, client=None)
     assert out[0].flag.kind == FlagKind.stop_word

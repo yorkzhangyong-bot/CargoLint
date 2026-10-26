@@ -338,6 +338,17 @@ auto-accept decision moved from the model's confidence to a vote of the nearest 
 the five-model comparison behind the switch to Gemini 2.5 Flash. It also states the trade-offs and open items, and
 traces every number to the eval reports and commits.
 
+**End-to-end eval** (`python tests/eval/e2e_eval.py`, feature 007): the 120 rulings of the CN-8 eval go through the
+upload's own steps as rows of a file, cut at 300 characters as the parser cuts them. Each line takes the description
+check, the HS-6 step and the CN-8 step with their vote gates, then the store's routes; a line left in review gets the
+HS-6 its row pre-selects, as the clerk's Confirm would give it. With Gemini 2.5 Flash, 68 of 120 lines end with the
+right CN-8 (run `e2e-stopword-fix`, 2026-10-26, against 64 on the majority of the three `e2e-baseline` runs); 56 are
+auto-accepted, 7 of them wrongly, and 7 go to the shipper. In the baseline the firm stop-word list matched a term
+anywhere in the text, as FR-008 originally specified. The rule now matches the goods name only, and FR-008 and FR-009
+were corrected with the code: a listed term outside it ("T-shirts in various sizes") no longer locks a line, while a
+goods name that is nothing but listed terms ("various goods", "parts") still does. The report is
+`tests/eval/e2e_eval.md`.
+
 **Known issues**:
 - **Sample line 10, "铝合金自行车架 / Aluminium alloy bicycle frames"** (browser check with the live model, 2026-10-24):
   it is auto-accepted as 9503 00 10 00 (wheeled toys) at 95 %; the correct HS-6 is 8714.91 (frames and forks of
@@ -352,6 +363,9 @@ traces every number to the eval reports and commits.
 - Confidence is model-estimated and only loosely calibrated against 20 labelled lines; it must not be
   read as a probability.
 - Chinese product slang and brand-only names still miss; the hybrid index helps but does not solve it.
+- Known limitation of the stop-word rule: a goods name made only of listed words, such as "metal box" or "steel
+  rods", is still locked, even though the ICS2 guidance accepts names like "steel tubes". A narrower notion of stop
+  word is deferred until the eval set has more such lines.
 - Classification confusions remain where the nomenclature itself is subtle (protective phone cases vs
   packaging cases; aluminium bicycle frames landed in aluminium structures `7610.90` instead of
   `8714.91` in one live run, and in wheeled toys `9503.00`, steered by a ruling, in two app runs on 2026-10-23) —

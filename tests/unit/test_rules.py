@@ -2,7 +2,7 @@
 import pytest
 
 from agent.schemas import FlagKind, RuleSource
-from rag.rules import RuleSet, check_rules, default_ask_for, is_pure_stop_word
+from rag.rules import RuleSet, check_rules, default_ask_for, goods_name, is_pure_stop_word
 
 pytestmark = pytest.mark.unit
 
@@ -45,7 +45,7 @@ class TestMatching:
         assert "v4.10" in m.source_doc
 
     def test_ics2_stop_word_only_term_is_vague_citing_that_list(self, rules):
-        m = check_rules("", "said to contain electrical items", rules)
+        m = check_rules("", "said to contain goods", rules)   # nothing but listed terms: see TestGoodsNameOnly
         assert m.kind == FlagKind.vague and m.rule_source == RuleSource.ics2_stop_words and m.matched_term == "said to contain"
 
     def test_chinese_alias_resolves_to_canonical_ics2_term(self, rules):
@@ -59,6 +59,53 @@ class TestMatching:
     def test_clear_description_has_no_rule_match(self, rules):
         assert check_rules("不锈钢保温杯", "Stainless steel vacuum flask, 500 ml", rules) is None
         assert check_rules("纯棉针织T恤", "Cotton T-shirts, knitted", rules) is None
+
+
+class TestGoodsNameOnly:
+    """Feature 007: a listed term locks a line only when the goods name is nothing but listed terms, as ICS2 rejects a
+    general term used as the description, not one that sits in a property or qualifies a named good."""
+
+    def test_a_stop_word_outside_the_goods_name_passes(self, rules):
+        assert check_rules("", "T-shirts in various sizes", rules) is None
+        assert check_rules("", "Silicone masks, used on various sizes of implants", rules) is None
+        assert check_rules("", "Back-pack / Rucksack\nBag for carrying laptop / conveyance of goods or personal effects",
+                           rules) is None
+
+    def test_a_goods_name_of_nothing_but_stop_words_is_locked(self, rules):
+        m = check_rules("", "various goods", rules)
+        assert m.kind == FlagKind.stop_word and m.rule_source == RuleSource.firm_stop_words and m.matched_term == "various"
+        assert check_rules("", "Parts and accessories, 20 ctns", rules).matched_term == "accessories"
+
+    def test_a_qualified_generic_term_passes(self, rules):
+        assert check_rules("", "spare parts for pumps", rules) is None   # the model's judgement still follows
+
+    def test_a_generic_term_alone_is_locked(self, rules):
+        m = check_rules("", "parts", rules)
+        assert m.kind == FlagKind.vague and m.matched_term == "parts"
+        assert check_rules("", "Spare parts. These are polyethylene wear strips", rules) is not None   # its first phrase
+
+    def test_an_empty_goods_name_keeps_a_stop_word_locked(self, rules):
+        m = check_rules("", "available in various sizes", rules)
+        assert m.kind == FlagKind.stop_word and m.matched_term == "various"
+
+    def test_singular_and_plural_forms_are_alike(self, rules):
+        assert check_rules("", "Toy", rules).matched_term == "toys"
+        assert check_rules("", "Gifts", rules).matched_term == "gift"     # the list's own form, of the two it has
+
+    def test_both_languages_make_one_goods_name(self, rules):
+        assert check_rules("配件", "Parts", rules).matched_term == "parts"
+        assert check_rules("各种货物", "", rules).matched_term == "各种"           # "various goods"
+        assert check_rules("各种尺寸的硅胶面罩", "", rules) is None                # silicone masks of various sizes
+        assert check_rules("礼品", "Stainless steel vacuum flask", rules) is None   # a gift, named
+
+    def test_the_goods_name_ends_at_the_first_phrase_boundary(self):
+        assert goods_name("Machine parts. These are polyethylene wear strips") == "Machine parts"
+        assert goods_name("T-shirts in various sizes") == "T-shirts"
+        assert goods_name("available in various sizes") == ""
+        assert goods_name("In-ear headphones, black") == "In-ear headphones"
+        assert goods_name("spare parts for pumps") == "spare parts for pumps"
+        assert goods_name("Steel wire 2.5 mm, galvanised") == "Steel wire 2.5 mm"   # a decimal point is no full stop
+        assert goods_name("礼品套装，不锈钢保温杯") == "礼品套装"
 
 
 class TestPureStopWordAndAskFor:

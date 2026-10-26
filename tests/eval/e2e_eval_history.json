@@ -1,0 +1,2194 @@
+[
+ {
+  "iteration": 1,
+  "run_on": "2026-10-26",
+  "tag": "e2e-baseline",
+  "model": "google/gemini-2.5-flash",
+  "reasoning": {
+   "enabled": false
+  },
+  "threshold": 85,
+  "ask_floor": 50,
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 3,
+  "right_runs": [
+   64,
+   64,
+   65
+  ],
+  "majority_right": 64,
+  "majority_origin": {
+   "hs6": 47,
+   "cn8": 9
+  },
+  "routes_runs": [
+   {
+    "auto_accept": 53,
+    "review": 55,
+    "ask_shipper": 12
+   },
+   {
+    "auto_accept": 52,
+    "review": 56,
+    "ask_shipper": 12
+   },
+   {
+    "auto_accept": 53,
+    "review": 55,
+    "ask_shipper": 12
+   }
+  ],
+  "right_auto_runs": [
+   45,
+   45,
+   46
+  ],
+  "wrong_auto_runs": [
+   [
+    {
+     "reference": "IEBTIIENEN004-2024-BTI284",
+     "expected": "42021291",
+     "cn8": "42029219",
+     "hs6": "4202.92",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "DEBTI36175/25-1",
+     "expected": "61161020",
+     "cn8": "61169200",
+     "hs6": "6116.92",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI356",
+     "expected": "64052091",
+     "cn8": "64041910",
+     "hs6": "6404.19",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI68",
+     "expected": "84798997",
+     "cn8": "84198998",
+     "hs6": "8419.89",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI105",
+     "expected": "84749090",
+     "cn8": "39269097",
+     "hs6": "3926.90",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "MTBTI2024-002",
+     "expected": "84248970",
+     "cn8": "84798997",
+     "hs6": "8479.89",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "MTBTI2025-011",
+     "expected": "94054231",
+     "cn8": "94051140",
+     "hs6": "9405.11",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI38",
+     "expected": "95030041",
+     "cn8": "95030049",
+     "hs6": "9503.00",
+     "origin": "cn8_wrong"
+    }
+   ],
+   [
+    {
+     "reference": "DEBTI36175/25-1",
+     "expected": "61161020",
+     "cn8": "61169200",
+     "hs6": "6116.92",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI356",
+     "expected": "64052091",
+     "cn8": "64041910",
+     "hs6": "6404.19",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI68",
+     "expected": "84798997",
+     "cn8": "84198998",
+     "hs6": "8419.89",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI105",
+     "expected": "84749090",
+     "cn8": "39269097",
+     "hs6": "3926.90",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "MTBTI2024-002",
+     "expected": "84248970",
+     "cn8": "84798997",
+     "hs6": "8479.89",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "MTBTI2025-011",
+     "expected": "94054231",
+     "cn8": "94051140",
+     "hs6": "9405.11",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI38",
+     "expected": "95030041",
+     "cn8": "95030049",
+     "hs6": "9503.00",
+     "origin": "cn8_wrong"
+    }
+   ],
+   [
+    {
+     "reference": "DEBTI36175/25-1",
+     "expected": "61161020",
+     "cn8": "61169200",
+     "hs6": "6116.92",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI356",
+     "expected": "64052091",
+     "cn8": "64041910",
+     "hs6": "6404.19",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI68",
+     "expected": "84798997",
+     "cn8": "84198998",
+     "hs6": "8419.89",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI105",
+     "expected": "84749090",
+     "cn8": "39269097",
+     "hs6": "3926.90",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "MTBTI2024-002",
+     "expected": "84248970",
+     "cn8": "84798997",
+     "hs6": "8479.89",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "MTBTI2025-011",
+     "expected": "94054231",
+     "cn8": "94051140",
+     "hs6": "9405.11",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI38",
+     "expected": "95030041",
+     "cn8": "95030049",
+     "hs6": "9503.00",
+     "origin": "cn8_wrong"
+    }
+   ]
+  ],
+  "origin_runs": [
+   {
+    "hs6_wrong": 36,
+    "hs6_flagged": 10,
+    "hs6_failed": 0,
+    "hs6_no_candidate": 0,
+    "cn8_wrong": 2,
+    "cn8_asked": 8,
+    "cn8_failed": 0
+   },
+   {
+    "hs6_wrong": 37,
+    "hs6_flagged": 10,
+    "hs6_failed": 0,
+    "hs6_no_candidate": 0,
+    "cn8_wrong": 1,
+    "cn8_asked": 8,
+    "cn8_failed": 0
+   },
+   {
+    "hs6_wrong": 36,
+    "hs6_flagged": 10,
+    "hs6_failed": 0,
+    "hs6_no_candidate": 0,
+    "cn8_wrong": 1,
+    "cn8_asked": 8,
+    "cn8_failed": 0
+   }
+  ],
+  "hs6_top1_runs": [
+   81,
+   80,
+   80
+  ],
+  "hs6_wrong_auto_runs": [
+   8,
+   7,
+   7
+  ],
+  "cn8_after_right_hs6_runs": [
+   [
+    64,
+    74
+   ],
+   [
+    64,
+    73
+   ],
+   [
+    65,
+    74
+   ]
+  ],
+  "cut": 71,
+  "cut_right_runs": [
+   37,
+   37,
+   37
+  ],
+  "uncut_right_runs": [
+   27,
+   27,
+   28
+  ],
+  "same_cn8": 114,
+  "same_route": 118,
+  "n": 120,
+  "always_wrong": [
+   {
+    "reference": "IEBTIIENEN004-2025-BTI245",
+    "expected": "39269097",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "hs6_flagged"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "hs6_flagged"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "hs6_flagged"
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505068468",
+    "expected": "39269097",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "hs6_flagged"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "hs6_flagged"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "hs6_flagged"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI258",
+    "expected": "39269097",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "hs6_flagged"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "hs6_flagged"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "hs6_flagged"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2023-BTI572",
+    "expected": "39231090",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_flagged"
+     },
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_flagged"
+     },
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_flagged"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI284",
+    "expected": "42021291",
+    "seen": [
+     {
+      "cn8": "42029219",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "42023210",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "42023210",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI145",
+    "expected": "42029291",
+    "seen": [
+     {
+      "cn8": "42022290",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "42022290",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "42022290",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI449",
+    "expected": "42029219",
+    "seen": [
+     {
+      "cn8": "42021250",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "42021250",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "42021250",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI264",
+    "expected": "42029291",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "hs6_flagged"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "hs6_flagged"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "hs6_flagged"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI227",
+    "expected": "42029298",
+    "seen": [
+     {
+      "cn8": "42022290",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "42022290",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "42022290",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI261",
+    "expected": "42029219",
+    "seen": [
+     {
+      "cn8": "42021250",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "42021250",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "42021250",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI132",
+    "expected": "61023090",
+    "seen": [
+     {
+      "cn8": "61013090",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "61013090",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "61013090",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI208",
+    "expected": "61099020",
+    "seen": [
+     {
+      "cn8": "61143000",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "61143000",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "61143000",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI90",
+    "expected": "61013090",
+    "seen": [
+     {
+      "cn8": "61043300",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "61043300",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "61043300",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI45301/24-1",
+    "expected": "61102099",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI36175/25-1",
+    "expected": "61161020",
+    "seen": [
+     {
+      "cn8": "61169200",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "61169200",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "61169200",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI23122/26-1",
+    "expected": "61161080",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "hs6_flagged"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "hs6_flagged"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "hs6_flagged"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI106",
+    "expected": "62121090",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "61124190",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI108",
+    "expected": "62121090",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI107",
+    "expected": "62121090",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI7623/25-1",
+    "expected": "62024010",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "62043390",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI43065/25-1",
+    "expected": "62101098",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI228",
+    "expected": "63079098",
+    "seen": [
+     {
+      "cn8": "33042000",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "33042000",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "33042000",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "SEBTITV-2026-01096",
+    "expected": "63079010",
+    "seen": [
+     {
+      "cn8": "95030041",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "95030041",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "95030041",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI7",
+    "expected": "63079098",
+    "seen": [
+     {
+      "cn8": "46029000",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "46029000",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "46029000",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI5",
+    "expected": "63079098",
+    "seen": [
+     {
+      "cn8": "46021990",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "46021990",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "46021990",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505066180",
+    "expected": "63079010",
+    "seen": [
+     {
+      "cn8": "87082190",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "87082190",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "87082190",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "MTBTI2025-017",
+    "expected": "63079098",
+    "seen": [
+     {
+      "cn8": "63059000",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "63059000",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "63059000",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI356",
+    "expected": "64052091",
+    "seen": [
+     {
+      "cn8": "64041910",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "64041910",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "64041910",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI16524/26-1",
+    "expected": "64029998",
+    "seen": [
+     {
+      "cn8": "64041910",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "64041910",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "64041910",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI37155/24-1",
+    "expected": "64029190",
+    "seen": [
+     {
+      "cn8": "64029998",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "64029998",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "64029998",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505060394",
+    "expected": "73269098",
+    "seen": [
+     {
+      "cn8": "73101000",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "73101000",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "73101000",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI77",
+    "expected": "73181552",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "cn8_asked"
+     },
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "cn8_asked"
+     },
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "cn8_asked"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI92",
+    "expected": "73209090",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "cn8_asked"
+     },
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "cn8_asked"
+     },
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "cn8_asked"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI279",
+    "expected": "73181542",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI96",
+    "expected": "73269098",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI378",
+    "expected": "73170020",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI331",
+    "expected": "73089098",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "hs6_flagged"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "hs6_flagged"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "hs6_flagged"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI173",
+    "expected": "73269098",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     },
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI301",
+    "expected": "73259990",
+    "seen": [
+     {
+      "cn8": "85389099",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "85389099",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "85389099",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI19",
+    "expected": "84151010",
+    "seen": [
+     {
+      "cn8": "84152000",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "84152000",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "84152000",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI249",
+    "expected": "84213925",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_flagged"
+     },
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_flagged"
+     },
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_flagged"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI293",
+    "expected": "84249080",
+    "seen": [
+     {
+      "cn8": "73072910",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "84818099",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "84818099",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI68",
+    "expected": "84798997",
+    "seen": [
+     {
+      "cn8": "84198998",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "84198998",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "84198998",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI124",
+    "expected": "84314980",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_flagged"
+     },
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_flagged"
+     },
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_flagged"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI105",
+    "expected": "84749090",
+    "seen": [
+     {
+      "cn8": "39269097",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "39269097",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "39269097",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "MTBTI2024-002",
+    "expected": "84248970",
+    "seen": [
+     {
+      "cn8": "84798997",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "84798997",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "84798997",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI60",
+    "expected": "85389099",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI336",
+    "expected": "85389099",
+    "seen": [
+     {
+      "cn8": "39259010",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "39259010",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "39259010",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505068566",
+    "expected": "85044083",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_flagged"
+     },
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_flagged"
+     },
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_flagged"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2023-BTI561",
+    "expected": "85371098",
+    "seen": [
+     {
+      "cn8": "85363030",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "85363030",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "85363030",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "MTBTI2025-011",
+    "expected": "94054231",
+    "seen": [
+     {
+      "cn8": "94051140",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "94051140",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "94051140",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI38",
+    "expected": "95030041",
+    "seen": [
+     {
+      "cn8": "95030049",
+      "route": "auto_accept",
+      "origin": "cn8_wrong"
+     },
+     {
+      "cn8": "95030049",
+      "route": "auto_accept",
+      "origin": "cn8_wrong"
+     },
+     {
+      "cn8": "95030049",
+      "route": "auto_accept",
+      "origin": "cn8_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI72",
+    "expected": "96190050",
+    "seen": [
+     {
+      "cn8": "96190040",
+      "route": "review",
+      "origin": "cn8_wrong"
+     },
+     {
+      "cn8": "61082200",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "61082200",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI71",
+    "expected": "96190050",
+    "seen": [
+     {
+      "cn8": "61082100",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "61082100",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "61082100",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI222",
+    "expected": "96091090",
+    "seen": [
+     {
+      "cn8": "96099090",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "96099090",
+      "route": "review",
+      "origin": "hs6_wrong"
+     },
+     {
+      "cn8": "96099090",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   }
+  ],
+  "parse": {
+   "retry_limit": 2,
+   "runs": [
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    },
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    },
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    }
+   ]
+  },
+  "upload_s_runs": [
+   84.4,
+   73.2,
+   73.4
+  ],
+  "elapsed_s_runs": [
+   100.4,
+   81.5,
+   81.0
+  ],
+  "elapsed_s": 262.9,
+  "cost_usd": 0.792,
+  "cost_eur": 0.7286,
+  "cost_eur_runs": [
+   0.2431,
+   0.2418,
+   0.2437
+  ]
+ },
+ {
+  "iteration": 2,
+  "run_on": "2026-10-26",
+  "tag": "e2e-stopword-fix",
+  "model": "google/gemini-2.5-flash",
+  "reasoning": {
+   "enabled": false
+  },
+  "threshold": 85,
+  "ask_floor": 50,
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 1,
+  "right_runs": [
+   68
+  ],
+  "majority_right": 68,
+  "majority_origin": {
+   "hs6": 42,
+   "cn8": 10
+  },
+  "routes_runs": [
+   {
+    "auto_accept": 56,
+    "review": 57,
+    "ask_shipper": 7
+   }
+  ],
+  "right_auto_runs": [
+   49
+  ],
+  "wrong_auto_runs": [
+   [
+    {
+     "reference": "XIBTI505068468",
+     "expected": "39269097",
+     "cn8": "73218100",
+     "hs6": "7321.81",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "DEBTI36175/25-1",
+     "expected": "61161020",
+     "cn8": "61169200",
+     "hs6": "6116.92",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI356",
+     "expected": "64052091",
+     "cn8": "64041910",
+     "hs6": "6404.19",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI68",
+     "expected": "84798997",
+     "cn8": "84198998",
+     "hs6": "8419.89",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "MTBTI2024-002",
+     "expected": "84248970",
+     "cn8": "84798997",
+     "hs6": "8479.89",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "MTBTI2025-011",
+     "expected": "94054231",
+     "cn8": "94051140",
+     "hs6": "9405.11",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI38",
+     "expected": "95030041",
+     "cn8": "95030049",
+     "hs6": "9503.00",
+     "origin": "cn8_wrong"
+    }
+   ]
+  ],
+  "origin_runs": [
+   {
+    "hs6_wrong": 34,
+    "hs6_flagged": 8,
+    "hs6_failed": 0,
+    "hs6_no_candidate": 0,
+    "cn8_wrong": 3,
+    "cn8_asked": 7,
+    "cn8_failed": 0
+   }
+  ],
+  "hs6_top1_runs": [
+   82
+  ],
+  "hs6_wrong_auto_runs": [
+   7
+  ],
+  "cn8_after_right_hs6_runs": [
+   [
+    68,
+    78
+   ]
+  ],
+  "cut": 71,
+  "cut_right_runs": [
+   40
+  ],
+  "uncut_right_runs": [
+   28
+  ],
+  "same_cn8": 120,
+  "same_route": 120,
+  "n": 120,
+  "always_wrong": [
+   {
+    "reference": "IEBTIIENEN004-2025-BTI245",
+    "expected": "39269097",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_flagged"
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505068468",
+    "expected": "39269097",
+    "seen": [
+     {
+      "cn8": "73218100",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2023-BTI572",
+    "expected": "39231090",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_flagged"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI284",
+    "expected": "42021291",
+    "seen": [
+     {
+      "cn8": "42023210",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI145",
+    "expected": "42029291",
+    "seen": [
+     {
+      "cn8": "42022290",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI449",
+    "expected": "42029219",
+    "seen": [
+     {
+      "cn8": "42021250",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI264",
+    "expected": "42029291",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI227",
+    "expected": "42029298",
+    "seen": [
+     {
+      "cn8": "42022290",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI261",
+    "expected": "42029219",
+    "seen": [
+     {
+      "cn8": "42021250",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI132",
+    "expected": "61023090",
+    "seen": [
+     {
+      "cn8": "61121200",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI208",
+    "expected": "61099020",
+    "seen": [
+     {
+      "cn8": "61143000",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI90",
+    "expected": "61013090",
+    "seen": [
+     {
+      "cn8": "61043300",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI45301/24-1",
+    "expected": "61102099",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI36175/25-1",
+    "expected": "61161020",
+    "seen": [
+     {
+      "cn8": "61169200",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI23122/26-1",
+    "expected": "61161080",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "hs6_flagged"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI106",
+    "expected": "62121090",
+    "seen": [
+     {
+      "cn8": "61124190",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI108",
+    "expected": "62121090",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI107",
+    "expected": "62121090",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI7623/25-1",
+    "expected": "62024010",
+    "seen": [
+     {
+      "cn8": "62043390",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI43065/25-1",
+    "expected": "62101098",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI228",
+    "expected": "63079098",
+    "seen": [
+     {
+      "cn8": "33049900",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "SEBTITV-2026-01096",
+    "expected": "63079010",
+    "seen": [
+     {
+      "cn8": "95030041",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI7",
+    "expected": "63079098",
+    "seen": [
+     {
+      "cn8": "46029000",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI5",
+    "expected": "63079098",
+    "seen": [
+     {
+      "cn8": "46021990",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505066180",
+    "expected": "63079010",
+    "seen": [
+     {
+      "cn8": "87082190",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "MTBTI2025-017",
+    "expected": "63079098",
+    "seen": [
+     {
+      "cn8": "63059000",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI356",
+    "expected": "64052091",
+    "seen": [
+     {
+      "cn8": "64041910",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI16524/26-1",
+    "expected": "64029998",
+    "seen": [
+     {
+      "cn8": "64041910",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI37155/24-1",
+    "expected": "64029190",
+    "seen": [
+     {
+      "cn8": "64029998",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505060394",
+    "expected": "73269098",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_flagged"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI77",
+    "expected": "73181552",
+    "seen": [
+     {
+      "cn8": "73181595",
+      "route": "review",
+      "origin": "cn8_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI92",
+    "expected": "73209090",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "cn8_asked"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI279",
+    "expected": "73181542",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI378",
+    "expected": "73170020",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI173",
+    "expected": "73269098",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "ask_shipper",
+      "origin": "cn8_asked"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI301",
+    "expected": "73259990",
+    "seen": [
+     {
+      "cn8": "85389099",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI19",
+    "expected": "84151010",
+    "seen": [
+     {
+      "cn8": "84152000",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI249",
+    "expected": "84213925",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_flagged"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI293",
+    "expected": "84249080",
+    "seen": [
+     {
+      "cn8": "84818099",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI68",
+    "expected": "84798997",
+    "seen": [
+     {
+      "cn8": "84198998",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI124",
+    "expected": "84314980",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_flagged"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI105",
+    "expected": "84749090",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_flagged"
+     }
+    ]
+   },
+   {
+    "reference": "MTBTI2024-002",
+    "expected": "84248970",
+    "seen": [
+     {
+      "cn8": "84798997",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI60",
+    "expected": "85389099",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI336",
+    "expected": "85389099",
+    "seen": [
+     {
+      "cn8": "39259010",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505068566",
+    "expected": "85044083",
+    "seen": [
+     {
+      "cn8": null,
+      "route": "review",
+      "origin": "hs6_flagged"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2023-BTI561",
+    "expected": "85371098",
+    "seen": [
+     {
+      "cn8": "85363030",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "MTBTI2025-011",
+    "expected": "94054231",
+    "seen": [
+     {
+      "cn8": "94051140",
+      "route": "auto_accept",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI38",
+    "expected": "95030041",
+    "seen": [
+     {
+      "cn8": "95030049",
+      "route": "auto_accept",
+      "origin": "cn8_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI72",
+    "expected": "96190050",
+    "seen": [
+     {
+      "cn8": "96190040",
+      "route": "review",
+      "origin": "cn8_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI71",
+    "expected": "96190050",
+    "seen": [
+     {
+      "cn8": "61082100",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI222",
+    "expected": "96091090",
+    "seen": [
+     {
+      "cn8": "96099090",
+      "route": "review",
+      "origin": "hs6_wrong"
+     }
+    ]
+   }
+  ],
+  "parse": {
+   "retry_limit": 2,
+   "runs": [
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    }
+   ]
+  },
+  "upload_s_runs": [
+   117.3
+  ],
+  "elapsed_s_runs": [
+   133.7
+  ],
+  "elapsed_s": 133.7,
+  "cost_usd": 0.2674,
+  "cost_eur": 0.246,
+  "cost_eur_runs": [
+   0.246
+  ]
+ }
+]

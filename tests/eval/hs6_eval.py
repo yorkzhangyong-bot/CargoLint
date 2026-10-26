@@ -39,6 +39,10 @@ by run, whose right-right cell per run is the end-to-end estimate, and the cost.
 With the gate it also keeps per run the gate reasons, the lines no ruling voted on that went to review, the right
 auto-accepts, and those the gate lost against the confidence rule.
 
+The line-by-line results go to tests/eval/hs6_eval.json, the latest run, and to the run's own
+tests/eval/hs6_eval_<tag>.json (hs6_eval_iteration<N>.json without --tag), which a run with another tag leaves alone,
+as the CN-8 iteration files keep earlier CN-8 runs (feature 007).
+
 --model names another OpenRouter chat model for this run only (the default is the configured CARGOLINT_CHAT_MODEL,
 Gemini 2.5 Flash since feature 006; the entry keeps the model and the reasoning sent next to its tag), through
 tests/eval/cn8_eval.run_settings: thinking stays off ({"enabled": false}; "minimal" still thinks) unless the model has no
@@ -94,6 +98,7 @@ QUADRANTS = ("hs6_right_cn8_right", "hs6_right_cn8_wrong", "hs6_wrong_cn8_right"
 GATES = ("vote_agrees", "vote_disagrees", "vote_tie", "vote_share_low", "no_rulings", "not_gated")   # not_gated: flagged,
                                                                                                      # failed, no candidate
 OTHER_MODEL_RETRIES = 1        # a --model run retries an invalid answer once; the product retries MAX_SCHEMA_RETRIES times
+TAG_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")   # a tag names the run's own results file
 _rec = threading.local()       # per worker thread, for the line in hand: the logged ruling searches
 
 
@@ -334,6 +339,16 @@ def own_ruling(runs: list[list[dict]]) -> dict:
             "logged_runs": [sum(r["own_rank"] is not None for r in run) for run in runs], "searched": SEARCHED}
 
 
+def write_results(report: dict, out: Path, name: str) -> Path:
+    """Write the line-by-line results to `out`, the latest run's file, and to the run's own file next to it
+    (hs6_eval.json → hs6_eval_<name>.json), which a later run with another name does not overwrite. Returns the latter."""
+    text = dump_results(report)
+    own = out.with_name(f"{out.stem}_{name}{out.suffix}")
+    for path in (out, own):
+        path.write_text(text, encoding="utf-8", newline="\n")
+    return own
+
+
 def cn8_results(data: dict) -> dict[str, dict]:
     """Per line of a CN-8 eval results file: its expected CN-8, and the chosen CN-8 and the top-1 hit of each run."""
     out: dict[str, dict] = {}
@@ -498,7 +513,8 @@ def render_report(history: list[dict], data: dict) -> str:
     for h in history:
         out += _entry_sections(h, descriptions)
     out += ["", f"Model: {history[-1]['model'] if history else '-'}. Line-by-line results of the latest run: "
-            "`tests/eval/hs6_eval.json`; earlier runs are in the git history of that file.", ""]
+            "`tests/eval/hs6_eval.json`; since feature 007 each run also keeps its own, `tests/eval/hs6_eval_<tag>.json`; "
+            "earlier runs are in the git history of `hs6_eval.json`.", ""]
     return "\n".join(out)
 
 
@@ -522,6 +538,8 @@ def main(argv: list[str] | None = None) -> int:
         ap.error("--repeat must be 1 or more")
     if args.limit is not None and not args.dry_run:
         ap.error("--limit is for a dry run: the history keeps whole-set runs only")
+    if args.tag is not None and not TAG_RE.fullmatch(args.tag):
+        ap.error("--tag names the run's results file: letters, digits, '.', '_' and '-'")
     data = json.loads(SET.read_text(encoding="utf-8"))
     rulings = data["rulings"][:args.limit] if args.limit else data["rulings"]
     cn8_data = json.loads(Path(args.cn8).read_text(encoding="utf-8"))
@@ -596,7 +614,7 @@ def main(argv: list[str] | None = None) -> int:
         print("\n== tests/eval/hs6_eval.md:\n" + render_report(history, data))
         print("dry run: nothing written")
     else:
-        OUT.write_text(dump_results(report), encoding="utf-8", newline="\n")
+        write_results(report, OUT, args.tag or f"iteration{iteration}")
         HISTORY.write_text(json.dumps(history, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
         REPORT.write_text(render_report(history, data), encoding="utf-8", newline="\n")
     print(f"HS-6 top-1 per run {m['top1_runs']} of {n}; majority {m['majority_top1']}/{n}; in top 3 per run {m['top3_runs']}; "
