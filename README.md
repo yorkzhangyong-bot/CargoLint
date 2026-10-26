@@ -332,6 +332,12 @@ CN-8 and TARIC-10 (feature 004), measured on 2026-10-23 with the 2026-10-01 TARI
   "Furniture" came back at 40 and went to the shipper, and the toy cars were written as 9503 00 95 instead of
   asking whether a motor is fitted.
 
+**Feature 006 report**: [docs/reports/006-stability-baseline.md](docs/reports/006-stability-baseline.md) tells the
+story of feature 006 for the capstone review. It covers how the run-to-run instability was measured, why the
+auto-accept decision moved from the model's confidence to a vote of the nearest EBTI rulings at both code levels, and
+the five-model comparison behind the switch to Gemini 2.5 Flash. It also states the trade-offs and open items, and
+traces every number to the eval reports and commits.
+
 **Known issues**:
 - **Sample line 10, "铝合金自行车架 / Aluminium alloy bicycle frames"** (browser check with the live model, 2026-10-24):
   it is auto-accepted as 9503 00 10 00 (wheeled toys) at 95 %; the correct HS-6 is 8714.91 (frames and forks of
