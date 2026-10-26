@@ -62,6 +62,7 @@ class ClassifyContext:
     k: int = RETRIEVAL_K
     as_of: date = field(default_factory=date.today)
     precedents: bool = True        # let matching BTI rulings propose candidate codes
+    exclude_refs: frozenset[str] | None = None   # feature 006: rulings kept out of the precedents (an eval's own ruling)
 
 
 def _history_chapters(codes: list[str]) -> list[str]:
@@ -102,7 +103,7 @@ def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCal
     bti_vectors = getattr(kb, "bti_vectors", None)
     if ctx.precedents and bti_vectors is not None and query_vectors:
         present = {c.id for c in chunks}
-        for p in precedent_codes(bti_vectors, kb.bti, query_vectors, k=ctx.k, as_of=ctx.as_of):
+        for p in precedent_codes(bti_vectors, kb.bti, query_vectors, k=ctx.k, as_of=ctx.as_of, exclude_refs=ctx.exclude_refs):
             if len(precedents) >= PRECEDENT_CODES_MAX:
                 break
             ch = kb.index.get(p["code"])

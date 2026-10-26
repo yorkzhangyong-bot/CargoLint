@@ -1,0 +1,2297 @@
+[
+ {
+  "iteration": 1,
+  "run_on": "2026-10-25",
+  "change": "3 independent runs, temperature 0.0, seed none",
+  "model": "openai/gpt-4o-mini",
+  "threshold": 85,
+  "ask_floor": 50,
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 3,
+  "n": 120,
+  "top1_runs": [
+   72,
+   68,
+   69
+  ],
+  "majority_top1": 69,
+  "top3_runs": [
+   103,
+   103,
+   101
+  ],
+  "same_top1": 114,
+  "top1_consistency": 0.95,
+  "same_route": 119,
+  "route_consistency": 0.9917,
+  "routes_runs": [
+   {
+    "auto_accept": 108,
+    "review": 5,
+    "ask_shipper": 7
+   },
+   {
+    "auto_accept": 109,
+    "review": 4,
+    "ask_shipper": 7
+   },
+   {
+    "auto_accept": 108,
+    "review": 5,
+    "ask_shipper": 7
+   }
+  ],
+  "wrong_auto_runs": [
+   [
+    {
+     "reference": "IEBTIIENEN004-2024-BTI133",
+     "expected": "3926.90",
+     "top1": "4202.92",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI141",
+     "expected": "3926.90",
+     "top1": "9111.80",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2023-BTI572",
+     "expected": "3923.10",
+     "top1": "9617.00",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI284",
+     "expected": "4202.12",
+     "top1": "4202.32",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI145",
+     "expected": "4202.92",
+     "top1": "4202.22",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI449",
+     "expected": "4202.92",
+     "top1": "4202.12",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI189",
+     "expected": "4202.92",
+     "top1": "4202.12",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI227",
+     "expected": "4202.92",
+     "top1": "4202.22",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI261",
+     "expected": "4202.92",
+     "top1": "4202.12",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI132",
+     "expected": "6102.30",
+     "top1": "6112.12",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI208",
+     "expected": "6109.90",
+     "top1": "6114.30",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI90",
+     "expected": "6101.30",
+     "top1": "6104.33",
+     "confidence": 95
+    },
+    {
+     "reference": "FRBTIFR-BTI-2025-08672",
+     "expected": "6111.20",
+     "top1": "6209.20",
+     "confidence": 95
+    },
+    {
+     "reference": "DEBTI52786/23-1",
+     "expected": "6113.00",
+     "top1": "6203.33",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI106",
+     "expected": "6212.10",
+     "top1": "6112.41",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI108",
+     "expected": "6212.10",
+     "top1": "6112.41",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI107",
+     "expected": "6212.10",
+     "top1": "6112.41",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI23",
+     "expected": "6307.90",
+     "top1": "6215.90",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI228",
+     "expected": "6307.90",
+     "top1": "3304.99",
+     "confidence": 90
+    },
+    {
+     "reference": "SEBTITV-2026-01096",
+     "expected": "6307.90",
+     "top1": "9503.00",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI7",
+     "expected": "6307.90",
+     "top1": "4602.19",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI5",
+     "expected": "6307.90",
+     "top1": "4602.19",
+     "confidence": 90
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI8",
+     "expected": "6307.90",
+     "top1": "4602.90",
+     "confidence": 95
+    },
+    {
+     "reference": "MTBTI2025-018",
+     "expected": "6307.90",
+     "top1": "6306.12",
+     "confidence": 95
+    },
+    {
+     "reference": "XIBTI505066180",
+     "expected": "6307.90",
+     "top1": "8708.21",
+     "confidence": 90
+    },
+    {
+     "reference": "MTBTI2025-017",
+     "expected": "6307.90",
+     "top1": "6305.90",
+     "confidence": 95
+    },
+    {
+     "reference": "CZBTI47/152108/2024-580000-04/01",
+     "expected": "6307.90",
+     "top1": "9503.00",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI352",
+     "expected": "6404.19",
+     "top1": "6405.20",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI356",
+     "expected": "6405.20",
+     "top1": "6404.19",
+     "confidence": 95
+    },
+    {
+     "reference": "XIBTI505060394",
+     "expected": "7326.90",
+     "top1": "7310.10",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI19",
+     "expected": "8415.10",
+     "top1": "8415.82",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI293",
+     "expected": "8424.90",
+     "top1": "8481.80",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI68",
+     "expected": "8479.89",
+     "top1": "8419.89",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI124",
+     "expected": "8431.49",
+     "top1": "7306.61",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI105",
+     "expected": "8474.90",
+     "top1": "3920.10",
+     "confidence": 95
+    },
+    {
+     "reference": "MTBTI2024-002",
+     "expected": "8424.89",
+     "top1": "8479.89",
+     "confidence": 90
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI60",
+     "expected": "8538.90",
+     "top1": "8536.30",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2023-BTI579",
+     "expected": "8528.52",
+     "top1": "8528.72",
+     "confidence": 95
+    },
+    {
+     "reference": "XIBTI505065379",
+     "expected": "8505.19",
+     "top1": "9505.90",
+     "confidence": 95
+    },
+    {
+     "reference": "MTBTI2025-011",
+     "expected": "9405.42",
+     "top1": "9405.11",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI38",
+     "expected": "9503.00",
+     "top1": "9618.00",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI460",
+     "expected": "9503.00",
+     "top1": "9506.62",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI222",
+     "expected": "9609.10",
+     "top1": "9609.90",
+     "confidence": 95
+    }
+   ],
+   [
+    {
+     "reference": "IEBTIIENEN004-2024-BTI133",
+     "expected": "3926.90",
+     "top1": "4202.92",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI141",
+     "expected": "3926.90",
+     "top1": "9111.80",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2023-BTI572",
+     "expected": "3923.10",
+     "top1": "9617.00",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI284",
+     "expected": "4202.12",
+     "top1": "4202.32",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI145",
+     "expected": "4202.92",
+     "top1": "4202.22",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI449",
+     "expected": "4202.92",
+     "top1": "4202.12",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI189",
+     "expected": "4202.92",
+     "top1": "4202.12",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI227",
+     "expected": "4202.92",
+     "top1": "4202.22",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI261",
+     "expected": "4202.92",
+     "top1": "4202.12",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI132",
+     "expected": "6102.30",
+     "top1": "6112.12",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI208",
+     "expected": "6109.90",
+     "top1": "6114.30",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI90",
+     "expected": "6101.30",
+     "top1": "6104.33",
+     "confidence": 95
+    },
+    {
+     "reference": "FRBTIFR-BTI-2025-08672",
+     "expected": "6111.20",
+     "top1": "6209.20",
+     "confidence": 95
+    },
+    {
+     "reference": "DEBTI52786/23-1",
+     "expected": "6113.00",
+     "top1": "6203.33",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI106",
+     "expected": "6212.10",
+     "top1": "6112.41",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI108",
+     "expected": "6212.10",
+     "top1": "6112.41",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI107",
+     "expected": "6212.10",
+     "top1": "6112.41",
+     "confidence": 95
+    },
+    {
+     "reference": "DEBTI7623/25-1",
+     "expected": "6202.40",
+     "top1": "6204.33",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI23",
+     "expected": "6307.90",
+     "top1": "6215.90",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI228",
+     "expected": "6307.90",
+     "top1": "3304.99",
+     "confidence": 90
+    },
+    {
+     "reference": "SEBTITV-2026-01096",
+     "expected": "6307.90",
+     "top1": "9503.00",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI7",
+     "expected": "6307.90",
+     "top1": "4602.90",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI5",
+     "expected": "6307.90",
+     "top1": "4602.19",
+     "confidence": 90
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI8",
+     "expected": "6307.90",
+     "top1": "4602.90",
+     "confidence": 95
+    },
+    {
+     "reference": "MTBTI2025-018",
+     "expected": "6307.90",
+     "top1": "6306.12",
+     "confidence": 95
+    },
+    {
+     "reference": "XIBTI505066180",
+     "expected": "6307.90",
+     "top1": "8708.21",
+     "confidence": 95
+    },
+    {
+     "reference": "MTBTI2025-017",
+     "expected": "6307.90",
+     "top1": "6305.90",
+     "confidence": 95
+    },
+    {
+     "reference": "CZBTI47/152108/2024-580000-04/01",
+     "expected": "6307.90",
+     "top1": "9503.00",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI352",
+     "expected": "6404.19",
+     "top1": "6405.20",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI356",
+     "expected": "6405.20",
+     "top1": "6404.19",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI354",
+     "expected": "6404.19",
+     "top1": "6405.20",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI377",
+     "expected": "6404.19",
+     "top1": "6405.20",
+     "confidence": 95
+    },
+    {
+     "reference": "XIBTI505060394",
+     "expected": "7326.90",
+     "top1": "7310.10",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI301",
+     "expected": "7325.99",
+     "top1": "8421.39",
+     "confidence": 90
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI19",
+     "expected": "8415.10",
+     "top1": "8415.82",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI293",
+     "expected": "8424.90",
+     "top1": "8481.80",
+     "confidence": 90
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI68",
+     "expected": "8479.89",
+     "top1": "8419.89",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI124",
+     "expected": "8431.49",
+     "top1": "7306.61",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI105",
+     "expected": "8474.90",
+     "top1": "3920.10",
+     "confidence": 95
+    },
+    {
+     "reference": "MTBTI2024-002",
+     "expected": "8424.89",
+     "top1": "8479.89",
+     "confidence": 90
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI60",
+     "expected": "8538.90",
+     "top1": "8536.30",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2023-BTI579",
+     "expected": "8528.52",
+     "top1": "8528.72",
+     "confidence": 95
+    },
+    {
+     "reference": "XIBTI505065379",
+     "expected": "8505.19",
+     "top1": "9505.90",
+     "confidence": 95
+    },
+    {
+     "reference": "MTBTI2025-011",
+     "expected": "9405.42",
+     "top1": "9405.11",
+     "confidence": 95
+    },
+    {
+     "reference": "SEBTITV-2024-01665",
+     "expected": "9401.99",
+     "top1": "6304.92",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI38",
+     "expected": "9503.00",
+     "top1": "9618.00",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI460",
+     "expected": "9503.00",
+     "top1": "9506.62",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI222",
+     "expected": "9609.10",
+     "top1": "9609.90",
+     "confidence": 95
+    }
+   ],
+   [
+    {
+     "reference": "IEBTIIENEN004-2024-BTI133",
+     "expected": "3926.90",
+     "top1": "4202.92",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI141",
+     "expected": "3926.90",
+     "top1": "9111.80",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2023-BTI572",
+     "expected": "3923.10",
+     "top1": "9617.00",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI284",
+     "expected": "4202.12",
+     "top1": "4202.32",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI145",
+     "expected": "4202.92",
+     "top1": "4202.22",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI449",
+     "expected": "4202.92",
+     "top1": "4202.12",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI189",
+     "expected": "4202.92",
+     "top1": "4202.12",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI227",
+     "expected": "4202.92",
+     "top1": "4202.22",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI261",
+     "expected": "4202.92",
+     "top1": "4202.12",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI132",
+     "expected": "6102.30",
+     "top1": "6112.12",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI208",
+     "expected": "6109.90",
+     "top1": "6114.30",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI90",
+     "expected": "6101.30",
+     "top1": "6104.33",
+     "confidence": 95
+    },
+    {
+     "reference": "FRBTIFR-BTI-2025-08672",
+     "expected": "6111.20",
+     "top1": "6209.20",
+     "confidence": 95
+    },
+    {
+     "reference": "DEBTI52786/23-1",
+     "expected": "6113.00",
+     "top1": "6203.33",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI106",
+     "expected": "6212.10",
+     "top1": "6112.41",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI108",
+     "expected": "6212.10",
+     "top1": "6112.41",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI107",
+     "expected": "6212.10",
+     "top1": "6112.41",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI23",
+     "expected": "6307.90",
+     "top1": "6215.90",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI228",
+     "expected": "6307.90",
+     "top1": "3304.99",
+     "confidence": 90
+    },
+    {
+     "reference": "SEBTITV-2026-01096",
+     "expected": "6307.90",
+     "top1": "9503.00",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI7",
+     "expected": "6307.90",
+     "top1": "4602.90",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI5",
+     "expected": "6307.90",
+     "top1": "4602.19",
+     "confidence": 90
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI8",
+     "expected": "6307.90",
+     "top1": "4602.90",
+     "confidence": 95
+    },
+    {
+     "reference": "MTBTI2025-018",
+     "expected": "6307.90",
+     "top1": "6306.12",
+     "confidence": 95
+    },
+    {
+     "reference": "XIBTI505066180",
+     "expected": "6307.90",
+     "top1": "8708.21",
+     "confidence": 95
+    },
+    {
+     "reference": "MTBTI2025-017",
+     "expected": "6307.90",
+     "top1": "6305.90",
+     "confidence": 95
+    },
+    {
+     "reference": "CZBTI47/152108/2024-580000-04/01",
+     "expected": "6307.90",
+     "top1": "9503.00",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI352",
+     "expected": "6404.19",
+     "top1": "6405.20",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI356",
+     "expected": "6405.20",
+     "top1": "6404.19",
+     "confidence": 90
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI354",
+     "expected": "6404.19",
+     "top1": "6405.20",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI377",
+     "expected": "6404.19",
+     "top1": "6405.20",
+     "confidence": 95
+    },
+    {
+     "reference": "XIBTI505060394",
+     "expected": "7326.90",
+     "top1": "7310.10",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI301",
+     "expected": "7325.99",
+     "top1": "8421.39",
+     "confidence": 90
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI19",
+     "expected": "8415.10",
+     "top1": "8415.82",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI293",
+     "expected": "8424.90",
+     "top1": "8481.80",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI68",
+     "expected": "8479.89",
+     "top1": "8419.89",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI124",
+     "expected": "8431.49",
+     "top1": "7306.61",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI105",
+     "expected": "8474.90",
+     "top1": "3920.10",
+     "confidence": 90
+    },
+    {
+     "reference": "MTBTI2024-002",
+     "expected": "8424.89",
+     "top1": "8413.20",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI60",
+     "expected": "8538.90",
+     "top1": "8536.30",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2023-BTI579",
+     "expected": "8528.52",
+     "top1": "8528.72",
+     "confidence": 95
+    },
+    {
+     "reference": "XIBTI505065379",
+     "expected": "8505.19",
+     "top1": "9505.90",
+     "confidence": 95
+    },
+    {
+     "reference": "MTBTI2025-011",
+     "expected": "9405.42",
+     "top1": "9405.11",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI38",
+     "expected": "9503.00",
+     "top1": "9618.00",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI460",
+     "expected": "9503.00",
+     "top1": "9506.62",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI222",
+     "expected": "9609.10",
+     "top1": "9609.90",
+     "confidence": 95
+    }
+   ]
+  ],
+  "always_wrong": [
+   {
+    "reference": "XIBTI505068468",
+    "chapter": "39",
+    "expected": "3926.90",
+    "seen": [
+     {
+      "top1": "7321.81",
+      "confidence": 85,
+      "route": "ask_shipper",
+      "in_top3": false
+     },
+     {
+      "top1": "7321.81",
+      "confidence": 85,
+      "route": "ask_shipper",
+      "in_top3": false
+     },
+     {
+      "top1": "7321.81",
+      "confidence": 85,
+      "route": "ask_shipper",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI133",
+    "chapter": "39",
+    "expected": "3926.90",
+    "seen": [
+     {
+      "top1": "4202.92",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "4202.92",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "4202.92",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI141",
+    "chapter": "39",
+    "expected": "3926.90",
+    "seen": [
+     {
+      "top1": "9111.80",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "9111.80",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "9111.80",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2023-BTI572",
+    "chapter": "39",
+    "expected": "3923.10",
+    "seen": [
+     {
+      "top1": "9617.00",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "9617.00",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "9617.00",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI284",
+    "chapter": "42",
+    "expected": "4202.12",
+    "seen": [
+     {
+      "top1": "4202.32",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "4202.32",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "4202.32",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI145",
+    "chapter": "42",
+    "expected": "4202.92",
+    "seen": [
+     {
+      "top1": "4202.22",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "4202.22",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "4202.22",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI449",
+    "chapter": "42",
+    "expected": "4202.92",
+    "seen": [
+     {
+      "top1": "4202.12",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "4202.12",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "4202.12",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI189",
+    "chapter": "42",
+    "expected": "4202.92",
+    "seen": [
+     {
+      "top1": "4202.12",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "4202.12",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "4202.12",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI227",
+    "chapter": "42",
+    "expected": "4202.92",
+    "seen": [
+     {
+      "top1": "4202.22",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "4202.22",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "4202.22",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI261",
+    "chapter": "42",
+    "expected": "4202.92",
+    "seen": [
+     {
+      "top1": "4202.12",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "4202.12",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "4202.12",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI132",
+    "chapter": "61",
+    "expected": "6102.30",
+    "seen": [
+     {
+      "top1": "6112.12",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6112.12",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "6112.12",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI208",
+    "chapter": "61",
+    "expected": "6109.90",
+    "seen": [
+     {
+      "top1": "6114.30",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "6114.30",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "6114.30",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI90",
+    "chapter": "61",
+    "expected": "6101.30",
+    "seen": [
+     {
+      "top1": "6104.33",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "6104.33",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "6104.33",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "FRBTIFR-BTI-2025-08672",
+    "chapter": "61",
+    "expected": "6111.20",
+    "seen": [
+     {
+      "top1": "6209.20",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6209.20",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6209.20",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI52786/23-1",
+    "chapter": "61",
+    "expected": "6113.00",
+    "seen": [
+     {
+      "top1": "6203.33",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "6203.33",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "6203.33",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI106",
+    "chapter": "62",
+    "expected": "6212.10",
+    "seen": [
+     {
+      "top1": "6112.41",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6112.41",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6112.41",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI108",
+    "chapter": "62",
+    "expected": "6212.10",
+    "seen": [
+     {
+      "top1": "6112.41",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6112.41",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6112.41",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI107",
+    "chapter": "62",
+    "expected": "6212.10",
+    "seen": [
+     {
+      "top1": "6112.41",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6112.41",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6112.41",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI7623/25-1",
+    "chapter": "62",
+    "expected": "6202.40",
+    "seen": [
+     {
+      "top1": "6204.33",
+      "confidence": 59,
+      "route": "review",
+      "in_top3": true
+     },
+     {
+      "top1": "6204.33",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6204.33",
+      "confidence": 59,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI23",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "6215.90",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6215.90",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6215.90",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI228",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "3304.99",
+      "confidence": 90,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "3304.99",
+      "confidence": 90,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "3304.99",
+      "confidence": 90,
+      "route": "auto_accept",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "SEBTITV-2026-01096",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI7",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "4602.19",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "4602.90",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "4602.90",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI5",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "4602.19",
+      "confidence": 90,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "4602.19",
+      "confidence": 90,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "4602.19",
+      "confidence": 90,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI8",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "4602.90",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "4602.90",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "4602.90",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "MTBTI2025-018",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "6306.12",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6306.12",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6306.12",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505066180",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "8708.21",
+      "confidence": 90,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "8708.21",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "8708.21",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "MTBTI2025-017",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "6305.90",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6305.90",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6305.90",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "CZBTI47/152108/2024-580000-04/01",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI352",
+    "chapter": "64",
+    "expected": "6404.19",
+    "seen": [
+     {
+      "top1": "6405.20",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6405.20",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6405.20",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI356",
+    "chapter": "64",
+    "expected": "6405.20",
+    "seen": [
+     {
+      "top1": "6404.19",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6404.19",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6404.19",
+      "confidence": 90,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505060394",
+    "chapter": "73",
+    "expected": "7326.90",
+    "seen": [
+     {
+      "top1": "7310.10",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "7310.10",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "7310.10",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI69",
+    "chapter": "73",
+    "expected": "7318.14",
+    "seen": [
+     {
+      "top1": "7318.15",
+      "confidence": 85,
+      "route": "ask_shipper",
+      "in_top3": true
+     },
+     {
+      "top1": "7318.15",
+      "confidence": 85,
+      "route": "ask_shipper",
+      "in_top3": true
+     },
+     {
+      "top1": "7318.15",
+      "confidence": 85,
+      "route": "ask_shipper",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI19",
+    "chapter": "84",
+    "expected": "8415.10",
+    "seen": [
+     {
+      "top1": "8415.82",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "8415.82",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "8415.82",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI293",
+    "chapter": "84",
+    "expected": "8424.90",
+    "seen": [
+     {
+      "top1": "8481.80",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "8481.80",
+      "confidence": 90,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "8481.80",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI68",
+    "chapter": "84",
+    "expected": "8479.89",
+    "seen": [
+     {
+      "top1": "8419.89",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "8419.89",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "8419.89",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI124",
+    "chapter": "84",
+    "expected": "8431.49",
+    "seen": [
+     {
+      "top1": "7306.61",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "7306.61",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "7306.61",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI105",
+    "chapter": "84",
+    "expected": "8474.90",
+    "seen": [
+     {
+      "top1": "3920.10",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "3920.10",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "3920.10",
+      "confidence": 90,
+      "route": "auto_accept",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "MTBTI2024-002",
+    "chapter": "84",
+    "expected": "8424.89",
+    "seen": [
+     {
+      "top1": "8479.89",
+      "confidence": 90,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "8479.89",
+      "confidence": 90,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "8413.20",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI60",
+    "chapter": "85",
+    "expected": "8538.90",
+    "seen": [
+     {
+      "top1": "8536.30",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "8536.30",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "8536.30",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2023-BTI579",
+    "chapter": "85",
+    "expected": "8528.52",
+    "seen": [
+     {
+      "top1": "8528.72",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "8528.72",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "8528.72",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505068566",
+    "chapter": "85",
+    "expected": "8504.40",
+    "seen": [
+     {
+      "top1": "8504.31",
+      "confidence": 59,
+      "route": "review",
+      "in_top3": false
+     },
+     {
+      "top1": "8504.31",
+      "confidence": 59,
+      "route": "review",
+      "in_top3": false
+     },
+     {
+      "top1": "8504.31",
+      "confidence": 59,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2023-BTI561",
+    "chapter": "85",
+    "expected": "8537.10",
+    "seen": [
+     {
+      "top1": "8536.20",
+      "confidence": 59,
+      "route": "review",
+      "in_top3": false
+     },
+     {
+      "top1": "8536.20",
+      "confidence": 59,
+      "route": "review",
+      "in_top3": true
+     },
+     {
+      "top1": "8536.20",
+      "confidence": 59,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505065379",
+    "chapter": "85",
+    "expected": "8505.19",
+    "seen": [
+     {
+      "top1": "9505.90",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "9505.90",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "9505.90",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "MTBTI2025-011",
+    "chapter": "94",
+    "expected": "9405.42",
+    "seen": [
+     {
+      "top1": "9405.11",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "9405.11",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "9405.11",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI38",
+    "chapter": "95",
+    "expected": "9503.00",
+    "seen": [
+     {
+      "top1": "9618.00",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "9618.00",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "9618.00",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI460",
+    "chapter": "95",
+    "expected": "9503.00",
+    "seen": [
+     {
+      "top1": "9506.62",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "9506.62",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "9506.62",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI222",
+    "chapter": "96",
+    "expected": "9609.10",
+    "seen": [
+     {
+      "top1": "9609.90",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "9609.90",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "9609.90",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     }
+    ]
+   }
+  ],
+  "unstable": [
+   {
+    "reference": "IEBTIIENEN004-2024-BTI7",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "4602.19",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "4602.90",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "4602.90",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI354",
+    "chapter": "64",
+    "expected": "6404.19",
+    "seen": [
+     {
+      "top1": "6404.19",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6405.20",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6405.20",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI377",
+    "chapter": "64",
+    "expected": "6404.19",
+    "seen": [
+     {
+      "top1": "6404.19",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6405.20",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6405.20",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI301",
+    "chapter": "73",
+    "expected": "7325.99",
+    "seen": [
+     {
+      "top1": "7325.99",
+      "confidence": 90,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "8421.39",
+      "confidence": 90,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "8421.39",
+      "confidence": 90,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "MTBTI2024-002",
+    "chapter": "84",
+    "expected": "8424.89",
+    "seen": [
+     {
+      "top1": "8479.89",
+      "confidence": 90,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "8479.89",
+      "confidence": 90,
+      "route": "auto_accept",
+      "in_top3": false
+     },
+     {
+      "top1": "8413.20",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "SEBTITV-2024-01665",
+    "chapter": "94",
+    "expected": "9401.99",
+    "seen": [
+     {
+      "top1": "9401.99",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "6304.92",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     },
+     {
+      "top1": "9401.99",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   }
+  ],
+  "expected_sent": {
+   "wrong": 151,
+   "with_expected": 124,
+   "share": 0.8212
+  },
+  "own_ruling": {
+   "nearest_runs": [
+    110,
+    111,
+    110
+   ],
+   "searched_runs": [
+    120,
+    120,
+    120
+   ],
+   "logged_runs": [
+    120,
+    120,
+    120
+   ],
+   "searched": 12
+  },
+  "cn8_iteration": 11,
+  "cn8_source": "cn8_eval_iteration11.json",
+  "cross_layer": {
+   "majority": {
+    "hs6_right_cn8_right": 56,
+    "hs6_right_cn8_wrong": 13,
+    "hs6_wrong_cn8_right": 41,
+    "hs6_wrong_cn8_wrong": 10
+   },
+   "runs": [
+    {
+     "hs6_right_cn8_right": 59,
+     "hs6_right_cn8_wrong": 13,
+     "hs6_wrong_cn8_right": 38,
+     "hs6_wrong_cn8_wrong": 10
+    },
+    {
+     "hs6_right_cn8_right": 54,
+     "hs6_right_cn8_wrong": 14,
+     "hs6_wrong_cn8_right": 41,
+     "hs6_wrong_cn8_wrong": 11
+    },
+    {
+     "hs6_right_cn8_right": 56,
+     "hs6_right_cn8_wrong": 13,
+     "hs6_wrong_cn8_right": 40,
+     "hs6_wrong_cn8_wrong": 11
+    }
+   ],
+   "end_to_end_runs": [
+    59,
+    54,
+    56
+   ]
+  },
+  "elapsed_s": 350.0,
+  "cost_usd": 0.1932,
+  "cost_eur": 0.1778,
+  "cost_eur_runs": [
+   0.0591,
+   0.0595,
+   0.0592
+  ],
+  "tag": "hs6-baseline"
+ }
+]
