@@ -93,13 +93,22 @@ class StructuredCaller:
 
     def call(self, schema: type[BaseModel], system: str, user: str, max_retries: int | None = None) -> BaseModel:
         """`max_retries` overrides the caller's default for one call (feature 004: one retry for the CN-8 and subdivision
-        calls)."""
+        calls). Feature 006: an answer that is not JSON at all (the raw client's {"_invalid": ...}) is an invalid answer,
+        never an empty one, and gets one retry; when the retry is invalid too, the call fails."""
         retries = self.max_retries if max_retries is None else max_retries
         feedback = ""
         last_error: Exception | None = None
-        for attempt in range(retries + 1):
+        attempts, attempt = retries + 1, 0
+        while attempt < attempts:
             out = self.raw.raw_structured(schema, system, user + feedback)
             self._record_usage()
+            attempt += 1
+            if isinstance(out, dict) and out.get("_invalid"):
+                attempts = min(attempts, attempt + 1)
+                last_error = ValueError("the answer was not valid JSON")
+                feedback = "\n\nYour previous answer was not valid JSON. Return only valid JSON that matches the schema."
+                log.info("structured output not JSON (attempt %s/%s) for %s", attempt, attempts, schema.__name__)
+                continue
             try:
                 if isinstance(out, schema):
                     return out
@@ -108,8 +117,8 @@ class StructuredCaller:
                 last_error = exc
                 feedback = ("\n\nYour previous answer was invalid: " + str(exc).splitlines()[0]
                             + ". Return only valid JSON that matches the schema.")
-                log.info("structured output invalid (attempt %s/%s) for %s", attempt + 1, retries + 1, schema.__name__)
-        raise SchemaError(f"{schema.__name__}: invalid after {retries + 1} attempts: {last_error}")
+                log.info("structured output invalid (attempt %s/%s) for %s", attempt, attempts, schema.__name__)
+        raise SchemaError(f"{schema.__name__}: invalid after {attempt} attempts: {last_error}")
 
     def _record_usage(self) -> None:
         if self.usage_sink is None:
@@ -193,10 +202,14 @@ def get_chat_model(settings: Settings | None = None, **overrides: Any) -> Any:
     headers = {"X-OpenRouter-Title": settings.app_title}
     if settings.http_referer:
         headers["HTTP-Referer"] = settings.http_referer
+    extra: dict[str, Any] = {}
+    if settings.structured_method == "json_schema":
+        extra["provider"] = {"require_parameters": True}
+    if settings.reasoning_off:
+        extra["reasoning"] = {"enabled": False}   # feature 006: no thinking tokens; {"effort": "minimal"} still thinks
     kwargs: dict[str, Any] = dict(
         model=settings.chat_model, base_url=OPENROUTER_BASE_URL, api_key=settings.api_key, default_headers=headers,
-        stream_usage=True, use_responses_api=False, max_retries=3, temperature=0,
-        extra_body={"provider": {"require_parameters": True}} if settings.structured_method == "json_schema" else None,
+        stream_usage=True, use_responses_api=False, max_retries=3, temperature=0, extra_body=extra or None,
     )
     kwargs.update(overrides)
     return ChatOpenAI(**{k: v for k, v in kwargs.items() if v is not None})

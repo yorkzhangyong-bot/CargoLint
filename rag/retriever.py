@@ -276,17 +276,24 @@ class HybridRetriever:
 
 
 def precedent_codes(bti_vectors: VectorSearch, bti_store: Any, query_vectors: list[list[float]], k: int = RETRIEVAL_K,
-                    rrf_k: int = RRF_K, as_of: Any = None) -> list[dict[str, Any]]:
+                    rrf_k: int = RRF_K, as_of: Any = None, exclude_refs: frozenset[str] | None = None,
+                    hits: list[list[tuple[str, float]]] | None = None) -> list[dict[str, Any]]:
     """Precedent-driven retrieval: rank HS-6 codes by the BTI rulings whose goods match the queries.
 
     Each query's nearest rulings are fused with RRF; a code's score is the sum over its rulings, so a code backed by
     several similar rulings outranks one backed by a single ruling. Returns one entry per code, best first:
     {code, score, rulings, reference, member_state, excerpt}, where reference/excerpt are the best-ranked ruling.
-    Rulings unknown to the store, without a code, or not valid on `as_of` are skipped.
+    Rulings unknown to the store, without a code, or not valid on `as_of` are skipped, and so are the references in
+    `exclude_refs` (feature 006: an evaluation keeps a line's own ruling out; the product excludes nothing). `hits` are
+    the searches already run for the query vectors (feature 006: the HS-6 vote reads the same ones).
     """
-    rankings = [[d for d, _ in bti_vectors.search_by_vector(vec, k * 2, None)] for vec in query_vectors]
+    if hits is None:
+        hits = [bti_vectors.search_by_vector(vec, k * 2, None) for vec in query_vectors]
+    rankings = [[d for d, _ in found] for found in hits]
     by_code: dict[str, dict[str, Any]] = {}
     for ruling_id, score in rrf(rankings, rrf_k):
+        if exclude_refs and ruling_id.removeprefix("bti:") in exclude_refs:
+            continue
         rec = bti_store.get(ruling_id, as_of)
         code = (rec or {}).get("code")
         if not code:

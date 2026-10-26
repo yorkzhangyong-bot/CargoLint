@@ -22,6 +22,7 @@ from agent.routing import (
     cn8_written_by_rule,
     effective_route_of,
     hs6_auto_decided,
+    hs6_gate,
     route_line,
     validate_cn8,
     validate_code,
@@ -40,6 +41,7 @@ from agent.schemas import (
     DecisionRecord,
     DecisionRoute,
     DescriptionCheck,
+    FlagKind,
     Line,
     LineStatus,
     LineVersion,
@@ -216,11 +218,13 @@ class LineStore:
             v.status = LineStatus.failed
             v.error_reason = cls.error_reason or "classification failed"
             v.candidates = []
+            v.hs6_vote = None
             self._recompute(line, Actor.system, ChangeKind.line_failed)
             return
         v.candidates = list(cls.candidates)
         v.no_valid_candidate = cls.no_valid_candidate
         v.retrieval_trace = cls.retrieval_trace
+        v.hs6_vote = cls.hs6_vote
         existing = {s.id for s in v.sources}
         v.sources.extend(s for s in cls.sources if s.id not in existing)
         v.status = LineStatus.checked
@@ -392,7 +396,9 @@ class LineStore:
         c = v.cn8
         route, reason = route_line(kind, v.top_confidence, v.status, needs_click, s.threshold, s.ask_floor,
                                    cn8_question=c.deciding_attribute if c is not None and c.question else None,
-                                   cn8_error=c.error if c is not None and c.error else None)
+                                   cn8_error=c.error if c is not None and c.error else None, hs6_vote=v.hs6_vote)
+        gated = v.status == LineStatus.checked and kind == FlagKind.ok and (v.top_confidence or 0) > 0
+        v.hs6_gate = hs6_gate(v.top_confidence, s.threshold, v.hs6_vote)[1] if gated else None   # feature 006
         if v.unreadable and v.status == LineStatus.checked and not v.candidates:
             reason = "unreadable description — needs a human look"
         changed = route != v.computed_route or reason != v.route_reason
@@ -416,7 +422,8 @@ class LineStore:
         v = line.current
         return (
             line.ever_flagged and v.decision is None and v.status == LineStatus.checked and v.flag is not None
-            and v.flag.kind.value == "ok" and v.top_confidence is not None and v.top_confidence >= self.shipment.threshold
+            and v.flag.kind.value == "ok" and (v.top_confidence or 0) > 0
+            and hs6_gate(v.top_confidence, self.shipment.threshold, v.hs6_vote)[0]   # feature 006: the vote, or the threshold
         )
 
     def decided_code(self, line: Line) -> tuple[str | None, str | None]:
@@ -431,7 +438,7 @@ class LineStore:
         s, v = self.shipment, line.current
         needs_click = line.ever_flagged or v.created_by == CreatedBy.shipper_reply
         return hs6_auto_decided(v.flag.kind if v.flag is not None else None, v.top_confidence, v.status, needs_click,
-                                s.threshold, s.ask_floor)
+                                s.threshold, s.ask_floor, hs6_vote=v.hs6_vote)
 
     # ------------------------------------------------------------------ feature 004: the CN-8 choice
     def set_cn8_result(self, line_no: int, choice: Cn8Choice) -> None:

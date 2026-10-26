@@ -1684,5 +1684,103 @@
     ]
    }
   ]
+ },
+ {
+  "iteration": 12,
+  "run_on": "2026-10-26",
+  "change": "stability baseline: 3 independent runs, model google/gemini-2.5-flash, temperature 0.0, seed none; the row shows run 1",
+  "tag": "cn8-gemini25-flash",
+  "model": "google/gemini-2.5-flash",
+  "reasoning": {
+   "enabled": false
+  },
+  "threshold": 85,
+  "top1": 102,
+  "n": 120,
+  "written": 95,
+  "written_wrong": 3,
+  "to_confirm": 16,
+  "questions": 9,
+  "failures": 0,
+  "with_precedent": 111,
+  "per_chapter": {
+   "39": "10/10",
+   "42": "8/10",
+   "61": "8/10",
+   "62": "10/10",
+   "63": "9/10",
+   "64": "10/10",
+   "73": "5/10",
+   "84": "9/10",
+   "85": "7/10",
+   "94": "10/10",
+   "95": "9/10",
+   "96": "7/10"
+  },
+  "elapsed_s": 118.8,
+  "cost_usd": 0.3371,
+  "cost_eur": 0.3101,
+  "expected_sent": {
+   "wrong": 52,
+   "with_expected": 52,
+   "share": 1.0
+  },
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 3,
+  "top1_runs": [
+   102,
+   103,
+   103
+  ],
+  "majority_top1": 103,
+  "code_consistency": 0.9833,
+  "decision_consistency": 0.9833,
+  "unstable": [
+   {
+    "reference": "IEBTIIENEN004-2025-BTI77",
+    "hs6": "7318.15",
+    "expected": "73181552",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "73181595",
+      "confidence": 75,
+      "decision": "review"
+     },
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI293",
+    "hs6": "8424.90",
+    "expected": "84249080",
+    "seen": [
+     {
+      "cn8": null,
+      "confidence": 0,
+      "decision": "ask_shipper"
+     },
+     {
+      "cn8": "84249080",
+      "confidence": 85,
+      "decision": "auto_accept"
+     },
+     {
+      "cn8": "84249080",
+      "confidence": 85,
+      "decision": "auto_accept"
+     }
+    ]
+   }
+  ]
  }
 ]

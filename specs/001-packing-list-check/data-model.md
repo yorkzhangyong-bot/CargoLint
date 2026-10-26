@@ -46,7 +46,8 @@ within a shipment. Versions are append-only; `current` is the last version.
 Derived helpers (pure functions in the line store): `current`, `effective_route`
 (= `decision.route` if a decision exists, else `computed_route`), `needs_action`
 (= effective route ≠ accepted), `ready_to_accept` (= `ever_flagged` and current flag is `ok`
-and top confidence ≥ threshold and no decision yet).
+and the HS-6 gate passes — since constitution 1.5.0 the ruling vote, with no eligible ruling top
+confidence ≥ threshold — and no decision yet).
 
 ## 3. LineVersion
 
@@ -229,10 +230,16 @@ Rules enforced in code (`route_line`, FR-020; lock FR-022):
 | stop_word | any | checked | ask_shipper |
 | vague | < ask_floor | checked | ask_shipper |
 | vague | ≥ ask_floor | checked | review |
-| ok | ≥ threshold, `ever_flagged=False` | checked | auto_accept |
-| ok | ≥ threshold, `ever_flagged=True` | checked | review (`ready to accept`) |
-| ok | < threshold | checked | review |
+| ok | HS-6 gate passes¹, `ever_flagged=False` | checked | auto_accept |
+| ok | HS-6 gate passes¹, `ever_flagged=True` | checked | review (`ready to accept`) |
+| ok | HS-6 gate does not pass¹ | checked | review |
 | any | — | no candidates / unreadable / failed | review |
+
+¹ Since constitution 1.5.0 (feature 006) the HS-6 gate (`hs6_gate`) is the vote of the five
+nearest eligible EBTI rulings at or above the similarity floor (0.40), each counted once: the top
+candidate passes when it is their majority with a share of at least 0.5. With no eligible ruling it
+passes when its confidence is ≥ threshold, as before. When it does not pass, the route reason names
+the rulings and their issuing countries, and the candidate they support when it is the 2nd or 3rd.
 
 **Line version**: `v1` (file/paste/sample) → `v2…` (one per applied reply). A reply to an
 accepted line creates a new version and clears the decision (back to review). Versions are never

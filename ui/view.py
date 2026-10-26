@@ -13,8 +13,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from agent.config import MAX_DESC_CHARS
-from agent.routing import cn8_precedent_conflict
-from agent.schemas import ChosenHow, Cn8Gate, DecisionRoute, FlagKind, TaricRule, WrittenBy
+from agent.routing import cn8_precedent_conflict, hs6_gate
+from agent.schemas import ChosenHow, Cn8Gate, DecisionRoute, FlagKind, Hs6Gate, TaricRule, WrittenBy
 from agent.schemas import LineStatus as CheckStatus
 from tools.parsers import split_mixed
 
@@ -371,10 +371,26 @@ def preselect(store: Any, line: Any, kind: str, form: str) -> tuple[str | None, 
 def _hs6_how(line: Any) -> str:
     v = line.current
     conf, d = v.top_confidence, v.decision
+    if v.hs6_gate == Hs6Gate.vote_agrees:   # feature 006: the nearest rulings decided, not the estimate
+        n, m = _hs6_votes(v.hs6_vote, v.hs6_vote.majority)
+        auto = f"auto-accepted, {n} of {m} nearest rulings agree"
+    else:
+        auto = f"auto-accepted at {conf} %"
     if d is None:
-        return f"auto-accepted at {conf} %"
-    return {ChosenHow.auto: f"auto-accepted at {conf} %, accepted by you", ChosenHow.top: "confirmed by you",
+        return auto
+    return {ChosenHow.auto: f"{auto}, accepted by you", ChosenHow.top: "confirmed by you",
             ChosenHow.other_candidate: "chosen by you", ChosenHow.typed: "typed by you"}[d.chosen_how]
+
+
+def _hs6_votes(vote: Any, code: str | None) -> tuple[int, int]:
+    """Feature 006: the nearest rulings at the HS-6, and the rulings that voted."""
+    return (sum(len(countries) for c, countries in vote.competing if c == code),
+            sum(len(countries) for _, countries in vote.competing))
+
+
+def _hs6_rulings(vote: Any) -> str:
+    """Feature 006: the HS-6 codes the nearest rulings sit at, with the issuing country of every ruling."""
+    return ", ".join(f"{spaced(c)} ({', '.join(k or '?' for k in countries)})" for c, countries in vote.competing)
 
 
 def _votes(c: Any, cn8: str | None) -> tuple[int, int]:
@@ -418,9 +434,20 @@ def explain_a(store: Any, line: Any, kind: str) -> tuple[str, str]:
             return "", "No valid candidate was found. Type the HS-6 code, or ask the shipper what the goods are."
         top = v.candidates[0]
         first = cut(top.rationale, 200)
-        if top.confidence >= threshold:   # above the threshold, review only because the line was updated (FR-022)
+        passed, gate = hs6_gate(top.confidence, threshold, v.hs6_vote)
+        if passed:   # the vote or the threshold accepts it, review only because the line was updated (FR-022)
             why = "this line was flagged before its update" if line.ever_flagged else "this line was updated from the shipper's reply"
             return first, f"Top candidate leads ({top.confidence} %), but {why}, so it needs your confirmation. TARIC runs after your pick."
+        after = "TARIC runs after your pick."
+        if gate == Hs6Gate.vote_disagrees:   # feature 006: the nearest rulings decide, not the estimate
+            support = f" Precedents support candidate {v.hs6_vote.candidate}." if v.hs6_vote.candidate else ""
+            return first, f"Rulings disagree: model {spaced(top.code)}, nearest rulings {_hs6_rulings(v.hs6_vote)}.{support} {after}"
+        if gate == Hs6Gate.vote_tie:
+            return first, f"Rulings split: model {spaced(top.code)}, nearest rulings {_hs6_rulings(v.hs6_vote)}. {after}"
+        if gate == Hs6Gate.vote_share_low:
+            n, m = _hs6_votes(v.hs6_vote, top.code)
+            return first, (f"Rulings too spread: model {spaced(top.code)} has {n} of {m} nearest rulings; "
+                           f"{_hs6_rulings(v.hs6_vote)}. {after}")
         return first, (f"Top candidate leads ({top.confidence} %) but is under the {threshold} % auto-accept threshold, so "
                        "you decide. TARIC runs after your pick.")
     hs6 = store.decided_code(line)[0]

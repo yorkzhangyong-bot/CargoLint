@@ -27,7 +27,7 @@ MAX_PASTED_LINES = 50                # lines per pasted chat message
 SUPPORTED_FILE_KINDS = ("xlsx", "csv", "pdf", "jpg", "jpeg", "png")
 
 # Routing (FR-020, FR-021)
-DEFAULT_THRESHOLD = 85              # the HS-6 auto-accept threshold (constitution 1.4.0: HS-6 only)
+DEFAULT_THRESHOLD = 85              # auto-accept at either layer, only when no eligible ruling votes (feature 006)
 THRESHOLD_MIN = 60
 THRESHOLD_MAX = 99
 ASK_FLOOR = 50
@@ -36,6 +36,12 @@ ASK_FLOOR = 50
 # unweighted by design: the product is not tied to one entry country.
 CN8_VOTE_K = 5                     # the nearest eligible rulings that vote
 CN8_VOTE_SHARE = 0.5               # the majority's share the model's CN-8 needs; exactly the share passes
+
+# HS-6 gate (feature 006): the same vote on the first six digits of the nearest eligible rulings. A ruling less similar
+# to the line than the floor (cosine similarity, 1 - distance) does not vote; with none left, no ruling votes.
+HS6_VOTE_K = 5                     # the nearest eligible rulings that vote
+HS6_VOTE_SHARE = 0.5               # the majority's share the model's top HS-6 needs; exactly the share passes
+HS6_VOTE_MIN_SIMILARITY = 0.40     # below every nearest eligible ruling in the HS-6 eval set (lowest 0.436)
 
 # Agent and model behaviour (FR-044, FR-049)
 MAX_SCHEMA_RETRIES = 2
@@ -69,6 +75,8 @@ class Settings:
     usd_eur: float
     workers: int
     ocr_min_score: float
+    reasoning_off: bool = True   # feature 006: send OpenRouter's reasoning {"enabled": false}; a model without the
+                                 # parameter needs False (CARGOLINT_REASONING other than "off"), as OpenRouter refuses it
 
     @property
     def has_key(self) -> bool:
@@ -83,12 +91,13 @@ def load_settings(env: dict | None = None) -> Settings:
         api_key=e.get("OPENROUTER_API_KEY") or None,
         http_referer=e.get("OPENROUTER_HTTP_REFERER") or None,
         app_title=e.get("OPENROUTER_APP_TITLE") or "CargoLint",
-        chat_model=e.get("CARGOLINT_CHAT_MODEL") or "openai/gpt-4o-mini",
+        chat_model=e.get("CARGOLINT_CHAT_MODEL") or "google/gemini-2.5-flash",
         embed_model=e.get("CARGOLINT_EMBED_MODEL") or "qwen/qwen3-embedding-8b",
         structured_method=e.get("CARGOLINT_STRUCTURED_METHOD") or "json_schema",
         usd_eur=float(e.get("CARGOLINT_USD_EUR") or 0.92),
         workers=int(e.get("CARGOLINT_WORKERS") or 6),
         ocr_min_score=float(e.get("CARGOLINT_OCR_MIN_SCORE") or 0.6),
+        reasoning_off=(e.get("CARGOLINT_REASONING") or "off") == "off",
     )
 
 

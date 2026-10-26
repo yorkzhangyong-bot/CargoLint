@@ -10,12 +10,12 @@ from datetime import date
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
-from agent.config import RETRIEVAL_K
+from agent.config import HS6_VOTE_MIN_SIMILARITY, RETRIEVAL_K
 from agent.llm import StructuredCaller
 from agent.prompts import fence
-from agent.routing import validate_classification, validate_code
+from agent.routing import hs6_ruling_vote, validate_classification, validate_code
 from agent.schemas import Candidate, Classification, LineStatus, RankOut, RetrievalMode, RetrievalTrace, Source, SourceKind
-from rag.retriever import rrf, precedent_codes
+from rag.retriever import rrf, precedent_codes, stable_order
 from rag.rules import find_shipper, load_shippers
 from rag.translate import translate_and_expand
 from tools import register
@@ -62,10 +62,32 @@ class ClassifyContext:
     k: int = RETRIEVAL_K
     as_of: date = field(default_factory=date.today)
     precedents: bool = True        # let matching BTI rulings propose candidate codes
+    exclude_refs: frozenset[str] | None = None   # feature 006: rulings kept out of the precedents (an eval's own ruling)
 
 
 def _history_chapters(codes: list[str]) -> list[str]:
     return sorted({c[:2] for c in codes if len(c) >= 2})
+
+
+def hs6_voters(hits: list[list[tuple[str, float]]], bti_store, index, as_of: date,
+               exclude_refs: frozenset[str] | None = None,
+               min_similarity: float = HS6_VOTE_MIN_SIMILARITY) -> list[tuple[str, str]]:
+    """Feature 006: the rulings that vote on a line's HS-6, nearest first, as (HS-6, issuing country). Each ruling counts
+    once, at its highest similarity over the query vectors, when it is at least `min_similarity` similar to the line,
+    valid on `as_of`, not in `exclude_refs`, and coded to a subheading of the nomenclature."""
+    best: dict[str, float] = {}
+    for found in hits:
+        for doc_id, score in found:
+            best[doc_id] = max(best.get(doc_id, float("-inf")), score)
+    voters = []
+    for doc_id in stable_order(list(best.items())):
+        if best[doc_id] < min_similarity or (exclude_refs and doc_id.removeprefix("bti:") in exclude_refs):
+            continue
+        rec = bti_store.get(doc_id, as_of)
+        code = (rec or {}).get("code")
+        if code and index.get(code) is not None:
+            voters.append((code, rec.get("member_state") or ""))
+    return voters
 
 
 def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCaller | None) -> Classification:
@@ -100,9 +122,11 @@ def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCal
     precedents: list[dict] = []
     precedent_chunks = 0
     bti_vectors = getattr(kb, "bti_vectors", None)
-    if ctx.precedents and bti_vectors is not None and query_vectors:
+    hits = [bti_vectors.search_by_vector(vec, ctx.k * 2, None) for vec in query_vectors] if bti_vectors is not None else []
+    if ctx.precedents and hits:
         present = {c.id for c in chunks}
-        for p in precedent_codes(bti_vectors, kb.bti, query_vectors, k=ctx.k, as_of=ctx.as_of):
+        for p in precedent_codes(bti_vectors, kb.bti, query_vectors, k=ctx.k, as_of=ctx.as_of, exclude_refs=ctx.exclude_refs,
+                                 hits=hits):
             if len(precedents) >= PRECEDENT_CODES_MAX:
                 break
             ch = kb.index.get(p["code"])
@@ -163,8 +187,10 @@ def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCal
                         bm25_hits=trace["bm25_hits"], vector_hits=trace["vector_hits"], fused=trace["fused"],
                         sent_to_model=len(chunks), history_chunks=history_chunks, precedent_chunks=precedent_chunks,
                         precedent_codes=[p["code"] for p in precedents], mode=RetrievalMode(mode))
+    vote = (hs6_ruling_vote(hs6_voters(hits, kb.bti, kb.index, ctx.as_of, ctx.exclude_refs), [c.code for c in candidates])
+            if candidates else None)   # feature 006: the HS-6 auto-accept gate
     return Classification(line_no=line.line_no, candidates=candidates, no_valid_candidate=not candidates, retrieval_trace=rt,
-                          sources=sources, status=LineStatus.checked)
+                          sources=sources, status=LineStatus.checked, hs6_vote=vote)
 
 
 def classify_lines(lines: list[LineText], ctx: ClassifyContext, kb, client: StructuredCaller | None, workers: int = 4) -> list[Classification]:
