@@ -47,10 +47,11 @@ def _rules(store: Any) -> None:
         st.session_state["threshold"] = store.shipment.threshold if has else DEFAULT_THRESHOLD
     if "hybrid" not in st.session_state:
         st.session_state["hybrid"] = store.shipment.hybrid_search if has else True
-    st.slider("HS-6 auto-accept threshold", THRESHOLD_MIN, THRESHOLD_MAX, key="threshold", format="%d %%",
-              persist_state="session", on_change=_threshold_changed, args=(store,))
-    st.caption("Re-routes every unconfirmed line, no model call; clerk-confirmed lines are never touched. A CN-8 is "
-               "written when the nearest EBTI rulings agree with it; the threshold only applies when no ruling can vote.")
+    st.slider("Auto-accept threshold, when no ruling can vote", THRESHOLD_MIN, THRESHOLD_MAX, key="threshold",
+              format="%d %%", persist_state="session", on_change=_threshold_changed, args=(store,))
+    st.caption("Re-routes every unconfirmed line, no model call; clerk-confirmed lines are never touched. An HS-6 is "
+               "auto-accepted and a CN-8 written when the nearest EBTI rulings agree with the model; at both layers the "
+               "threshold applies only when no eligible ruling exists.")
     st.toggle("Hybrid search (BM25 and vectors)", key="hybrid", persist_state="session", on_change=_hybrid_changed,
               args=(store,))
 

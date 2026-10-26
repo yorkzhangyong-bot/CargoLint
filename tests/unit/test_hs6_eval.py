@@ -111,6 +111,60 @@ def test_hs6_measures_over_three_runs():
     assert [u["reference"] for u in m["unstable"]] == ["C"]
 
 
+def gated(reference, hit, route, by_confidence, gate):
+    return {**row(reference, "3926.90" if hit else "4202.92"), "route": route, "route_by_confidence": by_confidence,
+            "gate": gate}
+
+
+def test_the_vote_gate_measures():
+    runs = [[gated("A", True, "auto_accept", "auto_accept", "vote_agrees"),     # right, kept
+             gated("B", True, "review", "auto_accept", "vote_disagrees"),      # right, lost to the gate
+             gated("C", False, "review", "auto_accept", "vote_disagrees"),     # a wrong auto-accept the gate stopped
+             gated("D", True, "review", "review", "no_rulings"),               # below the threshold, no ruling voted
+             gated("E", False, "ask_shipper", "ask_shipper", "not_gated")]]    # flagged
+    g = ev.gate_measures(runs)
+    assert g["gate_runs"] == [{"vote_agrees": 1, "vote_disagrees": 2, "vote_tie": 0, "vote_share_low": 0, "no_rulings": 1,
+                               "not_gated": 1}]
+    assert (g["no_rulings_review_runs"], g["right_auto_runs"], g["lost_runs"]) == ([1], [1], [1])
+
+
+class Answers:
+    """A raw backend that gives the scripted answers in turn."""
+
+    def __init__(self, *answers):
+        self.answers, self.last_usage = list(answers), {}
+
+    def raw_structured(self, schema, system, user):
+        return self.answers.pop(0)
+
+
+def test_an_invalid_answer_is_retried_once_and_counted():
+    from agent.llm import StructuredCaller
+    from agent.routing import SchemaError
+    from agent.schemas import RankOut
+
+    good = {"candidates": [{"code": "3926.90", "confidence": 90, "rationale": "a phone case", "history_only": False}]}
+    not_json = {"_invalid": True, "content": "Sure! {code: 3926.90"}
+    client = StructuredCaller(raw=Answers(not_json, good, not_json, {"candidates": "none"}, good), model_name="m",
+                              prices=None, usd_eur=0.92, max_retries=ev.OTHER_MODEL_RETRIES)
+    counts = ev.count_invalid(client)
+    assert client.call(RankOut, "s", "u").candidates[0].code == "3926.90"     # not JSON, then right on the retry
+    with pytest.raises(SchemaError):
+        client.call(RankOut, "s", "u")                                         # not JSON, then not the schema: the call fails
+    assert client.call(RankOut, "s", "u").candidates[0].confidence == 90       # a valid answer is passed on as it is
+    rows = [{"status": "failed"}, {"status": "checked"}]
+    assert ev.parse_counts(counts, rows) == {"retries": 2, "unparseable": 2, "schema_invalid": 1, "failed_calls": 1,
+                                             "failed_lines": 1}
+
+
+def test_the_confidence_table_counts_right_and_wrong_top1_per_value():
+    runs = [[{**row("A", "3926.90"), "raw_confidence": 95}, {**row("B", "4202.92"), "raw_confidence": 95},
+             {**row("C", "3926.90", confidence=59), "raw_confidence": 90}, {**row("D", None), "raw_confidence": None}],
+            [{**row("A", "3926.90"), "raw_confidence": 95}, {**row("B", "4202.92", confidence=85)}]]   # an older row: confidence
+    assert ev.confidence_table(runs) == {"95": {"right": 2, "wrong": 1}, "90": {"right": 1, "wrong": 0},
+                                         "85": {"right": 0, "wrong": 1}}
+
+
 def test_where_the_own_ruling_stood():
     runs = [[row("A", "x", own_rank=1), row("B", "x", own_rank=12), row("C", "x", own_rank=13), row("D", "x", own_rank=None)]]
     assert ev.own_ruling(runs) == {"nearest_runs": [1], "searched_runs": [2], "logged_runs": [3], "searched": 12}
@@ -169,3 +223,15 @@ def test_the_report_shows_the_entry():
     assert "On majority results 3 of 4 lines end wrong: 2 from the HS-6 step" in text
     assert ("- C (chapter 39, expected 3926.90): 3923.10 (80, review) · 3923.10 (80, review) · 3923.10 (80, review); "
             "correct in the top 3 in 0 of 3 runs. \"goods \\*C\\*\"") in text
+    assert "| 1 / 2 / 0 of 4 | 0 / 0 / 0 | - | $0.0100" in text and "### Vote gate" not in text   # an entry before the gate
+
+
+def test_the_report_shows_the_vote_gate():
+    runs = [[{**r, "route_by_confidence": r["route"], "gate": "no_rulings"} for r in run] for run in HS6_RUNS]
+    entry = {"iteration": 2, "run_on": "2026-10-26", "tag": "hs6-vote-gate", "repeat": 3, "n": 4, "model": "m",
+             **ev.measures(runs), **ev.gate_measures(runs), "expected_sent": expected_sent_share(runs),
+             "own_ruling": ev.own_ruling(runs), "cn8_iteration": 11, "cross_layer": ev.cross_layer(runs, CN8),
+             "elapsed_s": 10.0, "cost_usd": 0.01, "cost_eur": 0.0093}
+    text = ev.render_report([entry], {"built_on": "2026-10-23", "rulings": []})
+    assert "| 1 / 2 / 0 of 4 | 0 / 0 / 0 | 0 / 0 / 0 | $0.0100" in text
+    assert "| 2 | 0 | 0 | 0 | 0 | 4 | 0 | 4 | 0 | 0 |" in text      # run 2: no ruling voted on any line, all to review

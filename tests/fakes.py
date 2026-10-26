@@ -26,6 +26,7 @@ class FakeRawClient:
         self.recorded = recorded or {}
         self.fail_on = set(fail_on or ())
         self.invalid_first = dict(invalid_first or {})
+        self.not_json_first: dict[tuple[str, str], int] = {}   # (schema, key) -> answers that are not JSON at all
         self.calls: list[dict[str, Any]] = []
         self.last_usage: dict[str, int] = {}
 
@@ -50,6 +51,9 @@ class FakeRawClient:
         if key in self.fail_on:
             raise RuntimeError(f"simulated model failure for {key!r}")
         scoped = (schema.__name__, key)
+        if self.not_json_first.get(scoped, 0) > 0:   # what OpenRouterRawClient returns for a text that is not JSON
+            self.not_json_first[scoped] -= 1
+            return {"_invalid": True, "content": "Sure! The best subheading is 9617.00."}
         k = scoped if scoped in self.invalid_first else key
         remaining = self.invalid_first.get(k, 0)
         if remaining > 0:

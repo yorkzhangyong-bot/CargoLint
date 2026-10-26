@@ -9,6 +9,7 @@ from agent.llm import get_client
 from rag.bti import BTIStore
 from rag.loader import KnowledgeBase
 from rag.retriever import BM25Index, HybridRetriever, InMemoryVectorSearch, precedent_codes
+from tests.eval import hs6_eval   # at collection: the offline guard replaces the OpenRouter client inside a test
 from tools.classify_hs6 import ClassifyContext, classify_lines
 from tools.common import LineText
 
@@ -57,9 +58,7 @@ def test_with_the_guard_the_lines_own_ruling_is_kept_out(fake_llm, kb):
 def test_the_hs6_eval_keeps_each_lines_own_ruling_out(fake_llm, kb):
     """tests/eval/hs6_eval.run_once: the line's own ruling is logged as its nearest hit, not eligible, and never reaches
     the model; another ruling at the same code still proposes it."""
-    from tests.eval import hs6_eval
-
-    other = {**OWN, "reference": "DE-TEST-2", "member_state": "DE", "description": "Smartphone case of silicone rubber"}
+    other ={**OWN, "reference": "DE-TEST-2", "member_state": "DE", "description": "Smartphone case of silicone rubber"}
     kb.bti = BTIStore([OWN, other])
     kb.bti_vectors = InMemoryVectorSearch(kb.bti.chunk_texts(), kb.embeddings)
     line = {"reference": "NL-TEST-1", "chapter": "39", "hs6": "3926.90", "cn8": "39269097", "language": "en",

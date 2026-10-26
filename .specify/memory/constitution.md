@@ -5,23 +5,30 @@
 ### I. Guardrails Live in Code, Not in the Prompt (NON-NEGOTIABLE)
 
 - Routing to `auto_accept`, `review` or `ask_shipper` MUST be computed by one deterministic
-  function from the line's flag, its HS-6 confidence against the threshold, whether the attribute
-  that decides its CN-8 is missing from the line text, and the CN-8 gate below. Routing MUST NOT
-  be a tool, a model decision, or logic that exists only in the UI.
-- The auto-accept threshold governs the HS-6 step only. It defaults to 85%, is adjustable from
-  60% to 99% on the Admin page (Rules), and MUST be enforced in code. A flagged (vague or
-  stop-word) line, or a line whose top HS-6 candidate is below the threshold, MUST NOT be routed
-  to `auto_accept`. Behaviour at exactly the threshold MUST be fixed in the spec and covered by a
-  test.
-- A CN-8 MUST be written by rule only when code computes agreement: the model's quote passed the
-  evidence check, no cited ruling sits at another CN-8, and the chosen CN-8 equals the majority
-  CN-8 of the k nearest eligible EBTI rulings, each counted once, with a share at or above the
-  vote threshold (k and the share are named configuration constants). Otherwise it stays a
-  suggestion for the clerk, with the competing rulings and their issuing countries as the reason;
-  a failed evidence check still routes the line to `ask_shipper`. The model's CN-8 confidence is
-  shown as "model estimate" and is not a routing input, except as the fallback when no eligible
-  ruling is found, where the previous rule (the estimate against the threshold) applies.
-  Behaviour at exactly the vote threshold MUST be fixed in the spec and covered by a test.
+  function from the line's flag, the HS-6 gate below, whether the attribute that decides its CN-8
+  is missing from the line text, and the CN-8 gate below. Routing MUST NOT be a tool, a model
+  decision, or logic that exists only in the UI.
+- At both layers the automatic decision MUST come from code-computed agreement with the k nearest
+  eligible EBTI rulings, each counted once: the model's code equals the rulings' majority code
+  (the first six digits for the HS-6, eight for the CN-8) with a share at or above the vote
+  threshold. A ruling is eligible when it is valid on the day and coded to the loaded
+  nomenclature; for the HS-6 it MUST also be at least as similar to the line as the similarity
+  floor. k, the share and the floor are named configuration constants. Behaviour at exactly the
+  vote threshold and exactly the floor MUST be fixed in the spec and covered by a test.
+- An unflagged line's HS-6 MUST be auto-accepted only when the HS-6 gate passes. Otherwise the
+  line goes to `review` with the competing rulings and their issuing countries as the reason,
+  naming the model's candidate the rulings support when it is the second or third. A flagged
+  (vague or stop-word) line MUST NOT be routed to `auto_accept`.
+- A CN-8 MUST be written by rule only when the model's quote passed the evidence check, no cited
+  ruling sits at another CN-8, and the CN-8 gate passes. Otherwise it stays a suggestion for the
+  clerk, with the competing rulings and their issuing countries as the reason; a failed evidence
+  check still routes the line to `ask_shipper`.
+- The model's confidence is not a routing input at either layer, except as the fallback when no
+  eligible ruling votes: then the model's estimate against the auto-accept threshold decides, as
+  before. The threshold defaults to 85%, is adjustable from 60% to 99% on the Admin page (Rules),
+  and MUST be enforced in code; behaviour at exactly the threshold MUST be fixed in the spec and
+  covered by a test. Whether the fallback stays is decided after confidence has been tested with
+  another model.
 - A line that was ever flagged MUST NOT become `auto_accept` after an update (for example a
   shipper reply) without an explicit human click.
 - Every HS-6 code shown to the clerk MUST exist in the loaded nomenclature. A code that fails
@@ -151,8 +158,9 @@ came from, in a layout that feels native to Streamlit.
 ### VII. Test-First and Measured (NON-NEGOTIABLE for guardrail code)
 
 - Tests MUST be written first and seen to fail for the deterministic code that carries the
-  guardrails: routing and threshold enforcement, the CN-8 ruling-vote gate, the flagged-line
-  lock, code-existence validation, schema validators, rule matching, file parsing and caps,
+  guardrails: routing and threshold enforcement, the HS-6 and CN-8 ruling-vote gates, with the
+  HS-6 similarity floor and the fallback when no ruling votes, the flagged-line lock,
+  code-existence validation, schema validators, rule matching, file parsing and caps,
   reciprocal rank fusion, BTI expiry filtering, the single-line scope of `apply_shipper_reply`,
   and the prompt-injection fixtures. These tests are mandatory deliverables and override the
   "tests are optional" default of the tasks template.
@@ -279,7 +287,8 @@ a listed element needs a spec change.
     TARIC code, undecided digits as underscores) · Status · Action ("Choose" or "Update"). A line
     expands in place into one of three kinds:
     - (a) choose the HS-6 or CN-8 from the top candidates, with confidence bars and EBTI precedent;
-      for the CN-8, the nearest rulings behind the vote with their issuing countries;
+      for the HS-6 and the CN-8, the nearest rulings behind the vote with their issuing countries,
+      and for the HS-6 the candidate they support;
     - (b) choose the TARIC-10 subdivision, with duty and anti-dumping columns, all measures and the
       EU TARIC link;
     - (c) ask the shipper: the question, the reason, "Copy question", the description to update and
@@ -288,8 +297,8 @@ a listed element needs a spec change.
     templates, English or Chinese, copy only) and "+ Check one more line".
 - Admin page, for the operator and course evaluators, reached from the header link, with a left
   navigation:
-  - Rules: the HS-6 auto-accept threshold (60–99, default 85) and the hybrid-search switch (on by
-    default);
+  - Rules: the auto-accept threshold, used at either layer only when no eligible ruling votes
+    (60–99, default 85), and the hybrid-search switch (on by default);
   - Data: the EBTI ruling count, the TARIC snapshot date and source, the model, and the
     knowledge-base last-updated date;
   - Cost: tokens and cost for this shipment and for the session;
@@ -362,5 +371,17 @@ to depart from; MAY is optional.
   the unweighted vote of the five nearest rulings cut wrong auto-accepts from 38 to 15 over three
   runs and lost 9.3 % of the correct ones (`tests/eval/cn8_vote_analysis.md`, iteration 10). The
   Admin threshold now governs the HS-6 step only.
+- 1.5.0 (2026-10-26): the HS-6 auto-accept gate moved from the model's confidence to the same
+  code-computed agreement with the five nearest eligible EBTI rulings, with a similarity floor of
+  0.40 below which a ruling does not vote (Principles I and VII, and the UI Design Contract).
+  Reason: in feature 006's HS-6 baseline the model gave its top HS-6 a confidence of 95 on about
+  100 of 120 lines, right or wrong, so the threshold auto-accepted 137 wrong HS-6 codes over three
+  runs, and 51 of the 64 lines that ended wrong went wrong at the HS-6; the vote gate cut wrong
+  auto-accepts to 7 over three runs and lost 33 of 186 correct auto-accepts (17.7 %)
+  (`tests/eval/hs6_eval.md`, iterations 1 and 2). The Admin threshold now applies at both layers,
+  and only when no eligible ruling votes. The default chat model moved from gpt-4o-mini to Gemini
+  2.5 Flash after a five-model comparison on the HS-6 eval (`tests/eval/hs6_eval.md`), and end to
+  end rose from 56 to 74 of 120 (majority results, Gemini at both layers: HS-6 iteration 4 with
+  CN-8 iteration 12).
 
-**Version**: 1.4.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-25
+**Version**: 1.5.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-26

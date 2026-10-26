@@ -266,7 +266,7 @@ The export gains a CN-8 column and a TARIC-10 column. Each is filled only once t
   - Principle I requires every CN-8 shown to exist in CN 2026, and every TARIC-10 and every measure shown to exist in the loaded TARIC snapshot, with the snapshot date displayed.
   - Principle I allows no subdivision to be written without the clerk's confirmation, except a single subdivision auto-completed with an audit entry. This spec is stricter: trade-defence measures always need confirmation (FR-011).
   - Principle I's schema rule names the code format for each level: HS-6 unchanged, CN-8 eight digits, TARIC-10 ten digits.
-  - Principle I's routing function takes the line's flag, its confidence against the threshold, and whether the attribute that decides its CN-8 is missing from the line text (FR-003). Since constitution 1.4.0 the threshold governs the HS-6 only, and the CN-8 gate is the ruling vote (feature 006).
+  - Principle I's routing function takes the line's flag, its confidence against the threshold, and whether the attribute that decides its CN-8 is missing from the line text (FR-003). Since constitution 1.4.0 the threshold governs the HS-6 only, and the CN-8 gate is the ruling vote (feature 006). Since 1.5.0 the HS-6 is gated by the same ruling vote, and the threshold applies at either layer only when no eligible ruling votes.
   - The architecture lists seven tools, including `classify_cn8` and `lookup_taric`.
   - Screen 1 describes the bundled sample as 12 lines with 6 needing action (v1.2.1).
 - **Design constraints set by the author, carried into planning**:

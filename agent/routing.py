@@ -14,8 +14,9 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from agent.config import CN8_VOTE_K, CN8_VOTE_SHARE, THRESHOLD_MAX, THRESHOLD_MIN
-from agent.schemas import CN8_PATTERN, CODE_RE, TARIC10_PATTERN, Candidate, Cn8Gate, FlagKind, LineStatus, RankOut, Route
+from agent.config import CN8_VOTE_K, CN8_VOTE_SHARE, HS6_VOTE_K, HS6_VOTE_SHARE, THRESHOLD_MAX, THRESHOLD_MIN
+from agent.schemas import (CN8_PATTERN, CODE_RE, TARIC10_PATTERN, Candidate, Cn8Gate, FlagKind, Hs6Gate, Hs6Vote, LineStatus,
+                           RankOut, Route)
 
 _CN8_RE = re.compile(CN8_PATTERN)
 _TARIC10_RE = re.compile(TARIC10_PATTERN)
@@ -47,11 +48,14 @@ def route_line(
     ask_floor: int,
     cn8_question: str | None = None,
     cn8_error: str | None = None,
+    hs6_vote: Hs6Vote | None = None,
 ) -> tuple[Route, str]:
     """The routing table from data-model.md §9. Returns (route, plain-language reason).
 
     Feature 004 (its data-model §6): on a checked, unflagged line, a failed CN-8 step (`cn8_error`) routes to review, like
-    a failed check, and an open CN-8 question (`cn8_question`, the missing attribute) routes to ask the shipper."""
+    a failed check, and an open CN-8 question (`cn8_question`, the missing attribute) routes to ask the shipper.
+    Feature 006: after those rules, the nearest rulings' vote (`hs6_vote`) decides the auto-accept through hs6_gate; only
+    without an eligible ruling does the confidence meet the threshold, as before."""
     if not (THRESHOLD_MIN <= int(threshold) <= THRESHOLD_MAX):
         raise ValueError(f"threshold must be between {THRESHOLD_MIN} and {THRESHOLD_MAX}, got {threshold}")
     st = _status(status)
@@ -79,51 +83,118 @@ def route_line(
     # flag ok (or no flag yet)
     if conf is None or conf <= 0:
         return Route.review, "no valid candidate — needs a human look"
-    if conf >= threshold:
-        if ever_flagged:
-            return Route.review, (
-                f"ready to accept — confidence {conf} at or above the threshold {threshold}, "
-                "but the line was flagged or updated before; click Accept to confirm"
-            )
-        return Route.auto_accept, f"confidence {conf} at or above the threshold {threshold}"
-    return Route.review, f"below threshold ({conf} < {threshold})"
+    passed, gate = hs6_gate(conf, threshold, hs6_vote)
+    if gate == Hs6Gate.no_rulings:
+        if passed:
+            if ever_flagged:
+                return Route.review, (
+                    f"ready to accept — confidence {conf} at or above the threshold {threshold}, "
+                    "but the line was flagged or updated before; click Accept to confirm"
+                )
+            return Route.auto_accept, f"confidence {conf} at or above the threshold {threshold}"
+        return Route.review, f"below threshold ({conf} < {threshold})"
+    reason = _hs6_vote_reason(gate, hs6_vote)
+    if not passed:
+        return Route.review, f"{reason} — needs a human look"
+    if ever_flagged:
+        return Route.review, f"ready to accept — {reason}, but the line was flagged or updated before; click Accept to confirm"
+    return Route.auto_accept, reason
+
+
+def _votes_text(competing: Sequence[tuple[str, list[str]]]) -> str:
+    """The codes the nearest rulings sit at, each with the issuing country of every ruling: "3926.90 (IE, DE)"."""
+    return ", ".join(f"{code} ({', '.join(c or '?' for c in countries)})" for code, countries in competing)
+
+
+def _hs6_vote_reason(gate: Hs6Gate, vote: Hs6Vote) -> str:
+    """The route reason, and the audit note, of an HS-6 the vote decided."""
+    voted = sum(len(countries) for _, countries in vote.competing)
+    at = next(((code, countries) for code, countries in vote.competing if code == vote.majority), None)
+    if gate == Hs6Gate.vote_agrees:
+        return f"{len(at[1])} of {voted} nearest EBTI rulings at {_votes_text([at])}"
+    if gate == Hs6Gate.vote_disagrees:
+        supported = f", the model's candidate {vote.candidate}" if vote.candidate else ""
+        return (f"the nearest EBTI rulings point to {at[0]} ({len(at[1])} of {voted}: "
+                f"{', '.join(c or '?' for c in at[1])}){supported}")
+    if gate == Hs6Gate.vote_tie:
+        return f"the nearest EBTI rulings are split: {_votes_text(vote.competing)}"
+    return f"only {len(at[1])} of {voted} nearest EBTI rulings at {at[0]}"
 
 
 def hs6_auto_decided(flag_kind: FlagKind | str | None, top_confidence: int | None, status: LineStatus | str,
-                     ever_flagged: bool, threshold: int, ask_floor: int) -> bool:
-    """Feature 004: the HS-6 is decided by rule exactly where feature 001 auto-accepts, whatever the CN-8 step found."""
-    return route_line(flag_kind, top_confidence, status, ever_flagged, threshold, ask_floor)[0] == Route.auto_accept
+                     ever_flagged: bool, threshold: int, ask_floor: int, hs6_vote: Hs6Vote | None = None) -> bool:
+    """Feature 004: the HS-6 is decided by rule exactly where feature 001 auto-accepts, whatever the CN-8 step found;
+    feature 006: through the vote of the nearest rulings."""
+    return route_line(flag_kind, top_confidence, status, ever_flagged, threshold, ask_floor,
+                      hs6_vote=hs6_vote)[0] == Route.auto_accept
 
 
 @dataclass(frozen=True)
 class RulingVote:
-    """Feature 006: the vote of the nearest eligible EBTI rulings on a CN-8, each ruling counted once."""
+    """Feature 006: the vote of the nearest eligible EBTI rulings on a code (a CN-8, or an HS-6), each ruling counted
+    once."""
 
-    majority_cn8: str | None                    # the CN-8 most of them sit at; None on a tie
+    majority: str | None                        # the code most of them sit at; None on a tie
     majority_share: float                       # its rulings over the rulings that voted
-    competing: list[tuple[str, list[str]]]      # every CN-8 with a vote and the issuing country of each ruling, most first
-    model_is_majority: bool                     # the model's CN-8 is the majority
+    competing: list[tuple[str, list[str]]]      # every code with a vote and the issuing country of each ruling, most first
+    model_is_majority: bool                     # the model's code is the majority
     agrees: bool                                # ... and its share is at least the vote share
 
+    @property
+    def majority_cn8(self) -> str | None:
+        """The majority, by its CN-8 name."""
+        return self.majority
 
-def cn8_ruling_vote(nearest: Sequence[tuple[str, str]], model_cn8: str | None, k: int = CN8_VOTE_K,
-                    share: float = CN8_VOTE_SHARE) -> RulingVote | None:
-    """Feature 006, constitution 1.4.0: the vote of the k nearest eligible rulings, given nearest first as (CN-8,
-    issuing country). The majority is the CN-8 with the most rulings, none on a tie; the model's CN-8 agrees when it is
-    the majority with a share of at least `share` (exactly the share counts). None when no ruling is eligible."""
+
+def ruling_vote(nearest: Sequence[tuple[str, str]], model_code: str | None, k: int, share: float) -> RulingVote | None:
+    """Feature 006: the vote of the k nearest eligible rulings, given nearest first as (code, issuing country). The
+    majority is the code with the most rulings, none on a tie; the model's code agrees when it is the majority with a
+    share of at least `share` (exactly the share counts). None when no ruling is eligible."""
     voters = list(nearest[:k])
     if not voters:
         return None
     countries: dict[str, list[str]] = {}
-    for cn8, country in voters:
-        countries.setdefault(cn8, []).append(country)
+    for code, country in voters:
+        countries.setdefault(code, []).append(country)
     top = max(len(c) for c in countries.values())
-    leaders = [cn8 for cn8, c in countries.items() if len(c) == top]
+    leaders = [code for code, c in countries.items() if len(c) == top]
     majority = leaders[0] if len(leaders) == 1 else None
     competing = sorted(countries.items(), key=lambda item: -len(item[1]))   # ties keep the nearest-first order
-    is_majority = model_cn8 is not None and model_cn8 == majority
+    is_majority = model_code is not None and model_code == majority
     return RulingVote(majority, round(top / len(voters), 4), competing, is_majority,
                       is_majority and top / len(voters) >= share)
+
+
+def cn8_ruling_vote(nearest: Sequence[tuple[str, str]], model_cn8: str | None, k: int = CN8_VOTE_K,
+                    share: float = CN8_VOTE_SHARE) -> RulingVote | None:
+    """Feature 006, constitution 1.4.0: ruling_vote on the CN-8, given nearest first as (CN-8, issuing country)."""
+    return ruling_vote(nearest, model_cn8, k, share)
+
+
+def hs6_ruling_vote(nearest: Sequence[tuple[str, str]], candidates: Sequence[str], k: int = HS6_VOTE_K,
+                    share: float = HS6_VOTE_SHARE) -> Hs6Vote | None:
+    """Feature 006: ruling_vote on the model's top HS-6, given the rulings nearest first as (HS-6, issuing country) and
+    the model's candidates top first; `candidate` is 2 or 3 when the majority is that candidate. None when no ruling is
+    eligible."""
+    vote = ruling_vote(nearest, candidates[0] if candidates else None, k, share)
+    if vote is None:
+        return None
+    supported = next((n for n, code in enumerate(candidates[:3], start=1) if n > 1 and code == vote.majority), None)
+    return Hs6Vote(majority=vote.majority, majority_share=vote.majority_share, competing=vote.competing,
+                   model_is_majority=vote.model_is_majority, agrees=vote.agrees, candidate=supported)
+
+
+def hs6_gate(confidence: int, threshold: int, vote: Hs6Vote | None = None) -> tuple[bool, Hs6Gate]:
+    """Whether an HS-6 is auto-accepted, and the rule that decided it (feature 006): the ruling vote decides, as
+    cn8_gate's. Only without an eligible ruling does the model estimate meet the threshold, as before (at the threshold
+    counts)."""
+    if vote is None:
+        return int(confidence) >= int(threshold), Hs6Gate.no_rulings
+    if vote.agrees:
+        return True, Hs6Gate.vote_agrees
+    if vote.majority is None:
+        return False, Hs6Gate.vote_tie
+    return False, (Hs6Gate.vote_share_low if vote.model_is_majority else Hs6Gate.vote_disagrees)
 
 
 def cn8_gate(confidence: int, threshold: int, single_line: bool, precedent_conflict: bool = False,
@@ -140,7 +211,7 @@ def cn8_gate(confidence: int, threshold: int, single_line: bool, precedent_confl
         return int(confidence) >= int(threshold), Cn8Gate.no_rulings
     if vote.agrees:
         return True, Cn8Gate.vote_agrees
-    if vote.majority_cn8 is None:
+    if vote.majority is None:
         return False, Cn8Gate.vote_tie
     return False, (Cn8Gate.vote_share_low if vote.model_is_majority else Cn8Gate.vote_disagrees)
 

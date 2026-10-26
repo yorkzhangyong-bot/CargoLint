@@ -17,6 +17,7 @@
 | 9 | 2026-10-25 | evidence-source-v1: goods description in its own <goods> block; the prompt allows quotes only from it, with new level-b examples (knife, hose, desk lamp); the evidence check normalises accents and line breaks and accepts a fragment found as a phrase or a run of words at 90 %; 3 runs, the row shows run 1 | 96/120 | 108 | 12 | 5 | 7 | 0 | $0.1235 (€0.1136), 218 s |
 | 10 | 2026-10-25 | nearest-hits logging: deterministic retrieval order and query embeddings cached per line text (bd7f97d, order fixed in a4ec6c7); logs the top-40 vector hits; 3 runs, the row shows run 1 | 95/120 | 108 | 13 | 4 | 8 | 0 | $0.1231 (€0.1132), 173 s |
 | 11 | 2026-10-25 | CN-8 auto-accept gated by the unweighted vote of the 5 nearest eligible EBTI rulings at share >= 0.5 (constitution 1.4.0); model confidence only as the fallback without an eligible ruling; 3 runs, the row shows run 1 | 97/120 | 93 | 5 | 20 | 7 | 0 | $0.1228 (€0.1130), 150 s |
+| 12 | 2026-10-26 | stability baseline: 3 independent runs, model google/gemini-2.5-flash, temperature 0.0, seed none; the row shows run 1 | 102/120 | 95 | 3 | 16 | 9 | 0 | $0.3371 (€0.3101), 119 s |
 
 ## Top-1 per chapter
 
@@ -33,6 +34,7 @@
 | 9 | 9/10 | 6/10 | 8/10 | 10/10 | 8/10 | 8/10 | 8/10 | 8/10 | 6/10 | 7/10 | 9/10 | 9/10 |
 | 10 | 9/10 | 6/10 | 8/10 | 10/10 | 8/10 | 7/10 | 8/10 | 8/10 | 6/10 | 7/10 | 9/10 | 9/10 |
 | 11 | 8/10 | 6/10 | 9/10 | 10/10 | 8/10 | 9/10 | 8/10 | 8/10 | 6/10 | 7/10 | 9/10 | 9/10 |
+| 12 | 10/10 | 8/10 | 8/10 | 10/10 | 9/10 | 10/10 | 5/10 | 9/10 | 7/10 | 10/10 | 9/10 | 7/10 |
 
 ## Stability (repeated runs)
 
@@ -47,6 +49,7 @@ Each line classified N times, independently. Same CN-8: the top-1 is identical i
 | 9 | 2026-10-25 | evidence-source-v1 | 0.0 | none | 3 | 96 / 93 / 93 of 120 | 94/120 | 94.2% | 93.3% | $0.1235 (€0.1136) |
 | 10 | 2026-10-25 | nearest-hits-logging | 0.0 | none | 3 | 95 / 97 / 97 of 120 | 97/120 | 95.8% | 95.8% | $0.1231 (€0.1132) |
 | 11 | 2026-10-25 | cn8-vote-gate | 0.0 | none | 3 | 97 / 95 / 96 of 120 | 97/120 | 95.0% | 95.0% | $0.1228 (€0.1130) |
+| 12 | 2026-10-26 | cn8-gemini25-flash | 0.0 | none | 3 | 102 / 103 / 103 of 120 | 103/120 | 98.3% | 98.3% | $0.3371 (€0.3101) |
 
 Note on iteration 10: The first attempt at iteration 10 was discarded: bd7f97d inverted the retrieval order (Chroma returns a distance, not a relevance score, so the farthest of the 40 hits went first). The eval caught it as a drop from 94 to 89 majority accuracy and from 37 to 60 wrong auto-accepts; fixed in a4ec6c7 with a regression test on a real Chroma collection.
 
@@ -126,6 +129,11 @@ Iteration 11: 6 lines whose top-1 differed between runs (chosen CN-8, confidence
 - IEBTIIENEN004-2026-BTI72 (HS-6 9619.00, expected 96190050): 96190050 (85, auto_accept) · 96190040 (85, review) · 96190040 (85, review)
 - IEBTIIENEN004-2026-BTI222 (HS-6 9609.10, expected 96091090): 96091090 (85, auto_accept) · no code (0, ask_shipper) · 96091090 (85, auto_accept)
 
+Iteration 12: 2 lines whose top-1 differed between runs (chosen CN-8, confidence, decision per run):
+
+- IEBTIIENEN004-2025-BTI77 (HS-6 7318.15, expected 73181552): no code (0, ask_shipper) · 73181595 (75, review) · no code (0, ask_shipper)
+- IEBTIIENEN004-2025-BTI293 (HS-6 8424.90, expected 84249080): no code (0, ask_shipper) · 84249080 (85, auto_accept) · 84249080 (85, auto_accept)
+
 ## Rulings sent to the model
 
 Wrong results (line × run; a question to the shipper is a miss) in which a ruling at the expected CN-8 was among the rulings sent to the model. Logged since iteration 7.
@@ -135,5 +143,6 @@ Wrong results (line × run; a question to the shipper is a miss) in which a ruli
 - Iteration 9: 78 of 78 wrong results (100.0%).
 - Iteration 10: 71 of 71 wrong results (100.0%).
 - Iteration 11: 72 of 72 wrong results (100.0%).
+- Iteration 12: 52 of 52 wrong results (100.0%).
 
-Model: openai/gpt-4o-mini. Line-by-line results of the latest run: `tests/eval/cn8_eval.json`; earlier runs are in the git history of that file.
+Model: google/gemini-2.5-flash. Line-by-line results of the latest run: `tests/eval/cn8_eval.json`; earlier runs are in the git history of that file.

@@ -151,7 +151,8 @@ operator and the course evaluators.
   copy and send by hand. Nothing is sent, and no model is called.
 
 **The Admin page**, through its left navigation:
-- **Rules**: the auto-accept threshold (60–99, default 85) and hybrid search. Both survive a page switch, and every
+- **Rules**: the auto-accept threshold (60–99, default 85), used at either layer only when no eligible ruling votes,
+  and hybrid search. Both survive a page switch, and every
   new shipment starts with them.
 - **Data**: the EBTI ruling count, the TARIC snapshot with its CN-8 mismatches, the model and the knowledge-base
   statement.
@@ -190,7 +191,11 @@ operator and the course evaluators.
    nomenclature index**; unknown codes are dropped, subheading text and chapter are filled from the
    index, never from the model. If nothing survives, the line is "no valid candidate".
 7. **Routing in code** (`agent/routing.py`): stop-word → ask the shipper; vague → ask the shipper below
-   the ask floor (50) else review; OK → auto-accept at or above the threshold else review; a line that
+   the ask floor (50) else review; OK → auto-accept when the HS-6 gate passes, else review. The gate
+   (constitution 1.5.0) is the vote of the five nearest eligible EBTI rulings at or above a cosine
+   similarity of 0.40: the top candidate passes when it is their majority with a share of at least
+   0.5, and the review reason names the rulings, their countries and the candidate they support. Only
+   when no ruling votes does the confidence decide, at or above the threshold. A line that
    was ever flagged, or updated by a shipper reply, is never auto-accepted — it becomes "ready to
    accept" and needs the clerk's click.
 
@@ -350,14 +355,17 @@ CN-8 and TARIC-10 (feature 004), measured on 2026-10-23 with the 2026-10-01 TARI
 - Precedent votes can point at a neighbouring code: for plastic household storage boxes the rulings vote
   `3926.90`/`3923.10` first and for steel bobbin cases `7326.90`. The model kept the right code in both cases,
   and the tag is presented as evidence, not as a verdict; the clerk sees the ruling and decides.
-- `gpt-4o-mini` sometimes skips `lookup_precedent`; the completeness guard runs it, so results are
+- The chat model can skip `lookup_precedent` (gpt-4o-mini did, before Gemini 2.5 Flash became the default); the
+  completeness guard runs it, so results are
   complete, but the progress block then shows the step as "run by the app".
 - BTI coverage: the twelve target chapters only (73,899 valid rulings with the full build, 192 with `--demo`). Rulings
   must be refreshed as they expire, and the full rulings index costs about 1.2 GB of RAM in the app.
 - OCR on phone photos is the weakest input path (RapidOCR, PP-OCR models); quantities and values are
   not read from photos.
 - State lives in the Streamlit session: nothing persists across restarts; one user, one shipment.
-- The chat model is reached through OpenRouter; a 402 (credits) stops checks with a clear message.
+- The chat model, `google/gemini-2.5-flash` by default with thinking off (OpenRouter `reasoning: {enabled: false}`;
+  `CARGOLINT_CHAT_MODEL`, and `CARGOLINT_REASONING=model` for a model without that parameter), is reached through
+  OpenRouter; a 402 (credits) stops checks with a clear message.
 - TARIC snapshot: full temporary stops are not applied; the companies behind additional codes are not
   named; Meursing agricultural components and sugar and flour additional duties are not represented, so
   composite agricultural goods show the base duty only; and conditional duties, such as company-specific

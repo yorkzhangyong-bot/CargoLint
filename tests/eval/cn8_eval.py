@@ -38,6 +38,11 @@ whose top-1 differed. The entry is appended to the history with "repeat": N and 
 --tag names another; its usual fields describe run 1. Without --iteration it takes the next number, as the validation
 run did. --temperature and --seed override the chat model for this run only; agent/llm.py and agent/config.py stay as
 they are. --note keeps a note with the history entry; the report shows it in the stability section.
+
+--model names another OpenRouter chat model for this run only (the default is the configured one, Gemini 2.5 Flash
+since feature 006). Thinking stays off (reasoning {"enabled": false}) unless the model has no reasoning parameter, which
+OpenRouter's require_parameters would refuse; a model missing from data/model_prices.json gets its OpenRouter list
+price for the cost tally. The entry keeps the model and the reasoning sent next to its tag.
 """
 from __future__ import annotations
 
@@ -48,6 +53,7 @@ import sys
 import threading
 import time
 from collections import Counter
+from dataclasses import replace
 from datetime import date
 from pathlib import Path
 from types import SimpleNamespace
@@ -56,8 +62,10 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from agent.config import get_settings  # noqa: E402
-from agent.llm import OpenRouterRawClient, get_chat_model, get_client, set_client_factory  # noqa: E402
+import requests  # noqa: E402
+
+from agent.config import OPENROUTER_BASE_URL, Settings, get_settings  # noqa: E402
+from agent.llm import OpenRouterRawClient, PriceTable, get_chat_model, get_client, set_client_factory  # noqa: E402
 from agent.schemas import Cn8Line, Usage  # noqa: E402
 from rag.loader import open_knowledge_base  # noqa: E402
 import tools.classify_cn8 as classify_cn8  # noqa: E402
@@ -81,6 +89,36 @@ class OverriddenClient(OpenRouterRawClient):
     def __init__(self, settings: Any, overrides: dict) -> None:
         super().__init__(settings)
         self._model = get_chat_model(settings, **overrides)
+
+
+def openrouter_model(model_id: str) -> dict | None:
+    """The model's entry in OpenRouter's public model list (pricing, supported parameters), or None."""
+    resp = requests.get(f"{OPENROUTER_BASE_URL}/models", timeout=60)
+    resp.raise_for_status()
+    return next((m for m in resp.json().get("data", []) if m.get("id") == model_id), None)
+
+
+def run_settings(settings: Settings, model: str | None) -> tuple[Settings, dict | None]:
+    """This run's settings and, for --model, the model's OpenRouter entry. --model names another chat model for this run
+    only; thinking stays off (agent/config.py) unless the model has no reasoning parameter, which OpenRouter's
+    require_parameters would refuse."""
+    if not model:
+        return settings, None
+    found = openrouter_model(model)
+    if found is None:
+        raise SystemExit(f"{model} is not in OpenRouter's model list")
+    takes_reasoning = "reasoning" in (found.get("supported_parameters") or [])
+    return replace(settings, chat_model=model, reasoning_off=settings.reasoning_off and takes_reasoning), found
+
+
+def price_for_run(client: Any, found: dict | None) -> None:
+    """For --model, add the model's OpenRouter list price to the client's price table when it lacks it (the cost tally
+    of this run only; the provider's bill can differ)."""
+    if found is None or client.prices is None or client.model_name in client.prices.models:
+        return
+    price = found.get("pricing") or {}
+    client.prices = PriceTable(client.prices.as_of, {**client.prices.models, client.model_name: {
+        "input": float(price.get("prompt", 0)) * 1_000_000, "output": float(price.get("completion", 0)) * 1_000_000}})
 
 
 def decision(row: dict) -> str:
@@ -303,6 +341,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--repeat", type=int, default=1, help="classify every line N times, independently (default 1)")
     ap.add_argument("--temperature", type=float, help="chat-model temperature for this run only")
     ap.add_argument("--seed", type=int, help="chat-model seed for this run only")
+    ap.add_argument("--model", help="OpenRouter chat model for this run only (default: the configured one)")
     ap.add_argument("--tag", help=f"tag of the history entry (a repeated run defaults to {TAG})")
     ap.add_argument("--note", help="a note kept with the history entry and shown with it in the report")
     args = ap.parse_args(argv)
@@ -310,25 +349,29 @@ def main(argv: list[str] | None = None) -> int:
         ap.error("--repeat must be 1 or more")
     if args.repeat == 1 and (args.iteration is None or args.change is None):
         ap.error("a single run needs --iteration and --change")
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")   # "≈" and "€" in the summary; a redirected Windows console is cp1252
     data = json.loads(SET.read_text(encoding="utf-8"))
     rulings = data["rulings"]
     as_of = date.fromisoformat(data["built_on"])
-    settings = get_settings()
+    settings, found = run_settings(get_settings(), args.model)
+    reasoning = {"enabled": False} if settings.reasoning_off else None   # what the calls carry
     usage = Usage()
     kb = open_knowledge_base(settings, usage_sink=usage.add)
     overrides = {k: v for k, v in (("temperature", args.temperature), ("seed", args.seed)) if v is not None}
     if overrides:
         set_client_factory(lambda: OverriddenClient(settings, overrides))
     client = get_client(usage_sink=usage.add, settings=settings)
+    price_for_run(client, found)
     model = client.raw._model
     temperature, seed = getattr(model, "temperature", None), getattr(model, "seed", None)   # what the calls carry
     history = json.loads(HISTORY.read_text(encoding="utf-8")) if HISTORY.exists() else []
     iteration = args.iteration if args.iteration is not None else max((h["iteration"] for h in history), default=0) + 1
-    change = args.change or (f"stability baseline: {args.repeat} independent runs, temperature {temperature}, "
-                             f"seed {seed if seed is not None else 'none'}; the row shows run 1")
+    change = args.change or (f"stability baseline: {args.repeat} independent runs, model {settings.chat_model}, "
+                             f"temperature {temperature}, seed {seed if seed is not None else 'none'}; the row shows run 1")
     print(f"iteration {iteration}: {len(rulings)} rulings × {args.repeat} run(s); BTI vectors "
           f"{'loaded' if getattr(kb, 'bti_vectors', None) is not None else 'not loaded'}; model {settings.chat_model}, "
-          f"temperature {temperature}, seed {seed}")
+          f"reasoning {reasoning}, temperature {temperature}, seed {seed}")
 
     runs, elapsed, costs = [], 0.0, []
     for k in range(args.repeat):
@@ -357,8 +400,10 @@ def main(argv: list[str] | None = None) -> int:
         "usage": {"total_tokens": usage.total_tokens, "calls": usage.calls, "cost_usd": round(usage.cost_usd, 4),
                   "cost_eur": round(usage.cost_eur, 4)},
     }
+    tag = args.tag or (TAG if args.repeat > 1 else None)
     entry = {
-        "iteration": iteration, "run_on": date.today().isoformat(), "change": change, "model": settings.chat_model,
+        "iteration": iteration, "run_on": date.today().isoformat(), "change": change, **({"tag": tag} if tag else {}),
+        "model": settings.chat_model, "reasoning": reasoning,
         "threshold": THRESHOLD, "top1": hits, "n": len(rows), "written": len(written),
         "written_wrong": len(written) - summary["written_correct"], "to_confirm": summary["to_confirm"],
         "questions": summary["questions"], "failures": summary["failures"], "with_precedent": summary["with_precedent"],
@@ -366,9 +411,6 @@ def main(argv: list[str] | None = None) -> int:
         "cost_usd": round(usage.cost_usd, 4), "cost_eur": round(usage.cost_eur, 4)}
     report: dict = {"summary": summary, "rows": rows}
     sent = summary["expected_sent"] = entry["expected_sent"] = expected_sent_share(runs)
-    tag = args.tag or (TAG if args.repeat > 1 else None)
-    if tag:
-        entry["tag"] = tag
     if args.note:
         entry["note"] = args.note
     if overrides or args.repeat > 1:

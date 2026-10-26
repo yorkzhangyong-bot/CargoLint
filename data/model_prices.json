@@ -4,6 +4,7 @@
   "unit": "per_1M_tokens",
   "source": "https://openrouter.ai/api/v1/models and /api/v1/embeddings/models (refresh with: python -m agent.llm --refresh-prices)",
   "models": {
+    "google/gemini-2.5-flash": {"input": 0.30, "output": 2.50},
     "openai/gpt-4o-mini": {"input": 0.15, "output": 0.60},
     "google/gemini-2.5-flash-lite": {"input": 0.10, "output": 0.40},
     "deepseek/deepseek-v3.2": {"input": 0.26, "output": 0.80},

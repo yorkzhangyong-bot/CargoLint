@@ -254,6 +254,29 @@ class Cn8Gate(str, Enum):
     no_rulings = "no_rulings"                   # no eligible ruling: the model estimate against the threshold
 
 
+class Hs6Gate(str, Enum):
+    """Feature 006: the rule that decided whether an HS-6 is auto-accepted, as Cn8Gate for the CN-8."""
+
+    vote_agrees = "vote_agrees"                 # the nearest rulings' majority is the model's top HS-6, at or above the share
+    vote_disagrees = "vote_disagrees"           # the majority is another HS-6
+    vote_tie = "vote_tie"                       # no majority
+    vote_share_low = "vote_share_low"           # the model's top HS-6 leads, below the share
+    no_rulings = "no_rulings"                   # no eligible ruling at or above the similarity floor: the model estimate
+                                                # against the threshold
+
+
+class Hs6Vote(BaseModel):
+    """Feature 006: the vote of the nearest eligible EBTI rulings on a line's HS-6, each ruling counted once."""
+
+    majority: str | None = Field(default=None, pattern=CODE_PATTERN)   # the HS-6 most of them sit at; None on a tie
+    majority_share: float = Field(ge=0, le=1)                         # its rulings over the rulings that voted
+    competing: list[tuple[str, list[str]]] = Field(default_factory=list)   # every HS-6 with a vote and the issuing
+                                                                           # country of each ruling, most first
+    model_is_majority: bool = False                                   # the model's top HS-6 is the majority
+    agrees: bool = False                                              # ... and its share is at least the vote share
+    candidate: int | None = None                                      # the majority is the model's candidate 2 or 3
+
+
 class VoteCode(BaseModel):
     """Feature 006: one CN-8 among the nearest eligible rulings and the issuing country of each ruling at it."""
 
@@ -327,6 +350,8 @@ class LineVersion(BaseModel):
     contradiction_note: str | None = None
     cn8: Cn8Choice | None = None              # feature 004: the CN-8 step's result
     taric: TaricOutcome | None = None         # feature 004: the TARIC step's result for the shipment's origin
+    hs6_vote: Hs6Vote | None = None           # feature 006: the nearest rulings' vote on the HS-6; None when none voted
+    hs6_gate: Hs6Gate | None = None           # feature 006: the rule that decided the HS-6 auto-accept, set with the route
 
     @property
     def top_confidence(self) -> int | None:
@@ -508,6 +533,7 @@ class Classification(BaseModel):
     sources: list[Source] = Field(default_factory=list)
     status: LineStatus = LineStatus.checked
     error_reason: str | None = None
+    hs6_vote: Hs6Vote | None = None           # feature 006: the nearest rulings' vote on the top HS-6
 
 
 class LookupPrecedentOutput(BaseModel):

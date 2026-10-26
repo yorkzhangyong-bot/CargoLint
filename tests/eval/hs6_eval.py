@@ -2,6 +2,7 @@
 
     python tests/eval/hs6_eval.py --repeat 3 --tag hs6-baseline
     python tests/eval/hs6_eval.py --limit 3 --repeat 3 --dry-run     # the first three lines; prints, writes nothing
+    python tests/eval/hs6_eval.py --repeat 3 --tag hs6-deepseek-v4-flash --model deepseek/deepseek-v4-flash
 
 Live: needs OPENROUTER_API_KEY and the full knowledge base, and spends credits, so run it only when the author asks.
 The set is the CN-8 eval's (tests/eval/cn8_eval_set.json, 120 EBTI rulings). A line's text is its ruling's goods
@@ -13,8 +14,13 @@ Each line goes through what the app runs for a new line (agent.agent._finalize):
 classify_lines for a line that is neither failed nor a pure stop word, with the context context_for_shipment builds for
 an unknown shipper (hybrid search, BTI precedents, no history), then the route the store computes for it (route_line,
 threshold 85, ask floor 50, no CN-8 input: the HS-6 layer's route). Leakage guard: the line's own ruling is never a BTI
-precedent (ClassifyContext.exclude_refs, one line at a time); without it the ruling under test would propose its own
-code with its own text. Ruling validity is judged on the set's build date, as in the CN-8 eval.
+precedent and never votes (ClassifyContext.exclude_refs, one line at a time); without it the ruling under test would
+propose its own code with its own text. Ruling validity is judged on the set's build date, as in the CN-8 eval.
+
+Since the HS-6 vote gate (feature 006), the route is the gate's: the vote of the 5 nearest eligible rulings at or above
+the similarity floor decides, the threshold only when none votes. Each row also keeps the gate reason, the vote
+(majority, share, voters, the candidate it supports) and route_by_confidence, the route the confidence rule alone gives
+the same output, so that the right auto-accepts the gate loses are counted within the run.
 
 Each row keeps the top-1 and the top 3 with their confidences, the correct HS-6, the top-1 hit, whether the correct
 HS-6 is in the top 3, the description check's flag, the route, the codes the BTI precedents proposed, whether the
@@ -30,6 +36,17 @@ tie goes to the earliest run), correct-in-top-3 per run, the lines with the same
 the routes and the wrong but auto-accepted lines per run, the lines wrong in every run, the cross-layer table against
 the CN-8 eval (tests/eval/cn8_eval_iteration11.json: the CN-8 step from the correct HS-6), on majority results and run
 by run, whose right-right cell per run is the end-to-end estimate, and the cost. --note keeps a note with the entry.
+With the gate it also keeps per run the gate reasons, the lines no ruling voted on that went to review, the right
+auto-accepts, and those the gate lost against the confidence rule.
+
+--model names another OpenRouter chat model for this run only (the default is the configured CARGOLINT_CHAT_MODEL,
+Gemini 2.5 Flash since feature 006; the entry keeps the model and the reasoning sent next to its tag), through
+tests/eval/cn8_eval.run_settings: thinking stays off ({"enabled": false}; "minimal" still thinks) unless the model has no
+reasoning parameter, and a model missing from the price table gets its OpenRouter list price for the cost tally.
+Structured output stays JSON-schema with require_parameters. The product retries an answer that is not valid JSON once and a wrong
+schema twice; a --model run retries a wrong schema once too. A call still invalid fails its line, not the run. Each run
+counts the invalid answers, the unparseable ones among them, the retries and the failed calls. Each row keeps raw_confidence, the model's
+own confidence of the top-1 before the vague cap, and the entry its distribution over right and wrong top-1 results.
 """
 from __future__ import annotations
 
@@ -43,19 +60,24 @@ from collections import Counter
 from dataclasses import replace
 from datetime import date
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from agent.config import ASK_FLOOR, DEFAULT_THRESHOLD, RETRIEVAL_K, get_settings  # noqa: E402
+from pydantic import ValidationError  # noqa: E402
+
+from agent.config import (ASK_FLOOR, DEFAULT_THRESHOLD, HS6_VOTE_K, HS6_VOTE_MIN_SIMILARITY, HS6_VOTE_SHARE,  # noqa: E402
+                          RETRIEVAL_K, get_settings)
 from agent.llm import get_client, set_client_factory  # noqa: E402
-from agent.routing import route_line  # noqa: E402
-from agent.schemas import FlagKind, LineStatus, SourceKind, Usage  # noqa: E402
+from agent.routing import SchemaError, hs6_gate, route_line  # noqa: E402
+from agent.schemas import FlagKind, LineStatus, RankOut, SourceKind, Usage  # noqa: E402
 from rag.loader import open_knowledge_base  # noqa: E402
 from rag.retriever import DISTANCE_DECIMALS  # noqa: E402
 from rag.translate import clear_cache as clear_translations  # noqa: E402
-from tests.eval.cn8_eval import OverriddenClient, dump_results, expected_sent_share, majority  # noqa: E402
+from tests.eval.cn8_eval import (OverriddenClient, dump_results, expected_sent_share, majority, price_for_run,  # noqa: E402
+                                 run_settings)
 from tools.check_description import check_descriptions  # noqa: E402
 from tools.classify_hs6 import ClassifyContext, classify_lines  # noqa: E402
 from tools.common import LineText, run_per_line  # noqa: E402
@@ -69,6 +91,9 @@ CN8_RESULTS = ROOT / "tests" / "eval" / "cn8_eval_iteration11.json"
 HITS_LOGGED = 40
 SEARCHED = 2 * RETRIEVAL_K    # the rulings precedent_codes reads per query vector
 QUADRANTS = ("hs6_right_cn8_right", "hs6_right_cn8_wrong", "hs6_wrong_cn8_right", "hs6_wrong_cn8_wrong")
+GATES = ("vote_agrees", "vote_disagrees", "vote_tie", "vote_share_low", "no_rulings", "not_gated")   # not_gated: flagged,
+                                                                                                     # failed, no candidate
+OTHER_MODEL_RETRIES = 1        # a --model run retries an invalid answer once; the product retries MAX_SCHEMA_RETRIES times
 _rec = threading.local()       # per worker thread, for the line in hand: the logged ruling searches
 
 
@@ -113,6 +138,72 @@ def nearest_hits(searches: list[list[tuple[str, float]]], own: str, kb: Any, as_
     return out
 
 
+def count_invalid(client: Any) -> Counter:
+    """Count, on `client` (a StructuredCaller), the answers it rejects: those that are not valid JSON (the raw client's
+    {"_invalid": ...}) and those that do not match the schema, and the calls still invalid after their last retry
+    (SchemaError: the line fails, the run goes on). Returns the live counter; the caller's behaviour stays as it is."""
+    counts: Counter = Counter()
+    lock = threading.Lock()
+    raw_structured, call = client.raw.raw_structured, client.call
+
+    def answered(schema: Any, system: str, user: str) -> Any:
+        out = raw_structured(schema, system, user)
+        kind = None
+        if isinstance(out, dict) and out.get("_invalid"):
+            kind = "unparseable"
+        elif not isinstance(out, schema):
+            try:
+                schema.model_validate(out)
+            except ValidationError:
+                kind = "schema_invalid"
+        if kind:
+            with lock:
+                counts[kind] += 1
+        return out
+
+    def called(schema: Any, system: str, user: str, max_retries: int | None = None) -> Any:
+        try:
+            return call(schema, system, user, max_retries)
+        except SchemaError:
+            with lock:
+                counts["failed"] += 1
+            raise
+
+    client.raw.raw_structured, client.call = answered, called
+    return counts
+
+
+def parse_counts(counts: Counter, rows: list[dict]) -> dict:
+    """One run's invalid answers: each is retried unless its call failed, so the retries are the invalid answers less the
+    failed calls; failed_lines are the rows whose check or HS-6 step failed for any reason."""
+    invalid = counts["unparseable"] + counts["schema_invalid"]
+    return {"retries": invalid - counts["failed"], "unparseable": counts["unparseable"],
+            "schema_invalid": counts["schema_invalid"], "failed_calls": counts["failed"],
+            "failed_lines": sum(r["status"] == "failed" for r in rows)}
+
+
+def _ranking(call: Any) -> Any:
+    """client.call, also keeping for the calling thread's line the ranking the model returned, as _rec.rank."""
+    def wrapper(schema: Any, system: str, user: str, *args: Any, **kwargs: Any) -> Any:
+        result = call(schema, system, user, *args, **kwargs)
+        if schema is RankOut:
+            _rec.rank = result
+        return result
+    return wrapper
+
+
+def confidence_table(runs: list[list[dict]]) -> dict[str, dict[str, int]]:
+    """The model's own confidence of its top-1 (before the vague cap) over all runs, highest first: how many top-1
+    results at each value were right and wrong. Rows without a top-1 are left out."""
+    table: dict[int, Counter] = {}
+    for run in runs:
+        for r in run:
+            value = r.get("raw_confidence", r["confidence"])
+            if r["top1"] is not None and value is not None:
+                table.setdefault(value, Counter())["right" if r["hit"] else "wrong"] += 1
+    return {str(v): {"right": c["right"], "wrong": c["wrong"]} for v, c in sorted(table.items(), reverse=True)}
+
+
 def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: int) -> tuple[list[dict], float]:
     """One pass of the app's HS-6 path over the set: one row per ruling, and the elapsed seconds."""
     clear_translations()   # an independent run: no translation carried over (only a Chinese line is translated)
@@ -126,11 +217,13 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
             line.flag_kind, line.flag_reason = chk.flag.kind.value, chk.flag.reason
             todo.append((line, r["reference"]))
 
-    def one(item: tuple[LineText, str]) -> tuple[Any, list]:
+    recorder = SimpleNamespace(call=_ranking(client.call))
+
+    def one(item: tuple[LineText, str]) -> tuple[Any, list, Any]:
         line, reference = item
-        _rec.searches = []
+        _rec.searches, _rec.rank = [], None
         ctx = replace(base, exclude_refs=frozenset({reference}))   # the leakage guard: never the line's own ruling
-        return classify_lines([line], ctx, kb, client, workers=1)[0], _rec.searches
+        return classify_lines([line], ctx, kb, recorder, workers=1)[0], _rec.searches, _rec.rank
 
     vectors = getattr(kb, "bti_vectors", None)
     own = vectors is not None and "search_by_vector" in vars(vectors)
@@ -150,7 +243,7 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
     rows = []
     for line, r, chk in zip(lines, rulings, checks):
         res = classified.get(line.line_no)
-        cls, searches = res if res is not None else (None, [])
+        cls, searches, rank = res if res is not None else (None, [], None)
         if chk.status == LineStatus.failed:
             status, error = LineStatus.failed, chk.error_reason
         elif line.line_no not in classified:       # a pure stop word: checked, nothing to classify
@@ -164,14 +257,25 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
         codes = [c.code for c in candidates]
         conf = candidates[0].confidence if candidates else None
         kind = chk.flag.kind if chk.flag is not None else None
-        route, _ = route_line(kind, conf, status, kind is not None and kind != FlagKind.ok, DEFAULT_THRESHOLD, ASK_FLOOR)
+        flagged = kind is not None and kind != FlagKind.ok
+        vote = cls.hs6_vote if cls is not None else None
+        route, _ = route_line(kind, conf, status, flagged, DEFAULT_THRESHOLD, ASK_FLOOR, hs6_vote=vote)
+        by_confidence, _ = route_line(kind, conf, status, flagged, DEFAULT_THRESHOLD, ASK_FLOOR)   # before the vote gate
+        gated = status == LineStatus.checked and kind == FlagKind.ok and (conf or 0) > 0          # as the store sets hs6_gate
         shown = {s.id for s in cls.sources if s.kind == SourceKind.nomenclature} if cls is not None else set()
         hits = nearest_hits(searches, r["reference"], kb, as_of)
         rows.append({
             "reference": r["reference"], "chapter": r["chapter"], "language": r["language"], "expected": expected,
             "flag": kind.value if kind is not None else "failed", "top1": codes[0] if codes else None, "top3": codes[:3],
             "confidences": [c.confidence for c in candidates[:3]], "confidence": conf,
+            "raw_confidence": (next((c.confidence for c in rank.candidates if c.code == codes[0]), None)
+                               if rank is not None and codes else None),
+            "raw": [{"code": c.code, "confidence": c.confidence} for c in rank.candidates] if rank is not None else None,
             "hit": bool(codes) and codes[0] == expected, "in_top3": expected in codes[:3], "route": route.value,
+            "route_by_confidence": by_confidence.value,
+            "gate": hs6_gate(conf, DEFAULT_THRESHOLD, vote)[1].value if gated else "not_gated",
+            "vote": None if vote is None else {"majority": vote.majority, "share": vote.majority_share,
+                                               "voters": sum(len(c) for _, c in vote.competing), "candidate": vote.candidate},
             "status": status.value, "error": error,
             "precedent_codes": cls.retrieval_trace.precedent_codes if cls is not None and cls.retrieval_trace else [],
             "expected_sent": f"hs:{expected}" in shown,
@@ -210,6 +314,16 @@ def measures(runs: list[list[dict]]) -> dict:
                                   "confidence": r["confidence"]} for r in run if r["route"] == "auto_accept" and not r["hit"]]
                                 for run in runs],
             "always_wrong": always_wrong, "unstable": unstable}
+
+
+def gate_measures(runs: list[list[dict]]) -> dict:
+    """The vote gate run by run: its reasons, the lines no ruling voted on that went to review, the right auto-accepts,
+    and the right lines the confidence rule alone would have auto-accepted that the gate did not (lost)."""
+    return {"gate_runs": [{g: sum(r["gate"] == g for r in run) for g in GATES} for run in runs],
+            "no_rulings_review_runs": [sum(r["gate"] == "no_rulings" and r["route"] == "review" for r in run) for run in runs],
+            "right_auto_runs": [sum(r["hit"] and r["route"] == "auto_accept" for r in run) for run in runs],
+            "lost_runs": [sum(r["hit"] and r["route_by_confidence"] == "auto_accept" and r["route"] != "auto_accept"
+                              for r in run) for run in runs]}
 
 
 def own_ruling(runs: list[list[dict]]) -> dict:
@@ -290,14 +404,32 @@ def _wrong_auto(wrong_auto_runs: list[list[dict]]) -> list[str]:
 
 def _entry_sections(h: dict, descriptions: dict[str, str]) -> list[str]:
     n, x = h["n"], h["cross_layer"]
-    out = ["", f"## Iteration {h['iteration']} ({h.get('tag', '-')}, {h['run_on']})"]
+    out = ["", f"## Iteration {h['iteration']} ({h.get('tag', '-')}, {h['model']}, {h['run_on']})"]
     if h.get("note"):
         out += ["", f"Note: {h['note']}"]
+    if h.get("parse"):
+        p = h["parse"]
+        out += ["", f"Invalid answers (retried at most {p['retry_limit']} time{'' if p['retry_limit'] == 1 else 's'}): "
+                + "; ".join(f"run {k + 1}: {r['retries']} retried ({r['unparseable']} not valid JSON, {r['schema_invalid']} "
+                            f"not the schema), {r['failed_calls']} calls still invalid, {r['failed_lines']} lines failed"
+                            for k, r in enumerate(p["runs"])) + "."]
+    if h.get("confidence"):
+        out += ["", "The model's own confidence of its top-1 (before the vague cap), all runs, right / wrong: "
+                + " · ".join(f"{value}: {c['right']} / {c['wrong']}" for value, c in h["confidence"].items()) + "."]
     out += ["", "| Run | Top-1 | In top 3 | Auto-accept | Review | Ask the shipper | Wrong, auto-accepted |",
             "|---|---|---|---|---|---|---|"]
     for k, routes in enumerate(h["routes_runs"]):
         out.append(f"| {k + 1} | {h['top1_runs'][k]}/{n} | {h['top3_runs'][k]}/{n} | {routes['auto_accept']} | "
                    f"{routes['review']} | {routes['ask_shipper']} | {len(h['wrong_auto_runs'][k])} |")
+    if "gate_runs" in h:
+        out += ["", "### Vote gate", "",
+                "Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 "
+                "results the confidence rule alone would have auto-accepted and the gate did not.", "",
+                "| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | "
+                "Right auto-accepts | Lost |", "|---|---|---|---|---|---|---|---|---|---|"]
+        out += [f"| {k + 1} | " + " | ".join(str(gates[g]) for g in GATES)
+                + f" | {h['no_rulings_review_runs'][k]} | {h['right_auto_runs'][k]} | {h['lost_runs'][k]} |"
+                for k, gates in enumerate(h["gate_runs"])]
     m = x["majority"]
     out += ["", f"### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration {h['cn8_iteration']})", "",
             "The CN-8 eval starts from the correct HS-6, so a line is right end to end only when both are right. "
@@ -344,17 +476,24 @@ def render_report(history: list[dict], data: dict) -> str:
         "correct HS-6 among the candidates the clerk picks from on review. **Majority**: the most frequent top-1 over the "
         "runs (a tie goes to the earliest run). **Wrong, auto-accepted**: routed to auto-accept with a wrong top-1; the "
         "CN-8 step then runs on the wrong HS-6.",
+        f"- **Vote gate** (the entries with gate reasons): the {HS6_VOTE_K} nearest eligible rulings at or above a cosine "
+        f"similarity of {HS6_VOTE_MIN_SIMILARITY} vote on the first six digits, and the model's top-1 is auto-accepted "
+        f"when it is their majority with a share of at least {HS6_VOTE_SHARE}; the threshold applies only when none votes. "
+        "**Lost**: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.",
         "",
         "| Iteration | Run on | Tag | Runs | Top-1 per run | Majority top-1 | In top 3 per run | Same top-1 | Same route | "
-        "Wrong, auto-accepted per run | End to end per run | Cost |",
-        "|---|---|---|---|---|---|---|---|---|---|---|---|",
+        "Wrong, auto-accepted per run | End to end per run | Auto-accepted per run | Right auto-accepts lost per run | "
+        "Cost |",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for h in history:
         n = h["n"]
         out.append(f"| {h['iteration']} | {h['run_on']} | {h.get('tag', '-')} | {h['repeat']} | {_runs(h['top1_runs'])} "
                    f"of {n} | {h['majority_top1']}/{n} | {_runs(h['top3_runs'])} of {n} | {h['same_top1']}/{n} | "
                    f"{h['same_route']}/{n} | {_runs(len(w) for w in h['wrong_auto_runs'])} | "
-                   f"{_runs(h['cross_layer']['end_to_end_runs'])} of {n} | ${h['cost_usd']:.4f} (€{h['cost_eur']:.4f}), "
+                   f"{_runs(h['cross_layer']['end_to_end_runs'])} of {n} | "
+                   f"{_runs(routes['auto_accept'] for routes in h['routes_runs'])} | "
+                   f"{_runs(h['lost_runs']) if 'lost_runs' in h else '-'} | ${h['cost_usd']:.4f} (€{h['cost_eur']:.4f}), "
                    f"{h['elapsed_s']:.0f} s |")
     for h in history:
         out += _entry_sections(h, descriptions)
@@ -372,6 +511,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--repeat", type=int, default=1, help="run every line N times, independently (default 1)")
     ap.add_argument("--temperature", type=float, help="chat-model temperature for this run only")
     ap.add_argument("--seed", type=int, help="chat-model seed for this run only")
+    ap.add_argument("--model", help="OpenRouter chat model for this run only (default: the configured one)")
     ap.add_argument("--tag", help="tag of the history entry")
     ap.add_argument("--note", help="a note kept with the history entry and shown with it in the report")
     ap.add_argument("--cn8", default=str(CN8_RESULTS), help="the CN-8 eval results the cross-layer table reads")
@@ -390,13 +530,18 @@ def main(argv: list[str] | None = None) -> int:
     if missing:
         ap.error(f"{len(missing)} lines are missing from {args.cn8}, such as {missing[0]}")
     as_of = date.fromisoformat(data["built_on"])
-    settings = get_settings()
+    settings, found = run_settings(get_settings(), args.model)
+    reasoning = {"enabled": False} if settings.reasoning_off else None   # what the calls carry
     usage = Usage()
     kb = open_knowledge_base(settings, usage_sink=usage.add)
     overrides = {k: v for k, v in (("temperature", args.temperature), ("seed", args.seed)) if v is not None}
     if overrides:
         set_client_factory(lambda: OverriddenClient(settings, overrides))
     client = get_client(usage_sink=usage.add, settings=settings)
+    price_for_run(client, found)
+    if found is not None:
+        client.max_retries = OTHER_MODEL_RETRIES
+    invalid = count_invalid(client)
     model = client.raw._model
     temperature, seed = getattr(model, "temperature", None), getattr(model, "seed", None)   # what the calls carry
     history = json.loads(HISTORY.read_text(encoding="utf-8")) if HISTORY.exists() else []
@@ -407,31 +552,34 @@ def main(argv: list[str] | None = None) -> int:
           f"{'loaded' if getattr(kb, 'bti_vectors', None) is not None else 'not loaded'}; model {settings.chat_model}, "
           f"temperature {temperature}, seed {seed}; CN-8 results: iteration {cn8_data['summary'].get('iteration')}")
 
-    runs, elapsed, costs = [], 0.0, []
+    runs, elapsed, costs, parsed = [], 0.0, [], []
     for k in range(args.repeat):
         before = usage.cost_eur
+        invalid.clear()
         rows, seconds = run_once(rulings, kb, client, as_of, settings.workers)
         runs.append(rows)
+        parsed.append(parse_counts(invalid, rows))
         elapsed += seconds
         costs.append(round(usage.cost_eur - before, 4))
         print(f"  run {k + 1}: top-1 {sum(r['hit'] for r in rows)}/{len(rows)}, in top 3 {sum(r['in_top3'] for r in rows)}, "
-              f"{seconds:.0f} s, €{costs[-1]:.4f}")
+              f"{seconds:.0f} s, €{costs[-1]:.4f}; invalid answers {parsed[-1]}")
     m, x = measures(runs), cross_layer(runs, cn8)
     entry = {
-        "iteration": iteration, "run_on": date.today().isoformat(), "change": change, "model": settings.chat_model,
+        "iteration": iteration, "run_on": date.today().isoformat(), "change": change,
+        **({"tag": args.tag} if args.tag else {}), "model": settings.chat_model, "reasoning": reasoning,
         "threshold": DEFAULT_THRESHOLD, "ask_floor": ASK_FLOOR, "temperature": temperature, "seed": seed,
-        "repeat": args.repeat, "n": len(rulings), **m, "expected_sent": expected_sent_share(runs),
+        "repeat": args.repeat, "n": len(rulings), **m, **gate_measures(runs), "expected_sent": expected_sent_share(runs),
         "own_ruling": own_ruling(runs), "cn8_iteration": cn8_data["summary"].get("iteration"), "cn8_source": Path(args.cn8).name,
         "cross_layer": {key: x[key] for key in ("majority", "runs", "end_to_end_runs")},
+        "parse": {"retry_limit": client.max_retries, "runs": parsed}, "confidence": confidence_table(runs),
         "elapsed_s": round(elapsed, 1), "cost_usd": round(usage.cost_usd, 4), "cost_eur": round(usage.cost_eur, 4),
         "cost_eur_runs": costs}
-    if args.tag:
-        entry["tag"] = args.tag
     if args.note:
         entry["note"] = args.note
     summary = {**entry, "set_built_on": data["built_on"], "cn8_lines": x["lines"],
-               "usage": {"total_tokens": usage.total_tokens, "calls": usage.calls, "cost_usd": round(usage.cost_usd, 4),
-                         "cost_eur": round(usage.cost_eur, 4)}}
+               "usage": {"total_tokens": usage.total_tokens, "prompt_tokens": usage.prompt_tokens,
+                         "completion_tokens": usage.completion_tokens, "calls": usage.calls,
+                         "cost_usd": round(usage.cost_usd, 4), "cost_eur": round(usage.cost_eur, 4)}}
     report: dict = {"summary": summary, "rows": runs[0]}
     if args.repeat > 1:
         report["runs"] = runs
@@ -453,10 +601,14 @@ def main(argv: list[str] | None = None) -> int:
         REPORT.write_text(render_report(history, data), encoding="utf-8", newline="\n")
     print(f"HS-6 top-1 per run {m['top1_runs']} of {n}; majority {m['majority_top1']}/{n}; in top 3 per run {m['top3_runs']}; "
           f"same top-1 in all runs {m['same_top1']}/{n}; same route {m['same_route']}/{n}")
-    print(f"  wrong but auto-accepted per run {[len(w) for w in m['wrong_auto_runs']]}; wrong in every run "
-          f"{len(m['always_wrong'])}")
+    print(f"  auto-accepted per run {[routes['auto_accept'] for routes in m['routes_runs']]}; wrong but auto-accepted per "
+          f"run {[len(w) for w in m['wrong_auto_runs']]}; wrong in every run {len(m['always_wrong'])}")
+    print(f"  gate per run {entry['gate_runs']}; no ruling, to review {entry['no_rulings_review_runs']}; right "
+          f"auto-accepts {entry['right_auto_runs']}; lost {entry['lost_runs']}")
     print(f"  cross-layer (majority) {mx}; end to end per run {x['end_to_end_runs']} of {n}")
     print(f"  own ruling nearest per run {entry['own_ruling']['nearest_runs']}")
+    print(f"  model {settings.chat_model}, reasoning {reasoning}; invalid answers per run (retried at most "
+          f"{client.max_retries} times) {parsed}")
     print(f"  {elapsed:.0f} s; usage {usage.total_tokens} tokens, {usage.calls} calls, ${usage.cost_usd:.4f} ≈ €{usage.cost_eur:.4f}")
     return 0
 
