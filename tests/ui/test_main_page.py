@@ -877,3 +877,50 @@ def test_the_origin_stays_across_pages(kb, recorder):
     at.session_state["_harness_page"] = "main"
     at.run()
     assert at.text_input(key="origin_field").value == "US"
+
+
+# --------------------------------------------------------------------------- feature 008: the precedent override
+@pytest.mark.parametrize("env, override_min", [(None, 5), ("on", 5), ("off", None), ("false", None)])
+def test_a_new_shipment_takes_the_override_switch(kb, recorder, monkeypatch, env, override_min):
+    from agent.config import get_settings
+
+    if env is None:
+        monkeypatch.delenv("CARGOLINT_HS6_OVERRIDE", raising=False)
+    else:
+        monkeypatch.setenv("CARGOLINT_HS6_OVERRIDE", env)
+    get_settings.cache_clear()
+    try:
+        store = empty_store()
+        at = h.app(store, kb).run()
+        at.text_input(key="check_one_line").set_value("Ceramic coffee mugs").run()
+        assert not at.exception and store.shipment.hs6_override_min == override_min
+    finally:
+        get_settings.cache_clear()
+
+
+def test_an_overridden_line_shows_the_chosen_candidate_and_its_audit_entry(kb, recorder):
+    from agent.schemas import ChangeKind
+
+    store, nos = h.store_with("hs6_override", kb=kb, hs6_override_min=4)
+    n = nos["hs6_override"]
+    line = store.get_line(n)
+    s, code = view.line_status(store, line), view.code_display(store, line)
+    assert (s.colour, s.text, code.text) == ("green", "Ready", "9405 21 40")      # candidate 2's code, not 8543 70
+    page = texts(h.app(store, kb).run())
+    assert f"{s.dot} {s.text}" in page and f"`{code.text}`" in page
+    decided = view.explain_a(store, line, "a_change")[0]
+    assert decided.startswith("Decided: HS-6 9405 21, candidate 2 chosen, rulings overrode the model: 4 of 5 agree on "
+                              "9405 21 (IE, DE, DE, FR); the model's top candidate was 8543 70 · ")
+    assert decided in texts(opened(store, kb, n, action=True))                    # "Change" opens the "Decided:" line
+    assert [(r.previous, r.new, r.note) for r in store.shipment.audit if r.line_no == n and r.change == ChangeKind.code_decided] \
+        == [("8543.70", "9405.21", "rulings overrode the model: 4 of 5 agree on 9405.21; candidate 2 chosen")]
+
+
+def test_an_overridden_line_whose_cn8_is_to_pick_says_the_rulings_overrode_the_model(kb, recorder):
+    store, nos = h.store_with("hs6_override_cn8", kb=kb, hs6_override_min=4)
+    n = nos["hs6_override_cn8"]
+    s = view.line_status(store, store.get_line(n))
+    assert (s.colour, s.text, s.kind) == ("yellow", "Pick: CN-8, 3 lines", "a_cn8")
+    page = texts(opened(store, kb, n, action=True))                                 # "Choose" opens the CN-8 pick
+    assert ("The HS-6 is 9405 21; rulings overrode the model: 4 of 5 agree on 9405 21; its subheading has 3 CN-8 "
+            "lines.") in page

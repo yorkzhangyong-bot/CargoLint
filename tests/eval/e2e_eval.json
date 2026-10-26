@@ -1,8 +1,8 @@
 {
  "summary": {
-  "iteration": 2,
+  "iteration": 3,
   "run_on": "2026-10-26",
-  "tag": "e2e-stopword-fix",
+  "tag": "e2e-override",
   "model": "google/gemini-2.5-flash",
   "reasoning": {
    "enabled": false
@@ -13,22 +13,22 @@
   "seed": null,
   "repeat": 1,
   "right_runs": [
-   68
+   74
   ],
-  "majority_right": 68,
+  "majority_right": 74,
   "majority_origin": {
-   "hs6": 42,
-   "cn8": 10
+   "hs6": 34,
+   "cn8": 12
   },
   "routes_runs": [
    {
-    "auto_accept": 56,
-    "review": 57,
+    "auto_accept": 64,
+    "review": 49,
     "ask_shipper": 7
    }
   ],
   "right_auto_runs": [
-   49
+   56
   ],
   "wrong_auto_runs": [
    [
@@ -37,6 +37,13 @@
      "expected": "39269097",
      "cn8": "73218100",
      "hs6": "7321.81",
+     "origin": "hs6_wrong"
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI284",
+     "expected": "42021291",
+     "cn8": "42029219",
+     "hs6": "4202.92",
      "origin": "hs6_wrong"
     },
     {
@@ -85,25 +92,25 @@
   ],
   "origin_runs": [
    {
-    "hs6_wrong": 34,
+    "hs6_wrong": 26,
     "hs6_flagged": 8,
     "hs6_failed": 0,
     "hs6_no_candidate": 0,
-    "cn8_wrong": 3,
-    "cn8_asked": 7,
+    "cn8_wrong": 4,
+    "cn8_asked": 8,
     "cn8_failed": 0
    }
   ],
   "hs6_top1_runs": [
-   82
+   80
   ],
   "hs6_wrong_auto_runs": [
-   7
+   9
   ],
   "cn8_after_right_hs6_runs": [
    [
-    68,
-    78
+    74,
+    86
    ]
   ],
   "cut": 71,
@@ -111,7 +118,7 @@
    40
   ],
   "uncut_right_runs": [
-   28
+   34
   ],
   "same_cn8": 120,
   "same_route": 120,
@@ -155,19 +162,8 @@
     "expected": "42021291",
     "seen": [
      {
-      "cn8": "42023210",
-      "route": "review",
-      "origin": "hs6_wrong"
-     }
-    ]
-   },
-   {
-    "reference": "IEBTIIENEN004-2024-BTI145",
-    "expected": "42029291",
-    "seen": [
-     {
-      "cn8": "42022290",
-      "route": "review",
+      "cn8": "42029219",
+      "route": "auto_accept",
       "origin": "hs6_wrong"
      }
     ]
@@ -177,7 +173,7 @@
     "expected": "42029219",
     "seen": [
      {
-      "cn8": "42021250",
+      "cn8": "42021211",
       "route": "review",
       "origin": "hs6_wrong"
      }
@@ -221,7 +217,7 @@
     "expected": "61023090",
     "seen": [
      {
-      "cn8": "61121200",
+      "cn8": "61013090",
       "route": "review",
       "origin": "hs6_wrong"
      }
@@ -283,39 +279,6 @@
     ]
    },
    {
-    "reference": "IEBTIIENEN004-2026-BTI106",
-    "expected": "62121090",
-    "seen": [
-     {
-      "cn8": "61124190",
-      "route": "review",
-      "origin": "hs6_wrong"
-     }
-    ]
-   },
-   {
-    "reference": "IEBTIIENEN004-2026-BTI108",
-    "expected": "62121090",
-    "seen": [
-     {
-      "cn8": null,
-      "route": "review",
-      "origin": "hs6_wrong"
-     }
-    ]
-   },
-   {
-    "reference": "IEBTIIENEN004-2026-BTI107",
-    "expected": "62121090",
-    "seen": [
-     {
-      "cn8": null,
-      "route": "review",
-      "origin": "hs6_wrong"
-     }
-    ]
-   },
-   {
     "reference": "DEBTI7623/25-1",
     "expected": "62024010",
     "seen": [
@@ -371,33 +334,11 @@
     ]
    },
    {
-    "reference": "IEBTIIENEN004-2024-BTI5",
-    "expected": "63079098",
-    "seen": [
-     {
-      "cn8": "46021990",
-      "route": "review",
-      "origin": "hs6_wrong"
-     }
-    ]
-   },
-   {
     "reference": "XIBTI505066180",
     "expected": "63079010",
     "seen": [
      {
       "cn8": "87082190",
-      "route": "review",
-      "origin": "hs6_wrong"
-     }
-    ]
-   },
-   {
-    "reference": "MTBTI2025-017",
-    "expected": "63079098",
-    "seen": [
-     {
-      "cn8": "63059000",
       "route": "review",
       "origin": "hs6_wrong"
      }
@@ -410,6 +351,17 @@
      {
       "cn8": "64041910",
       "route": "auto_accept",
+      "origin": "hs6_wrong"
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI122",
+    "expected": "64029939",
+    "seen": [
+     {
+      "cn8": "64041990",
+      "route": "review",
       "origin": "hs6_wrong"
      }
     ]
@@ -452,9 +404,9 @@
     "expected": "73181552",
     "seen": [
      {
-      "cn8": "73181595",
+      "cn8": null,
       "route": "review",
-      "origin": "cn8_wrong"
+      "origin": "cn8_asked"
      }
     ]
    },
@@ -602,17 +554,6 @@
     ]
    },
    {
-    "reference": "IEBTIIENEN004-2025-BTI336",
-    "expected": "85389099",
-    "seen": [
-     {
-      "cn8": "39259010",
-      "route": "review",
-      "origin": "hs6_wrong"
-     }
-    ]
-   },
-   {
     "reference": "XIBTI505068566",
     "expected": "85044083",
     "seen": [
@@ -672,9 +613,9 @@
     "expected": "96190050",
     "seen": [
      {
-      "cn8": "61082100",
+      "cn8": "96190040",
       "route": "review",
-      "origin": "hs6_wrong"
+      "origin": "cn8_wrong"
      }
     ]
    },
@@ -683,11 +624,307 @@
     "expected": "96091090",
     "seen": [
      {
-      "cn8": "96099090",
+      "cn8": "96091010",
       "route": "review",
-      "origin": "hs6_wrong"
+      "origin": "cn8_wrong"
      }
     ]
+   }
+  ],
+  "override_min": 4,
+  "off": {
+   "right_runs": [
+    67
+   ],
+   "majority_right": 67,
+   "routes_runs": [
+    {
+     "auto_accept": 57,
+     "review": 56,
+     "ask_shipper": 7
+    }
+   ],
+   "right_auto_runs": [
+    49
+   ],
+   "wrong_auto_runs": [
+    [
+     {
+      "reference": "XIBTI505068468",
+      "expected": "39269097",
+      "cn8": "73218100",
+      "hs6": "7321.81",
+      "origin": "hs6_wrong"
+     },
+     {
+      "reference": "IEBTIIENEN004-2024-BTI284",
+      "expected": "42021291",
+      "cn8": "42029219",
+      "hs6": "4202.92",
+      "origin": "hs6_wrong"
+     },
+     {
+      "reference": "DEBTI36175/25-1",
+      "expected": "61161020",
+      "cn8": "61169200",
+      "hs6": "6116.92",
+      "origin": "hs6_wrong"
+     },
+     {
+      "reference": "IEBTIIENEN004-2024-BTI356",
+      "expected": "64052091",
+      "cn8": "64041910",
+      "hs6": "6404.19",
+      "origin": "hs6_wrong"
+     },
+     {
+      "reference": "IEBTIIENEN004-2026-BTI68",
+      "expected": "84798997",
+      "cn8": "84198998",
+      "hs6": "8419.89",
+      "origin": "hs6_wrong"
+     },
+     {
+      "reference": "MTBTI2024-002",
+      "expected": "84248970",
+      "cn8": "84798997",
+      "hs6": "8479.89",
+      "origin": "hs6_wrong"
+     },
+     {
+      "reference": "MTBTI2025-011",
+      "expected": "94054231",
+      "cn8": "94051140",
+      "hs6": "9405.11",
+      "origin": "hs6_wrong"
+     },
+     {
+      "reference": "IEBTIIENEN004-2025-BTI38",
+      "expected": "95030041",
+      "cn8": "95030049",
+      "hs6": "9503.00",
+      "origin": "cn8_wrong"
+     }
+    ]
+   ],
+   "origin_runs": [
+    {
+     "hs6_wrong": 35,
+     "hs6_flagged": 8,
+     "hs6_failed": 0,
+     "hs6_no_candidate": 0,
+     "cn8_wrong": 2,
+     "cn8_asked": 8,
+     "cn8_failed": 0
+    }
+   ]
+  },
+  "overrides_runs": [
+   [
+    {
+     "reference": "IEBTIIENEN004-2024-BTI145",
+     "expected": "42029291",
+     "top1": "4202.22",
+     "chosen": "4202.92",
+     "rank": 3,
+     "hs6_right": true,
+     "on": {
+      "cn8": "42029291",
+      "route": "review",
+      "hit": true
+     },
+     "off": {
+      "cn8": "42022290",
+      "route": "review",
+      "hit": false
+     }
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI106",
+     "expected": "62121090",
+     "top1": "6112.41",
+     "chosen": "6212.10",
+     "rank": 2,
+     "hs6_right": true,
+     "on": {
+      "cn8": "62121090",
+      "route": "auto_accept",
+      "hit": true
+     },
+     "off": {
+      "cn8": "61124190",
+      "route": "review",
+      "hit": false
+     }
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI108",
+     "expected": "62121090",
+     "top1": "6112.41",
+     "chosen": "6212.10",
+     "rank": 2,
+     "hs6_right": true,
+     "on": {
+      "cn8": "62121090",
+      "route": "auto_accept",
+      "hit": true
+     },
+     "off": {
+      "cn8": null,
+      "route": "review",
+      "hit": false
+     }
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI107",
+     "expected": "62121090",
+     "top1": "6112.41",
+     "chosen": "6212.10",
+     "rank": 2,
+     "hs6_right": true,
+     "on": {
+      "cn8": "62121090",
+      "route": "auto_accept",
+      "hit": true
+     },
+     "off": {
+      "cn8": null,
+      "route": "review",
+      "hit": false
+     }
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI5",
+     "expected": "63079098",
+     "top1": "4602.19",
+     "chosen": "6307.90",
+     "rank": 2,
+     "hs6_right": true,
+     "on": {
+      "cn8": "63079098",
+      "route": "auto_accept",
+      "hit": true
+     },
+     "off": {
+      "cn8": "46021990",
+      "route": "review",
+      "hit": false
+     }
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI8",
+     "expected": "63079098",
+     "top1": "4602.90",
+     "chosen": "6307.90",
+     "rank": 2,
+     "hs6_right": true,
+     "on": {
+      "cn8": "63079098",
+      "route": "auto_accept",
+      "hit": true
+     },
+     "off": {
+      "cn8": "46029000",
+      "route": "review",
+      "hit": false
+     }
+    },
+    {
+     "reference": "MTBTI2025-017",
+     "expected": "63079098",
+     "top1": "6305.90",
+     "chosen": "6307.90",
+     "rank": 3,
+     "hs6_right": true,
+     "on": {
+      "cn8": "63079098",
+      "route": "auto_accept",
+      "hit": true
+     },
+     "off": {
+      "cn8": "63059000",
+      "route": "review",
+      "hit": false
+     }
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI122",
+     "expected": "64029939",
+     "top1": "6402.99",
+     "chosen": "6404.19",
+     "rank": 2,
+     "hs6_right": false,
+     "on": {
+      "cn8": "64041990",
+      "route": "review",
+      "hit": false
+     },
+     "off": {
+      "cn8": "64029939",
+      "route": "review",
+      "hit": true
+     }
+    },
+    {
+     "reference": "IEBTIIENEN004-2025-BTI336",
+     "expected": "85389099",
+     "top1": "3925.90",
+     "chosen": "8538.90",
+     "rank": 2,
+     "hs6_right": true,
+     "on": {
+      "cn8": "85389099",
+      "route": "auto_accept",
+      "hit": true
+     },
+     "off": {
+      "cn8": "39259010",
+      "route": "review",
+      "hit": false
+     }
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI71",
+     "expected": "96190050",
+     "top1": "6108.21",
+     "chosen": "9619.00",
+     "rank": 2,
+     "hs6_right": true,
+     "on": {
+      "cn8": "96190040",
+      "route": "review",
+      "hit": false
+     },
+     "off": {
+      "cn8": "61082100",
+      "route": "review",
+      "hit": false
+     }
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI222",
+     "expected": "96091090",
+     "top1": "9609.90",
+     "chosen": "9609.10",
+     "rank": 2,
+     "hs6_right": true,
+     "on": {
+      "cn8": "96091010",
+      "route": "review",
+      "hit": false
+     },
+     "off": {
+      "cn8": "96099090",
+      "route": "review",
+      "hit": false
+     }
+    }
+   ]
+  ],
+  "supported_runs": [
+   {
+    "lines": 25,
+    "right": 16
    }
   ],
   "parse": {
@@ -703,25 +940,25 @@
    ]
   },
   "upload_s_runs": [
-   117.3
+   194.9
   ],
   "elapsed_s_runs": [
-   133.7
+   225.1
   ],
-  "elapsed_s": 133.7,
-  "cost_usd": 0.2674,
-  "cost_eur": 0.246,
+  "elapsed_s": 225.1,
+  "cost_usd": 0.2771,
+  "cost_eur": 0.255,
   "cost_eur_runs": [
-   0.246
+   0.255
   ],
   "set_built_on": "2026-10-23",
   "usage": {
-   "total_tokens": 575469,
-   "prompt_tokens": 530334,
-   "completion_tokens": 45135,
-   "calls": 557,
-   "cost_usd": 0.2674,
-   "cost_eur": 0.246
+   "total_tokens": 597241,
+   "prompt_tokens": 550598,
+   "completion_tokens": 46643,
+   "calls": 572,
+   "cost_usd": 0.2771,
+   "cost_eur": 0.255
   }
  },
  "rows": [
@@ -740,6 +977,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_disagrees",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings point to 8538.90 (4 of 5: IE, IE, IE, IE) — needs a human look",
    "hs6": "3925.90",
    "hs6_by": "clerk",
    "cn8": "39259010",
@@ -750,7 +988,32 @@
    "route": "review",
    "hit": true,
    "written_hit": null,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "3925.90",
+    "hs6_by": "clerk",
+    "cn8": "39259010",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "review",
+    "hit": true,
+    "written_hit": null,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI245",
@@ -767,6 +1030,7 @@
    "hs6_hit": true,
    "hs6_gate": "not_gated",
    "hs6_route": "review",
+   "hs6_reason": "vague description; confidence 59 at or above the ask floor 50 — needs a human look",
    "hs6": null,
    "hs6_by": null,
    "cn8": null,
@@ -777,7 +1041,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_flagged"
+   "origin": "hs6_flagged",
+   "override": {
+    "fired": false,
+    "rank": null,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": null,
+    "hs6_by": null,
+    "cn8": null,
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": null,
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_flagged"
+   }
   },
   {
    "reference": "XIBTI505068468",
@@ -794,6 +1083,7 @@
    "hs6_hit": false,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "4 of 5 nearest EBTI rulings at 7321.81 (DE, DE, DE, DE)",
    "hs6": "7321.81",
    "hs6_by": "gate",
    "cn8": "73218100",
@@ -804,7 +1094,32 @@
    "route": "auto_accept",
    "hit": false,
    "written_hit": false,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "7321.81",
+    "hs6_by": "gate",
+    "cn8": "73218100",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "single_line",
+    "route": "auto_accept",
+    "hit": false,
+    "written_hit": false,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI258",
@@ -821,6 +1136,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "3 of 5 nearest EBTI rulings at 3926.90 (IE, ES, FR)",
    "hs6": "3926.90",
    "hs6_by": "gate",
    "cn8": "39269097",
@@ -831,7 +1147,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "3926.90",
+    "hs6_by": "gate",
+    "cn8": "39269097",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI51",
@@ -848,6 +1189,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "3 of 5 nearest EBTI rulings at 3926.90 (IE, IE, IE)",
    "hs6": "3926.90",
    "hs6_by": "gate",
    "cn8": "39269097",
@@ -858,7 +1200,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "3926.90",
+    "hs6_by": "gate",
+    "cn8": "39269097",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI324",
@@ -875,6 +1242,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "3 of 5 nearest EBTI rulings at 3919.90 (DE, NL, IE)",
    "hs6": "3919.90",
    "hs6_by": "gate",
    "cn8": "39199080",
@@ -885,7 +1253,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "3919.90",
+    "hs6_by": "gate",
+    "cn8": "39199080",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI133",
@@ -902,6 +1295,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_disagrees",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings point to 4202.92 (2 of 5: IE, IT), the model's candidate 2 — needs a human look",
    "hs6": "3926.90",
    "hs6_by": "clerk",
    "cn8": "39269097",
@@ -912,7 +1306,32 @@
    "route": "review",
    "hit": true,
    "written_hit": null,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": 2,
+    "right": false
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "3926.90",
+    "hs6_by": "clerk",
+    "cn8": "39269097",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "review",
+    "hit": true,
+    "written_hit": null,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI463",
@@ -929,6 +1348,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_share_low",
    "hs6_route": "review",
+   "hs6_reason": "only 2 of 5 nearest EBTI rulings at 3926.90 — needs a human look",
    "hs6": "3926.90",
    "hs6_by": "clerk",
    "cn8": "39269097",
@@ -939,7 +1359,32 @@
    "route": "review",
    "hit": true,
    "written_hit": null,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "3926.90",
+    "hs6_by": "clerk",
+    "cn8": "39269097",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "review",
+    "hit": true,
+    "written_hit": null,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI141",
@@ -956,6 +1401,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_share_low",
    "hs6_route": "review",
+   "hs6_reason": "only 2 of 5 nearest EBTI rulings at 3926.90 — needs a human look",
    "hs6": "3926.90",
    "hs6_by": "clerk",
    "cn8": "39269097",
@@ -966,7 +1412,32 @@
    "route": "review",
    "hit": true,
    "written_hit": null,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "3926.90",
+    "hs6_by": "clerk",
+    "cn8": "39269097",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "review",
+    "hit": true,
+    "written_hit": null,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2023-BTI572",
@@ -983,6 +1454,7 @@
    "hs6_hit": true,
    "hs6_gate": "not_gated",
    "hs6_route": "review",
+   "hs6_reason": "vague description; confidence 59 at or above the ask floor 50 — needs a human look",
    "hs6": null,
    "hs6_by": null,
    "cn8": null,
@@ -993,7 +1465,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_flagged"
+   "origin": "hs6_flagged",
+   "override": {
+    "fired": false,
+    "rank": null,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": null,
+    "hs6_by": null,
+    "cn8": null,
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": null,
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_flagged"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI284",
@@ -1005,22 +1502,48 @@
    "flag": "ok",
    "status": "checked",
    "error": null,
-   "top1": "4202.32",
+   "top1": "4202.92",
    "confidence": 95,
    "hs6_hit": false,
-   "hs6_gate": "vote_disagrees",
-   "hs6_route": "review",
-   "hs6": "4202.32",
-   "hs6_by": "clerk",
-   "cn8": "42023210",
+   "hs6_gate": "vote_agrees",
+   "hs6_route": "auto_accept",
+   "hs6_reason": "3 of 5 nearest EBTI rulings at 4202.92 (IE, FR, IE)",
+   "hs6": "4202.92",
+   "hs6_by": "gate",
+   "cn8": "42029219",
    "written": true,
    "question": null,
    "cn8_error": null,
    "cn8_gate": "vote_agrees",
-   "route": "review",
+   "route": "auto_accept",
    "hit": false,
-   "written_hit": null,
-   "origin": "hs6_wrong"
+   "written_hit": false,
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "4202.92",
+    "hs6_by": "gate",
+    "cn8": "42029219",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": false,
+    "written_hit": false,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI145",
@@ -1035,19 +1558,51 @@
    "top1": "4202.22",
    "confidence": 95,
    "hs6_hit": false,
-   "hs6_gate": "vote_disagrees",
-   "hs6_route": "review",
-   "hs6": "4202.22",
-   "hs6_by": "clerk",
-   "cn8": "42022290",
+   "hs6_gate": "vote_override",
+   "hs6_route": "auto_accept",
+   "hs6_reason": "rulings overrode the model: 4 of 5 agree on 4202.92",
+   "hs6": "4202.92",
+   "hs6_by": "gate",
+   "cn8": "42029291",
    "written": false,
    "question": null,
    "cn8_error": null,
    "cn8_gate": "vote_disagrees",
    "route": "review",
-   "hit": false,
+   "hit": true,
    "written_hit": null,
-   "origin": "hs6_wrong"
+   "origin": null,
+   "override": {
+    "fired": true,
+    "rank": 3,
+    "code": "4202.92",
+    "n": 4,
+    "m": 5
+   },
+   "supported": {
+    "rank": 3,
+    "right": true
+   },
+   "cn8_top1": {
+    "cn8": "42022290",
+    "written": false,
+    "question": null,
+    "error": null,
+    "gate": "vote_disagrees"
+   },
+   "off": {
+    "hs6": "4202.22",
+    "hs6_by": "clerk",
+    "cn8": "42022290",
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_disagrees",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI449",
@@ -1064,9 +1619,10 @@
    "hs6_hit": false,
    "hs6_gate": "vote_disagrees",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings point to 4202.92 (3 of 5: IE, FR, CZ), the model's candidate 2 — needs a human look",
    "hs6": "4202.12",
    "hs6_by": "clerk",
-   "cn8": "42021250",
+   "cn8": "42021211",
    "written": false,
    "question": null,
    "cn8_error": null,
@@ -1074,7 +1630,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": 2,
+    "right": true
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "4202.12",
+    "hs6_by": "clerk",
+    "cn8": "42021211",
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_disagrees",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI189",
@@ -1091,6 +1672,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 4202.92 (IE, IE, FR, IE, CZ)",
    "hs6": "4202.92",
    "hs6_by": "gate",
    "cn8": "42029291",
@@ -1101,7 +1683,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "4202.92",
+    "hs6_by": "gate",
+    "cn8": "42029291",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI239",
@@ -1118,6 +1725,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_disagrees",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings point to 6307.90 (3 of 5: FR, FR, FR), the model's candidate 2 — needs a human look",
    "hs6": "4202.92",
    "hs6_by": "clerk",
    "cn8": "42029298",
@@ -1128,7 +1736,32 @@
    "route": "review",
    "hit": true,
    "written_hit": null,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": 2,
+    "right": false
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "4202.92",
+    "hs6_by": "clerk",
+    "cn8": "42029298",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "review",
+    "hit": true,
+    "written_hit": null,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI315",
@@ -1143,8 +1776,9 @@
    "top1": "4202.32",
    "confidence": 95,
    "hs6_hit": true,
-   "hs6_gate": "vote_disagrees",
+   "hs6_gate": "vote_tie",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings are split: 4202.31 (IE, IE), 4202.92 (FR, FR), 4202.12 (IE) — needs a human look",
    "hs6": "4202.32",
    "hs6_by": "clerk",
    "cn8": "42023210",
@@ -1155,7 +1789,32 @@
    "route": "review",
    "hit": true,
    "written_hit": null,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "4202.32",
+    "hs6_by": "clerk",
+    "cn8": "42023210",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "review",
+    "hit": true,
+    "written_hit": null,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI264",
@@ -1172,6 +1831,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "4 of 5 nearest EBTI rulings at 4202.92 (IE, IE, IE, NL)",
    "hs6": "4202.92",
    "hs6_by": "gate",
    "cn8": null,
@@ -1182,7 +1842,32 @@
    "route": "ask_shipper",
    "hit": false,
    "written_hit": null,
-   "origin": "cn8_asked"
+   "origin": "cn8_asked",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "4202.92",
+    "hs6_by": "gate",
+    "cn8": null,
+    "written": false,
+    "question": "Ask the shipper for: outer surface material",
+    "cn8_error": null,
+    "cn8_gate": null,
+    "route": "ask_shipper",
+    "hit": false,
+    "written_hit": null,
+    "origin": "cn8_asked"
+   }
   },
   {
    "reference": "FRBTIFR-BTI-2025-02100",
@@ -1199,6 +1884,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 4203.29 (FR, FR, FR, FR, FR)",
    "hs6": "4203.29",
    "hs6_by": "gate",
    "cn8": "42032910",
@@ -1209,7 +1895,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "4203.29",
+    "hs6_by": "gate",
+    "cn8": "42032910",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI227",
@@ -1226,6 +1937,7 @@
    "hs6_hit": false,
    "hs6_gate": "vote_disagrees",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings point to 4202.92 (3 of 5: IE, IE, IE), the model's candidate 2 — needs a human look",
    "hs6": "4202.22",
    "hs6_by": "clerk",
    "cn8": "42022290",
@@ -1236,7 +1948,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": 2,
+    "right": true
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "4202.22",
+    "hs6_by": "clerk",
+    "cn8": "42022290",
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_disagrees",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI261",
@@ -1253,6 +1990,7 @@
    "hs6_hit": false,
    "hs6_gate": "vote_disagrees",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings point to 3926.90 (2 of 5: IE, IE), the model's candidate 2 — needs a human look",
    "hs6": "4202.12",
    "hs6_by": "clerk",
    "cn8": "42021250",
@@ -1263,7 +2001,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": 2,
+    "right": false
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "4202.12",
+    "hs6_by": "clerk",
+    "cn8": "42021250",
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_tie",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI132",
@@ -1275,22 +2038,48 @@
    "flag": "ok",
    "status": "checked",
    "error": null,
-   "top1": "6112.12",
+   "top1": "6101.30",
    "confidence": 95,
    "hs6_hit": false,
    "hs6_gate": "vote_disagrees",
    "hs6_route": "review",
-   "hs6": "6112.12",
+   "hs6_reason": "the nearest EBTI rulings point to 3926.20 (2 of 5: ES, ES) — needs a human look",
+   "hs6": "6101.30",
    "hs6_by": "clerk",
-   "cn8": "61121200",
+   "cn8": "61013090",
    "written": true,
    "question": null,
    "cn8_error": null,
-   "cn8_gate": "single_line",
+   "cn8_gate": "vote_agrees",
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6101.30",
+    "hs6_by": "clerk",
+    "cn8": "61013090",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "FRBTIFR-BTI-2025-03147",
@@ -1307,6 +2096,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 6116.10 (FR, FR, FR, FR, FR)",
    "hs6": "6116.10",
    "hs6_by": "gate",
    "cn8": "61161020",
@@ -1317,7 +2107,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6116.10",
+    "hs6_by": "gate",
+    "cn8": "61161020",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI208",
@@ -1334,6 +2149,7 @@
    "hs6_hit": false,
    "hs6_gate": "vote_disagrees",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings point to 6212.10 (2 of 5: IE, IE) — needs a human look",
    "hs6": "6114.30",
    "hs6_by": "clerk",
    "cn8": "61143000",
@@ -1344,7 +2160,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6114.30",
+    "hs6_by": "clerk",
+    "cn8": "61143000",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "single_line",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI90",
@@ -1361,6 +2202,7 @@
    "hs6_hit": false,
    "hs6_gate": "vote_disagrees",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings point to 3926.20 (2 of 5: ES, ES) — needs a human look",
    "hs6": "6104.33",
    "hs6_by": "clerk",
    "cn8": "61043300",
@@ -1371,7 +2213,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6104.33",
+    "hs6_by": "clerk",
+    "cn8": "61043300",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "single_line",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "FRBTIFR-BTI-2025-08672",
@@ -1388,6 +2255,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "3 of 5 nearest EBTI rulings at 6111.20 (FR, FR, FR)",
    "hs6": "6111.20",
    "hs6_by": "gate",
    "cn8": "61112090",
@@ -1398,7 +2266,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6111.20",
+    "hs6_by": "gate",
+    "cn8": "61112090",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "DEBTI45301/24-1",
@@ -1415,6 +2308,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 6110.20 (DE, DE, DE, DE, DE)",
    "hs6": "6110.20",
    "hs6_by": "gate",
    "cn8": null,
@@ -1425,7 +2319,32 @@
    "route": "ask_shipper",
    "hit": false,
    "written_hit": null,
-   "origin": "cn8_asked"
+   "origin": "cn8_asked",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6110.20",
+    "hs6_by": "gate",
+    "cn8": null,
+    "written": false,
+    "question": "Ask the shipper for: gender of the wearer",
+    "cn8_error": null,
+    "cn8_gate": null,
+    "route": "ask_shipper",
+    "hit": false,
+    "written_hit": null,
+    "origin": "cn8_asked"
+   }
   },
   {
    "reference": "DEBTI36175/25-1",
@@ -1442,6 +2361,7 @@
    "hs6_hit": false,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "3 of 5 nearest EBTI rulings at 6116.92 (DE, DE, DE)",
    "hs6": "6116.92",
    "hs6_by": "gate",
    "cn8": "61169200",
@@ -1452,7 +2372,32 @@
    "route": "auto_accept",
    "hit": false,
    "written_hit": false,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6116.92",
+    "hs6_by": "gate",
+    "cn8": "61169200",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "single_line",
+    "route": "auto_accept",
+    "hit": false,
+    "written_hit": false,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "DEBTI23122/26-1",
@@ -1469,6 +2414,7 @@
    "hs6_hit": false,
    "hs6_gate": "not_gated",
    "hs6_route": "ask_shipper",
+   "hs6_reason": "vague description and confidence 40 below the ask floor 50 — ask the shipper",
    "hs6": null,
    "hs6_by": null,
    "cn8": null,
@@ -1479,7 +2425,32 @@
    "route": "ask_shipper",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_flagged"
+   "origin": "hs6_flagged",
+   "override": {
+    "fired": false,
+    "rank": null,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": null,
+    "hs6_by": null,
+    "cn8": null,
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": null,
+    "route": "ask_shipper",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_flagged"
+   }
   },
   {
    "reference": "DEBTI52786/23-1",
@@ -1492,10 +2463,11 @@
    "status": "checked",
    "error": null,
    "top1": "6113.00",
-   "confidence": 95,
+   "confidence": 98,
    "hs6_hit": true,
    "hs6_gate": "vote_disagrees",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings point to 6210.30 (3 of 5: DE, DE, DE), the model's candidate 2 — needs a human look",
    "hs6": "6113.00",
    "hs6_by": "clerk",
    "cn8": "61130090",
@@ -1506,7 +2478,32 @@
    "route": "review",
    "hit": true,
    "written_hit": null,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": 2,
+    "right": false
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6113.00",
+    "hs6_by": "clerk",
+    "cn8": "61130090",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "review",
+    "hit": true,
+    "written_hit": null,
+    "origin": null
+   }
   },
   {
    "reference": "DEBTI44123/25-1",
@@ -1523,6 +2520,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_tie",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings are split: 6115.10 (DE, DE), 6115.96 (DE, DE), 6115.95 (DE) — needs a human look",
    "hs6": "6115.10",
    "hs6_by": "clerk",
    "cn8": "61151010",
@@ -1533,7 +2531,32 @@
    "route": "review",
    "hit": true,
    "written_hit": null,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6115.10",
+    "hs6_by": "clerk",
+    "cn8": "61151010",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "review",
+    "hit": true,
+    "written_hit": null,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI106",
@@ -1548,19 +2571,51 @@
    "top1": "6112.41",
    "confidence": 95,
    "hs6_hit": false,
-   "hs6_gate": "vote_disagrees",
-   "hs6_route": "review",
-   "hs6": "6112.41",
-   "hs6_by": "clerk",
-   "cn8": "61124190",
+   "hs6_gate": "vote_override",
+   "hs6_route": "auto_accept",
+   "hs6_reason": "rulings overrode the model: 4 of 5 agree on 6212.10",
+   "hs6": "6212.10",
+   "hs6_by": "gate",
+   "cn8": "62121090",
    "written": true,
    "question": null,
    "cn8_error": null,
    "cn8_gate": "vote_agrees",
-   "route": "review",
-   "hit": false,
-   "written_hit": null,
-   "origin": "hs6_wrong"
+   "route": "auto_accept",
+   "hit": true,
+   "written_hit": true,
+   "origin": null,
+   "override": {
+    "fired": true,
+    "rank": 2,
+    "code": "6212.10",
+    "n": 4,
+    "m": 5
+   },
+   "supported": {
+    "rank": 2,
+    "right": true
+   },
+   "cn8_top1": {
+    "cn8": "61124190",
+    "written": true,
+    "question": null,
+    "error": null,
+    "gate": "vote_agrees"
+   },
+   "off": {
+    "hs6": "6112.41",
+    "hs6_by": "clerk",
+    "cn8": "61124190",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI75",
@@ -1577,6 +2632,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_tie",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings are split: 6212.10 (IE, IE), 6114.30 (FR, IE), 6109.90 (IE) — needs a human look",
    "hs6": "6212.10",
    "hs6_by": "clerk",
    "cn8": "62121090",
@@ -1587,7 +2643,32 @@
    "route": "review",
    "hit": true,
    "written_hit": null,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6212.10",
+    "hs6_by": "clerk",
+    "cn8": "62121090",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "review",
+    "hit": true,
+    "written_hit": null,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI108",
@@ -1602,19 +2683,51 @@
    "top1": "6112.41",
    "confidence": 95,
    "hs6_hit": false,
-   "hs6_gate": "vote_disagrees",
-   "hs6_route": "review",
-   "hs6": "6112.41",
-   "hs6_by": "clerk",
-   "cn8": null,
-   "written": false,
-   "question": "Ask the shipper for: containing rubber thread",
+   "hs6_gate": "vote_override",
+   "hs6_route": "auto_accept",
+   "hs6_reason": "rulings overrode the model: 4 of 5 agree on 6212.10",
+   "hs6": "6212.10",
+   "hs6_by": "gate",
+   "cn8": "62121090",
+   "written": true,
+   "question": null,
    "cn8_error": null,
-   "cn8_gate": null,
-   "route": "review",
-   "hit": false,
-   "written_hit": null,
-   "origin": "hs6_wrong"
+   "cn8_gate": "vote_agrees",
+   "route": "auto_accept",
+   "hit": true,
+   "written_hit": true,
+   "origin": null,
+   "override": {
+    "fired": true,
+    "rank": 2,
+    "code": "6212.10",
+    "n": 4,
+    "m": 5
+   },
+   "supported": {
+    "rank": 2,
+    "right": true
+   },
+   "cn8_top1": {
+    "cn8": null,
+    "written": false,
+    "question": "Ask the shipper for: containing rubber thread",
+    "error": null,
+    "gate": null
+   },
+   "off": {
+    "hs6": "6112.41",
+    "hs6_by": "clerk",
+    "cn8": null,
+    "written": false,
+    "question": "Ask the shipper for: containing rubber thread",
+    "cn8_error": null,
+    "cn8_gate": null,
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI107",
@@ -1629,19 +2742,51 @@
    "top1": "6112.41",
    "confidence": 95,
    "hs6_hit": false,
-   "hs6_gate": "vote_disagrees",
-   "hs6_route": "review",
-   "hs6": "6112.41",
-   "hs6_by": "clerk",
-   "cn8": null,
-   "written": false,
-   "question": "Ask the shipper for: containing 5% or more of rubber thread",
+   "hs6_gate": "vote_override",
+   "hs6_route": "auto_accept",
+   "hs6_reason": "rulings overrode the model: 4 of 5 agree on 6212.10",
+   "hs6": "6212.10",
+   "hs6_by": "gate",
+   "cn8": "62121090",
+   "written": true,
+   "question": null,
    "cn8_error": null,
-   "cn8_gate": null,
-   "route": "review",
-   "hit": false,
-   "written_hit": null,
-   "origin": "hs6_wrong"
+   "cn8_gate": "vote_agrees",
+   "route": "auto_accept",
+   "hit": true,
+   "written_hit": true,
+   "origin": null,
+   "override": {
+    "fired": true,
+    "rank": 2,
+    "code": "6212.10",
+    "n": 4,
+    "m": 5
+   },
+   "supported": {
+    "rank": 2,
+    "right": true
+   },
+   "cn8_top1": {
+    "cn8": null,
+    "written": false,
+    "question": "Ask the shipper for: containing 5% or more of rubber thread",
+    "error": null,
+    "gate": null
+   },
+   "off": {
+    "hs6": "6112.41",
+    "hs6_by": "clerk",
+    "cn8": null,
+    "written": false,
+    "question": "Ask the shipper for: containing 5% or more of rubber thread",
+    "cn8_error": null,
+    "cn8_gate": null,
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI89",
@@ -1654,10 +2799,11 @@
    "status": "checked",
    "error": null,
    "top1": "6212.10",
-   "confidence": 98,
+   "confidence": 95,
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "4 of 5 nearest EBTI rulings at 6212.10 (IE, IE, IE, IT)",
    "hs6": "6212.10",
    "hs6_by": "gate",
    "cn8": "62121090",
@@ -1668,7 +2814,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6212.10",
+    "hs6_by": "gate",
+    "cn8": "62121090",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI74",
@@ -1685,6 +2856,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "4 of 5 nearest EBTI rulings at 6212.10 (IE, ES, ES, FR)",
    "hs6": "6212.10",
    "hs6_by": "gate",
    "cn8": "62121090",
@@ -1695,7 +2867,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6212.10",
+    "hs6_by": "gate",
+    "cn8": "62121090",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "DEBTI7623/25-1",
@@ -1712,6 +2909,7 @@
    "hs6_hit": false,
    "hs6_gate": "vote_disagrees",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings point to 6202.40 (2 of 5: DE, DE), the model's candidate 3 — needs a human look",
    "hs6": "6204.33",
    "hs6_by": "clerk",
    "cn8": "62043390",
@@ -1722,7 +2920,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": 3,
+    "right": true
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6204.33",
+    "hs6_by": "clerk",
+    "cn8": "62043390",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "DEBTI44553/23-1",
@@ -1739,6 +2962,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "3 of 5 nearest EBTI rulings at 6203.43 (DE, DE, DE)",
    "hs6": "6203.43",
    "hs6_by": "gate",
    "cn8": "62034311",
@@ -1749,7 +2973,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6203.43",
+    "hs6_by": "gate",
+    "cn8": "62034311",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "DEBTI43065/25-1",
@@ -1766,6 +3015,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 6210.10 (DE, DE, DE, DE, DE)",
    "hs6": "6210.10",
    "hs6_by": "gate",
    "cn8": null,
@@ -1776,7 +3026,32 @@
    "route": "ask_shipper",
    "hit": false,
    "written_hit": null,
-   "origin": "cn8_asked"
+   "origin": "cn8_asked",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6210.10",
+    "hs6_by": "gate",
+    "cn8": null,
+    "written": false,
+    "question": "Ask the shipper for: use",
+    "cn8_error": null,
+    "cn8_gate": null,
+    "route": "ask_shipper",
+    "hit": false,
+    "written_hit": null,
+    "origin": "cn8_asked"
+   }
   },
   {
    "reference": "DEBTI32632/24-1",
@@ -1793,6 +3068,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 6212.10 (DE, DE, DE, DE, DE)",
    "hs6": "6212.10",
    "hs6_by": "gate",
    "cn8": "62121090",
@@ -1803,7 +3079,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6212.10",
+    "hs6_by": "gate",
+    "cn8": "62121090",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI23",
@@ -1820,6 +3121,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "4 of 5 nearest EBTI rulings at 6307.90 (DE, DE, DE, NL)",
    "hs6": "6307.90",
    "hs6_by": "gate",
    "cn8": "63079098",
@@ -1830,7 +3132,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6307.90",
+    "hs6_by": "gate",
+    "cn8": "63079098",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI228",
@@ -1847,6 +3174,7 @@
    "hs6_hit": false,
    "hs6_gate": "vote_disagrees",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings point to 6307.90 (2 of 5: DE, DE) — needs a human look",
    "hs6": "3304.99",
    "hs6_by": "clerk",
    "cn8": "33049900",
@@ -1857,7 +3185,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "3304.99",
+    "hs6_by": "clerk",
+    "cn8": "33049900",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "single_line",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "SEBTITV-2026-01096",
@@ -1874,6 +3227,7 @@
    "hs6_hit": false,
    "hs6_gate": "vote_disagrees",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings point to 6307.90 (3 of 5: SE, SE, SE), the model's candidate 2 — needs a human look",
    "hs6": "9503.00",
    "hs6_by": "clerk",
    "cn8": "95030041",
@@ -1884,7 +3238,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": 2,
+    "right": true
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9503.00",
+    "hs6_by": "clerk",
+    "cn8": "95030041",
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_tie",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI7",
@@ -1901,6 +3280,7 @@
    "hs6_hit": false,
    "hs6_gate": "vote_disagrees",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings point to 6307.90 (3 of 5: IE, IE, DE), the model's candidate 2 — needs a human look",
    "hs6": "4602.90",
    "hs6_by": "clerk",
    "cn8": "46029000",
@@ -1911,7 +3291,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": 2,
+    "right": true
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "4602.90",
+    "hs6_by": "clerk",
+    "cn8": "46029000",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "single_line",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI5",
@@ -1926,19 +3331,51 @@
    "top1": "4602.19",
    "confidence": 95,
    "hs6_hit": false,
-   "hs6_gate": "vote_disagrees",
-   "hs6_route": "review",
-   "hs6": "4602.19",
-   "hs6_by": "clerk",
-   "cn8": "46021990",
+   "hs6_gate": "vote_override",
+   "hs6_route": "auto_accept",
+   "hs6_reason": "rulings overrode the model: 4 of 5 agree on 6307.90",
+   "hs6": "6307.90",
+   "hs6_by": "gate",
+   "cn8": "63079098",
    "written": true,
    "question": null,
    "cn8_error": null,
-   "cn8_gate": "no_rulings",
-   "route": "review",
-   "hit": false,
-   "written_hit": null,
-   "origin": "hs6_wrong"
+   "cn8_gate": "vote_agrees",
+   "route": "auto_accept",
+   "hit": true,
+   "written_hit": true,
+   "origin": null,
+   "override": {
+    "fired": true,
+    "rank": 2,
+    "code": "6307.90",
+    "n": 4,
+    "m": 5
+   },
+   "supported": {
+    "rank": 2,
+    "right": true
+   },
+   "cn8_top1": {
+    "cn8": "46021990",
+    "written": true,
+    "question": null,
+    "error": null,
+    "gate": "no_rulings"
+   },
+   "off": {
+    "hs6": "4602.19",
+    "hs6_by": "clerk",
+    "cn8": "46021990",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "no_rulings",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI8",
@@ -1950,11 +3387,12 @@
    "flag": "ok",
    "status": "checked",
    "error": null,
-   "top1": "6307.90",
+   "top1": "4602.90",
    "confidence": 95,
-   "hs6_hit": true,
-   "hs6_gate": "vote_agrees",
+   "hs6_hit": false,
+   "hs6_gate": "vote_override",
    "hs6_route": "auto_accept",
+   "hs6_reason": "rulings overrode the model: 5 of 5 agree on 6307.90",
    "hs6": "6307.90",
    "hs6_by": "gate",
    "cn8": "63079098",
@@ -1965,7 +3403,38 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": true,
+    "rank": 2,
+    "code": "6307.90",
+    "n": 5,
+    "m": 5
+   },
+   "supported": {
+    "rank": 2,
+    "right": true
+   },
+   "cn8_top1": {
+    "cn8": "46029000",
+    "written": true,
+    "question": null,
+    "error": null,
+    "gate": "single_line"
+   },
+   "off": {
+    "hs6": "4602.90",
+    "hs6_by": "clerk",
+    "cn8": "46029000",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "single_line",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "MTBTI2025-018",
@@ -1982,6 +3451,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_tie",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings are split: 3924.90 (IE), 6306.22 (FR), 6306.90 (IT), 6307.90 (DE), 3926.90 (FR) — needs a human look",
    "hs6": "6307.90",
    "hs6_by": "clerk",
    "cn8": "63079098",
@@ -1992,7 +3462,32 @@
    "route": "review",
    "hit": true,
    "written_hit": null,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6307.90",
+    "hs6_by": "clerk",
+    "cn8": "63079098",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "review",
+    "hit": true,
+    "written_hit": null,
+    "origin": null
+   }
   },
   {
    "reference": "XIBTI505066180",
@@ -2009,6 +3504,7 @@
    "hs6_hit": false,
    "hs6_gate": "vote_tie",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings are split: 6307.90 (XI), 6304.91 (XI), 4202.12 (IE), 9404.90 (DE), 9401.99 (DE) — needs a human look",
    "hs6": "8708.21",
    "hs6_by": "clerk",
    "cn8": "87082190",
@@ -2019,7 +3515,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "8708.21",
+    "hs6_by": "clerk",
+    "cn8": "87082190",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "no_rulings",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "MTBTI2025-017",
@@ -2034,19 +3555,51 @@
    "top1": "6305.90",
    "confidence": 95,
    "hs6_hit": false,
-   "hs6_gate": "vote_disagrees",
-   "hs6_route": "review",
-   "hs6": "6305.90",
-   "hs6_by": "clerk",
-   "cn8": "63059000",
+   "hs6_gate": "vote_override",
+   "hs6_route": "auto_accept",
+   "hs6_reason": "rulings overrode the model: 5 of 5 agree on 6307.90",
+   "hs6": "6307.90",
+   "hs6_by": "gate",
+   "cn8": "63079098",
    "written": true,
    "question": null,
    "cn8_error": null,
-   "cn8_gate": "single_line",
-   "route": "review",
-   "hit": false,
-   "written_hit": null,
-   "origin": "hs6_wrong"
+   "cn8_gate": "vote_agrees",
+   "route": "auto_accept",
+   "hit": true,
+   "written_hit": true,
+   "origin": null,
+   "override": {
+    "fired": true,
+    "rank": 3,
+    "code": "6307.90",
+    "n": 5,
+    "m": 5
+   },
+   "supported": {
+    "rank": 3,
+    "right": true
+   },
+   "cn8_top1": {
+    "cn8": "63059000",
+    "written": true,
+    "question": null,
+    "error": null,
+    "gate": "single_line"
+   },
+   "off": {
+    "hs6": "6305.90",
+    "hs6_by": "clerk",
+    "cn8": "63059000",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "single_line",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "CZBTI47/152108/2024-580000-04/01",
@@ -2063,6 +3616,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "4 of 5 nearest EBTI rulings at 6307.90 (CZ, CZ, CZ, CZ)",
    "hs6": "6307.90",
    "hs6_by": "gate",
    "cn8": "63079098",
@@ -2073,7 +3627,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6307.90",
+    "hs6_by": "gate",
+    "cn8": "63079098",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI352",
@@ -2090,6 +3669,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "4 of 5 nearest EBTI rulings at 6404.19 (IE, IE, IE, IE)",
    "hs6": "6404.19",
    "hs6_by": "gate",
    "cn8": "64041910",
@@ -2100,7 +3680,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6404.19",
+    "hs6_by": "gate",
+    "cn8": "64041910",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI356",
@@ -2117,6 +3722,7 @@
    "hs6_hit": false,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 6404.19 (IE, IE, IE, IE, IE)",
    "hs6": "6404.19",
    "hs6_by": "gate",
    "cn8": "64041910",
@@ -2127,7 +3733,32 @@
    "route": "auto_accept",
    "hit": false,
    "written_hit": false,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6404.19",
+    "hs6_by": "gate",
+    "cn8": "64041910",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": false,
+    "written_hit": false,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI354",
@@ -2144,6 +3775,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "4 of 5 nearest EBTI rulings at 6404.19 (IE, IE, IE, IE)",
    "hs6": "6404.19",
    "hs6_by": "gate",
    "cn8": "64041910",
@@ -2154,7 +3786,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6404.19",
+    "hs6_by": "gate",
+    "cn8": "64041910",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI377",
@@ -2171,6 +3828,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "4 of 5 nearest EBTI rulings at 6404.19 (IE, IE, IE, IE)",
    "hs6": "6404.19",
    "hs6_by": "gate",
    "cn8": "64041910",
@@ -2181,7 +3839,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6404.19",
+    "hs6_by": "gate",
+    "cn8": "64041910",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI122",
@@ -2196,19 +3879,51 @@
    "top1": "6402.99",
    "confidence": 95,
    "hs6_hit": true,
-   "hs6_gate": "vote_disagrees",
-   "hs6_route": "review",
-   "hs6": "6402.99",
-   "hs6_by": "clerk",
-   "cn8": "64029939",
+   "hs6_gate": "vote_override",
+   "hs6_route": "auto_accept",
+   "hs6_reason": "rulings overrode the model: 4 of 5 agree on 6404.19",
+   "hs6": "6404.19",
+   "hs6_by": "gate",
+   "cn8": "64041990",
    "written": false,
    "question": null,
    "cn8_error": null,
    "cn8_gate": "vote_disagrees",
    "route": "review",
-   "hit": true,
+   "hit": false,
    "written_hit": null,
-   "origin": null
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": true,
+    "rank": 2,
+    "code": "6404.19",
+    "n": 4,
+    "m": 5
+   },
+   "supported": {
+    "rank": 2,
+    "right": false
+   },
+   "cn8_top1": {
+    "cn8": "64029939",
+    "written": false,
+    "question": null,
+    "error": null,
+    "gate": "vote_disagrees"
+   },
+   "off": {
+    "hs6": "6402.99",
+    "hs6_by": "clerk",
+    "cn8": "64029939",
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_disagrees",
+    "route": "review",
+    "hit": true,
+    "written_hit": null,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI348",
@@ -2225,6 +3940,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "4 of 5 nearest EBTI rulings at 6404.19 (IE, IE, IE, IE)",
    "hs6": "6404.19",
    "hs6_by": "gate",
    "cn8": "64041910",
@@ -2235,7 +3951,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6404.19",
+    "hs6_by": "gate",
+    "cn8": "64041910",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI128",
@@ -2250,19 +3991,45 @@
    "top1": "6404.19",
    "confidence": 95,
    "hs6_hit": true,
-   "hs6_gate": "vote_disagrees",
-   "hs6_route": "review",
+   "hs6_gate": "vote_agrees",
+   "hs6_route": "auto_accept",
+   "hs6_reason": "3 of 5 nearest EBTI rulings at 6404.19 (IE, DE, DE)",
    "hs6": "6404.19",
-   "hs6_by": "clerk",
+   "hs6_by": "gate",
    "cn8": "64041990",
    "written": true,
    "question": null,
    "cn8_error": null,
    "cn8_gate": "vote_agrees",
-   "route": "review",
+   "route": "auto_accept",
    "hit": true,
-   "written_hit": null,
-   "origin": null
+   "written_hit": true,
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6404.19",
+    "hs6_by": "gate",
+    "cn8": "64041990",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI355",
@@ -2279,6 +4046,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "4 of 5 nearest EBTI rulings at 6404.19 (IE, IE, IE, IE)",
    "hs6": "6404.19",
    "hs6_by": "gate",
    "cn8": "64041910",
@@ -2289,7 +4057,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6404.19",
+    "hs6_by": "gate",
+    "cn8": "64041910",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "DEBTI16524/26-1",
@@ -2306,6 +4099,7 @@
    "hs6_hit": false,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 6404.19 (DE, DE, DE, DE, DE)",
    "hs6": "6404.19",
    "hs6_by": "gate",
    "cn8": "64041910",
@@ -2316,7 +4110,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6404.19",
+    "hs6_by": "gate",
+    "cn8": "64041910",
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_disagrees",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "DEBTI37155/24-1",
@@ -2331,8 +4150,9 @@
    "top1": "6402.99",
    "confidence": 95,
    "hs6_hit": false,
-   "hs6_gate": "vote_disagrees",
+   "hs6_gate": "vote_tie",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings are split: 6402.91 (DE, DE), 6402.99 (DE, DE), 6404.19 (DE) — needs a human look",
    "hs6": "6402.99",
    "hs6_by": "clerk",
    "cn8": "64029998",
@@ -2343,7 +4163,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "6402.99",
+    "hs6_by": "clerk",
+    "cn8": "64029998",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "XIBTI505060394",
@@ -2355,11 +4200,12 @@
    "flag": "vague",
    "status": "checked",
    "error": null,
-   "top1": "8303.00",
+   "top1": "9403.20",
    "confidence": 59,
    "hs6_hit": false,
    "hs6_gate": "not_gated",
    "hs6_route": "review",
+   "hs6_reason": "vague description; confidence 59 at or above the ask floor 50 — needs a human look",
    "hs6": null,
    "hs6_by": null,
    "cn8": null,
@@ -2370,7 +4216,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_flagged"
+   "origin": "hs6_flagged",
+   "override": {
+    "fired": false,
+    "rank": null,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": null,
+    "hs6_by": null,
+    "cn8": null,
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": null,
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_flagged"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI77",
@@ -2387,17 +4258,43 @@
    "hs6_hit": true,
    "hs6_gate": "vote_tie",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings are split: 7318.29 (IE, IE), 7318.15 (IE, IE), 7318.16 (DE) — needs a human look",
    "hs6": "7318.15",
    "hs6_by": "clerk",
-   "cn8": "73181595",
+   "cn8": null,
    "written": false,
-   "question": null,
+   "question": "Ask the shipper for: type of head",
    "cn8_error": null,
-   "cn8_gate": "vote_disagrees",
+   "cn8_gate": null,
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "cn8_wrong"
+   "origin": "cn8_asked",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "7318.15",
+    "hs6_by": "clerk",
+    "cn8": null,
+    "written": false,
+    "question": "Ask the shipper for: type of head",
+    "cn8_error": null,
+    "cn8_gate": null,
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "cn8_asked"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI92",
@@ -2414,6 +4311,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_disagrees",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings point to 7320.20 (2 of 5: PL, FR), the model's candidate 2 — needs a human look",
    "hs6": "7320.90",
    "hs6_by": "clerk",
    "cn8": null,
@@ -2424,7 +4322,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "cn8_asked"
+   "origin": "cn8_asked",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": 2,
+    "right": false
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "7320.90",
+    "hs6_by": "clerk",
+    "cn8": null,
+    "written": false,
+    "question": "Ask the shipper for: type of spring",
+    "cn8_error": null,
+    "cn8_gate": null,
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "cn8_asked"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI279",
@@ -2441,6 +4364,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 7318.15 (ES, DE, IT, ES, ES)",
    "hs6": "7318.15",
    "hs6_by": "gate",
    "cn8": null,
@@ -2451,7 +4375,32 @@
    "route": "ask_shipper",
    "hit": false,
    "written_hit": null,
-   "origin": "cn8_asked"
+   "origin": "cn8_asked",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "7318.15",
+    "hs6_by": "gate",
+    "cn8": null,
+    "written": false,
+    "question": "Ask the shipper for: tensile strength",
+    "cn8_error": null,
+    "cn8_gate": null,
+    "route": "ask_shipper",
+    "hit": false,
+    "written_hit": null,
+    "origin": "cn8_asked"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI69",
@@ -2468,6 +4417,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_disagrees",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings point to 7318.12 (3 of 5: DE, DE, DE) — needs a human look",
    "hs6": "7318.14",
    "hs6_by": "clerk",
    "cn8": "73181499",
@@ -2478,7 +4428,32 @@
    "route": "review",
    "hit": true,
    "written_hit": null,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "7318.14",
+    "hs6_by": "clerk",
+    "cn8": "73181499",
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_disagrees",
+    "route": "review",
+    "hit": true,
+    "written_hit": null,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI96",
@@ -2495,6 +4470,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 7326.90 (DE, DE, DE, DE, DE)",
    "hs6": "7326.90",
    "hs6_by": "gate",
    "cn8": "73269098",
@@ -2505,7 +4481,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "7326.90",
+    "hs6_by": "gate",
+    "cn8": "73269098",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI378",
@@ -2522,6 +4523,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 7317.00 (DE, IE, DE, DE, DE)",
    "hs6": "7317.00",
    "hs6_by": "gate",
    "cn8": null,
@@ -2532,7 +4534,32 @@
    "route": "ask_shipper",
    "hit": false,
    "written_hit": null,
-   "origin": "cn8_asked"
+   "origin": "cn8_asked",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "7317.00",
+    "hs6_by": "gate",
+    "cn8": null,
+    "written": false,
+    "question": "Ask the shipper for: form of presentation",
+    "cn8_error": null,
+    "cn8_gate": null,
+    "route": "ask_shipper",
+    "hit": false,
+    "written_hit": null,
+    "origin": "cn8_asked"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI331",
@@ -2549,6 +4576,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "3 of 5 nearest EBTI rulings at 7308.90 (DE, BE, DE)",
    "hs6": "7308.90",
    "hs6_by": "gate",
    "cn8": "73089098",
@@ -2559,7 +4587,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "7308.90",
+    "hs6_by": "gate",
+    "cn8": "73089098",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI173",
@@ -2576,6 +4629,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "3 of 5 nearest EBTI rulings at 7326.90 (PL, DE, FR)",
    "hs6": "7326.90",
    "hs6_by": "gate",
    "cn8": null,
@@ -2586,7 +4640,32 @@
    "route": "ask_shipper",
    "hit": false,
    "written_hit": null,
-   "origin": "cn8_asked"
+   "origin": "cn8_asked",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "7326.90",
+    "hs6_by": "gate",
+    "cn8": null,
+    "written": false,
+    "question": "Ask the shipper for: manufacturing process",
+    "cn8_error": null,
+    "cn8_gate": null,
+    "route": "ask_shipper",
+    "hit": false,
+    "written_hit": null,
+    "origin": "cn8_asked"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI301",
@@ -2603,6 +4682,7 @@
    "hs6_hit": false,
    "hs6_gate": "vote_share_low",
    "hs6_route": "review",
+   "hs6_reason": "only 2 of 5 nearest EBTI rulings at 8538.90 — needs a human look",
    "hs6": "8538.90",
    "hs6_by": "clerk",
    "cn8": "85389099",
@@ -2613,7 +4693,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "8538.90",
+    "hs6_by": "clerk",
+    "cn8": "85389099",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI19",
@@ -2630,6 +4735,7 @@
    "hs6_hit": false,
    "hs6_gate": "vote_disagrees",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings point to 8479.89 (2 of 5: AT, AT) — needs a human look",
    "hs6": "8415.20",
    "hs6_by": "clerk",
    "cn8": "84152000",
@@ -2640,7 +4746,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "8415.20",
+    "hs6_by": "clerk",
+    "cn8": "84152000",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "single_line",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI249",
@@ -2657,6 +4788,7 @@
    "hs6_hit": true,
    "hs6_gate": "not_gated",
    "hs6_route": "review",
+   "hs6_reason": "vague description; confidence 59 at or above the ask floor 50 — needs a human look",
    "hs6": null,
    "hs6_by": null,
    "cn8": null,
@@ -2667,7 +4799,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_flagged"
+   "origin": "hs6_flagged",
+   "override": {
+    "fired": false,
+    "rank": null,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": null,
+    "hs6_by": null,
+    "cn8": null,
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": null,
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_flagged"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI293",
@@ -2684,6 +4841,7 @@
    "hs6_hit": false,
    "hs6_gate": "vote_share_low",
    "hs6_route": "review",
+   "hs6_reason": "only 2 of 5 nearest EBTI rulings at 8481.80 — needs a human look",
    "hs6": "8481.80",
    "hs6_by": "clerk",
    "cn8": "84818099",
@@ -2694,7 +4852,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "8481.80",
+    "hs6_by": "clerk",
+    "cn8": "84818099",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI68",
@@ -2711,6 +4894,7 @@
    "hs6_hit": false,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "3 of 5 nearest EBTI rulings at 8419.89 (PL, PL, PL)",
    "hs6": "8419.89",
    "hs6_by": "gate",
    "cn8": "84198998",
@@ -2721,7 +4905,32 @@
    "route": "auto_accept",
    "hit": false,
    "written_hit": false,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "8419.89",
+    "hs6_by": "gate",
+    "cn8": "84198998",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": false,
+    "written_hit": false,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI278",
@@ -2738,6 +4947,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "4 of 5 nearest EBTI rulings at 8421.39 (IE, IE, IE, IE)",
    "hs6": "8421.39",
    "hs6_by": "gate",
    "cn8": "84213925",
@@ -2748,7 +4958,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "8421.39",
+    "hs6_by": "gate",
+    "cn8": "84213925",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI124",
@@ -2760,11 +4995,12 @@
    "flag": "vague",
    "status": "checked",
    "error": null,
-   "top1": "8431.49",
+   "top1": "7308.90",
    "confidence": 59,
-   "hs6_hit": true,
+   "hs6_hit": false,
    "hs6_gate": "not_gated",
    "hs6_route": "review",
+   "hs6_reason": "vague description; confidence 59 at or above the ask floor 50 — needs a human look",
    "hs6": null,
    "hs6_by": null,
    "cn8": null,
@@ -2775,7 +5011,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_flagged"
+   "origin": "hs6_flagged",
+   "override": {
+    "fired": false,
+    "rank": null,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": null,
+    "hs6_by": null,
+    "cn8": null,
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": null,
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_flagged"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI105",
@@ -2792,6 +5053,7 @@
    "hs6_hit": false,
    "hs6_gate": "not_gated",
    "hs6_route": "review",
+   "hs6_reason": "vague description; confidence 59 at or above the ask floor 50 — needs a human look",
    "hs6": null,
    "hs6_by": null,
    "cn8": null,
@@ -2802,7 +5064,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_flagged"
+   "origin": "hs6_flagged",
+   "override": {
+    "fired": false,
+    "rank": null,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": null,
+    "hs6_by": null,
+    "cn8": null,
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": null,
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_flagged"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI255",
@@ -2819,6 +5106,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "3 of 5 nearest EBTI rulings at 8421.39 (IE, IE, IE)",
    "hs6": "8421.39",
    "hs6_by": "gate",
    "cn8": "84213985",
@@ -2829,7 +5117,32 @@
    "route": "review",
    "hit": true,
    "written_hit": null,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "8421.39",
+    "hs6_by": "gate",
+    "cn8": "84213985",
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_disagrees",
+    "route": "review",
+    "hit": true,
+    "written_hit": null,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI26",
@@ -2846,6 +5159,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "4 of 5 nearest EBTI rulings at 8471.60 (ES, NL, NL, NL)",
    "hs6": "8471.60",
    "hs6_by": "gate",
    "cn8": "84716070",
@@ -2856,7 +5170,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "8471.60",
+    "hs6_by": "gate",
+    "cn8": "84716070",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "MTBTI2024-002",
@@ -2873,6 +5212,7 @@
    "hs6_hit": false,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 8479.89 (DE, DE, DE, DE, FR)",
    "hs6": "8479.89",
    "hs6_by": "gate",
    "cn8": "84798997",
@@ -2883,7 +5223,32 @@
    "route": "auto_accept",
    "hit": false,
    "written_hit": false,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "8479.89",
+    "hs6_by": "gate",
+    "cn8": "84798997",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": false,
+    "written_hit": false,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI60",
@@ -2900,6 +5265,7 @@
    "hs6_hit": false,
    "hs6_gate": "vote_disagrees",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings point to 8538.90 (3 of 5: IE, IE, IE), the model's candidate 2 — needs a human look",
    "hs6": "8536.30",
    "hs6_by": "clerk",
    "cn8": null,
@@ -2910,7 +5276,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": 2,
+    "right": true
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "8536.30",
+    "hs6_by": "clerk",
+    "cn8": null,
+    "written": false,
+    "question": "Ask the shipper for: current rating",
+    "cn8_error": null,
+    "cn8_gate": null,
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI336",
@@ -2925,19 +5316,51 @@
    "top1": "3925.90",
    "confidence": 95,
    "hs6_hit": false,
-   "hs6_gate": "vote_disagrees",
-   "hs6_route": "review",
-   "hs6": "3925.90",
-   "hs6_by": "clerk",
-   "cn8": "39259010",
+   "hs6_gate": "vote_override",
+   "hs6_route": "auto_accept",
+   "hs6_reason": "rulings overrode the model: 4 of 5 agree on 8538.90",
+   "hs6": "8538.90",
+   "hs6_by": "gate",
+   "cn8": "85389099",
    "written": true,
    "question": null,
    "cn8_error": null,
    "cn8_gate": "vote_agrees",
-   "route": "review",
-   "hit": false,
-   "written_hit": null,
-   "origin": "hs6_wrong"
+   "route": "auto_accept",
+   "hit": true,
+   "written_hit": true,
+   "origin": null,
+   "override": {
+    "fired": true,
+    "rank": 2,
+    "code": "8538.90",
+    "n": 4,
+    "m": 5
+   },
+   "supported": {
+    "rank": 2,
+    "right": true
+   },
+   "cn8_top1": {
+    "cn8": "39259010",
+    "written": true,
+    "question": null,
+    "error": null,
+    "gate": "vote_agrees"
+   },
+   "off": {
+    "hs6": "3925.90",
+    "hs6_by": "clerk",
+    "cn8": "39259010",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI388",
@@ -2954,6 +5377,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 8504.40 (IE, IE, PL, PL, PL)",
    "hs6": "8504.40",
    "hs6_by": "gate",
    "cn8": "85044083",
@@ -2964,7 +5388,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "8504.40",
+    "hs6_by": "gate",
+    "cn8": "85044083",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2023-BTI579",
@@ -2981,6 +5430,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 8528.52 (IE, IE, IE, IE, IE)",
    "hs6": "8528.52",
    "hs6_by": "gate",
    "cn8": "85285210",
@@ -2991,7 +5441,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "8528.52",
+    "hs6_by": "gate",
+    "cn8": "85285210",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "XIBTI505059567",
@@ -3008,6 +5483,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_disagrees",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings point to 8536.69 (2 of 5: DE, NL), the model's candidate 2 — needs a human look",
    "hs6": "8504.40",
    "hs6_by": "clerk",
    "cn8": "85044060",
@@ -3018,7 +5494,32 @@
    "route": "review",
    "hit": true,
    "written_hit": null,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": 2,
+    "right": false
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "8504.40",
+    "hs6_by": "clerk",
+    "cn8": "85044060",
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_tie",
+    "route": "review",
+    "hit": true,
+    "written_hit": null,
+    "origin": null
+   }
   },
   {
    "reference": "XIBTI505068566",
@@ -3035,6 +5536,7 @@
    "hs6_hit": false,
    "hs6_gate": "not_gated",
    "hs6_route": "review",
+   "hs6_reason": "vague description; confidence 59 at or above the ask floor 50 — needs a human look",
    "hs6": null,
    "hs6_by": null,
    "cn8": null,
@@ -3045,7 +5547,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_flagged"
+   "origin": "hs6_flagged",
+   "override": {
+    "fired": false,
+    "rank": null,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": 3,
+    "right": false
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": null,
+    "hs6_by": null,
+    "cn8": null,
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": null,
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_flagged"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2023-BTI625",
@@ -3058,10 +5585,11 @@
    "status": "checked",
    "error": null,
    "top1": "8528.52",
-   "confidence": 95,
+   "confidence": 98,
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 8528.52 (IE, IE, IE, IE, IE)",
    "hs6": "8528.52",
    "hs6_by": "gate",
    "cn8": "85285210",
@@ -3072,7 +5600,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "8528.52",
+    "hs6_by": "gate",
+    "cn8": "85285210",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2023-BTI561",
@@ -3089,6 +5642,7 @@
    "hs6_hit": false,
    "hs6_gate": "vote_disagrees",
    "hs6_route": "review",
+   "hs6_reason": "the nearest EBTI rulings point to 8536.20 (2 of 5: PL, DE), the model's candidate 2 — needs a human look",
    "hs6": "8536.30",
    "hs6_by": "clerk",
    "cn8": "85363030",
@@ -3099,7 +5653,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": 2,
+    "right": false
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "8536.30",
+    "hs6_by": "clerk",
+    "cn8": "85363030",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "XIBTI505065379",
@@ -3116,6 +5695,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 8505.19 (XI, FR, DE, DE, DE)",
    "hs6": "8505.19",
    "hs6_by": "gate",
    "cn8": "85051910",
@@ -3126,7 +5706,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "8505.19",
+    "hs6_by": "gate",
+    "cn8": "85051910",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI118",
@@ -3143,6 +5748,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 8528.52 (IE, IE, IE, IE, IE)",
    "hs6": "8528.52",
    "hs6_by": "gate",
    "cn8": "85285210",
@@ -3153,7 +5759,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "8528.52",
+    "hs6_by": "gate",
+    "cn8": "85285210",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "MTBTI2025-011",
@@ -3170,6 +5801,7 @@
    "hs6_hit": false,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "3 of 5 nearest EBTI rulings at 9405.11 (DE, DE, DE)",
    "hs6": "9405.11",
    "hs6_by": "gate",
    "cn8": "94051140",
@@ -3180,7 +5812,32 @@
    "route": "auto_accept",
    "hit": false,
    "written_hit": false,
-   "origin": "hs6_wrong"
+   "origin": "hs6_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9405.11",
+    "hs6_by": "gate",
+    "cn8": "94051140",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": false,
+    "written_hit": false,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "XIBTI505070292",
@@ -3197,6 +5854,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 9403.20 (XI, XI, XI, XI, XI)",
    "hs6": "9403.20",
    "hs6_by": "gate",
    "cn8": "94032080",
@@ -3207,7 +5865,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9403.20",
+    "hs6_by": "gate",
+    "cn8": "94032080",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "SEBTITV-2024-01674",
@@ -3224,6 +5907,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 9401.99 (SE, SE, SE, SE, SE)",
    "hs6": "9401.99",
    "hs6_by": "gate",
    "cn8": "94019980",
@@ -3234,7 +5918,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9401.99",
+    "hs6_by": "gate",
+    "cn8": "94019980",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "XIBTI505070488",
@@ -3251,6 +5960,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 9403.20 (XI, XI, FR, XI, DE)",
    "hs6": "9403.20",
    "hs6_by": "gate",
    "cn8": "94032080",
@@ -3261,7 +5971,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9403.20",
+    "hs6_by": "gate",
+    "cn8": "94032080",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "XIBTI505070096",
@@ -3278,6 +6013,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "4 of 5 nearest EBTI rulings at 9403.20 (XI, XI, XI, XI)",
    "hs6": "9403.20",
    "hs6_by": "gate",
    "cn8": "94032080",
@@ -3288,7 +6024,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9403.20",
+    "hs6_by": "gate",
+    "cn8": "94032080",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "SEBTITV-2024-01665",
@@ -3305,6 +6066,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 9401.99 (SE, SE, SE, SE, SE)",
    "hs6": "9401.99",
    "hs6_by": "gate",
    "cn8": "94019980",
@@ -3315,7 +6077,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9401.99",
+    "hs6_by": "gate",
+    "cn8": "94019980",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI333",
@@ -3332,6 +6119,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "4 of 5 nearest EBTI rulings at 9403.60 (IE, FR, DE, FR)",
    "hs6": "9403.60",
    "hs6_by": "gate",
    "cn8": "94036090",
@@ -3342,7 +6130,32 @@
    "route": "review",
    "hit": true,
    "written_hit": null,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9403.60",
+    "hs6_by": "gate",
+    "cn8": "94036090",
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_disagrees",
+    "route": "review",
+    "hit": true,
+    "written_hit": null,
+    "origin": null
+   }
   },
   {
    "reference": "SEBTITV-2024-01658",
@@ -3359,6 +6172,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 9401.99 (SE, SE, SE, SE, SE)",
    "hs6": "9401.99",
    "hs6_by": "gate",
    "cn8": "94019980",
@@ -3369,7 +6183,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9401.99",
+    "hs6_by": "gate",
+    "cn8": "94019980",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "SEBTITV-2026-09785",
@@ -3386,6 +6225,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "4 of 5 nearest EBTI rulings at 9405.42 (SE, SE, SE, SE)",
    "hs6": "9405.42",
    "hs6_by": "gate",
    "cn8": "94054239",
@@ -3396,7 +6236,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9405.42",
+    "hs6_by": "gate",
+    "cn8": "94054239",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "SEBTITV-2024-01615",
@@ -3413,6 +6278,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 9401.99 (SE, SE, SE, SE, SE)",
    "hs6": "9401.99",
    "hs6_by": "gate",
    "cn8": "94019980",
@@ -3423,7 +6289,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9401.99",
+    "hs6_by": "gate",
+    "cn8": "94019980",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "SEBTITV-2025-27476",
@@ -3440,6 +6331,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 9505.10 (SE, SE, SE, DE, DE)",
    "hs6": "9505.10",
    "hs6_by": "gate",
    "cn8": "95051090",
@@ -3450,7 +6342,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9505.10",
+    "hs6_by": "gate",
+    "cn8": "95051090",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI38",
@@ -3467,6 +6384,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 9503.00 (XI, DE, BE, IE, DE)",
    "hs6": "9503.00",
    "hs6_by": "gate",
    "cn8": "95030049",
@@ -3477,7 +6395,32 @@
    "route": "auto_accept",
    "hit": false,
    "written_hit": false,
-   "origin": "cn8_wrong"
+   "origin": "cn8_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9503.00",
+    "hs6_by": "gate",
+    "cn8": "95030049",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": false,
+    "written_hit": false,
+    "origin": "cn8_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI67",
@@ -3494,6 +6437,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 9503.00 (DE, AT, DE, DE, FR)",
    "hs6": "9503.00",
    "hs6_by": "gate",
    "cn8": "95030070",
@@ -3504,7 +6448,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9503.00",
+    "hs6_by": "gate",
+    "cn8": "95030070",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI99",
@@ -3521,6 +6490,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 9503.00 (IT, FR, IE, FR, IE)",
    "hs6": "9503.00",
    "hs6_by": "gate",
    "cn8": "95030041",
@@ -3531,7 +6501,32 @@
    "route": "review",
    "hit": true,
    "written_hit": null,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9503.00",
+    "hs6_by": "gate",
+    "cn8": "95030041",
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_tie",
+    "route": "review",
+    "hit": true,
+    "written_hit": null,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI22",
@@ -3548,6 +6543,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 9504.90 (FR, FR, FR, FR, FR)",
    "hs6": "9504.90",
    "hs6_by": "gate",
    "cn8": "95049080",
@@ -3558,7 +6554,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9504.90",
+    "hs6_by": "gate",
+    "cn8": "95049080",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "SEBTITV-2026-09764",
@@ -3575,6 +6596,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 9505.10 (SE, SE, SE, SE, SE)",
    "hs6": "9505.10",
    "hs6_by": "gate",
    "cn8": "95051090",
@@ -3585,7 +6607,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9505.10",
+    "hs6_by": "gate",
+    "cn8": "95051090",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI118",
@@ -3602,6 +6649,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "3 of 5 nearest EBTI rulings at 9503.00 (IE, IE, FR)",
    "hs6": "9503.00",
    "hs6_by": "gate",
    "cn8": "95030099",
@@ -3612,7 +6660,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9503.00",
+    "hs6_by": "gate",
+    "cn8": "95030099",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI393",
@@ -3629,6 +6702,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 9503.00 (RO, RO, RO, DE, RO)",
    "hs6": "9503.00",
    "hs6_by": "gate",
    "cn8": "95030049",
@@ -3639,7 +6713,32 @@
    "route": "review",
    "hit": true,
    "written_hit": null,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9503.00",
+    "hs6_by": "gate",
+    "cn8": "95030049",
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_disagrees",
+    "route": "review",
+    "hit": true,
+    "written_hit": null,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2025-BTI460",
@@ -3656,6 +6755,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "4 of 5 nearest EBTI rulings at 9503.00 (DE, FR, FR, DE)",
    "hs6": "9503.00",
    "hs6_by": "gate",
    "cn8": "95030095",
@@ -3666,7 +6766,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9503.00",
+    "hs6_by": "gate",
+    "cn8": "95030095",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2024-BTI391",
@@ -3683,6 +6808,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 9503.00 (PL, FR, RO, PL, PL)",
    "hs6": "9503.00",
    "hs6_by": "gate",
    "cn8": "95030010",
@@ -3693,7 +6819,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9503.00",
+    "hs6_by": "gate",
+    "cn8": "95030010",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI72",
@@ -3710,6 +6861,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 9619.00 (IE, DE, DE, DE, ES)",
    "hs6": "9619.00",
    "hs6_by": "gate",
    "cn8": "96190040",
@@ -3720,7 +6872,32 @@
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "cn8_wrong"
+   "origin": "cn8_wrong",
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9619.00",
+    "hs6_by": "gate",
+    "cn8": "96190040",
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_disagrees",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "cn8_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI71",
@@ -3735,19 +6912,51 @@
    "top1": "6108.21",
    "confidence": 95,
    "hs6_hit": false,
-   "hs6_gate": "vote_disagrees",
-   "hs6_route": "review",
-   "hs6": "6108.21",
-   "hs6_by": "clerk",
-   "cn8": "61082100",
-   "written": true,
+   "hs6_gate": "vote_override",
+   "hs6_route": "auto_accept",
+   "hs6_reason": "rulings overrode the model: 5 of 5 agree on 9619.00",
+   "hs6": "9619.00",
+   "hs6_by": "gate",
+   "cn8": "96190040",
+   "written": false,
    "question": null,
    "cn8_error": null,
-   "cn8_gate": "single_line",
+   "cn8_gate": "vote_disagrees",
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_wrong"
+   "origin": "cn8_wrong",
+   "override": {
+    "fired": true,
+    "rank": 2,
+    "code": "9619.00",
+    "n": 5,
+    "m": 5
+   },
+   "supported": {
+    "rank": 2,
+    "right": true
+   },
+   "cn8_top1": {
+    "cn8": "61082100",
+    "written": true,
+    "question": null,
+    "error": null,
+    "gate": "single_line"
+   },
+   "off": {
+    "hs6": "6108.21",
+    "hs6_by": "clerk",
+    "cn8": "61082100",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "single_line",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "IEBTIIENEN004-2026-BTI222",
@@ -3762,19 +6971,51 @@
    "top1": "9609.90",
    "confidence": 95,
    "hs6_hit": false,
-   "hs6_gate": "vote_disagrees",
-   "hs6_route": "review",
-   "hs6": "9609.90",
-   "hs6_by": "clerk",
-   "cn8": "96099090",
-   "written": true,
+   "hs6_gate": "vote_override",
+   "hs6_route": "auto_accept",
+   "hs6_reason": "rulings overrode the model: 5 of 5 agree on 9609.10",
+   "hs6": "9609.10",
+   "hs6_by": "gate",
+   "cn8": "96091010",
+   "written": false,
    "question": null,
    "cn8_error": null,
-   "cn8_gate": "vote_agrees",
+   "cn8_gate": "vote_disagrees",
    "route": "review",
    "hit": false,
    "written_hit": null,
-   "origin": "hs6_wrong"
+   "origin": "cn8_wrong",
+   "override": {
+    "fired": true,
+    "rank": 2,
+    "code": "9609.10",
+    "n": 5,
+    "m": 5
+   },
+   "supported": {
+    "rank": 2,
+    "right": true
+   },
+   "cn8_top1": {
+    "cn8": "96099090",
+    "written": true,
+    "question": null,
+    "error": null,
+    "gate": "vote_agrees"
+   },
+   "off": {
+    "hs6": "9609.90",
+    "hs6_by": "clerk",
+    "cn8": "96099090",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "review",
+    "hit": false,
+    "written_hit": null,
+    "origin": "hs6_wrong"
+   }
   },
   {
    "reference": "FRBTIFR-BTI-2026-02219",
@@ -3791,6 +7032,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "4 of 5 nearest EBTI rulings at 9603.90 (FR, FR, FR, FR)",
    "hs6": "9603.90",
    "hs6_by": "gate",
    "cn8": "96039091",
@@ -3801,7 +7043,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9603.90",
+    "hs6_by": "gate",
+    "cn8": "96039091",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "DEBTI7845/24-1",
@@ -3818,6 +7085,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 9603.90 (DE, DE, DE, DE, DE)",
    "hs6": "9603.90",
    "hs6_by": "gate",
    "cn8": "96039091",
@@ -3828,7 +7096,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9603.90",
+    "hs6_by": "gate",
+    "cn8": "96039091",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "DEBTI3465/24-1",
@@ -3845,6 +7138,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 9609.10 (DE, DE, DE, DE, DE)",
    "hs6": "9609.10",
    "hs6_by": "gate",
    "cn8": "96091090",
@@ -3855,7 +7149,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9609.10",
+    "hs6_by": "gate",
+    "cn8": "96091090",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "DEBTI47340/24-1",
@@ -3872,6 +7191,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 9603.90 (DE, DE, DE, DE, DE)",
    "hs6": "9603.90",
    "hs6_by": "gate",
    "cn8": "96039099",
@@ -3882,7 +7202,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9603.90",
+    "hs6_by": "gate",
+    "cn8": "96039099",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "DEBTI59675/24-1",
@@ -3899,6 +7244,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 9603.90 (DE, DE, DE, DE, DE)",
    "hs6": "9603.90",
    "hs6_by": "gate",
    "cn8": "96039099",
@@ -3909,7 +7255,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9603.90",
+    "hs6_by": "gate",
+    "cn8": "96039099",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   },
   {
    "reference": "DEBTI35114/25-1",
@@ -3926,6 +7297,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "4 of 5 nearest EBTI rulings at 9603.90 (DE, DE, DE, DE)",
    "hs6": "9603.90",
    "hs6_by": "gate",
    "cn8": "96039091",
@@ -3936,7 +7308,32 @@
    "route": "review",
    "hit": true,
    "written_hit": null,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9603.90",
+    "hs6_by": "gate",
+    "cn8": "96039091",
+    "written": false,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_disagrees",
+    "route": "review",
+    "hit": true,
+    "written_hit": null,
+    "origin": null
+   }
   },
   {
    "reference": "DEBTI9589/25-1",
@@ -3953,6 +7350,7 @@
    "hs6_hit": true,
    "hs6_gate": "vote_agrees",
    "hs6_route": "auto_accept",
+   "hs6_reason": "5 of 5 nearest EBTI rulings at 9608.10 (DE, DE, DE, DE, DE)",
    "hs6": "9608.10",
    "hs6_by": "gate",
    "cn8": "96081092",
@@ -3963,7 +7361,32 @@
    "route": "auto_accept",
    "hit": true,
    "written_hit": true,
-   "origin": null
+   "origin": null,
+   "override": {
+    "fired": false,
+    "rank": 1,
+    "code": null,
+    "n": null,
+    "m": null
+   },
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "cn8_top1": null,
+   "off": {
+    "hs6": "9608.10",
+    "hs6_by": "gate",
+    "cn8": "96081092",
+    "written": true,
+    "question": null,
+    "cn8_error": null,
+    "cn8_gate": "vote_agrees",
+    "route": "auto_accept",
+    "hit": true,
+    "written_hit": true,
+    "origin": null
+   }
   }
  ]
 }

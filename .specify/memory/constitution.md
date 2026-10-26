@@ -19,12 +19,13 @@
 - An unflagged line's HS-6 MUST be auto-accepted only when the HS-6 gate passes. The rulings'
   majority either confirms the model's top candidate or, with the precedent override switched on
   (`HS6_OVERRIDE`), overrides it to the model's second or third candidate when at least
-  `OVERRIDE_MIN` (default 4) of the 5 nearest eligible rulings sit there. That candidate becomes
-  the decided code, with the reason "rulings overrode the model: N of M agree on <code>", M being
-  the rulings that voted (5 unless fewer are eligible). Three of five, or agreement on a code
-  outside the model's top three, stays `review`; with the override switched on, a code outside
-  the top three is shown as a hint, never chosen. `OVERRIDE_MIN` is a named configuration
-  constant; behaviour at exactly `OVERRIDE_MIN` MUST be fixed in the spec and covered by a test.
+  `OVERRIDE_MIN` (default 5: all five) of the 5 nearest eligible rulings sit there. That candidate
+  becomes the decided code, with the reason "rulings overrode the model: N of M agree on <code>",
+  M being the rulings that voted (5 unless fewer are eligible). Fewer than `OVERRIDE_MIN`, or
+  agreement on a code outside the model's top three, stays `review`; with the override switched
+  on, a code outside the top three is shown as a hint, never chosen. `OVERRIDE_MIN` is a named
+  configuration constant; behaviour at exactly `OVERRIDE_MIN` MUST be fixed in the spec and
+  covered by a test.
   Otherwise the line goes to `review` with the competing rulings and their issuing countries as
   the reason, naming the model's candidate the rulings support when it is the second or third. A
   flagged (vague or stop-word) line MUST NOT be routed to `auto_accept`.
@@ -401,6 +402,9 @@ to depart from; MAY is optional.
   it with the note "rulings overrode the model: N of M agree on <code>"; 3 of 5, or agreement
   outside the top three, stays review. The switch ships off until the HS-6 and end-to-end evals,
   each comparing the switch on and off on the same stored model answers, show more lines right
-  end to end and no more wrong auto-accepts.
+  end to end and no more wrong auto-accepts. Note, same day, no version bump: the evals met that
+  bar at `OVERRIDE_MIN` 5 (right end to end 67 → 69 of 120, the HS-6 eval's end-to-end estimate
+  74 → 77, wrong auto-accepts unchanged) and not at 4 (wrong auto-accepts on the HS-6 eval 3 → 6),
+  so the switch ships on with a default of 5 of 5 (feature 008, T027).
 
 **Version**: 1.6.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-26

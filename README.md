@@ -194,10 +194,14 @@ operator and the course evaluators.
    the ask floor (50) else review; OK → auto-accept when the HS-6 gate passes, else review. The gate
    (constitution 1.5.0) is the vote of the five nearest eligible EBTI rulings at or above a cosine
    similarity of 0.40: the top candidate passes when it is their majority with a share of at least
-   0.5, and the review reason names the rulings, their countries and the candidate they support. Only
-   when no ruling votes does the confidence decide, at or above the threshold. A line that
-   was ever flagged, or updated by a shipper reply, is never auto-accepted — it becomes "ready to
-   accept" and needs the clerk's click.
+   0.5, and the review reason names the rulings, their countries and the candidate they support. The
+   precedent override (constitution 1.6.0, feature 008) adds one case: when at least `OVERRIDE_MIN` of
+   the five (by default 5, all of them) sit at the model's second or third candidate, that candidate is
+   decided and auto-accepted with the note "rulings overrode the model: N of M agree on <code>"; the
+   same agreement on a code outside the three candidates is only shown as a hint. It is on by default;
+   `CARGOLINT_HS6_OVERRIDE=off` turns it off. Only when no ruling votes does the confidence decide, at
+   or above the threshold. A line that was ever flagged, or updated by a shipper reply, is never
+   auto-accepted — it becomes "ready to accept" and needs the clerk's click.
 
 ## The tool-calling loop
 
@@ -349,6 +353,33 @@ were corrected with the code: a listed term outside it ("T-shirts in various siz
 goods name that is nothing but listed terms ("various goods", "parts") still does. The report is
 `tests/eval/e2e_eval.md`.
 
+**Precedent override** (feature 008): the HS-6 eval (run `hs6-override`) and the end-to-end eval (run `e2e-override`)
+each made one paid run with the override on and replayed it with the override off from the same stored model answers
+and rulings, so the two states differ only by the rule. Each line records whether the override fired, the candidate it
+chose and whether the candidate the rulings supported was right. `--replay <results file> --override-min N`
+recomputes a stored run at another minimum with no model call (runs `hs6-override-min5` and `e2e-override-min5`).
+
+| HS-6 eval | Off | On at 4 | On at 5 |
+|---|---|---|---|
+| HS-6 right | 83/120 | 92/120 | 87/120 |
+| End-to-end estimate (CN-8 iteration 12) | 74/120 | 82/120 | 77/120 |
+| Auto-accepted | 67 | 81 | 71 |
+| Wrong auto-accepts | 3 | 6 | 3 |
+| Overrides fired (right HS-6) | – | 14 (11) | 4 (4) |
+
+| End-to-end eval | Off | On at 4 | On at 5 |
+|---|---|---|---|
+| Right end to end | 67/120 | 74/120 | 69/120 |
+| Auto-accepted | 57 | 64 | 59 |
+| Wrong auto-accepts | 8 | 8 | 8 |
+| Overrides fired (right HS-6) | – | 11 (10) | 4 (4) |
+
+Every wrong override was a 4-of-5 one. Two of them are a pair of shoe rulings, IEBTIIENEN004-2024-BTI122 at 6402.99
+and IEBTIIENEN004-2024-BTI128 at 6404.19: with each line's own ruling left out, the nearest other rulings point to the
+other code, so at 4 of 5 the override turned both right answers wrong. At 5 of 5 every override chose the right HS-6:
+end to end 67 → 69 of 120, the estimate 74 → 77, and wrong auto-accepts unchanged in both evals. The override ships on
+at 5 of 5. The reports are `tests/eval/hs6_eval.md` and `tests/eval/e2e_eval.md`.
+
 **Known issues**:
 - **Sample line 10, "铝合金自行车架 / Aluminium alloy bicycle frames"** (browser check with the live model, 2026-10-24):
   it is auto-accepted as 9503 00 10 00 (wheeled toys) at 95 %; the correct HS-6 is 8714.91 (frames and forks of
@@ -366,6 +397,9 @@ goods name that is nothing but listed terms ("various goods", "parts") still doe
 - Known limitation of the stop-word rule: a goods name made only of listed words, such as "metal box" or "steel
   rods", is still locked, even though the ICS2 guidance accepts names like "steel tubes". A narrower notion of stop
   word is deferred until the eval set has more such lines.
+- The precedent override runs at 5 of 5. At 4 of 5 it would give 7 more lines right end to end (67 → 74), at the cost
+  of 3 more wrong HS-6 codes auto-accepted on the HS-6 eval (3 → 6), among them the shoe pair above. That trade-off is
+  left for a later decision.
 - Classification confusions remain where the nomenclature itself is subtle (protective phone cases vs
   packaging cases; aluminium bicycle frames landed in aluminium structures `7610.90` instead of
   `8714.91` in one live run, and in wheeled toys `9503.00`, steered by a ruling, in two app runs on 2026-10-23) —

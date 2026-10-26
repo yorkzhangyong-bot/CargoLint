@@ -96,8 +96,10 @@ step is passed like feature 001's failed status (Principle V):
 | otherwise | as in feature 001 | unchanged |
 
 **HS-6 decided**: the clerk has accepted an HS-6, or, with no clerk decision, `hs6_auto_decided(flag_kind,
-top_confidence, status, ever_flagged, threshold, ask_floor)` is true. That helper is true exactly when `route_line`
-without a CN-8 question or error returns `auto_accept`, the condition feature 001 auto-accepts on. It does not depend
+top_confidence, status, ever_flagged, threshold, ask_floor, hs6_vote, hs6_override_min)` is true (`hs6_vote` since
+feature 006, the nearest rulings' vote; `hs6_override_min` since feature 008, the precedent override switch, None when
+off). That helper is true exactly when `route_line` without a CN-8 question or error returns `auto_accept`, the
+condition feature 001 auto-accepts on. It does not depend
 on the CN-8 question or a CN-8 failure, so `decided_code()` and the HS-6 export columns keep their values (FR-021).
 
 **Effective route** precedence:

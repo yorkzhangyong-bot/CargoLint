@@ -146,9 +146,9 @@ fields and totals.
 ### Functional Requirements
 
 - **FR-001**: With the switch on, an unflagged line whose top HS-6 candidate fails the HS-6 gate MUST be auto-accepted
-  with the model's second or third candidate when at least OVERRIDE_MIN (default 4) of the 5 nearest eligible EBTI
-  rulings sit at that candidate's HS-6. These are the rulings the HS-6 gate counts: valid on the day, coded to the
-  loaded nomenclature, at or above the similarity floor, each counted once.
+  with the model's second or third candidate when at least OVERRIDE_MIN (default 5, see FR-007) of the 5 nearest
+  eligible EBTI rulings sit at that candidate's HS-6. These are the rulings the HS-6 gate counts: valid on the day,
+  coded to the loaded nomenclature, at or above the similarity floor, each counted once.
 - **FR-002**: The chosen candidate MUST become the line's decided HS-6; the model's ranking of its candidates is kept
   and shown unchanged. The route reason MUST read "rulings overrode the model: N of M agree on <code>", where N is
   the number of agreeing rulings and M the number that voted, 5 unless fewer were eligible.
@@ -164,8 +164,9 @@ fields and totals.
 - **FR-006**: The override MUST be computed in code from the line's candidates and the ruling vote, like the rest of
   the routing; it MUST NOT be a model decision, and no prompt changes.
 - **FR-007**: A configuration switch, HS6_OVERRIDE, MUST turn the override on and off, and OVERRIDE_MIN MUST set the
-  agreeing rulings it needs (default 4). The switch is off by default until the evals meet SC-001 to SC-003. With the
-  switch off, every route, decided code and note MUST be the ones the HS-6 gate gives today.
+  agreeing rulings it needs. The switch was off by default until the evals met SC-001 to SC-003; they met them at
+  OVERRIDE_MIN 5 and not at 4, so the switch ships on with OVERRIDE_MIN 5, all five nearest eligible rulings (T027).
+  With the switch off, every route, decided code and note MUST be the ones the HS-6 gate gives without the override.
 - **FR-008**: The detail row of an overridden line MUST show which candidate was chosen (its rank, 2 or 3, and its
   code), the model's top candidate, and the note, and the line's code in the table MUST be the chosen candidate's.
 - **FR-009**: The audit trail MUST record each override: the chosen candidate's rank and code, the model's top
@@ -194,7 +195,8 @@ fields and totals.
   M) and the note.
 - **Ruling hint**: with the switch on, on a line in review, an HS-6 outside the model's three candidates on which at
   least OVERRIDE_MIN of the voting rulings agree, with that count. It is shown, never chosen.
-- **Override switch**: the configuration HS6_OVERRIDE (on or off) and OVERRIDE_MIN (agreeing rulings needed, default 4).
+- **Override switch**: the configuration HS6_OVERRIDE (on by default, or off) and OVERRIDE_MIN (agreeing rulings
+  needed, default 5).
 - **Eval line record**: the existing per-line record of the HS-6 eval and the end-to-end eval, extended with the
   chosen candidate's rank, whether the override fired, and whether the supported candidate was right.
 
@@ -226,8 +228,11 @@ fields and totals.
 - The override does not use the model's confidence: the chosen candidate's own estimate is not a routing input, as
   constitution 1.5.0 states for both layers.
 - "The rulings agree on a code outside the top-3" uses the same OVERRIDE_MIN as the override.
-- HS6_OVERRIDE is off by default, so the clerk sees no change until the evals meet SC-001 to SC-003; the author then
-  turns it on. The switch is set when the app starts, not on the Admin page.
+- HS6_OVERRIDE ships on, at OVERRIDE_MIN 5, after the evals (T027). Each eval compared the switch on and off from
+  the same stored model answers. At 5 they met SC-001 to SC-003: right end to end 67 → 69 of 120, the HS-6 eval's
+  end-to-end estimate 74 → 77, wrong auto-accepts unchanged in both evals. At 4 they did not: right end to end
+  67 → 74, but wrong auto-accepts on the HS-6 eval 3 → 6. The switch is set when the app starts, not on the Admin
+  page; CARGOLINT_HS6_OVERRIDE "off" turns it off.
 - "Iteration 12" is the CN-8 eval's iteration 12 (Gemini 2.5 Flash), against which the HS-6 eval computes its
   end-to-end estimate. The historical figures in SC-001 to SC-003 are context, not baselines: run
   `e2e-stopword-fix`'s 68 of 120 right end to end and 7 wrong auto-accepts (of 56 auto-accepted), and the estimate of

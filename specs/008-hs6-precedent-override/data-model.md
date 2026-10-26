@@ -7,8 +7,8 @@ feature 006's vote. Decisions: [research.md](research.md).
 
 | Name | Where | Type | Default | Rule |
 |---|---|---|---|---|
-| `OVERRIDE_MIN` | `agent/config.py`, next to `HS6_VOTE_K` | int | 4 | a named configuration constant, 1 ≤ `OVERRIDE_MIN` ≤ `HS6_VOTE_K` (5) |
-| `hs6_override` | `Settings`, from `CARGOLINT_HS6_OVERRIDE` | bool | False | "on" turns it on; read when the app starts, as every setting |
+| `OVERRIDE_MIN` | `agent/config.py`, next to `HS6_VOTE_K` | int | 5 (4 until the evals, T027) | a named configuration constant, 1 ≤ `OVERRIDE_MIN` ≤ `HS6_VOTE_K` (5) |
+| `hs6_override` | `Settings`, from `CARGOLINT_HS6_OVERRIDE` | bool | True (False until the evals, T027) | "off" or "false" turns it off; read when the app starts, as every setting |
 
 ## 2. Shipment
 
@@ -59,9 +59,14 @@ When `_recompute` turns a line's gate to `vote_override` and its route changes, 
 
 The `route_computed` record carries the route reason, as for every route.
 
-When the clerk later changes the line's HS-6, the clerk's `code_decided` record has `previous` = the code in force
-before the change, which is the chosen candidate. `set_decision` uses `decided_code(line)` when a code is decided and
-falls back to the top candidate otherwise, so every line without an override is recorded as today.
+When the clerk changes a line's HS-6, the clerk's `code_decided` record has `previous` = the code in force before the
+change, which `set_decision` reads from `decided_code(line)` (contracts §3):
+- the code the clerk accepted earlier, when they had already accepted one;
+- otherwise, on a line the override decided, the chosen candidate;
+- otherwise the model's top candidate.
+
+A line without an override is recorded as before feature 008, except when the clerk changes a code they had already
+accepted: `previous` is now that earlier code, where it used to be the model's top candidate.
 
 ## 7. Routing table
 

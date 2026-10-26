@@ -45,6 +45,7 @@ All are plain text in native Streamlit elements.
 | table, status column | an overridden line, once its CN-8 and TARIC are settled | as for any auto-accepted line ("Ready"); the code column shows the chosen candidate |
 | `a_change`, "Decided:" line, HS-6 part (`_hs6_how`) | gate `vote_override`, no decision | "candidate {rank} chosen, rulings overrode the model: {N} of {M} agree on {code} ({countries}); the model's top candidate was {top}" |
 | the same | the clerk accepted it (`chosen_how` auto) | the same text followed by ", accepted by you" |
+| `a_cn8`, first line (`explain_a`), the CN-8 rows ("Pick: CN-8", "Confirm: {CN-8}") | gate `vote_override`, the HS-6 decided by the override (`chosen_how` auto) | "The HS-6 is {code}; rulings overrode the model: {N} of {M} agree on {code}; its subheading has {n} CN-8 lines." |
 | table, status column | `vote_override` on an ever-flagged line | "Confirm: {chosen code}" |
 | `a_hs6`, second line (`explain_a`) | the same | "Candidate {rank}, {code}, is chosen because the rulings overrode the model ({N} of {M} agree on it: {countries}), but {why}, so it needs your confirmation. TARIC runs after your pick." |
 | `a_hs6`, pre-selection (`preselect`) | the same | the chosen candidate |
@@ -67,10 +68,14 @@ When the override decides a line, two entries are written:
 Each is written once, when the route changes. The audit's JSON export shows both. The CSV and JSON line export keeps
 its schema; its `decided_code` is the chosen candidate and its `decided_how` is "auto" (FR-014).
 
-When the clerk then changes an overridden line's HS-6 (FR-011), the clerk's `code_decided` entry has `previous` set to
-the code in force before the change, which is the chosen candidate, not the model's top candidate. `set_decision`
-records `previous` as `decided_code(line)` when a code is decided, and falls back to the top candidate otherwise, so
-every line without an override is recorded as today.
+When the clerk changes a line's HS-6 (FR-011), the clerk's `code_decided` entry has `previous` set to the code in force
+before the change, which `set_decision` reads from `decided_code(line)`:
+- the code the clerk accepted earlier, when they had already accepted one;
+- otherwise, on a line the override decided, the chosen candidate, not the model's top candidate;
+- otherwise the model's top candidate.
+
+A line without an override is recorded as before feature 008, except when the clerk changes a code they had already
+accepted: `previous` is now that earlier code, where it used to be the model's top candidate.
 
 ## 4. Evals
 

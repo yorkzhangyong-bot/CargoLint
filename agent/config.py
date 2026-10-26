@@ -42,6 +42,9 @@ CN8_VOTE_SHARE = 0.5               # the majority's share the model's CN-8 needs
 HS6_VOTE_K = 5                     # the nearest eligible rulings that vote
 HS6_VOTE_SHARE = 0.5               # the majority's share the model's top HS-6 needs; exactly the share passes
 HS6_VOTE_MIN_SIMILARITY = 0.40     # below every nearest eligible ruling in the HS-6 eval set (lowest 0.436)
+OVERRIDE_MIN = 5                   # feature 008: the rulings at the model's candidate 2 or 3 that override its top HS-6;
+                                   # 1 ≤ OVERRIDE_MIN ≤ HS6_VOTE_K. 5 of 5 since the evals (T027): at 4, 3 more wrong
+                                   # auto-accepts on the HS-6 eval
 
 # Agent and model behaviour (FR-044, FR-049)
 MAX_SCHEMA_RETRIES = 2
@@ -77,6 +80,8 @@ class Settings:
     ocr_min_score: float
     reasoning_off: bool = True   # feature 006: send OpenRouter's reasoning {"enabled": false}; a model without the
                                  # parameter needs False (CARGOLINT_REASONING other than "off"), as OpenRouter refuses it
+    hs6_override: bool = True    # feature 008: the precedent override at the HS-6, on since the evals (T027);
+                                 # CARGOLINT_HS6_OVERRIDE "off" or "false" turns it off
 
     @property
     def has_key(self) -> bool:
@@ -98,6 +103,7 @@ def load_settings(env: dict | None = None) -> Settings:
         workers=int(e.get("CARGOLINT_WORKERS") or 6),
         ocr_min_score=float(e.get("CARGOLINT_OCR_MIN_SCORE") or 0.6),
         reasoning_off=(e.get("CARGOLINT_REASONING") or "off") == "off",
+        hs6_override=(e.get("CARGOLINT_HS6_OVERRIDE") or "on").strip().lower() not in ("off", "false"),
     )
 
 

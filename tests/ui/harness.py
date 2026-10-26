@@ -17,7 +17,7 @@ from typing import Any
 
 from langchain_core.messages import AIMessage
 
-from agent.schemas import (Candidate, Classification, Cn8Choice, CreatedBy, Decision, DecisionRoute, LineStatus,
+from agent.schemas import (Candidate, Classification, Cn8Choice, CreatedBy, Decision, DecisionRoute, Hs6Vote, LineStatus,
                            LineVersion, ParsedLine, Precedent, TaricOutcome, TaricRule, WrittenBy)
 from agent.store import LineStore
 from tests.fakes import FakeRawClient, ScriptedChatModel, ai_tool_call
@@ -120,9 +120,9 @@ def make_kb(taric: str | None = "small") -> Any:
 
 
 # --------------------------------------------------------------------------- stores in every line state
-def _store(origin: str = "CN") -> LineStore:
+def _store(origin: str = "CN", hs6_override_min: int | None = None) -> LineStore:
     store = LineStore(backend={}, index=small_index())
-    store.new_shipment(reference="INV-TEST", threshold=85)
+    store.new_shipment(reference="INV-TEST", threshold=85, hs6_override_min=hs6_override_min)
     if origin != "CN":
         store.set_taric_origin(origin)
     return store
@@ -148,12 +148,12 @@ def fake_client_caller() -> Any:
 
 
 def _classify(store: LineStore, n: int, cands: list[tuple[str, int]], no_valid: bool = False,
-              rationale: str = "matches the subheading") -> None:
+              rationale: str = "matches the subheading", hs6_vote: Hs6Vote | None = None) -> None:
     index = store.index
     candidates = [Candidate(code=code, subheading_text=index.subheading_text(code), confidence=conf,
                             rationale=f"{rationale} {code}", history_only=(i == 2)) for i, (code, conf) in enumerate(cands)]
     store.update_classification(n, Classification(line_no=n, candidates=candidates, no_valid_candidate=no_valid,
-                                                  status=LineStatus.checked))
+                                                  status=LineStatus.checked, hs6_vote=hs6_vote))
     by_code = {}
     if cands:
         by_code[cands[0][0]] = [Precedent(reference=f"DE-{cands[0][0].replace('.', '')}-01", member_state="DE",
@@ -280,6 +280,17 @@ def build_state(store: LineStore, kb: Any, state: str) -> int:
         if state == "accepted":
             store.confirm_cn8(n, "96170000")
         return n
+    if state in ("hs6_override", "hs6_override_cn8"):   # feature 008: 4 of 5 nearest rulings at candidate 2; needs a
+        n = _clear(store, kb, "LED desk lamp, USB powered", "LED台灯 USB供电")   # store with the switch on
+        vote = Hs6Vote(majority="9405.21", majority_share=0.8, candidate=2,
+                       competing=[("9405.21", ["IE", "DE", "DE", "FR"]), ("8543.70", ["NL"])])
+        _classify(store, n, [("8543.70", 90), ("9405.21", 60), ("9403.60", 20)], hs6_vote=vote)
+        if state == "hs6_override_cn8":   # the CN-8 left to confirm: "Pick: CN-8"
+            _cn8(store, n, "9405.21", "94052140", conf=70, written=False)
+            return n
+        _cn8(store, n, "9405.21", "94052140", conf=95)
+        _taric(store, kb, n)
+        return n
     if state in ("edited_ever_flagged", "edited_never_flagged"):   # T026: a clerk version, re-checked inline
         n = build_state(store, kb, "ics2_term" if state == "edited_ever_flagged" else "cn8_question")
         text = "Brake pads for bicycles, steel" if state == "edited_ever_flagged" else "Plastic toy cars without a motor"
@@ -295,10 +306,12 @@ CN_STATES = ("pending", "failed", "ics2_term", "firm_stop_word", "vague_close", 
              "ready_not_loaded", "accepted", "accepted_taric")
 
 
-def store_with(*states: str, origin: str = "CN", kb: Any = None) -> tuple[LineStore, dict[str, int]]:
-    """A store with one line per state, and the line number of each state."""
+def store_with(*states: str, origin: str = "CN", kb: Any = None,
+               hs6_override_min: int | None = None) -> tuple[LineStore, dict[str, int]]:
+    """A store with one line per state, and the line number of each state; `hs6_override_min` is the precedent override
+    switch of feature 008 (the state "hs6_override" needs it on)."""
     kb = kb or make_kb()
-    store = _store(origin)
+    store = _store(origin, hs6_override_min)
     with ModelGuard():
         numbers = {s: build_state(store, kb, s) for s in states}
     return store, numbers

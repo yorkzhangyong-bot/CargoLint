@@ -492,6 +492,100 @@ def test_explain_a_who_decided_the_hs6(kb, code, how):
     assert view.explain_a(store, store.get_line(n), "a_change")[0].startswith(f"Decided: HS-6 {view.spaced(code)}, {how}")
 
 
+# --------------------------------------------------------------------------- feature 008: the precedent override
+LAMP = [("8543.70", 90), ("9405.21", 60), ("9403.60", 20)]       # the rulings sit at candidate 2
+FOUR_AT_2 = [("9405.21", "IE"), ("9405.21", "DE"), ("9405.21", "DE"), ("9405.21", "FR"), ("8543.70", "NL")]
+
+
+def _voted_lamp(kb, nearest, override_min=4, ever_flagged=False):
+    """A desk lamp whose candidates are LAMP, with the vote of its `nearest` rulings, in a shipment with the override
+    switch at `override_min`; `ever_flagged`: a firm stop word first, then the shipper's reply."""
+    from agent.routing import hs6_ruling_vote
+    from agent.schemas import Candidate, Classification, CreatedBy, Flag, FlagKind, LineStatus, LineVersion
+
+    store = h._store(hs6_override_min=override_min)
+    cands = [Candidate(code=c, subheading_text=store.index.subheading_text(c), confidence=conf, rationale=f"matches {c}")
+             for c, conf in LAMP]
+    vote = hs6_ruling_vote(nearest, [c for c, _ in LAMP])
+    if ever_flagged:
+        n = h._clear(store, kb, "Gift")
+        store.add_version(n, LineVersion(created_by=CreatedBy.shipper_reply, text_en="LED desk lamp, USB powered",
+                                         flag=Flag(kind=FlagKind.ok), status=LineStatus.checked, candidates=cands,
+                                         hs6_vote=vote))
+    else:
+        n = h._clear(store, kb, "LED desk lamp, USB powered")
+        store.update_classification(n, Classification(line_no=n, candidates=cands, status=LineStatus.checked,
+                                                      hs6_vote=vote))
+    return store, store.get_line(n)
+
+
+OVERRIDDEN = ("Decided: HS-6 9405 21, candidate 2 chosen, rulings overrode the model: 4 of 5 agree on 9405 21 (IE, DE, "
+              "DE, FR); the model's top candidate was 8543 70")
+
+
+def test_feature_008_an_overridden_line_says_which_candidate_was_chosen(kb):
+    store, line = _voted_lamp(kb, FOUR_AT_2)
+    assert view.explain_a(store, line, "a_change")[0] == OVERRIDDEN
+    assert view.code_display(store, line).text == "9405 21 __ __"
+    store.confirm_cn8(line.line_no, "94052140")
+    assert view.explain_a(store, line, "a_change")[0].split(" · ")[0] == OVERRIDDEN + ", accepted by you"
+
+
+def test_feature_008_a_cn8_row_says_the_rulings_overrode_the_model(kb):
+    from agent.schemas import Decision, DecisionRoute
+
+    store, line = _voted_lamp(kb, FOUR_AT_2)
+    h._cn8(store, line.line_no, "9405.21", "94052140", conf=70, written=False)    # the CN-8 left to confirm
+    assert view.line_status(store, line).text == "Pick: CN-8, 3 lines"
+    assert view.explain_a(store, line, "a_cn8")[0] == (
+        "The HS-6 is 9405 21; rulings overrode the model: 4 of 5 agree on 9405 21; its subheading has 3 CN-8 lines.")
+    store.set_decision(line.line_no, Decision(route=DecisionRoute.accepted, decided_code="9405.21"))   # the clerk's
+    assert view.explain_a(store, line, "a_cn8")[0] == "The HS-6 is 9405 21; its subheading has 3 CN-8 lines."
+
+
+def test_feature_008_a_line_flagged_before_offers_the_chosen_candidate(kb):
+    store, line = _voted_lamp(kb, FOUR_AT_2, ever_flagged=True)
+    assert view.line_status(store, line).text == "Confirm: 9405 21"
+    assert view.explain_a(store, line, "a_hs6")[1] == (
+        "Candidate 2, 9405 21, is chosen because the rulings overrode the model (4 of 5 agree on it: IE, DE, DE, FR), but "
+        "this line was flagged before its update, so it needs your confirmation. TARIC runs after your pick.")
+    assert view.preselect(store, line, "a_hs6", "hs6")[0] == "9405.21"
+
+
+def test_feature_008_with_the_switch_off_the_texts_are_as_before(kb):
+    store, line = _voted_lamp(kb, FOUR_AT_2, override_min=None)
+    assert view.line_status(store, line).text == "Pick: 3 candidates"
+    assert view.explain_a(store, line, "a_hs6")[1] == (
+        "Rulings disagree: model 8543 70, nearest rulings 9405 21 (IE, DE, DE, FR), 8543 70 (NL). Precedents support "
+        "candidate 2. TARIC runs after your pick.")
+    assert view.preselect(store, line, "a_hs6", "hs6")[0] == "8543.70"
+    assert view.code_display(store, line).text == "____ __ __ __"
+
+
+OUTSIDE = "Rulings disagree: model 8543 70, nearest rulings 9617 00 (IE, DE, DE, FR), 8543 70 (NL). TARIC runs after your pick."
+FOUR_OUTSIDE = [("9617.00", "IE"), ("9617.00", "DE"), ("9617.00", "DE"), ("9617.00", "FR"), ("8543.70", "NL")]
+
+
+def test_feature_008_a_hint_names_a_code_outside_the_candidates(kb):
+    store, line = _voted_lamp(kb, FOUR_OUTSIDE)
+    assert view.explain_a(store, line, "a_hs6")[1] == (
+        OUTSIDE + " Hint: 4 of 5 nearest rulings agree on 9617 00, which is not among the candidates.")
+    assert store.effective_route(line) == "review" and view.preselect(store, line, "a_hs6", "hs6")[0] == "8543.70"
+
+
+@pytest.mark.parametrize("nearest, override_min, text", [
+    (FOUR_OUTSIDE, None, OUTSIDE),                                                        # the switch off
+    ([("9617.00", "IE"), ("9617.00", "DE"), ("9617.00", "FR"), ("8543.70", "NL"), ("9405.21", "PL")], 4,
+     "Rulings disagree: model 8543 70, nearest rulings 9617 00 (IE, DE, FR), 8543 70 (NL), 9405 21 (PL). TARIC runs "
+     "after your pick."),                                                                 # 3 of 5 outside
+    ([("9405.21", "IE"), ("9405.21", "DE"), ("9405.21", "FR"), ("8543.70", "NL"), ("9403.60", "PL")], 4,
+     "Rulings disagree: model 8543 70, nearest rulings 9405 21 (IE, DE, FR), 8543 70 (NL), 9403 60 (PL). Precedents "
+     "support candidate 2. TARIC runs after your pick.")])                               # 3 of 5 at candidate 2
+def test_feature_008_no_hint(kb, nearest, override_min, text):
+    store, line = _voted_lamp(kb, nearest, override_min=override_min)
+    assert view.explain_a(store, line, "a_hs6")[1] == text
+
+
 # --------------------------------------------------------------------------- §6 kind (b) rows (US2, T017)
 def taric_view_of(store, kb, n):
     from agent.agent import line_taric_view

@@ -47,7 +47,7 @@ Derived helpers (pure functions in the line store): `current`, `effective_route`
 (= `decision.route` if a decision exists, else `computed_route`), `needs_action`
 (= effective route ≠ accepted), `ready_to_accept` (= `ever_flagged` and current flag is `ok`
 and the HS-6 gate passes — since constitution 1.5.0 the ruling vote, with no eligible ruling top
-confidence ≥ threshold — and no decision yet).
+confidence ≥ threshold; since 1.6.0 also the precedent override, when switched on — and no decision yet).
 
 ## 3. LineVersion
 
@@ -117,8 +117,8 @@ Precedence: firm stop-word match → `stop_word`; else a match in either ICS2 li
 | `at` | datetime | |
 
 Invariants: `route=accepted` is rejected while the current flag is not `ok` (FR-022/023). For an
-auto-accepted line without a decision, the decided code is the top candidate with
-`chosen_how=auto` (FR-020).
+auto-accepted line without a decision, the decided code is the top candidate, or the candidate the precedent
+override chose, with `chosen_how=auto` (FR-020).
 
 **Precedent** (one BTI ruling; FR-015)
 
@@ -240,6 +240,11 @@ nearest eligible EBTI rulings at or above the similarity floor (0.40), each coun
 candidate passes when it is their majority with a share of at least 0.5. With no eligible ruling it
 passes when its confidence is ≥ threshold, as before. When it does not pass, the route reason names
 the rulings and their issuing countries, and the candidate they support when it is the 2nd or 3rd.
+Since constitution 1.6.0 (feature 008), with the precedent override switched on (`CARGOLINT_HS6_OVERRIDE`), the gate
+also passes for the second or third candidate on which at least OVERRIDE_MIN (4) of the five nearest eligible rulings
+agree: that candidate becomes the decided code, with the reason "rulings overrode the model: N of M agree on <code>".
+With the switch on, at least OVERRIDE_MIN rulings at a code outside the top three leave the line in review, with that
+code shown as a hint, never chosen.
 
 **Line version**: `v1` (file/paste/sample) → `v2…` (one per applied reply). A reply to an
 accepted line creates a new version and clears the decision (back to review). Versions are never

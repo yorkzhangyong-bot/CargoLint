@@ -22,6 +22,7 @@ from agent.routing import (
     cn8_written_by_rule,
     effective_route_of,
     hs6_auto_decided,
+    hs6_choice,
     hs6_gate,
     route_line,
     validate_cn8,
@@ -42,11 +43,13 @@ from agent.schemas import (
     DecisionRoute,
     DescriptionCheck,
     FlagKind,
+    Hs6Gate,
     Line,
     LineStatus,
     LineVersion,
     ParsedLine,
     Precedent,
+    Route,
     ShipperRef,
     Shipment,
     Source,
@@ -149,11 +152,12 @@ class LineStore:
         origin: str | None = None,
         destination: str | None = None,
         mode: str | None = None,
+        hs6_override_min: int | None = None,
     ) -> Shipment:
         s = Shipment(
             id=uuid4().hex[:12], reference=reference, shipper=shipper or ShipperRef(), threshold=threshold,
             ask_floor=ask_floor, hybrid_search=hybrid, source=source, origin=origin, destination=destination,
-            mode=mode, created_at=self._clock(),
+            mode=mode, created_at=self._clock(), hs6_override_min=hs6_override_min,
         )
         self._b["shipment"] = s
         self._b["files"] = {}
@@ -293,6 +297,7 @@ class LineStore:
         line = self.get_line(line_no)
         v = line.current
         previous = self.effective_route(line)
+        previous_code = self.decided_code(line)[0] or v.top_code   # feature 008: the code in force, an override's too
         if decision.route == DecisionRoute.accepted:
             if v.flag is None or not can_accept(v.flag.kind):
                 raise LockedError(f"line {line_no} is flagged ({v.flag.kind.value if v.flag else 'unchecked'}); "
@@ -322,7 +327,7 @@ class LineStore:
                                    actor=Actor.clerk))
         if decision.route == DecisionRoute.accepted:
             self.record(DecisionRecord(at=self._clock(), line_no=line_no, version_no=v.version_no,
-                                       change=ChangeKind.code_decided, previous=v.top_code, new=decision.decided_code,
+                                       change=ChangeKind.code_decided, previous=previous_code, new=decision.decided_code,
                                        actor=Actor.clerk, note=decision.chosen_how.value if decision.chosen_how else None))
             self._reevaluate_cn8(line, self.shipment.threshold, Actor.routing_rule)   # feature 004: the HS-6 is decided
             self._reapply_taric(line, Actor.routing_rule)                             # again; re-read its CN-8 and TARIC-10
@@ -396,9 +401,12 @@ class LineStore:
         c = v.cn8
         route, reason = route_line(kind, v.top_confidence, v.status, needs_click, s.threshold, s.ask_floor,
                                    cn8_question=c.deciding_attribute if c is not None and c.question else None,
-                                   cn8_error=c.error if c is not None and c.error else None, hs6_vote=v.hs6_vote)
+                                   cn8_error=c.error if c is not None and c.error else None, hs6_vote=v.hs6_vote,
+                                   hs6_override_min=s.hs6_override_min)
         gated = v.status == LineStatus.checked and kind == FlagKind.ok and (v.top_confidence or 0) > 0
-        v.hs6_gate = hs6_gate(v.top_confidence, s.threshold, v.hs6_vote)[1] if gated else None   # feature 006
+        gate_before = v.hs6_gate
+        v.hs6_gate = (hs6_gate(v.top_confidence, s.threshold, v.hs6_vote, s.hs6_override_min)[1]   # features 006, 008
+                      if gated else None)
         if v.unreadable and v.status == LineStatus.checked and not v.candidates:
             reason = "unreadable description — needs a human look"
         changed = route != v.computed_route or reason != v.route_reason
@@ -408,6 +416,11 @@ class LineStore:
         if changed:
             self.record(DecisionRecord(at=self._clock(), line_no=line.line_no, version_no=v.version_no, change=change,
                                        previous=previous, new=route.value, actor=actor, note=reason))
+            if route == Route.auto_accept and v.hs6_gate == Hs6Gate.vote_override and gate_before != Hs6Gate.vote_override:
+                rank, code = hs6_choice(v.candidates, v.hs6_vote, v.hs6_gate)   # feature 008: the override decided the HS-6
+                self.record(DecisionRecord(at=self._clock(), line_no=line.line_no, version_no=v.version_no,
+                                           change=ChangeKind.code_decided, previous=v.top_code, new=code,
+                                           actor=Actor.routing_rule, note=f"{reason}; candidate {rank} chosen"))
         self._reevaluate_cn8(line, s.threshold, actor)   # feature 004: an HS-6 decided again re-reads its CN-8 and TARIC-10
         self._reapply_taric(line, actor)
 
@@ -423,22 +436,23 @@ class LineStore:
         return (
             line.ever_flagged and v.decision is None and v.status == LineStatus.checked and v.flag is not None
             and v.flag.kind.value == "ok" and (v.top_confidence or 0) > 0
-            and hs6_gate(v.top_confidence, self.shipment.threshold, v.hs6_vote)[0]   # feature 006: the vote, or the threshold
+            and hs6_gate(v.top_confidence, self.shipment.threshold, v.hs6_vote,   # feature 006: the vote, or the threshold;
+                         self.shipment.hs6_override_min)[0]                   # feature 008: or the precedent override
         )
 
     def decided_code(self, line: Line) -> tuple[str | None, str | None]:
         v = line.current
         if v.decision is not None and v.decision.route == DecisionRoute.accepted:
             return v.decision.decided_code, (v.decision.chosen_how.value if v.decision.chosen_how else None)
-        if v.decision is None and v.candidates and self._hs6_auto_decided(line):
-            return v.candidates[0].code, ChosenHow.auto.value
+        if v.decision is None and v.candidates and self._hs6_auto_decided(line):   # feature 008: the override's candidate
+            return hs6_choice(v.candidates, v.hs6_vote, v.hs6_gate)[1], ChosenHow.auto.value
         return None, None
 
     def _hs6_auto_decided(self, line: Line) -> bool:
         s, v = self.shipment, line.current
         needs_click = line.ever_flagged or v.created_by == CreatedBy.shipper_reply
         return hs6_auto_decided(v.flag.kind if v.flag is not None else None, v.top_confidence, v.status, needs_click,
-                                s.threshold, s.ask_floor, hs6_vote=v.hs6_vote)
+                                s.threshold, s.ask_floor, hs6_vote=v.hs6_vote, hs6_override_min=s.hs6_override_min)
 
     # ------------------------------------------------------------------ feature 004: the CN-8 choice
     def set_cn8_result(self, line_no: int, choice: Cn8Choice) -> None:

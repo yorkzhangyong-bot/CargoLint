@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from agent.config import MAX_DESC_CHARS
-from agent.routing import cn8_precedent_conflict, hs6_gate
+from agent.routing import cn8_precedent_conflict, hs6_choice, hs6_gate
 from agent.schemas import ChosenHow, Cn8Gate, DecisionRoute, FlagKind, Hs6Gate, TaricRule, WrittenBy
 from agent.schemas import LineStatus as CheckStatus
 from tools.parsers import split_mixed
@@ -136,8 +136,8 @@ def _taric_pick_text(t: Any) -> str:
 
 def _review_text(store: Any, line: Any) -> str:
     v = line.current
-    if store.ready_to_accept(line):
-        return f"Confirm: {spaced(v.top_code)}"
+    if store.ready_to_accept(line):   # feature 008: the candidate the precedent override chose, or the top one
+        return f"Confirm: {spaced(hs6_choice(v.candidates, v.hs6_vote, v.hs6_gate)[1])}"
     n = len(v.candidates[:3])
     return "Pick: no candidate" if n == 0 else f"Pick: {_plural(n, 'candidate')}"
 
@@ -352,7 +352,7 @@ def preselect(store: Any, line: Any, kind: str, form: str) -> tuple[str | None, 
         if kind == "a_change":
             hs6 = store.decided_code(line)[0]
             return (hs6, "") if hs6 in codes else (OTHER, hs6 or "")
-        return (codes[0] if codes else None), ""
+        return hs6_choice(v.candidates, v.hs6_vote, v.hs6_gate)[1], ""   # feature 008: the override's candidate, or the top
     if kind == "a_change":
         return (store.decided_cn8(line) if form == "cn8" else store.decided_taric10(line)), ""
     if form == "cn8":
@@ -374,6 +374,11 @@ def _hs6_how(line: Any) -> str:
     if v.hs6_gate == Hs6Gate.vote_agrees:   # feature 006: the nearest rulings decided, not the estimate
         n, m = _hs6_votes(v.hs6_vote, v.hs6_vote.majority)
         auto = f"auto-accepted, {n} of {m} nearest rulings agree"
+    elif v.hs6_gate == Hs6Gate.vote_override:   # feature 008: the nearest rulings chose the model's candidate 2 or 3
+        rank, code = hs6_choice(v.candidates, v.hs6_vote, v.hs6_gate)
+        n, m = _hs6_votes(v.hs6_vote, code)
+        auto = (f"candidate {rank} chosen, rulings overrode the model: {n} of {m} agree on {spaced(code)} "
+                f"({_hs6_countries(v.hs6_vote, code)}); the model's top candidate was {spaced(v.top_code)}")
     else:
         auto = f"auto-accepted at {conf} %"
     if d is None:
@@ -391,6 +396,11 @@ def _hs6_votes(vote: Any, code: str | None) -> tuple[int, int]:
 def _hs6_rulings(vote: Any) -> str:
     """Feature 006: the HS-6 codes the nearest rulings sit at, with the issuing country of every ruling."""
     return ", ".join(f"{spaced(c)} ({', '.join(k or '?' for k in countries)})" for c, countries in vote.competing)
+
+
+def _hs6_countries(vote: Any, code: str | None) -> str:
+    """Feature 008: the issuing country of every nearest ruling at the HS-6, joined as _hs6_rulings joins them."""
+    return ", ".join(k or "?" for c, countries in vote.competing if c == code for k in countries)
 
 
 def _votes(c: Any, cn8: str | None) -> tuple[int, int]:
@@ -434,14 +444,25 @@ def explain_a(store: Any, line: Any, kind: str) -> tuple[str, str]:
             return "", "No valid candidate was found. Type the HS-6 code, or ask the shipper what the goods are."
         top = v.candidates[0]
         first = cut(top.rationale, 200)
-        passed, gate = hs6_gate(top.confidence, threshold, v.hs6_vote)
+        passed, gate = hs6_gate(top.confidence, threshold, v.hs6_vote, store.shipment.hs6_override_min)
         if passed:   # the vote or the threshold accepts it, review only because the line was updated (FR-022)
             why = "this line was flagged before its update" if line.ever_flagged else "this line was updated from the shipper's reply"
+            if gate == Hs6Gate.vote_override:   # feature 008: the rulings chose the model's candidate 2 or 3
+                rank, code = hs6_choice(v.candidates, v.hs6_vote, gate)
+                n, m = _hs6_votes(v.hs6_vote, code)
+                return first, (f"Candidate {rank}, {spaced(code)}, is chosen because the rulings overrode the model ({n} of "
+                               f"{m} agree on it: {_hs6_countries(v.hs6_vote, code)}), but {why}, so it needs your "
+                               "confirmation. TARIC runs after your pick.")
             return first, f"Top candidate leads ({top.confidence} %), but {why}, so it needs your confirmation. TARIC runs after your pick."
         after = "TARIC runs after your pick."
         if gate == Hs6Gate.vote_disagrees:   # feature 006: the nearest rulings decide, not the estimate
             support = f" Precedents support candidate {v.hs6_vote.candidate}." if v.hs6_vote.candidate else ""
-            return first, f"Rulings disagree: model {spaced(top.code)}, nearest rulings {_hs6_rulings(v.hs6_vote)}.{support} {after}"
+            text = f"Rulings disagree: model {spaced(top.code)}, nearest rulings {_hs6_rulings(v.hs6_vote)}.{support} {after}"
+            override_min = store.shipment.hs6_override_min   # feature 008: a code outside the candidates is a hint only
+            n, m = _hs6_votes(v.hs6_vote, v.hs6_vote.majority)
+            if override_min is not None and not v.hs6_vote.candidate and n >= override_min:
+                text += f" Hint: {n} of {m} nearest rulings agree on {spaced(v.hs6_vote.majority)}, which is not among the candidates."
+            return first, text
         if gate == Hs6Gate.vote_tie:
             return first, f"Rulings split: model {spaced(top.code)}, nearest rulings {_hs6_rulings(v.hs6_vote)}. {after}"
         if gate == Hs6Gate.vote_share_low:
@@ -450,9 +471,14 @@ def explain_a(store: Any, line: Any, kind: str) -> tuple[str, str]:
                            f"{_hs6_rulings(v.hs6_vote)}. {after}")
         return first, (f"Top candidate leads ({top.confidence} %) but is under the {threshold} % auto-accept threshold, so "
                        "you decide. TARIC runs after your pick.")
-    hs6 = store.decided_code(line)[0]
+    hs6, how = store.decided_code(line)
     c = v.cn8
-    first = f"The HS-6 is {spaced(hs6)}; its subheading has {_plural(_cn8_line_count(store, line, hs6), 'CN-8 line')}."
+    overrode = ""
+    if how == ChosenHow.auto.value and v.hs6_gate == Hs6Gate.vote_override:   # feature 008 (FR-008): on the CN-8 rows too
+        agree, voted = _hs6_votes(v.hs6_vote, hs6)
+        overrode = f" rulings overrode the model: {agree} of {voted} agree on {spaced(hs6)};"
+    first = (f"The HS-6 is {spaced(hs6)};{overrode} its subheading has "
+             f"{_plural(_cn8_line_count(store, line, hs6), 'CN-8 line')}.")
     step = next_step(store, line)
     if c is not None and c.error and c.hs6 == hs6:
         return first, f"The CN-8 step failed: {c.error}. Pick the CN-8."

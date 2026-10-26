@@ -27,10 +27,10 @@ only when the author asks. Every file keeps its line endings; all files named he
 
 **Purpose**: the governance step and the pinned eval input that later phases need
 
-- [ ] T001 The author runs `/speckit-constitution` with the 1.6.0 draft in specs/008-hs6-precedent-override/plan.md
+- [X] T001 The author runs `/speckit-constitution` with the 1.6.0 draft in specs/008-hs6-precedent-override/plan.md
   ("Draft for task A1"), amending Principle I in .specify/memory/constitution.md. No routing code (T006 onwards) is
   written before this lands: constitution 1.5.0 does not allow the override.
-- [ ] T002 [P] Pin CN-8 iteration 12 for the HS-6 eval: copy tests/eval/cn8_eval.json byte for byte to
+- [X] T002 [P] Pin CN-8 iteration 12 for the HS-6 eval: copy tests/eval/cn8_eval.json byte for byte to
   tests/eval/cn8_eval_iteration12.json. That file is the CN-8 eval's iteration 12, Gemini 2.5 Flash, 3 runs, committed
   in `ce3bf02`. Check that `summary.iteration` is 12 and that `runs` has 3 entries.
 
@@ -42,7 +42,7 @@ only when the author asks. Every file keeps its line endings; all files named he
 
 **CRITICAL**: no user story work starts until T006 is done.
 
-- [ ] T003 [P] Write the routing tests first, in a new file tests/unit/test_hs6_override.py, following the `vote(...)`
+- [X] T003 [P] Write the routing tests first, in a new file tests/unit/test_hs6_override.py, following the `vote(...)`
   helper pattern of tests/unit/test_hs6_gate.py:
   - **`hs6_gate(confidence, threshold, vote, override_min)`**: every row of
     specs/008-hs6-precedent-override/contracts/override.md §1. 5 of 5 and 4 of 5 at candidate 2 or 3 give
@@ -63,14 +63,14 @@ only when the author asks. Every file keeps its line endings; all files named he
   - **Fewer than three candidates** (the spec's edge case). With only two candidates, 4 of 5 rulings at the second
     give `vote_override`, and `hs6_choice` returns rank 2. 4 of 5 at a code the model did not return count as outside
     its candidates: `vote_disagrees`, no override.
-- [ ] T004 [P] Add the switch in agent/config.py:
+- [X] T004 [P] Add the switch in agent/config.py:
   - `OVERRIDE_MIN = 4` next to `HS6_VOTE_K`, with a comment: "feature 008: the rulings at the model's candidate 2 or 3
     that override its top HS-6; 1 ≤ OVERRIDE_MIN ≤ HS6_VOTE_K".
   - `Settings.hs6_override: bool = False`, read where the other `CARGOLINT_*` variables are read:
     `hs6_override=(e.get("CARGOLINT_HS6_OVERRIDE") or "off") == "on"`.
   - In tests/unit/test_chat_model.py, test the default off and "on", calling `get_settings.cache_clear()` around the
     monkeypatched environment.
-- [ ] T005 [P] Extend agent/schemas.py:
+- [X] T005 [P] Extend agent/schemas.py:
   - `Hs6Gate.vote_override = "vote_override"`, with the comment "the majority is the model's candidate 2 or 3 with at
     least the shipment's hs6_override_min rulings; that candidate is decided".
   - `Shipment.hs6_override_min: int | None = Field(default=None, ge=1)`, to the data-model §2 rule: "None: the switch
@@ -80,7 +80,7 @@ only when the author asks. Every file keeps its line endings; all files named he
     (data-model §9).
   - Tests in tests/unit/test_hs6_override.py: None and 4 are accepted; 0 and `HS6_VOTE_K + 1` are rejected with a
     pydantic `ValidationError`.
-- [ ] T006 Implement the rule in agent/routing.py, exactly as contracts/override.md §1 states, until T003 passes:
+- [X] T006 Implement the rule in agent/routing.py, exactly as contracts/override.md §1 states, until T003 passes:
   - `hs6_gate(..., override_min=None)`, with N from `vote.competing`;
   - `route_line(..., hs6_override_min=None)`, with both reason texts;
   - `hs6_auto_decided(..., hs6_override_min=None)`;
@@ -102,7 +102,7 @@ auto-accepted with that candidate as its decided HS-6, and the CN-8 step runs on
 candidate 2, a flagged line and an ever-flagged line, and check the routes, the decided codes and the CN-8 step's HS-6.
 Repeat with the switch off.
 
-- [ ] T007 [P] [US1] Write the store tests first in tests/unit/test_hs6_override.py (class `TestStore`), reusing
+- [X] T007 [P] [US1] Write the store tests first in tests/unit/test_hs6_override.py (class `TestStore`), reusing
   `voted_line`-style setup from tests/unit/test_hs6_gate.py:
   - **Switch on**: `LineStore.new_shipment(hs6_override_min=4)` routes an unflagged line with 4 of 5 rulings at
     candidate 2 to `auto_accept`. Its `route_reason` is "rulings overrode the model: 4 of 5 agree on <code>", and
@@ -121,7 +121,7 @@ Repeat with the switch off.
     is still `auto_accept`, with the same decided code.
   - **Fewer than three candidates**: a line with only two candidates and 4 of 5 rulings at the second is decided with
     the second.
-- [ ] T008 [US1] Implement the store part in agent/store.py until T007 passes:
+- [X] T008 [US1] Implement the store part in agent/store.py until T007 passes:
   - `new_shipment(..., hs6_override_min: int | None = None)` stores the value on the Shipment.
   - `_recompute`, `_hs6_auto_decided` and `ready_to_accept` pass `self.shipment.hs6_override_min` to `route_line`,
     `hs6_auto_decided` and `hs6_gate`.
@@ -130,7 +130,7 @@ Repeat with the switch off.
     a clerk's decision still wins.
 
   Depends on T006.
-- [ ] T009 [US1] Set the switch when a shipment opens, in ui/upload.py `open_shipment`: pass
+- [X] T009 [US1] Set the switch when a shipment opens, in ui/upload.py `open_shipment`: pass
   `hs6_override_min=OVERRIDE_MIN if get_settings().hs6_override else None` to `store.new_shipment`. Test it in
   tests/ui/test_main_page.py through the harness: with `CARGOLINT_HS6_OVERRIDE=on` (monkeypatched, with
   `get_settings.cache_clear()`), a newly opened shipment has `hs6_override_min` 4, and by default None. Depends on T008.
@@ -146,7 +146,7 @@ Repeat with the switch off.
 **Independent Test**: on an overridden line, read the "Decided:" line, the ready-to-accept texts of an ever-flagged
 one, and the audit entries; compare them with an ordinary auto-accepted line.
 
-- [ ] T010 [P] [US2] Write the audit tests first in tests/unit/test_hs6_override.py (class `TestAudit`). When the
+- [X] T010 [P] [US2] Write the audit tests first in tests/unit/test_hs6_override.py (class `TestAudit`). When the
   override decides a line, `store.shipment.audit` holds two entries:
   - a `route_computed` entry whose note is the route reason;
   - a `code_decided` entry with `actor` routing_rule, `previous` = the top candidate, `new` = the chosen code, and the
@@ -158,7 +158,7 @@ one, and the audit entries; compare them with an ordinary auto-accepted line.
   decided_code=<the model's top candidate>))`. Then `decided_code` returns the clerk's code with `chosen_how` top. The
   clerk's new `code_decided` entry (actor clerk) has `previous` = candidate 2's code, the code in force before the
   change, not the model's top candidate, and `new` = the clerk's code (contracts §3).
-- [ ] T011 [P] [US2] Write the view tests first in tests/unit/test_view.py, with the texts exactly as in
+- [X] T011 [P] [US2] Write the view tests first in tests/unit/test_view.py, with the texts exactly as in
   contracts/override.md §2:
   - **"Decided:" line**: `explain_a(store, line, "a_change")[0]` holds "candidate 2 chosen, rulings overrode the model:
     4 of 5 agree on <spaced code> (IE, DE, DE, FR); the model's top candidate was <spaced top>". The countries are those
@@ -170,14 +170,16 @@ one, and the audit entries; compare them with an ordinary auto-accepted line.
       confirmation. TARIC runs after your pick.";
     - `preselect(store, line, "a_hs6", "hs6")[0]` is the chosen code.
   - **Code column**: shows the chosen candidate.
-- [ ] T012 [US2] Write the audit entries in agent/store.py, until T010 passes:
+- [X] T012 [US2] Write the audit entries in agent/store.py, until T010 passes:
   - in `_recompute`, when the gate becomes `vote_override` and the route changed, append the `code_decided`
     `DecisionRecord` of data-model §6;
   - in `set_decision`, the clerk's `code_decided` entry takes `previous` from `self.decided_code(line)[0]` when a code
-    is decided, and from `v.top_code` otherwise (contracts §3). Every line without an override is recorded as today.
+    is decided, and from `v.top_code` otherwise (contracts §3): the code the clerk accepted earlier, else, on a line the
+    override decided, the chosen candidate, else the model's top candidate. A line without an override is recorded as
+    before, except when the clerk changes a code they had already accepted: `previous` is now that earlier code.
 
   Depends on T008.
-- [ ] T013 [US2] Implement the texts in ui/view.py, until T011 passes:
+- [X] T013 [US2] Implement the texts in ui/view.py, until T011 passes:
   - the `vote_override` branch of `_hs6_how`, with the agreeing rulings' issuing countries taken from
     `v.hs6_vote.competing` and joined as `_hs6_rulings` joins them;
   - `_review_text` and `preselect` (form "hs6", kind other than `a_change`) use `hs6_choice(...)` when the gate is
@@ -185,7 +187,7 @@ one, and the audit entries; compare them with an ordinary auto-accepted line.
   - the ready-to-accept branch of `explain_a` (`a_hs6`, gate passed) gets the override wording.
 
   All texts are plain strings (constitution Principle VI). Depends on T008.
-- [ ] T014 [US2] Add a page test with an overridden line:
+- [X] T014 [US2] Add a page test with an overridden line:
   - in tests/ui/harness.py, a `build_state` state "hs6_override": three candidates; an `Hs6Vote` with 4 of 5 rulings
     at candidate 2 (`candidate=2`); a store opened with `hs6_override_min=4`; and the CN-8 and TARIC helpers, so the
     line is Ready;
@@ -208,13 +210,13 @@ hint that names the code.
 **Independent Test**: a line whose rulings sit 4 of 5 outside the top three gets the hint, stays in review and keeps
 the top candidate pre-selected; 3 of 5 and the switch off show no hint.
 
-- [ ] T015 [P] [US3] Write the tests first in tests/unit/test_view.py, with the switch on and gate `vote_disagrees`:
+- [X] T015 [P] [US3] Write the tests first in tests/unit/test_view.py, with the switch on and gate `vote_disagrees`:
   - **4 of 5 at a code outside the top three**: `explain_a(store, line, "a_hs6")[1]` is today's "Rulings disagree: …"
     line followed by " Hint: 4 of 5 nearest rulings agree on <spaced code>, which is not among the candidates.". The
     route stays `review`, and `preselect` stays the top candidate.
   - **No hint**: with 3 of 5 outside, and with the switch off.
   - **Unchanged**: a majority at candidate 2 with 3 of 5 still reads "… Precedents support candidate 2. …".
-- [ ] T016 [US3] Implement the hint in ui/view.py `explain_a`, in the `a_hs6`, `vote_disagrees` branch. It reads
+- [X] T016 [US3] Implement the hint in ui/view.py `explain_a`, in the `a_hs6`, `vote_disagrees` branch. It reads
   `store.shipment.hs6_override_min` and the counts from `_hs6_votes`, until T015 passes. Depends on T013, which edits
   the same file.
 
@@ -230,7 +232,7 @@ right. Each derives the switch-off result from its one paid run.
 **Independent Test**: offline, a stored run yields both states, and on override lines only the override fields and
 what follows from them differ; the reports show on against off.
 
-- [ ] T017 [P] [US4] Write the HS-6 eval tests first in tests/unit/test_hs6_eval.py:
+- [X] T017 [P] [US4] Write the HS-6 eval tests first in tests/unit/test_hs6_eval.py:
   - **Row fields**: a row with `top3`, `vote.counts` and `vote.candidate` gets `supported = {"rank": 2, "right":
     candidate 2 == expected}` and `on = {"gate": "vote_override", "route": "auto_accept", "rank": 2, "chosen":
     candidate 2's code, "hit": …}` when 4 of 5 rulings sit at candidate 2. The row's existing fields stay the
@@ -238,7 +240,7 @@ what follows from them differ; the reports show on against off.
   - **Measures**: per state, the chosen HS-6 right, the wrong auto-accepts, the overrides that fired and how many were
     right, and the cross-layer end-to-end estimate on the chosen HS-6.
   - **Report**: `render_report` shows a "Precedent override" section with off against on.
-- [ ] T018 [US4] Implement in tests/eval/hs6_eval.py, until T017 passes:
+- [X] T018 [US4] Implement in tests/eval/hs6_eval.py, until T017 passes:
   - the row fields `vote.counts`, `supported` and `on`, computed with the routing functions at `OVERRIDE_MIN`
     (data-model §8);
   - the `on` measures, and `cross_layer` on the chosen HS-6;
@@ -247,7 +249,7 @@ what follows from them differ; the reports show on against off.
   - a docstring paragraph for feature 008.
 
   The paid run stays one run; nothing calls the model twice. Depends on T006.
-- [ ] T019 [P] [US4] Write the end-to-end eval tests first:
+- [X] T019 [P] [US4] Write the end-to-end eval tests first:
   - **Unit test**, in tests/unit/test_e2e_eval.py. The switch-off replay of an override row sets `hs6` to the top
     candidate by the clerk, `cn8` to `cn8_top1`'s code, and the route to `review`, with hit and origin recomputed. A
     row without an override is identical in both states. The measures and report show on against off, and the lines
@@ -257,7 +259,7 @@ what follows from them differ; the reports show on against off.
     unchanged. The line's top candidate is 9503.00 (95), and its candidate 2, 3926.90 (60), holds 4 of its 5 nearest
     rulings. With the switch on, `run_once` overrides it to 3926.90 and auto-accepts it. Its `cn8_top1` holds a CN-8
     answer under 9503.00, and its `off` block is review. The line's own ruling never reaches the extra CN-8 prompt.
-- [ ] T020 [US4] Implement in tests/eval/e2e_eval.py, until T019 passes:
+- [X] T020 [US4] Implement in tests/eval/e2e_eval.py, until T019 passes:
   - `run_once` opens its shipment with `hs6_override_min=OVERRIDE_MIN`.
   - After the upload's CN-8 step, for every line whose `hs6_gate` is `vote_override`, run the CN-8 step under the top
     candidate, as `cn8_step` does (`classify_cn8_lines` per line, `exclude_refs` and the set's date), without writing
@@ -268,10 +270,10 @@ what follows from them differ; the reports show on against off.
   - Add a docstring paragraph for feature 008.
 
   Depends on T008.
-- [ ] T021 [US4] Paid run, only when the author asks: `python tests/eval/hs6_eval.py --repeat 1 --tag hs6-override
+- [X] T021 [US4] Paid run, only when the author asks: `python tests/eval/hs6_eval.py --repeat 1 --tag hs6-override
   --cn8 tests/eval/cn8_eval_iteration12.json`. From tests/eval/hs6_eval.md, read SC-002 (wrong auto-accepts, on ≤ off),
   SC-003 (end-to-end estimate, on > off) and SC-006. Depends on T002 and T018.
-- [ ] T022 [US4] Paid run, only when the author asks: `python tests/eval/e2e_eval.py --repeat 1 --tag e2e-override`.
+- [X] T022 [US4] Paid run, only when the author asks: `python tests/eval/e2e_eval.py --repeat 1 --tag e2e-override`.
   From tests/eval/e2e_eval.md, read SC-001 (right end to end, on > off), SC-002, SC-004 (every override row's route
   reason holds the note) and SC-006. Depends on T020.
 
@@ -281,7 +283,7 @@ what follows from them differ; the reports show on against off.
 
 ## Phase 7: Polish and Cross-Cutting Concerns
 
-- [ ] T023 [P] Correct features 001 and 004, doc only (plan task A2 and the 1.6.0 consistency review). Add the
+- [X] T023 [P] Correct features 001 and 004, doc only (plan task A2 and the 1.6.0 consistency review). Add the
   override wording of specs/008-hs6-precedent-override/plan.md ("…or, when the precedent override (feature 008,
   switched on) decided it, the second or third candidate on which at least OVERRIDE_MIN of the five nearest eligible
   rulings agree").
@@ -306,7 +308,7 @@ what follows from them differ; the reports show on against off.
     (missing since feature 006) and `hs6_override_min` (feature 008).
 
   Depends on T001.
-- [ ] T024 [P] Update feature 005's view contract to the current texts, doc only (the author's addition), in
+- [X] T024 [P] Update feature 005's view contract to the current texts, doc only (the author's addition), in
   specs/005-decision-first-ui/contracts/view.md. Copy every text from ui/view.py as implemented, so that the contract
   equals the code.
   - **§2.2**: "Confirm: {top HS-6}" becomes "Confirm: {decided HS-6}", the chosen candidate when the precedent override
@@ -329,16 +331,16 @@ what follows from them differ; the reports show on against off.
     {rank} chosen, …", the ready-to-accept line, and the hint.
 
   Depends on T013 and T016.
-- [ ] T025 Update README.md:
+- [X] T025 Update README.md:
   - the routing summary: the precedent override, its switch `CARGOLINT_HS6_OVERRIDE` (off by default) and
     `OVERRIDE_MIN`;
   - the end-to-end paragraph: the on and off results of T021 and T022.
 
   Depends on T021 and T022.
-- [ ] T026 Run `pytest -q` (offline; the suite must pass) and the offline checks of
+- [X] T026 Run `pytest -q` (offline; the suite must pass) and the offline checks of
   specs/008-hs6-precedent-override/quickstart.md §1. Confirm that every edited file kept its line endings (count CR
   bytes with Python, as CLAUDE.md notes).
-- [ ] T027 The switch decision (FR-007), by the author. If T021 and T022 meet SC-001 to SC-003, the default is turned
+- [X] T027 The switch decision (FR-007), by the author. If T021 and T022 meet SC-001 to SC-003, the default is turned
   on (`Settings.hs6_override` default, or `CARGOLINT_HS6_OVERRIDE=on` where the app runs); otherwise it stays off. The
   README records the decision. Depends on T021 and T022.
 

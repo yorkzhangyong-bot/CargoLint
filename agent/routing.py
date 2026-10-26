@@ -49,13 +49,15 @@ def route_line(
     cn8_question: str | None = None,
     cn8_error: str | None = None,
     hs6_vote: Hs6Vote | None = None,
+    hs6_override_min: int | None = None,
 ) -> tuple[Route, str]:
     """The routing table from data-model.md §9. Returns (route, plain-language reason).
 
     Feature 004 (its data-model §6): on a checked, unflagged line, a failed CN-8 step (`cn8_error`) routes to review, like
     a failed check, and an open CN-8 question (`cn8_question`, the missing attribute) routes to ask the shipper.
     Feature 006: after those rules, the nearest rulings' vote (`hs6_vote`) decides the auto-accept through hs6_gate; only
-    without an eligible ruling does the confidence meet the threshold, as before."""
+    without an eligible ruling does the confidence meet the threshold, as before. Feature 008: with the switch on
+    (`hs6_override_min`, None when off), the precedent override is one more case of that gate."""
     if not (THRESHOLD_MIN <= int(threshold) <= THRESHOLD_MAX):
         raise ValueError(f"threshold must be between {THRESHOLD_MIN} and {THRESHOLD_MAX}, got {threshold}")
     st = _status(status)
@@ -83,7 +85,7 @@ def route_line(
     # flag ok (or no flag yet)
     if conf is None or conf <= 0:
         return Route.review, "no valid candidate — needs a human look"
-    passed, gate = hs6_gate(conf, threshold, hs6_vote)
+    passed, gate = hs6_gate(conf, threshold, hs6_vote, hs6_override_min)
     if gate == Hs6Gate.no_rulings:
         if passed:
             if ever_flagged:
@@ -112,6 +114,8 @@ def _hs6_vote_reason(gate: Hs6Gate, vote: Hs6Vote) -> str:
     at = next(((code, countries) for code, countries in vote.competing if code == vote.majority), None)
     if gate == Hs6Gate.vote_agrees:
         return f"{len(at[1])} of {voted} nearest EBTI rulings at {_votes_text([at])}"
+    if gate == Hs6Gate.vote_override:
+        return f"rulings overrode the model: {len(at[1])} of {voted} agree on {at[0]}"
     if gate == Hs6Gate.vote_disagrees:
         supported = f", the model's candidate {vote.candidate}" if vote.candidate else ""
         return (f"the nearest EBTI rulings point to {at[0]} ({len(at[1])} of {voted}: "
@@ -122,11 +126,23 @@ def _hs6_vote_reason(gate: Hs6Gate, vote: Hs6Vote) -> str:
 
 
 def hs6_auto_decided(flag_kind: FlagKind | str | None, top_confidence: int | None, status: LineStatus | str,
-                     ever_flagged: bool, threshold: int, ask_floor: int, hs6_vote: Hs6Vote | None = None) -> bool:
+                     ever_flagged: bool, threshold: int, ask_floor: int, hs6_vote: Hs6Vote | None = None,
+                     hs6_override_min: int | None = None) -> bool:
     """Feature 004: the HS-6 is decided by rule exactly where feature 001 auto-accepts, whatever the CN-8 step found;
-    feature 006: through the vote of the nearest rulings."""
+    feature 006: through the vote of the nearest rulings; feature 008: or the precedent override, when switched on."""
     return route_line(flag_kind, top_confidence, status, ever_flagged, threshold, ask_floor,
-                      hs6_vote=hs6_vote)[0] == Route.auto_accept
+                      hs6_vote=hs6_vote, hs6_override_min=hs6_override_min)[0] == Route.auto_accept
+
+
+def hs6_choice(candidates: Sequence[Candidate], vote: Hs6Vote | None,
+               gate: Hs6Gate | str | None) -> tuple[int | None, str | None]:
+    """Feature 008: the candidate an auto-decided HS-6 is, as (rank, code): the one the rulings support when the precedent
+    override decided it, otherwise the top one; (None, None) without a candidate."""
+    if not candidates:
+        return None, None
+    if gate == Hs6Gate.vote_override and vote is not None and vote.candidate:
+        return vote.candidate, candidates[vote.candidate - 1].code
+    return 1, candidates[0].code
 
 
 @dataclass(frozen=True)
@@ -184,17 +200,24 @@ def hs6_ruling_vote(nearest: Sequence[tuple[str, str]], candidates: Sequence[str
                    model_is_majority=vote.model_is_majority, agrees=vote.agrees, candidate=supported)
 
 
-def hs6_gate(confidence: int, threshold: int, vote: Hs6Vote | None = None) -> tuple[bool, Hs6Gate]:
+def hs6_gate(confidence: int, threshold: int, vote: Hs6Vote | None = None,
+             override_min: int | None = None) -> tuple[bool, Hs6Gate]:
     """Whether an HS-6 is auto-accepted, and the rule that decided it (feature 006): the ruling vote decides, as
     cn8_gate's. Only without an eligible ruling does the model estimate meet the threshold, as before (at the threshold
-    counts)."""
+    counts). Feature 008, the precedent override: with the switch on (`override_min`, None when off), a majority at the
+    model's candidate 2 or 3 of at least `override_min` rulings decides that candidate (exactly the minimum counts)."""
     if vote is None:
         return int(confidence) >= int(threshold), Hs6Gate.no_rulings
     if vote.agrees:
         return True, Hs6Gate.vote_agrees
     if vote.majority is None:
         return False, Hs6Gate.vote_tie
-    return False, (Hs6Gate.vote_share_low if vote.model_is_majority else Hs6Gate.vote_disagrees)
+    if vote.model_is_majority:
+        return False, Hs6Gate.vote_share_low
+    at_majority = sum(len(countries) for code, countries in vote.competing if code == vote.majority)
+    if override_min is not None and vote.candidate and at_majority >= override_min:
+        return True, Hs6Gate.vote_override
+    return False, Hs6Gate.vote_disagrees
 
 
 def cn8_gate(confidence: int, threshold: int, single_line: bool, precedent_conflict: bool = False,

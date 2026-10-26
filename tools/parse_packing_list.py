@@ -153,7 +153,8 @@ def parse_packing_list_tool(file_ref: str) -> str:
     if not store.has_shipment() or store.lines:
         store.new_shipment(reference=store.shipment.reference if store.has_shipment() else "",
                            threshold=store.shipment.threshold if store.has_shipment() else 85,
-                           hybrid=store.shipment.hybrid_search if store.has_shipment() else True)
+                           hybrid=store.shipment.hybrid_search if store.has_shipment() else True,
+                           hs6_override_min=store.shipment.hs6_override_min if store.has_shipment() else None)
     load_into_store(store, parsed, name, len(data), shippers=getattr(ctx.kb, "shippers", None))
     payload = {"summary": summarize(parsed, name), "line_count": len(parsed.lines), "shipper": parsed.shipper_name_detected,
                "meta": parsed.meta, "warnings": parsed.warnings,

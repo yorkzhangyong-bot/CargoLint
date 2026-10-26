@@ -28,18 +28,19 @@ Expected: the whole suite passes, including the new tests:
 ## 2. The switch in the app
 
 ```bash
-streamlit run app.py                            # default: switch off, the product as today
-CARGOLINT_HS6_OVERRIDE=on streamlit run app.py  # switch on (set the variable as your shell sets one)
+streamlit run app.py                             # default since T027: switch on, OVERRIDE_MIN 5
+CARGOLINT_HS6_OVERRIDE=off streamlit run app.py  # switch off (set the variable as your shell sets one)
 ```
 
-With the switch on, a line whose five nearest rulings sit at least 4 of 5 at its second or third candidate behaves as
-follows (the page tests in `tests/ui/` seed such a line; the 12-line sample may not have one):
+With the switch on, a line whose five nearest rulings sit at least OVERRIDE_MIN of 5 at its second or third candidate
+behaves as follows (the page tests in `tests/ui/` seed such a line; the 12-line sample may not have one):
 - it is green;
 - its code is that candidate;
 - its "Decided:" line reads "candidate N chosen, rulings overrode the model: N of M agree on <code> (<countries>);
   the model's top candidate was <top>".
 
-With 4 of 5 rulings at a code outside the top three, the line stays yellow and its explanation ends with the hint.
+With at least OVERRIDE_MIN rulings at a code outside the top three, the line stays yellow and its explanation ends
+with the hint.
 
 ## 3. The HS-6 eval (live: spends credits, run only when the author asks)
 
