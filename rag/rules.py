@@ -14,6 +14,7 @@ from agent.schemas import Alias, FlagKind, RuleEntry, RuleList, RuleSource, Ship
 ASK_FOR_DEFAULT = ["material", "product_name", "use"]
 _CJK = re.compile(r"[一-鿿]")
 _LATIN_WORD = re.compile(r"[a-z0-9]")
+_LATIN_LETTER = re.compile(r"[A-Za-z]")
 
 
 @dataclass
@@ -162,7 +163,9 @@ def _terms(rules: RuleSet) -> list[_Term]:
     out += ordered([term(a.alias, FlagKind.vague, rl, a.term.lower(),
                          f"\"{a.alias}\" means \"{a.term}\", which ICS2 lists as an unacceptable goods description")
                     for a in rules.aliases if (rl := rules.ics2_list_for(a.term)) is not None])
-    return [t for t in out if t.words or _CJK.search(t.text)]   # a term of punctuation alone can name no goods
+    # an entry without a Latin letter or a Chinese character names no goods: punctuation, or numbers left by the PDF
+    # extraction ("1005", a row of symbols ending in "12")
+    return [t for t in out if _LATIN_LETTER.search(t.text) or _CJK.search(t.text)]
 
 
 def _term_count(words: list[str], text: str, rules: RuleSet) -> int:

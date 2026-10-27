@@ -137,6 +137,20 @@ class TestSeveralListedTerms:
         assert m.kind == FlagKind.vague and m.rule_source == RuleSource.ics2_unacceptable and m.matched_term == "parts"
 
 
+class TestEntriesWithoutLetters:
+    """The shipped list data/rules/ics2_unacceptable_terms.json holds two entries left over from the PDF extraction,
+    "1005" and a row of symbols ending in "12"; an entry with no Latin letter and no Chinese character is skipped, so a
+    bare number is no listed term."""
+
+    def test_a_bare_number_is_no_listed_term(self, shipped_rules):
+        forms = {t.text for t in shipped_rules.terms} | {" ".join(t.words) for t in shipped_rules.terms}
+        assert "12" not in forms and "1005" not in forms
+        assert check_rules("", "Steel rods 12 mm", shipped_rules) is None
+        assert check_rules("", "Bolts, 1005 pcs", shipped_rules) is None
+        m = check_rules("", "Parts", shipped_rules)
+        assert m is not None and m.matched_term == "parts"
+
+
 class TestPureStopWordAndAskFor:
     def test_pure_stop_word_when_nothing_else_remains(self, rules):
         m = check_rules("礼品", "Gift", rules)
