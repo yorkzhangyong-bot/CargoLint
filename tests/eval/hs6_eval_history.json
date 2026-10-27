@@ -10583,5 +10583,1508 @@
   "cost_eur_runs": [
    0.0
   ]
+ },
+ {
+  "iteration": 9,
+  "run_on": "2026-10-27",
+  "change": "1 independent run, temperature 0.0, seed none",
+  "tag": "zh-off",
+  "model": "google/gemini-2.5-flash",
+  "reasoning": {
+   "enabled": false
+  },
+  "lang": "zh",
+  "expansion": "off",
+  "threshold": 85,
+  "ask_floor": 50,
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 1,
+  "n": 30,
+  "top1_runs": [
+   17
+  ],
+  "majority_top1": 17,
+  "top3_runs": [
+   26
+  ],
+  "same_top1": 30,
+  "top1_consistency": 1.0,
+  "same_route": 30,
+  "route_consistency": 1.0,
+  "routes_runs": [
+   {
+    "auto_accept": 9,
+    "review": 21,
+    "ask_shipper": 0
+   }
+  ],
+  "wrong_auto_runs": [
+   []
+  ],
+  "always_wrong": [
+   {
+    "reference": "IEBTIIENEN004-2024-BTI284",
+    "chapter": "42",
+    "expected": "4202.12",
+    "seen": [
+     {
+      "top1": "4202.92",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI90",
+    "chapter": "61",
+    "expected": "6101.30",
+    "seen": [
+     {
+      "top1": "6103.39",
+      "confidence": 90,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI132",
+    "chapter": "61",
+    "expected": "6102.30",
+    "seen": [
+     {
+      "top1": "6110.30",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI106",
+    "chapter": "62",
+    "expected": "6212.10",
+    "seen": [
+     {
+      "top1": "6112.41",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI107",
+    "chapter": "62",
+    "expected": "6212.10",
+    "seen": [
+     {
+      "top1": "6112.41",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI228",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "9605.00",
+      "confidence": 90,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI5",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "4602.19",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI122",
+    "chapter": "64",
+    "expected": "6402.99",
+    "seen": [
+     {
+      "top1": "6404.19",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI96",
+    "chapter": "73",
+    "expected": "7326.90",
+    "seen": [
+     {
+      "top1": "8207.90",
+      "confidence": 90,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI301",
+    "chapter": "73",
+    "expected": "7325.99",
+    "seen": [
+     {
+      "top1": "8536.69",
+      "confidence": 50,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2023-BTI579",
+    "chapter": "85",
+    "expected": "8528.52",
+    "seen": [
+     {
+      "top1": "8528.59",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI71",
+    "chapter": "96",
+    "expected": "9619.00",
+    "seen": [
+     {
+      "top1": "6108.22",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI222",
+    "chapter": "96",
+    "expected": "9609.10",
+    "seen": [
+     {
+      "top1": "9609.90",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   }
+  ],
+  "unstable": [],
+  "gate_runs": [
+   {
+    "vote_agrees": 9,
+    "vote_disagrees": 12,
+    "vote_tie": 5,
+    "vote_share_low": 3,
+    "no_rulings": 0,
+    "not_gated": 1
+   }
+  ],
+  "no_rulings_review_runs": [
+   0
+  ],
+  "right_auto_runs": [
+   9
+  ],
+  "lost_runs": [
+   8
+  ],
+  "override_min": 5,
+  "on": {
+   "top1_runs": [
+    20
+   ],
+   "majority_top1": 20,
+   "routes_runs": [
+    {
+     "auto_accept": 12,
+     "review": 18,
+     "ask_shipper": 0
+    }
+   ],
+   "wrong_auto_runs": [
+    []
+   ],
+   "right_auto_runs": [
+    12
+   ],
+   "cross_layer": {
+    "majority": {
+     "hs6_right_cn8_right": 15,
+     "hs6_right_cn8_wrong": 5,
+     "hs6_wrong_cn8_right": 7,
+     "hs6_wrong_cn8_wrong": 3
+    },
+    "runs": [
+     {
+      "hs6_right_cn8_right": 15,
+      "hs6_right_cn8_wrong": 5,
+      "hs6_wrong_cn8_right": 7,
+      "hs6_wrong_cn8_wrong": 3
+     }
+    ],
+    "end_to_end_runs": [
+     15
+    ]
+   }
+  },
+  "overrides_runs": [
+   [
+    {
+     "reference": "IEBTIIENEN004-2026-BTI106",
+     "expected": "6212.10",
+     "top1": "6112.41",
+     "chosen": "6212.10",
+     "rank": 3,
+     "hit": true
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI107",
+     "expected": "6212.10",
+     "top1": "6112.41",
+     "chosen": "6212.10",
+     "rank": 2,
+     "hit": true
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI71",
+     "expected": "9619.00",
+     "top1": "6108.22",
+     "chosen": "9619.00",
+     "rank": 2,
+     "hit": true
+    }
+   ]
+  ],
+  "supported_runs": [
+   {
+    "lines": 12,
+    "right": 6
+   }
+  ],
+  "expected_sent": {
+   "wrong": 13,
+   "with_expected": 10,
+   "share": 0.7692
+  },
+  "own_ruling": {
+   "nearest_runs": [
+    22
+   ],
+   "searched_runs": [
+    27
+   ],
+   "logged_runs": [
+    28
+   ],
+   "searched": 12
+  },
+  "cn8_iteration": 11,
+  "cn8_source": "cn8_eval_iteration11.json",
+  "cross_layer": {
+   "majority": {
+    "hs6_right_cn8_right": 12,
+    "hs6_right_cn8_wrong": 5,
+    "hs6_wrong_cn8_right": 10,
+    "hs6_wrong_cn8_wrong": 3
+   },
+   "runs": [
+    {
+     "hs6_right_cn8_right": 12,
+     "hs6_right_cn8_wrong": 5,
+     "hs6_wrong_cn8_right": 10,
+     "hs6_wrong_cn8_wrong": 3
+    }
+   ],
+   "end_to_end_runs": [
+    12
+   ]
+  },
+  "parse": {
+   "retry_limit": 2,
+   "runs": [
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    }
+   ]
+  },
+  "confidence": {
+   "95": {
+    "right": 16,
+    "wrong": 9
+   },
+   "90": {
+    "right": 1,
+    "wrong": 3
+   },
+   "50": {
+    "right": 0,
+    "wrong": 1
+   }
+  },
+  "elapsed_s": 24.3,
+  "cost_usd": 0.0425,
+  "cost_eur": 0.0391,
+  "cost_eur_runs": [
+   0.0391
+  ],
+  "note": "Decision rule fixed before the results: query expansion becomes the default only if, in both languages, it is no worse on wrong auto-accepts and better on top-1 right (zh: zh-on vs zh-off; en: en-on vs hs6-override-min5)."
+ },
+ {
+  "iteration": 10,
+  "run_on": "2026-10-27",
+  "change": "1 independent run, temperature 0.0, seed none",
+  "tag": "zh-on",
+  "model": "google/gemini-2.5-flash",
+  "reasoning": {
+   "enabled": false
+  },
+  "lang": "zh",
+  "expansion": "on",
+  "threshold": 85,
+  "ask_floor": 50,
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 1,
+  "n": 30,
+  "top1_runs": [
+   17
+  ],
+  "majority_top1": 17,
+  "top3_runs": [
+   25
+  ],
+  "same_top1": 30,
+  "top1_consistency": 1.0,
+  "same_route": 30,
+  "route_consistency": 1.0,
+  "routes_runs": [
+   {
+    "auto_accept": 15,
+    "review": 15,
+    "ask_shipper": 0
+   }
+  ],
+  "wrong_auto_runs": [
+   [
+    {
+     "reference": "IEBTIIENEN004-2024-BTI122",
+     "expected": "6402.99",
+     "top1": "6404.19",
+     "confidence": 95
+    },
+    {
+     "reference": "XIBTI505070096",
+     "expected": "9403.20",
+     "top1": "9404.90",
+     "confidence": 95
+    }
+   ]
+  ],
+  "always_wrong": [
+   {
+    "reference": "IEBTIIENEN004-2024-BTI284",
+    "chapter": "42",
+    "expected": "4202.12",
+    "seen": [
+     {
+      "top1": "4202.92",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI90",
+    "chapter": "61",
+    "expected": "6101.30",
+    "seen": [
+     {
+      "top1": "6103.33",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI132",
+    "chapter": "61",
+    "expected": "6102.30",
+    "seen": [
+     {
+      "top1": "6112.12",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI106",
+    "chapter": "62",
+    "expected": "6212.10",
+    "seen": [
+     {
+      "top1": "6112.41",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI107",
+    "chapter": "62",
+    "expected": "6212.10",
+    "seen": [
+     {
+      "top1": "6112.41",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI228",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "9616.20",
+      "confidence": 90,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI122",
+    "chapter": "64",
+    "expected": "6402.99",
+    "seen": [
+     {
+      "top1": "6404.19",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI96",
+    "chapter": "73",
+    "expected": "7326.90",
+    "seen": [
+     {
+      "top1": "7228.40",
+      "confidence": 90,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI301",
+    "chapter": "73",
+    "expected": "7325.99",
+    "seen": [
+     {
+      "top1": "8538.90",
+      "confidence": 50,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2023-BTI561",
+    "chapter": "85",
+    "expected": "8537.10",
+    "seen": [
+     {
+      "top1": "8536.30",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505070096",
+    "chapter": "94",
+    "expected": "9403.20",
+    "seen": [
+     {
+      "top1": "9404.90",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI71",
+    "chapter": "96",
+    "expected": "9619.00",
+    "seen": [
+     {
+      "top1": "6108.22",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI222",
+    "chapter": "96",
+    "expected": "9609.10",
+    "seen": [
+     {
+      "top1": "9609.90",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   }
+  ],
+  "unstable": [],
+  "gate_runs": [
+   {
+    "vote_agrees": 15,
+    "vote_disagrees": 11,
+    "vote_tie": 3,
+    "vote_share_low": 0,
+    "no_rulings": 0,
+    "not_gated": 1
+   }
+  ],
+  "no_rulings_review_runs": [
+   0
+  ],
+  "right_auto_runs": [
+   13
+  ],
+  "lost_runs": [
+   4
+  ],
+  "override_min": 5,
+  "on": {
+   "top1_runs": [
+    17
+   ],
+   "majority_top1": 17,
+   "routes_runs": [
+    {
+     "auto_accept": 15,
+     "review": 15,
+     "ask_shipper": 0
+    }
+   ],
+   "wrong_auto_runs": [
+    [
+     {
+      "reference": "IEBTIIENEN004-2024-BTI122",
+      "expected": "6402.99",
+      "top1": "6404.19",
+      "confidence": 95
+     },
+     {
+      "reference": "XIBTI505070096",
+      "expected": "9403.20",
+      "top1": "9404.90",
+      "confidence": 95
+     }
+    ]
+   ],
+   "right_auto_runs": [
+    13
+   ],
+   "cross_layer": {
+    "majority": {
+     "hs6_right_cn8_right": 12,
+     "hs6_right_cn8_wrong": 5,
+     "hs6_wrong_cn8_right": 10,
+     "hs6_wrong_cn8_wrong": 3
+    },
+    "runs": [
+     {
+      "hs6_right_cn8_right": 12,
+      "hs6_right_cn8_wrong": 5,
+      "hs6_wrong_cn8_right": 10,
+      "hs6_wrong_cn8_wrong": 3
+     }
+    ],
+    "end_to_end_runs": [
+     12
+    ]
+   }
+  },
+  "overrides_runs": [
+   []
+  ],
+  "supported_runs": [
+   {
+    "lines": 10,
+    "right": 7
+   }
+  ],
+  "expected_sent": {
+   "wrong": 13,
+   "with_expected": 9,
+   "share": 0.6923
+  },
+  "own_ruling": {
+   "nearest_runs": [
+    24
+   ],
+   "searched_runs": [
+    29
+   ],
+   "logged_runs": [
+    29
+   ],
+   "searched": 12
+  },
+  "cn8_iteration": 11,
+  "cn8_source": "cn8_eval_iteration11.json",
+  "cross_layer": {
+   "majority": {
+    "hs6_right_cn8_right": 12,
+    "hs6_right_cn8_wrong": 5,
+    "hs6_wrong_cn8_right": 10,
+    "hs6_wrong_cn8_wrong": 3
+   },
+   "runs": [
+    {
+     "hs6_right_cn8_right": 12,
+     "hs6_right_cn8_wrong": 5,
+     "hs6_wrong_cn8_right": 10,
+     "hs6_wrong_cn8_wrong": 3
+    }
+   ],
+   "end_to_end_runs": [
+    12
+   ]
+  },
+  "parse": {
+   "retry_limit": 2,
+   "runs": [
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    }
+   ]
+  },
+  "confidence": {
+   "95": {
+    "right": 17,
+    "wrong": 10
+   },
+   "90": {
+    "right": 0,
+    "wrong": 2
+   },
+   "50": {
+    "right": 0,
+    "wrong": 1
+   }
+  },
+  "elapsed_s": 33.3,
+  "cost_usd": 0.0481,
+  "cost_eur": 0.0443,
+  "cost_eur_runs": [
+   0.0443
+  ],
+  "note": "Decision rule fixed before the results: query expansion becomes the default only if, in both languages, it is no worse on wrong auto-accepts and better on top-1 right (zh: zh-on vs zh-off; en: en-on vs hs6-override-min5)."
+ },
+ {
+  "iteration": 11,
+  "run_on": "2026-10-27",
+  "change": "1 independent run, temperature 0.0, seed none",
+  "tag": "en-on",
+  "model": "google/gemini-2.5-flash",
+  "reasoning": {
+   "enabled": false
+  },
+  "lang": "en",
+  "expansion": "on",
+  "threshold": 85,
+  "ask_floor": 50,
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 1,
+  "n": 120,
+  "top1_runs": [
+   81
+  ],
+  "majority_top1": 81,
+  "top3_runs": [
+   109
+  ],
+  "same_top1": 120,
+  "top1_consistency": 1.0,
+  "same_route": 120,
+  "route_consistency": 1.0,
+  "routes_runs": [
+   {
+    "auto_accept": 64,
+    "review": 56,
+    "ask_shipper": 0
+   }
+  ],
+  "wrong_auto_runs": [
+   [
+    {
+     "reference": "IEBTIIENEN004-2024-BTI315",
+     "expected": "4202.32",
+     "top1": "3926.90",
+     "confidence": 95
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI356",
+     "expected": "6405.20",
+     "top1": "6404.19",
+     "confidence": 95
+    },
+    {
+     "reference": "MTBTI2024-002",
+     "expected": "8424.89",
+     "top1": "8479.89",
+     "confidence": 95
+    }
+   ]
+  ],
+  "always_wrong": [
+   {
+    "reference": "XIBTI505068468",
+    "chapter": "39",
+    "expected": "3926.90",
+    "seen": [
+     {
+      "top1": "7322.90",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI133",
+    "chapter": "39",
+    "expected": "3926.90",
+    "seen": [
+     {
+      "top1": "4202.92",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI463",
+    "chapter": "39",
+    "expected": "3926.90",
+    "seen": [
+     {
+      "top1": "9606.30",
+      "confidence": 90,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI284",
+    "chapter": "42",
+    "expected": "4202.12",
+    "seen": [
+     {
+      "top1": "4202.92",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI449",
+    "chapter": "42",
+    "expected": "4202.92",
+    "seen": [
+     {
+      "top1": "4202.12",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI315",
+    "chapter": "42",
+    "expected": "4202.32",
+    "seen": [
+     {
+      "top1": "3926.90",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "FRBTIFR-BTI-2025-02100",
+    "chapter": "42",
+    "expected": "4203.29",
+    "seen": [
+     {
+      "top1": "6116.10",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI261",
+    "chapter": "42",
+    "expected": "4202.92",
+    "seen": [
+     {
+      "top1": "3926.90",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI132",
+    "chapter": "61",
+    "expected": "6102.30",
+    "seen": [
+     {
+      "top1": "6112.12",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI90",
+    "chapter": "61",
+    "expected": "6101.30",
+    "seen": [
+     {
+      "top1": "6103.33",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI52786/23-1",
+    "chapter": "61",
+    "expected": "6113.00",
+    "seen": [
+     {
+      "top1": "6103.33",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI106",
+    "chapter": "62",
+    "expected": "6212.10",
+    "seen": [
+     {
+      "top1": "6112.41",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI108",
+    "chapter": "62",
+    "expected": "6212.10",
+    "seen": [
+     {
+      "top1": "6112.41",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI107",
+    "chapter": "62",
+    "expected": "6212.10",
+    "seen": [
+     {
+      "top1": "6112.41",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "DEBTI7623/25-1",
+    "chapter": "62",
+    "expected": "6202.40",
+    "seen": [
+     {
+      "top1": "6204.33",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI228",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "3304.99",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "SEBTITV-2026-01096",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI5",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "4602.19",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI8",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "4602.90",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "MTBTI2025-018",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "6306.12",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505066180",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "9401.99",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "MTBTI2025-017",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "6305.90",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "CZBTI47/152108/2024-580000-04/01",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI356",
+    "chapter": "64",
+    "expected": "6405.20",
+    "seen": [
+     {
+      "top1": "6404.19",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505060394",
+    "chapter": "73",
+    "expected": "7326.90",
+    "seen": [
+     {
+      "top1": "8303.00",
+      "confidence": 59,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI279",
+    "chapter": "73",
+    "expected": "7318.15",
+    "seen": [
+     {
+      "top1": "7318.19",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI19",
+    "chapter": "84",
+    "expected": "8415.10",
+    "seen": [
+     {
+      "top1": "8415.82",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI68",
+    "chapter": "84",
+    "expected": "8479.89",
+    "seen": [
+     {
+      "top1": "8419.89",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI124",
+    "chapter": "84",
+    "expected": "8431.49",
+    "seen": [
+     {
+      "top1": "8431.20",
+      "confidence": 59,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI105",
+    "chapter": "84",
+    "expected": "8474.90",
+    "seen": [
+     {
+      "top1": "3926.90",
+      "confidence": 59,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "MTBTI2024-002",
+    "chapter": "84",
+    "expected": "8424.89",
+    "seen": [
+     {
+      "top1": "8479.89",
+      "confidence": 95,
+      "route": "auto_accept",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI60",
+    "chapter": "85",
+    "expected": "8538.90",
+    "seen": [
+     {
+      "top1": "8536.30",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI336",
+    "chapter": "85",
+    "expected": "8538.90",
+    "seen": [
+     {
+      "top1": "3925.90",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505059567",
+    "chapter": "85",
+    "expected": "8504.40",
+    "seen": [
+     {
+      "top1": "8471.80",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505068566",
+    "chapter": "85",
+    "expected": "8504.40",
+    "seen": [
+     {
+      "top1": "8504.31",
+      "confidence": 50,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2023-BTI561",
+    "chapter": "85",
+    "expected": "8537.10",
+    "seen": [
+     {
+      "top1": "8536.30",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "XIBTI505070096",
+    "chapter": "94",
+    "expected": "9403.20",
+    "seen": [
+     {
+      "top1": "9401.49",
+      "confidence": 90,
+      "route": "review",
+      "in_top3": false
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI72",
+    "chapter": "96",
+    "expected": "9619.00",
+    "seen": [
+     {
+      "top1": "6108.22",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2026-BTI71",
+    "chapter": "96",
+    "expected": "9619.00",
+    "seen": [
+     {
+      "top1": "6108.21",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   }
+  ],
+  "unstable": [],
+  "gate_runs": [
+   {
+    "vote_agrees": 64,
+    "vote_disagrees": 32,
+    "vote_tie": 14,
+    "vote_share_low": 4,
+    "no_rulings": 0,
+    "not_gated": 6
+   }
+  ],
+  "no_rulings_review_runs": [
+   0
+  ],
+  "right_auto_runs": [
+   61
+  ],
+  "lost_runs": [
+   18
+  ],
+  "override_min": 5,
+  "on": {
+   "top1_runs": [
+    83
+   ],
+   "majority_top1": 83,
+   "routes_runs": [
+    {
+     "auto_accept": 66,
+     "review": 54,
+     "ask_shipper": 0
+    }
+   ],
+   "wrong_auto_runs": [
+    [
+     {
+      "reference": "IEBTIIENEN004-2024-BTI315",
+      "expected": "4202.32",
+      "top1": "3926.90",
+      "confidence": 95
+     },
+     {
+      "reference": "IEBTIIENEN004-2024-BTI356",
+      "expected": "6405.20",
+      "top1": "6404.19",
+      "confidence": 95
+     },
+     {
+      "reference": "MTBTI2024-002",
+      "expected": "8424.89",
+      "top1": "8479.89",
+      "confidence": 95
+     }
+    ]
+   ],
+   "right_auto_runs": [
+    63
+   ],
+   "cross_layer": {
+    "majority": {
+     "hs6_right_cn8_right": 67,
+     "hs6_right_cn8_wrong": 16,
+     "hs6_wrong_cn8_right": 30,
+     "hs6_wrong_cn8_wrong": 7
+    },
+    "runs": [
+     {
+      "hs6_right_cn8_right": 67,
+      "hs6_right_cn8_wrong": 16,
+      "hs6_wrong_cn8_right": 30,
+      "hs6_wrong_cn8_wrong": 7
+     }
+    ],
+    "end_to_end_runs": [
+     67
+    ]
+   }
+  },
+  "overrides_runs": [
+   [
+    {
+     "reference": "FRBTIFR-BTI-2025-02100",
+     "expected": "4203.29",
+     "top1": "6116.10",
+     "chosen": "4203.29",
+     "rank": 2,
+     "hit": true
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI72",
+     "expected": "9619.00",
+     "top1": "6108.22",
+     "chosen": "9619.00",
+     "rank": 2,
+     "hit": true
+    }
+   ]
+  ],
+  "supported_runs": [
+   {
+    "lines": 26,
+    "right": 14
+   }
+  ],
+  "expected_sent": {
+   "wrong": 39,
+   "with_expected": 28,
+   "share": 0.7179
+  },
+  "own_ruling": {
+   "nearest_runs": [
+    110
+   ],
+   "searched_runs": [
+    120
+   ],
+   "logged_runs": [
+    120
+   ],
+   "searched": 12
+  },
+  "cn8_iteration": 11,
+  "cn8_source": "cn8_eval_iteration11.json",
+  "cross_layer": {
+   "majority": {
+    "hs6_right_cn8_right": 66,
+    "hs6_right_cn8_wrong": 15,
+    "hs6_wrong_cn8_right": 31,
+    "hs6_wrong_cn8_wrong": 8
+   },
+   "runs": [
+    {
+     "hs6_right_cn8_right": 65,
+     "hs6_right_cn8_wrong": 16,
+     "hs6_wrong_cn8_right": 32,
+     "hs6_wrong_cn8_wrong": 7
+    }
+   ],
+   "end_to_end_runs": [
+    65
+   ]
+  },
+  "parse": {
+   "retry_limit": 2,
+   "runs": [
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    }
+   ]
+  },
+  "confidence": {
+   "98": {
+    "right": 11,
+    "wrong": 0
+   },
+   "95": {
+    "right": 68,
+    "wrong": 33
+   },
+   "90": {
+    "right": 1,
+    "wrong": 3
+   },
+   "85": {
+    "right": 1,
+    "wrong": 1
+   },
+   "65": {
+    "right": 0,
+    "wrong": 1
+   },
+   "50": {
+    "right": 0,
+    "wrong": 1
+   }
+  },
+  "elapsed_s": 115.1,
+  "cost_usd": 0.2024,
+  "cost_eur": 0.1863,
+  "cost_eur_runs": [
+   0.1863
+  ],
+  "note": "Decision rule fixed before the results: query expansion becomes the default only if, in both languages, it is no worse on wrong auto-accepts and better on top-1 right (zh: zh-on vs zh-off; en: en-on vs hs6-override-min5)."
  }
 ]
