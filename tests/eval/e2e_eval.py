@@ -34,14 +34,19 @@ CN-8 is not written counts as review: the clerk still picks the CN-8 (the table'
 end when its CN-8 pick is the ruling's CN-8. Any other line went wrong at the HS-6 step (a wrong HS-6, or none: the line
 was flagged, failed or had no candidate) or at the CN-8 step (a wrong CN-8, a question to the shipper or a failure).
 
---repeat N runs every line N times, independently: a new shipment each run, translations drawn anew (query embeddings
-are cached for the life of the knowledge base). The entry in tests/eval/e2e_eval_history.json keeps per run the lines
+--repeat N runs every line N times, independently: a new shipment each run, query expansions (when on) drawn anew
+(query embeddings are cached for the life of the knowledge base). The entry in tests/eval/e2e_eval_history.json keeps per run the lines
 right end to end, the routes, the wrong auto-accepts, where the errors arose, the HS-6 layer, the cut and uncut lines
 right, the run time and the cost, and over the runs the majority (the most frequent CN-8 pick, a tie to the earliest
 run) and the lines with the same CN-8 pick and the same route in all runs. --model names another OpenRouter chat model
 for this run only, as in the HS-6 eval (tests/eval/hs6_eval.py), with its invalid-answer counts. The line-by-line
-results go to tests/eval/e2e_eval.json, the latest run, and to the run's own tests/eval/e2e_eval_<tag>.json; the
-report is tests/eval/e2e_eval.md.
+results go to tests/eval/e2e_eval.json, the latest run, and to the run's own
+tests/eval/e2e_eval_<tag>_<lang>_expansion-<on|off>.json; the report is tests/eval/e2e_eval.md.
+
+Feature 009: no line is translated; every line is searched with its raw text. `--expansion on|off` sets query
+expansion for the run, over CARGOLINT_QUERY_EXPANSION, and `--lang zh` uploads the 30 lines of
+tests/eval/hs6_eval_zh.json in Chinese, each with its English line's expected codes and leakage rule (`--lang en`,
+the default: the 120 as given). The entry keeps lang and expansion.
 
 Feature 008, the precedent override: every run is made with the switch on (the shipment's hs6_override_min is
 OVERRIDE_MIN), so a row's fields and the entry's measures are the switch on. On each line the override decided, the
@@ -78,10 +83,10 @@ from agent.schemas import (Classification, Cn8Choice, Cn8Input, Cn8Line, Created
                            Hs6Gate, LineStatus, ParsedLine, Usage)
 from agent.store import LineStore  # noqa: E402
 from rag.loader import open_knowledge_base  # noqa: E402
-from rag.translate import clear_cache as clear_translations  # noqa: E402
+from rag.translate import clear_cache as clear_expansions  # noqa: E402
 from tests.eval.cn8_eval import dump_results, majority, price_for_run, run_settings  # noqa: E402
-from tests.eval.hs6_eval import (OTHER_MODEL_RETRIES, TAG_RE, count_invalid, expected_hs6, parse_counts,  # noqa: E402
-                                 write_results)
+from tests.eval.hs6_eval import (OTHER_MODEL_RETRIES, TAG_RE, count_invalid, eval_rulings, expected_hs6,  # noqa: E402
+                                 parse_counts, results_name, write_results)
 from tools.check_description import check_descriptions  # noqa: E402
 from tools.classify_cn8 import classify_cn8_lines, needs_cn8  # noqa: E402
 from tools.classify_hs6 import classify_lines, context_for_shipment  # noqa: E402
@@ -110,10 +115,11 @@ def upload(rulings: list[dict]) -> list[ParsedLine]:
     return lines
 
 
-def hs6_step(store: LineStore, kb: Any, client: Any, refs: dict[int, str], as_of: date, workers: int) -> None:
+def hs6_step(store: LineStore, kb: Any, client: Any, refs: dict[int, str], as_of: date, workers: int,
+             expansion: bool = False) -> None:
     """agent._finalize's HS-6 step for each line neither failed nor a pure stop word, one line at a time so that its own
-    ruling stays out of its precedents and its vote, on the set's date."""
-    base = replace(context_for_shipment(store.shipment, kb), as_of=as_of)
+    ruling stays out of its precedents and its vote, on the set's date, with the run's query expansion."""
+    base = replace(context_for_shipment(store.shipment, kb), as_of=as_of, expansion=expansion)
     todo = [line.line_no for line in store.lines if line.current.status == LineStatus.pending and line.current.flag is not None]
 
     def one(line_no: int) -> Classification:
@@ -248,10 +254,11 @@ def off_block(row: dict) -> dict:
     return {k: off[k] for k in OFF_FIELDS}
 
 
-def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: int) -> tuple[list[dict], float, float]:
+def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: int,
+             expansion: bool = False) -> tuple[list[dict], float, float]:
     """One upload of the set through the pipeline, then the clerk's confirmations: one row per line, the seconds the
     upload's steps took and the seconds in all."""
-    clear_translations()   # an independent run
+    clear_expansions()   # an independent run
     store = LineStore(backend={}, index=kb.index)
     store.new_shipment(reference="e2e eval", hs6_override_min=OVERRIDE_MIN)   # the defaults ui.upload.open_shipment
                                                                               # opens with, the switch on (feature 008)
@@ -261,7 +268,7 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
     t0 = time.perf_counter()
     for check in check_descriptions(select_lines(store, list(refs)), kb.rules, client, workers):
         store.update_check(check.line_no, check)
-    hs6_step(store, kb, client, refs, as_of, workers)
+    hs6_step(store, kb, client, refs, as_of, workers, expansion)
     hs6_routes = {line.line_no: store.effective_route(line) for line in lines}
     hs6_reasons = {line.line_no: line.current.route_reason for line in lines}
     cn8_step(store, kb, client, refs, as_of, workers)
@@ -383,7 +390,8 @@ def _seen_text(seen: list[dict]) -> str:
 
 def _entry_sections(h: dict) -> list[str]:
     n = h["n"]
-    out = ["", f"## Iteration {h['iteration']} ({h.get('tag', '-')}, {h['model']}, {h['run_on']})", ""]
+    run = f", {h['lang']}, query expansion {h['expansion']}" if "lang" in h else ""   # feature 009
+    out = ["", f"## Iteration {h['iteration']} ({h.get('tag', '-')}, {h['model']}{run}, {h['run_on']})", ""]
     if h.get("replay_of"):
         r = h["replay_of"]
         out += [f"Replay of iteration {r['iteration']} ({r.get('tag') or '-'}) at OVERRIDE_MIN {h['override_min']}, from "
@@ -498,8 +506,8 @@ def replay_main(args: argparse.Namespace, data: dict, source: dict, override_min
     iteration = max((h["iteration"] for h in history), default=0) + 1
     m = measures(runs)
     entry = {"iteration": iteration, "run_on": date.today().isoformat(), **({"tag": args.tag} if args.tag else {}),
-             **{k: s[k] for k in ("model", "reasoning", "threshold", "ask_floor", "temperature", "seed", "repeat")
-                if k in s},
+             **{k: s[k] for k in ("model", "reasoning", "lang", "expansion", "threshold", "ask_floor", "temperature",
+                                  "seed", "repeat") if k in s},
              "replay_of": {"iteration": s["iteration"], "tag": s.get("tag")}, **m, **override_measures(runs, override_min),
              **({"parse": s["parse"]} if "parse" in s else {}), "upload_s_runs": [0.0] * len(runs),
              "elapsed_s_runs": [0.0] * len(runs), "elapsed_s": 0.0, "cost_usd": 0.0, "cost_eur": 0.0,
@@ -538,6 +546,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--replay", help="feature 008: a results file whose stored answers are replayed at a higher "
                                      "--override-min, with no model call")
     ap.add_argument("--override-min", type=int, help=f"the OVERRIDE_MIN of a --replay (default {OVERRIDE_MIN})")
+    ap.add_argument("--lang", choices=("en", "zh"), default="en",
+                    help="feature 009: en, the 120 lines as given (default); zh, the 30 lines of hs6_eval_zh.json in Chinese")
+    ap.add_argument("--expansion", choices=("on", "off"),
+                    help="feature 009: query expansion for this run (default: CARGOLINT_QUERY_EXPANSION)")
     args = ap.parse_args(argv)
     if args.repeat < 1:
         ap.error("--repeat must be 1 or more")
@@ -555,7 +567,8 @@ def main(argv: list[str] | None = None) -> int:
             ap.error(f"--override-min must be between the run's {run_min} and {HS6_VOTE_K}: the run asked the CN-8 step "
                      "under the top candidate only where its own minimum overrode")
         return replay_main(args, data, source, override_min)
-    rulings = data["rulings"][:args.limit] if args.limit else data["rulings"]
+    rulings = eval_rulings(data, args.lang)
+    rulings = rulings[:args.limit] if args.limit else rulings
     as_of = date.fromisoformat(data["built_on"])
     settings, found = run_settings(get_settings(), args.model)
     reasoning = {"enabled": False} if settings.reasoning_off else None   # what the calls carry
@@ -570,7 +583,9 @@ def main(argv: list[str] | None = None) -> int:
     temperature, seed = getattr(model, "temperature", None), getattr(model, "seed", None)   # what the calls carry
     history = json.loads(HISTORY.read_text(encoding="utf-8")) if HISTORY.exists() else []
     iteration = max((h["iteration"] for h in history), default=0) + 1
-    print(f"end-to-end iteration {iteration}: {len(rulings)} lines × {args.repeat} run(s); BTI vectors "
+    expansion = settings.query_expansion if args.expansion is None else args.expansion == "on"
+    print(f"end-to-end iteration {iteration}: {len(rulings)} lines ({args.lang}, query expansion "
+          f"{'on' if expansion else 'off'}) × {args.repeat} run(s); BTI vectors "
           f"{'loaded' if getattr(kb, 'bti_vectors', None) is not None else 'not loaded'}; model {settings.chat_model}, "
           f"reasoning {reasoning}, temperature {temperature}, seed {seed}")
 
@@ -578,7 +593,7 @@ def main(argv: list[str] | None = None) -> int:
     for k in range(args.repeat):
         before = usage.cost_eur
         invalid.clear()
-        rows, up, seconds = run_once(rulings, kb, client, as_of, settings.workers)
+        rows, up, seconds = run_once(rulings, kb, client, as_of, settings.workers, expansion)
         runs.append(rows)
         parsed.append(parse_counts(invalid, rows))
         upload_s.append(round(up, 1))
@@ -589,7 +604,8 @@ def main(argv: list[str] | None = None) -> int:
               f"(wrong {sum(not r['hit'] for r in auto)}), {seconds:.0f} s, €{costs[-1]:.4f}; invalid answers {parsed[-1]}")
     m = measures(runs)
     entry = {"iteration": iteration, "run_on": date.today().isoformat(), **({"tag": args.tag} if args.tag else {}),
-             "model": settings.chat_model, "reasoning": reasoning, "threshold": DEFAULT_THRESHOLD, "ask_floor": ASK_FLOOR,
+             "model": settings.chat_model, "reasoning": reasoning, "lang": args.lang,
+             "expansion": "on" if expansion else "off", "threshold": DEFAULT_THRESHOLD, "ask_floor": ASK_FLOOR,
              "temperature": temperature, "seed": seed, "repeat": args.repeat, **m, **override_measures(runs),
              "parse": {"retry_limit": client.max_retries, "runs": parsed}, "upload_s_runs": upload_s,
              "elapsed_s_runs": elapsed, "elapsed_s": round(sum(elapsed), 1), "cost_usd": round(usage.cost_usd, 4),
@@ -609,7 +625,7 @@ def main(argv: list[str] | None = None) -> int:
         print("\n== tests/eval/e2e_eval.md:\n" + render_report(history, data))
         print("dry run: nothing written")
     else:
-        write_results(report, OUT, args.tag or f"iteration{iteration}")
+        write_results(report, OUT, results_name(args.tag or f"iteration{iteration}", args.lang, expansion))
         HISTORY.write_text(json.dumps(history, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
         REPORT.write_text(render_report(history, data), encoding="utf-8", newline="\n")
     print(f"right end to end per run {m['right_runs']} of {n}; majority {m['majority_right']}/{n} "

@@ -226,6 +226,7 @@ class RetrievalTrace(BaseModel):
     precedent_chunks: int = 0                                  # chunks added because a BTI ruling pointed at their code
     precedent_codes: list[str] = Field(default_factory=list)   # codes proposed by matching rulings (≤ 3)
     mode: RetrievalMode = RetrievalMode.hybrid
+    expansion: bool = False                                    # feature 009: CARGOLINT_QUERY_EXPANSION for this line
 
 
 class Decision(BaseModel):
@@ -615,7 +616,7 @@ class JudgementOut(BaseModel):
     reason: str = ""
 
 
-class TranslateOut(BaseModel):
+class ExpandOut(BaseModel):
     queries: list[str] = Field(min_length=1, max_length=5)
     hyde: str | None = None
 

@@ -375,6 +375,17 @@ the spec, plan or tasks change. Each feature is closed against the Definition of
 **Keywords**: MUST and MUST NOT are mandatory; SHOULD is a default that needs a recorded reason
 to depart from; MAY is optional.
 
+**Open questions** (each awaits a decision through `/speckit-constitution`):
+
+- Query translation (2026-10-27, branch `009-query-expansion`): translation was removed from the
+  code. Every line, whatever its language, is searched with its raw text, because the embedding
+  model (`qwen/qwen3-embedding-8b`) is multilingual and a 10-pair bilingual smoke test showed no
+  gain from translating; query expansion is one switch for all languages or none
+  (`CARGOLINT_QUERY_EXPANSION`, off by default). Principle IV's pipeline bullet ("Chinese→English
+  query translation") and its rationale, and the `classify_hs6` row of the architecture table,
+  still name translation and need amending once the Chinese eval lines
+  (`tests/eval/hs6_eval_zh.json`) have measured the change.
+
 **Amendment log** (earlier amendments are in the git history of this file):
 
 - 1.4.0 (2026-10-25): the CN-8 auto-accept gate moved from the model's confidence to

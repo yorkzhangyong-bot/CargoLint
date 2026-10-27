@@ -9,8 +9,9 @@ retrieval mode, before any ranking by the model:
   context precision  — rank-weighted: 1/rank of the reference chunk when retrieved, else 0 (= MRR)
   chapter hit@k      — a chunk of the expected chapter is among the retrieved chunks
 These are the "context recall / context precision" ideas of the RAGAs framework computed against ground-truth
-chunk ids instead of with an LLM judge; the ragas library itself is not used. Needs OPENROUTER_API_KEY for query
-translation and embeddings of the queries. Writes tests/eval/retrieval_results.json.
+chunk ids instead of with an LLM judge; the ragas library itself is not used. Needs OPENROUTER_API_KEY for the
+embeddings of the queries (and the expansion call when CARGOLINT_QUERY_EXPANSION is on). Writes
+tests/eval/retrieval_results.json.
 """
 from __future__ import annotations
 
@@ -27,7 +28,7 @@ from agent.llm import get_client  # noqa: E402
 from agent.schemas import Usage  # noqa: E402
 from rag.loader import open_knowledge_base  # noqa: E402
 from rag.retriever import precedent_codes  # noqa: E402
-from rag.translate import translate_and_expand  # noqa: E402
+from rag.translate import build_queries  # noqa: E402
 from tools.common import LineText  # noqa: E402
 
 
@@ -54,8 +55,7 @@ def main(argv: list[str] | None = None) -> int:
         rows = []
         for i, l in enumerate(clear, start=1):
             text = LineText(line_no=i, text_zh=l["text_zh"], text_en=l["text_en"])
-            tr = translate_and_expand(client, text)
-            queries = list(tr.queries) + ([tr.hyde] if tr.hyde else [])
+            queries = build_queries(client, text, get_settings().query_expansion)
             vecs = kb.retriever.embed_queries(queries)
             chunks, _trace = kb.retriever.search(queries, chapter_filter=None, mode=mode, k=args.k, query_vectors=vecs)
             ids = [c.id for c in chunks]

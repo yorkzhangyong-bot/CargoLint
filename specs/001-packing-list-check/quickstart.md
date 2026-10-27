@@ -93,7 +93,7 @@ the "What I can and cannot do" panel (FR-019, FR-026).
 ### S3 — Follow-up and shipper reply (US3 independent test; FR-030–FR-039)
 
 1. Ask `Why only 31% on line 1?` → answer cites line 1's candidates, flag and shipper history;
-   the Retrieval steps expander shows original → translated queries → chapter filter → BM25 +
+   the Retrieval steps expander shows original → queries (with the expansion switch) → chapter filter → BM25 +
    vector hits → fused → sent to model (FR-031).
 2. Paste `line 1 is steel bobbin cases for industrial sewing machines` → only line 1 changes:
    version `v2`, flag OK, `8452.90` ≥ 85 with a BTI precedent, route **Human review — ready to

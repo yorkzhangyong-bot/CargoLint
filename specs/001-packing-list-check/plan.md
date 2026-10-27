@@ -117,7 +117,7 @@ agent/
 tools/
 ├── parse_packing_list.py    # tool wrapper over parsers.py / ocr.py
 ├── check_description.py     # rules first, judgement second (batch)
-├── classify_hs6.py          # translate → filter → hybrid retrieve → rank → validate codes (batch)
+├── classify_hs6.py          # queries → filter → hybrid retrieve → rank → validate codes (batch)
 ├── lookup_precedent.py      # BTI document-store lookup, validity filter
 ├── apply_shipper_reply.py   # target resolution, extraction, single-line re-check, contradiction rule
 ├── parsers.py               # xlsx/csv/pdf readers, header detection, ZH/EN split, caps, shipper detection
@@ -130,7 +130,7 @@ rag/
 ├── rules.py                 # ICS2 PDFs → JSON term lists; firm list and shipper loaders
 ├── embeddings.py            # OpenRouter embeddings (Embeddings subclass), model/dimension metadata
 ├── retriever.py             # BM25Index, Chroma wrapper, rrf(), HybridRetriever with trace
-└── translate.py             # ZH→EN translation, multi-query expansion, optional HyDE
+└── translate.py             # build_queries: the raw text; optional query expansion and HyDE (feature 009: no translation)
 
 ui/
 ├── sidebar.py               # uploader, shipment fields, rules, KB caption, tokens/cost, export

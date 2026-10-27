@@ -44,12 +44,6 @@ RECORDED: dict[str, dict[str, Any]] = {
         "Plastic toy cars without a motor": OK, "Brake pads for bicycles, steel": OK,
         "Mixed household articles": VAGUE, "Kitchen things": VAGUE, "Mixed metal articles": VAGUE,
     },
-    "TranslateOut": {
-        "Steel bobbin cases for industrial sewing machines": {"queries": ["Steel bobbin cases for industrial sewing machines"], "hyde": None},
-        "Plastic toy cars without a motor": {"queries": ["Plastic toy cars without a motor"], "hyde": None},
-        "Brake pads for bicycles, steel": {"queries": ["Brake pads for bicycles, steel"], "hyde": None},
-        "Spare parts": {"queries": ["Spare parts"], "hyde": None},
-    },
     "RankOut": {
         "Steel bobbin cases for industrial sewing machines": {"candidates": [
             {"code": "8452.90", "confidence": 95, "rationale": "bobbin cases are parts of sewing machines", "history_only": False}]},

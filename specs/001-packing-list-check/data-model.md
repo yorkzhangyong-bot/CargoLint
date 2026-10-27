@@ -158,7 +158,7 @@ override chose, with `chosen_how=auto` (FR-020).
 | Field | Type |
 |---|---|
 | `original` | str (text as sent, both languages) |
-| `queries` | list[str] (translation + expansions, optionally one HyDE passage) |
+| `queries` | list[str] (the raw text, the shipper-confirmed attributes when any; with query expansion on, up to five model expansions and optionally one HyDE passage. Feature 009: nothing is translated) |
 | `chapter_filter` | list[str] \| None, with `filter_reason` (shipper history / consignee / none) |
 | `bm25_hits`, `vector_hits` | int |
 | `fused` | int (after RRF) |
@@ -166,6 +166,7 @@ override chose, with `chosen_how=auto` (FR-020).
 | `precedent_codes` | list[str] (≤ 3 HS-6 codes proposed by matching BTI rulings, FR-051) |
 | `precedent_chunks` | int (of those, chunks added that plain retrieval had not returned) |
 | `mode` | `hybrid \| vector_only` |
+| `expansion` | bool (feature 009: `CARGOLINT_QUERY_EXPANSION` for this line) |
 
 **NomenclatureChunk** (Chroma document + BM25 entry; one per HS-6 subheading)
 

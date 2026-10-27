@@ -86,7 +86,7 @@ After a check, the clerk asks follow-up questions about any line in the chat ("W
 
 **Acceptance Scenarios**:
 
-1. **Given** a checked shipment, **When** the clerk asks why a line has a given confidence, **Then** the answer cites that line's candidates, flag, sources and (if used) shipper history, and a "Retrieval steps" view shows the original text, the translated and expanded search terms, any chapter filter applied and the number of passages considered.
+1. **Given** a checked shipment, **When** the clerk asks why a line has a given confidence, **Then** the answer cites that line's candidates, flag, sources and (if used) shipper history, and a "Retrieval steps" view shows the original text, the search terms (the raw text and, with query expansion on, the expansions; feature 009), any chapter filter applied and the number of passages considered.
 2. **Given** the clerk pastes a reply that names one line number, **When** it is sent, **Then** a new version of that line is created with the extracted material, part name and use, only that line is re-checked, its table row and detail panel refresh, counts and cost update, and every other line is unchanged.
 3. **Given** a reply that names no line while no single line is selected in the table (or that names more than one line), **When** it is sent, **Then** the app asks which line is meant and changes nothing.
 4. **Given** a previously flagged line whose new version is unflagged and passes the HS-6 gate (since constitution 1.5.0 the ruling vote; with no eligible ruling, confidence at or above the threshold), **When** the re-check completes, **Then** the route is "human review" with a note that it is ready to accept, and it becomes accepted, with the decided code they confirm, only after the clerk clicks.
@@ -182,7 +182,7 @@ The clerk exports the current results as CSV or JSON for the filing or for the s
 - **FR-028**: After a check the app MUST show the per-route counts and a plain-language summary naming the lines that need action and why.
 - **FR-029**: For each check the app MUST list the sources it used (rule-list entries, nomenclature subheadings, rulings), each identified well enough for a customs auditor to look it up.
 - **FR-030**: Users MUST be able to ask free-text questions about any line; answers MUST be based on the stored results of that line and shipment and MUST say so when the question cannot be answered from them.
-- **FR-031**: For any answer that involved searching the nomenclature, a "Retrieval steps" view MUST show the original text, the translated and expanded search terms, any chapter filter applied and the number of passages considered.
+- **FR-031**: For any answer that involved searching the nomenclature, a "Retrieval steps" view MUST show the original text, the search terms with the query expansion switch (the raw text, and with expansion on the model's expansions; feature 009: no line is translated), any chapter filter applied and the number of passages considered.
 - **FR-032**: All interface and assistant text MUST be in English; Chinese text from files and messages MUST display correctly.
 
 #### Review table and detail panel
@@ -217,7 +217,7 @@ The clerk exports the current results as CSV or JSON for the filing or for the s
 - **FR-048**: A failure on one line MUST NOT stop the shipment: the line is marked failed with a plain-language reason and routed to human review while the other lines complete.
 - **FR-049**: Transient service errors MUST be retried a bounded number of times with the status visible; a persistent error MUST produce a message telling the clerk what to do next.
 - **FR-050**: Empty, unreadable or header-less files MUST produce a clear message and no partial results.
-- **FR-051**: Candidate codes MAY also be proposed by Binding Tariff Information rulings whose goods match the description (precedent-driven retrieval): the rulings nearest to the translated queries vote for their HS-6 code, and up to three such codes are offered to the ranking step alongside the retrieved subheadings, each tagged with its best-matching ruling. Precedent-proposed codes MUST pass the same code-existence validation, MUST be marked as precedent-sourced in the retrieval trace and in the sources, and only rulings valid on the day of the check MAY vote.
+- **FR-051**: Candidate codes MAY also be proposed by Binding Tariff Information rulings whose goods match the description (precedent-driven retrieval): the rulings nearest to the line's queries vote for their HS-6 code, and up to three such codes are offered to the ranking step alongside the retrieved subheadings, each tagged with its best-matching ruling. Precedent-proposed codes MUST pass the same code-existence validation, MUST be marked as precedent-sourced in the retrieval trace and in the sources, and only rulings valid on the day of the check MAY vote.
 
 ### Key Entities
 

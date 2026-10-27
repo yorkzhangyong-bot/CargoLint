@@ -169,9 +169,12 @@ operator and the course evaluators.
    are one chunk each (goods description + reasoning; metadata code, chapter, member state, validity),
    with holder names and addresses dropped at load time. The ICS2 lists are extracted from the official
    PDFs (`rag/rules.py`).
-2. **Query translation and expansion** (`rag/translate.py`): a structured call turns the Chinese or
-   mixed description into one literal English translation plus up to four expansions (synonyms,
-   product category, material) and an optional HyDE-style sentence. English-only text skips the call.
+2. **Queries** (`rag/translate.py:build_queries`): every line, whatever its language, is searched with
+   its raw text as typed, plus what the shipper confirmed (part, material, use) as a second query. Nothing
+   is translated (feature 009): the embedding model is multilingual, and a 10-pair bilingual smoke test
+   showed no gain from translating. Query expansion is one switch for all languages,
+   `CARGOLINT_QUERY_EXPANSION` (off by default): when on, one structured call per line appends up to five
+   English queries (synonyms, product category, material) and an optional HyDE-style sentence.
 3. **Hybrid retrieval** (`rag/retriever.py`): BM25 over `rank_bm25` with a tokenizer that keeps HS
    codes in both `9617.00` and `961700` forms, plus cosine search in a persisted Chroma collection
    (`qwen/qwen3-embedding-8b`, 4096 dimensions), fused by **reciprocal rank fusion** (k = 60). When
@@ -379,6 +382,13 @@ and IEBTIIENEN004-2024-BTI128 at 6404.19: with each line's own ruling left out, 
 other code, so at 4 of 5 the override turned both right answers wrong. At 5 of 5 every override chose the right HS-6:
 end to end 67 → 69 of 120, the estimate 74 → 77, and wrong auto-accepts unchanged in both evals. The override ships on
 at 5 of 5. The reports are `tests/eval/hs6_eval.md` and `tests/eval/e2e_eval.md`.
+
+**Query expansion and Chinese input** (feature 009): both evals take `--expansion on|off`, which sets query
+expansion for the run over `CARGOLINT_QUERY_EXPANSION`, and `--lang en|zh`. `--lang zh` runs 30 of the 120 lines,
+spread across the 12 chapters, in Chinese (`tests/eval/hs6_eval_zh.json`, written once by the chat model as a Chinese
+shipper's packing-list lines and open to correction by hand), with the same expected codes and the same leakage rule
+as their English lines. Each run's own results file and history entry name its language and its expansion. No run
+has been made with these options yet.
 
 **Known issues**:
 - **Sample line 10, "铝合金自行车架 / Aluminium alloy bicycle frames"** (browser check with the live model, 2026-10-24):

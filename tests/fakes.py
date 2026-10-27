@@ -69,7 +69,7 @@ class FakeRawClient:
         name = schema.__name__
         if name == "JudgementOut":
             return {"vague": True, "missing": ["material", "product_name", "use"], "reason": "no recorded judgement"}
-        if name == "TranslateOut":
+        if name == "ExpandOut":
             return {"queries": [key or "unknown goods"], "hyde": None}
         if name == "RankOut":
             return {"candidates": []}

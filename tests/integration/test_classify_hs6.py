@@ -32,7 +32,7 @@ def test_pipeline_runs_in_order_and_fills_text_from_the_index(fake_llm, kb):
     t = c.retrieval_trace
     assert t.queries and t.mode == RetrievalMode.hybrid
     assert t.bm25_hits > 0 and t.vector_hits > 0 and t.fused >= 1 and t.sent_to_model >= 1
-    assert [call["schema"] for call in fake_llm.calls] == ["TranslateOut", "RankOut"]
+    assert [call["schema"] for call in fake_llm.calls] == ["RankOut"]   # feature 009: no translation call
     assert any(s.id == "hs:9617.00" for s in c.sources)
     assert c.candidates[0].source_ids and "hs:9617.00" in c.candidates[0].source_ids
 

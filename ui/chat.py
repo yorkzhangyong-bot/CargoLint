@@ -243,7 +243,8 @@ def _render_trace(store, line_no: int | None) -> None:
         hist = f" (+{t.history_chunks} from the shipper's past codes)" if t.history_chunks else ""
         if t.precedent_codes:
             hist += f" (+{t.precedent_chunks} from BTI precedents; precedent codes {', '.join(t.precedent_codes)})"
-        st.markdown(f"- **Original**: {t.original}\n- **Translation / expansion**: {', '.join(t.queries)}\n"
+        st.markdown(f"- **Original**: {t.original}\n- **Queries** (expansion {'on' if t.expansion else 'off'}): "
+                    f"{', '.join(t.queries)}\n"
                     f"- **Metadata filter**: {('chapters ' + ', '.join(t.chapter_filter) + ' — ' + t.filter_reason) if t.chapter_filter else 'none'}\n"
                     f"- **Hits**: BM25 {t.bm25_hits} + vectors {t.vector_hits} → RRF {t.fused} → {t.sent_to_model} chunks to the model{hist} ({t.mode.value})")
 
