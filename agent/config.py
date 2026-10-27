@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 
@@ -84,6 +84,11 @@ class Settings:
                                  # CARGOLINT_HS6_OVERRIDE "off" or "false" turns it off
     query_expansion: bool = False   # feature 009: CARGOLINT_QUERY_EXPANSION "on" adds the model's English queries to
                                     # every line's raw text (rag/translate.py)
+    app_password: str = field(default="", repr=False)   # feature 011: CARGOLINT_APP_PASSWORD; empty: no password gate
+    demo_store_url: str = ""        # feature 011: CARGOLINT_DEMO_STORE_URL, the demo store's archive, fetched when the
+                                    # store is missing; empty: never fetched (rag/demo_store.py)
+    demo_store_sha256: str = ""     # feature 011: CARGOLINT_DEMO_STORE_SHA256, the archive's checksum, checked before
+                                    # anything is unpacked
 
     @property
     def has_key(self) -> bool:
@@ -110,6 +115,9 @@ def load_settings(env: dict | None = None) -> Settings:
         reasoning_off=(e.get("CARGOLINT_REASONING") or "off") == "off",
         hs6_override=(e.get("CARGOLINT_HS6_OVERRIDE") or "on").strip().lower() not in ("off", "false"),
         query_expansion=expansion == "on",
+        app_password=e.get("CARGOLINT_APP_PASSWORD") or "",
+        demo_store_url=(e.get("CARGOLINT_DEMO_STORE_URL") or "").strip(),
+        demo_store_sha256=(e.get("CARGOLINT_DEMO_STORE_SHA256") or "").strip().lower(),
     )
 
 

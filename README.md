@@ -434,6 +434,59 @@ every pull request to main (Ubuntu, Python 3.13). It needs no API key: the suite
 stay deselected. The paid evals are not part of CI: `tests/eval/hs6_eval.py` and `tests/eval/e2e_eval.py` are run
 locally by hand, at about $0.20 (HS-6) and $0.27 (end to end) per run of the 120 lines.
 
+## Demo deployment
+
+A demo runs on Streamlit Community Cloud with a smaller knowledge base that the app downloads at its first start
+(feature 011). The measurements and platform limits behind it are in `docs/deploy/streamlit-cloud-assessment.md`.
+
+1. **Cut the demo store** from the local full build, after `python -m rag.loader` and `python -m rag.loader --taric`. No
+   API call is made:
+
+   ```bash
+   python -m rag.demo_store --out ../cargolint-demo --rulings 5000 --zip ../cargolint-demo.zip
+   ```
+
+   The script:
+   - copies the nomenclature index and the BM25 file;
+   - chooses about 5,000 rulings: half under the HS-6 codes of the CN-8 eval set and of the sample files, the rest
+     spread over the chapters;
+   - copies their existing vectors;
+   - packs `store/…` and `data/taric.jsonl` into one archive.
+
+   It prints the archive's SHA-256 and size, an estimated 130 MB. The folder given to `--out` must be new or empty.
+2. **Publish the archive** as a GitHub release asset, for example `gh release create demo-store-1
+   ../cargolint-demo.zip`, and copy its download URL. A public release also publishes the TARIC snapshot. The Swedish
+   Customs distribution has no formal licence, so check before publishing.
+3. **Deploy** the repository on Community Cloud with `app.py` as the entry point. Choose Python 3.13 under Advanced
+   settings: Community Cloud installs from `uv.lock`, which requires a Python below 3.14. Enter the secrets at the top
+   level and as strings; Streamlit copies such secrets into the environment before the app starts, and the app reads
+   them from there:
+
+   ```toml
+   OPENROUTER_API_KEY = "sk-or-…"         # a dedicated key with a credit limit set at OpenRouter
+   CARGOLINT_APP_PASSWORD = "…"           # the demo password; leave it out for no password
+   CARGOLINT_DEMO_STORE_URL = "https://github.com/<owner>/<repo>/releases/download/demo-store-1/cargolint-demo.zip"
+   CARGOLINT_DEMO_STORE_SHA256 = "…"      # as printed by the script
+   CARGOLINT_WORKERS = "3"
+   ANONYMIZED_TELEMETRY = "False"         # no usage pings from Chroma
+   ```
+
+   Reboot the app after changing a secret, since the settings are read once per process.
+
+What to expect:
+- **Download at every cold start.** At the first start, and after every sleep or reboot, the app downloads the archive
+  with a spinner showing. It checks the SHA-256 before unpacking anything, and a wrong checksum stops the app with an
+  error. Locally, with a store present or no URL set, nothing is downloaded.
+- **Password first.** With a password set, the password field comes before everything else: without the password
+  nothing is loaded and no model is called. The key's credit limit caps the spend even if the password spreads.
+- **Memory**: an estimated 550–600 MB at rest with 5,000 rulings, and about 900 MB while a scanned PDF or photo is
+  read. Community Cloud documents 690 MB to 2.7 GB.
+- **Sessions are lost on sleep.** They live in memory only, so a shipment is lost when the browser session ends, when
+  the app reboots, and when it sleeps after 12 hours without traffic. Export the CSV, the JSON or the audit trail before
+  leaving.
+- **More review than in the evaluation.** The demo holds about 5,000 of the 73,899 rulings, so fewer lines find rulings
+  that agree with the model than in the evaluation figures above.
+
 ## Known weaknesses and next steps
 
 - Confidence is model-estimated and only loosely calibrated against 20 labelled lines; it must not be
@@ -492,7 +545,7 @@ line's version history; duty calculation from the TARIC measures; SQLite persist
 app.py          Streamlit entry point        ui/        main_page, table, expand, view, actions, shipper_email, upload, runner, jobs (worker turns), admin, chat, replies
 agent/          config, schemas, routing, prompts, llm (client factory + cost), agent (loop + guard), store
 tools/          the seven tools, parsers, ocr, common (context + per-line runner)
-rag/            loader (CLI), nomenclature (SKOS), bti (EBTI), rules (ICS2 PDFs), embeddings, retriever, translate, taric + taric_extract + pgp (TARIC snapshot)
+rag/            loader (CLI), nomenclature (SKOS), bti (EBTI), rules (ICS2 PDFs), embeddings, retriever, translate, taric + taric_extract + pgp (TARIC snapshot), demo_store (hosted demo: cut and fetch)
 data/           processed knowledge base, rule lists, shipper history (synthetic), sample lists (xlsx, gbk csv, text pdf, photo), labelled set, SOURCES.md
 store/          Chroma vectors (nomenclature in chroma/, rulings in chroma-bti/), BM25 pickle, BTI document store (git-ignored; rebuilt by the loader)
 tests/          unit, integration, adversarial, live, eval (run_eval.py, make_big_list.py), fixtures
@@ -506,3 +559,6 @@ documents © European Commission. The TARIC snapshot comes from the Swedish Cust
 (free of charge, no formal licence published); the underlying data is EU TARIC from the European Commission.
 Shipper history, the firm stop-word list and the sample packing list are
 synthetic demo data.
+
+The TARIC snapshot (`data/taric.jsonl`, inside the demo archive) is European Commission tariff data obtained through
+Swedish Customs' file distribution service.
