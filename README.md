@@ -427,6 +427,13 @@ symbols ending in "12", so a bare number no longer counts as a listed term.
     code, and the audit trail records the clerk's decision.
   - The offline recordings classify the line correctly, so the walkthrough and the offline tests do not show it.
 
+## Continuous integration
+
+`.github/workflows/tests.yml` runs the offline suite, `pytest -q`, on GitHub Actions on every push to any branch and on
+every pull request to main (Ubuntu, Python 3.13). It needs no API key: the suite runs on fakes, and the four live tests
+stay deselected. The paid evals are not part of CI: `tests/eval/hs6_eval.py` and `tests/eval/e2e_eval.py` are run
+locally by hand, at about $0.20 (HS-6) and $0.27 (end to end) per run of the 120 lines.
+
 ## Known weaknesses and next steps
 
 - Confidence is model-estimated and only loosely calibrated against 20 labelled lines; it must not be
