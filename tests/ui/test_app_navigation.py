@@ -101,6 +101,25 @@ def test_the_password_comes_before_the_missing_key_message(settings):
     assert at.error[0].value.startswith("OPENROUTER_API_KEY is not set.")
 
 
+def test_the_demo_notice_shows_only_when_switched_on(settings, kb_opened):
+    settings("test-key-not-real", demo_notice=True)
+    at = AppTest.from_file(APP, default_timeout=30).run()
+    assert not at.exception
+    notice = [e for e in at.expander if e.label == "Before you upload"]
+    assert len(notice) == 1
+    assert [m.value for m in notice[0].markdown] == [
+        "This is a demo for evaluation, not customs advice. Every code and rewrite must be checked by the declarant "
+        "before use.",
+        "CargoLint stores nothing you upload. Each line is sent to an AI model through OpenRouter (US-hosted) to be "
+        "classified. Please use lists without personal data such as names, phone numbers or email addresses.",
+        "Your shipment lives only in this browser session: export your results before you close the tab.",
+    ]
+    settings("test-key-not-real", demo_notice=False)
+    at = AppTest.from_file(APP, default_timeout=30).run()
+    assert not at.exception
+    assert "Before you upload" not in [e.label for e in at.expander]
+
+
 def test_a_demo_store_that_fails_its_checksum_stops_the_app(monkeypatch, settings, kb_opened, tmp_path):
     import rag.demo_store
 

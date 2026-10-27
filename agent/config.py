@@ -89,6 +89,7 @@ class Settings:
                                     # store is missing; empty: never fetched (rag/demo_store.py)
     demo_store_sha256: str = ""     # feature 011: CARGOLINT_DEMO_STORE_SHA256, the archive's checksum, checked before
                                     # anything is unpacked
+    demo_notice: bool = False       # feature 011: CARGOLINT_DEMO_NOTICE "on" shows the "Before you upload" notice
 
     @property
     def has_key(self) -> bool:
@@ -118,6 +119,7 @@ def load_settings(env: dict | None = None) -> Settings:
         app_password=e.get("CARGOLINT_APP_PASSWORD") or "",
         demo_store_url=(e.get("CARGOLINT_DEMO_STORE_URL") or "").strip(),
         demo_store_sha256=(e.get("CARGOLINT_DEMO_STORE_SHA256") or "").strip().lower(),
+        demo_notice=(e.get("CARGOLINT_DEMO_NOTICE") or "off").strip().lower() == "on",
     )
 
 

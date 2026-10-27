@@ -156,6 +156,12 @@ replaced by fakes.
   - Python 3.13;
   - memory;
   - sessions lost on sleep.
+- **FR-012**: When `CARGOLINT_DEMO_NOTICE` is "on" (default "off"), the app MUST show an expander "Before you upload"
+  right after the password gate, before the page content. It holds three lines:
+  - the demo is not customs advice, and the declarant must check every code and rewrite;
+  - nothing uploaded is stored, each line goes to an AI model through OpenRouter (US-hosted), and lists should carry no
+    personal data;
+  - the shipment lives only in the browser session, so results must be exported before the tab is closed.
 
 ### Key Entities *(include if feature involves data)*
 

@@ -468,6 +468,7 @@ A demo runs on Streamlit Community Cloud with a smaller knowledge base that the 
    CARGOLINT_DEMO_STORE_URL = "https://github.com/<owner>/<repo>/releases/download/demo-store-1/cargolint-demo.zip"
    CARGOLINT_DEMO_STORE_SHA256 = "…"      # as printed by the script
    CARGOLINT_WORKERS = "3"
+   CARGOLINT_DEMO_NOTICE = "on"           # the "Before you upload" notice: demo only, no personal data, export before leaving
    ANONYMIZED_TELEMETRY = "False"         # no usage pings from Chroma
    ```
 

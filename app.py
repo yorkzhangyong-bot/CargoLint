@@ -18,6 +18,14 @@ from rag.retriever import IndexMismatchError
 
 st.set_page_config(page_title="CargoLint", page_icon="📦", layout="wide")
 
+DEMO_NOTICE = (   # feature 011: shown when CARGOLINT_DEMO_NOTICE is "on"
+    "This is a demo for evaluation, not customs advice. Every code and rewrite must be checked by the declarant before "
+    "use.",
+    "CargoLint stores nothing you upload. Each line is sent to an AI model through OpenRouter (US-hosted) to be classified. "
+    "Please use lists without personal data such as names, phone numbers or email addresses.",
+    "Your shipment lives only in this browser session: export your results before you close the tab.",
+)
+
 
 @st.cache_resource(show_spinner="Loading the knowledge base…")
 def load_kb():
@@ -55,6 +63,10 @@ def main() -> None:
     settings = get_settings()
     if not password_ok(settings.app_password):
         st.stop()
+    if settings.demo_notice:
+        with st.expander("Before you upload", expanded=True):
+            for line in DEMO_NOTICE:
+                st.markdown(line)
     if not settings.api_key:
         st.error("OPENROUTER_API_KEY is not set. Set it as an operating-system environment variable and restart CargoLint; "
                  "on Streamlit Community Cloud, add it to the app's Secrets settings and reboot the app.", icon="🔑")

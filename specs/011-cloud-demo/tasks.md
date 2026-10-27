@@ -138,7 +138,12 @@ base.
 - [X] T017 Run the selection, read only, on the full build's extract for the per-code counts (spec SC-007). Of 5,000
   rulings, 2,500 sit under the 73 preferred codes. That is 39 or 40 per code, or all a code has. Earphones 8518.30 and
   electronic apparatus 8543.70 get 39 each.
-- [X] T018 `pytest -q`, offline: 1242 passed, 4 deselected in 139.60s
+- [X] T018 The demo notice (spec FR-012):
+  - `demo_notice` (`CARGOLINT_DEMO_NOTICE`, default "off") in agent/config.py;
+  - the "Before you upload" expander in app.py, right after the gate;
+  - the secret in README.md;
+  - a test in tests/ui/test_app_navigation.py that it shows when on and not when off.
+- [X] T019 `pytest -q`, offline: 1243 passed, 4 deselected in 94.62s
 
 ---
 
@@ -153,4 +158,4 @@ base.
 
 - T004 comes before T007, T011, T012 and T014.
 - Each story's tests (T005, T006, T009, T010, T013) come before its implementation.
-- T007 comes before T008, and T011 before T012. T016 to T018 come last.
+- T007 comes before T008, and T011 before T012. T016 to T019 come last.
