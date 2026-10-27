@@ -43,10 +43,16 @@ streamlit run app.py           # http://localhost:8501
 - Tests first for guardrail code; unit tests must run offline. Keep `pytest -q` green after every change.
 - Commit and push only when asked.
 - Dev loop: the running Streamlit server does not reload edits to `ui/*.py`; restart it before verifying
-  in the browser. Most files use LF line endings. Among the source files only `app.py` and
-  `tools/parse_packing_list.py` use CRLF; so do `tests/conftest.py`, `tests/integration/test_classify_hs6.py`,
-  `.streamlit/config.toml` and some fixture, data, Spec Kit and spec files (checked byte by byte on 2026-10-24).
-  Keep each file's line endings when editing.
+  in the browser. Most files use LF line endings. Among the source files only `tools/parse_packing_list.py` uses
+  CRLF; so do `tests/integration/test_classify_hs6.py`, `.streamlit/config.toml`, the recorded outputs
+  `tests/fixtures/recorded/ExtractOut.json`, `JudgementOut.json` and `RankOut.json`, `tests/eval/retrieval_results.json`,
+  six data files (`data/bti_demo.jsonl`, `data/nomenclature_2026.jsonl`, `data/rules/ics2_stop_words.json`,
+  `data/rules/ics2_unacceptable_terms.json`, `data/samples/retrieval_language_test_20_1.csv`,
+  `data/samples/sample_invoice_ningbo.csv`), five Spec Kit JSON files under `.specify/` and
+  `specs/001-packing-list-check/contracts/ui.md` and `research.md`; `tests/fixtures/sample_packing_list.csv` mixes CRLF
+  and LF (working tree checked byte by byte on 2026-10-27). The repository itself stores LF, and `git checkout` or
+  `git merge` writes LF to every file it touches (`.gitattributes`: `* text=auto eol=lf`), so a working copy can
+  change; check a file's line endings before editing it and keep them.
 
 ## Working guidelines
 
