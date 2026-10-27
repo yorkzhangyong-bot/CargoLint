@@ -383,12 +383,40 @@ other code, so at 4 of 5 the override turned both right answers wrong. At 5 of 5
 end to end 67 → 69 of 120, the estimate 74 → 77, and wrong auto-accepts unchanged in both evals. The override ships on
 at 5 of 5. The reports are `tests/eval/hs6_eval.md` and `tests/eval/e2e_eval.md`.
 
-**Query expansion and Chinese input** (feature 009): both evals take `--expansion on|off`, which sets query
-expansion for the run over `CARGOLINT_QUERY_EXPANSION`, and `--lang en|zh`. `--lang zh` runs 30 of the 120 lines,
-spread across the 12 chapters, in Chinese (`tests/eval/hs6_eval_zh.json`, written once by the chat model as a Chinese
-shipper's packing-list lines and open to correction by hand), with the same expected codes and the same leakage rule
-as their English lines. Each run's own results file and history entry name its language and its expansion. No run
-has been made with these options yet.
+**Query expansion and Chinese input** (feature 009): retrieval no longer translates. Every line, in any language, is
+searched with its raw text as typed, plus what the shipper confirmed; query expansion with HyDE stays, behind one
+switch for all languages, `CARGOLINT_QUERY_EXPANSION`, off by default (constitution 1.7.0). Both evals take
+`--expansion on|off`, which sets query expansion for the run over `CARGOLINT_QUERY_EXPANSION`, and `--lang en|zh`.
+`--lang zh` runs 30 of the 120 lines, spread across the 12 chapters, in Chinese (`tests/eval/hs6_eval_zh.json`,
+written once by the chat model as a Chinese shipper's packing-list lines and open to correction by hand), with the same
+expected codes and the same leakage rule as their English lines. Three paid HS-6 runs with Gemini 2.5 Flash on
+2026-10-27 were compared with the English baseline of feature 008, all four read with the precedent override off:
+
+| HS-6 eval | Lines | Expansion | Top-1 right | Auto-accepted | Wrong auto-accepts |
+|---|---|---|---|---|---|
+| Chinese, run `zh-off` | 30 | off | 17/30 | 9 | 0 |
+| Chinese, run `zh-on` | 30 | on | 17/30 | 15 | 2 |
+| English, run `hs6-override-min5` (feature 008 baseline, not rerun) | 120 | off | 83/120 | 67 | 3 |
+| English, run `en-on` | 120 | on | 81/120 | 64 | 3 |
+
+The decision rule was fixed before the runs: expansion goes default on only if, in both languages, wrong auto-accepts
+are no worse and top-1 is better. It fails in both. In Chinese top-1 stays at 17 while wrong auto-accepts rise from 0
+to 2; in English top-1 falls from 83 to 81 with wrong auto-accepts unchanged. Expansion stays off. Run-to-run noise on
+these evals is about 2 lines, as large as the top-1 and wrong auto-accept differences above. Each run's own results
+file names its language and expansion, `tests/eval/hs6_eval_<run>_<lang>_expansion-<on|off>.json` (for example
+`hs6_eval_zh-off_zh_expansion-off.json`); the report is `tests/eval/hs6_eval.md`, iterations 9 to 11.
+
+Two changes to the description check were made alongside feature 009. A goods name of several listed terms is locked
+only when nothing else in the description identifies the goods (FR-008): "metal box, steel, 30x20 cm" passes, "Toy
+cars" alone does not (see the known weaknesses below). And a rule-list entry with no Latin letter and no Chinese
+character is skipped, which drops two leftovers of the PDF extraction from the shipped ICS2 list, "1005" and a row of
+symbols ending in "12", so a bare number no longer counts as a listed term.
+
+**Eval-set notes**:
+- **Cleanup**: six Swedish rulings in `tests/eval/cn8_eval_set.json` are still labelled `en`: SEBTITV-2026-01096,
+  SEBTITV-2024-01658, SEBTITV-2024-01665, SEBTITV-2024-01674, SEBTITV-2026-09785 and SEBTITV-2026-09764.
+  `tests/eval/make_cn8_eval_set.py` copies the labels from its source (`store/bti_docs.jsonl`), so rerunning it would
+  undo the label fixes made by hand (the seven rulings relabelled `fr`, `cs` or `sv` in feature 009).
 
 **Known issues**:
 - **Sample line 10, "铝合金自行车架 / Aluminium alloy bicycle frames"** (browser check with the live model, 2026-10-24):
