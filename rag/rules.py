@@ -85,6 +85,11 @@ def _source_for(list_name: str) -> RuleSource:
 # parts", "auto parts", "various goods") are listed terms of their own, so they still lock a goods name that is nothing
 # else. One point is looser than the guidance's examples: for parts it names the part itself ("Pump, Seals, Engines"),
 # while "spare parts for pumps" passes here and is left to the model's judgement, which follows every unflagged line.
+# Since 2026-10-27 a goods name of two or more listed terms locks only when nothing else in the description says what
+# the goods are. The ICS2 lists also name common goods and materials on their own ("toys", "cars", "metal", "box",
+# "steel", "rods"), and the guidance accepts a name that a material, property, size or use makes identifiable: "Toy
+# cars, plastic, for children 3+" and "metal box, steel, 30x20 cm" pass, "Toy cars" alone and "Parts and accessories,
+# 20 ctns" do not. A single listed term locks whatever follows it ("gift box, stainless steel vacuum flask 500 ml").
 _NAME_END = re.compile(
     r"[,;:!?()\[\]{}\r\n，；：。！？（）【】、]|\.(?=\s|$)|\s[-–—]\s"
     r"|(?:^|\s)(?:in|with|made|available|including|which|that|as|at|from)(?=\s)", re.I)
@@ -123,6 +128,7 @@ FILLER = {_singular(w) for w in (
     "products", "product", "goods", "items", "item", "articles", "article", "general", "all", "kind", "kinds", "type",
     "types", "sort", "other", "others", "assorted", "mixed", "pcs", "pc", "ctn", "ctns", "set", "sets", "pair", "unit",
     "dozen", "qty", "kg", "mm", "cm", "ml", "new", "used", "size", "colour", "color", "style", "model", "shape", "design")}
+_COUNT = {"pcs", "pc", "ctn", "set", "pair", "unit", "dozen", "qty"}   # filler that counts pieces: "20 ctns" is no size
 
 
 @dataclass(frozen=True)
@@ -159,11 +165,46 @@ def _terms(rules: RuleSet) -> list[_Term]:
     return [t for t in out if t.words or _CJK.search(t.text)]   # a term of punctuation alone can name no goods
 
 
+def _term_count(words: list[str], text: str, rules: RuleSet) -> int:
+    """How many listed terms a goods name is made of, in its Latin words or in its Chinese text, whichever has more, as
+    both name the same goods. Longest first, so "gift box" is one term and not "gift" and "box"; a term of filler words
+    alone ("goods", "various goods") is not counted."""
+    taken = [False] * len(words)
+    latin = chinese = 0
+    for t in sorted(rules.terms, key=lambda t: -len(t.words or t.text)):
+        if t.words:
+            n = len(t.words)
+            for i in range(len(words) - n + 1):
+                if tuple(words[i:i + n]) == t.words and not any(taken[i:i + n]):
+                    taken[i:i + n] = [True] * n
+                    latin += not set(t.words) <= FILLER
+        elif t.text in text:
+            chinese += 0 if t.text in CJK_FILLER else text.count(t.text)
+            text = text.replace(t.text, " ")
+    return max(latin, chinese)
+
+
+def _identifies(words: list[str], text: str) -> bool:
+    """True when the words or the Chinese text say what the goods are: a word of two or more letters that is not
+    filler, a listed one included ("plastic", "steel", "children"), a number other than a count of pieces ("30x20",
+    "3+", not "20 ctns" or "qty 20"), or a Chinese character outside the Chinese filler."""
+    for i, w in enumerate(words):
+        if w[0].isalpha() and len(w) > 1 and w not in FILLER:
+            return True
+        if w[0].isdigit() and not {*words[max(i - 1, 0):i], *words[i + 1:i + 2]} & _COUNT:
+            return True
+    for filler in CJK_FILLER:
+        text = text.replace(filler, " ")
+    return bool(_CJK.search(text))
+
+
 def check_rules(text_zh: str, text_en: str, rules: RuleSet) -> RuleMatch | None:
     """Deterministic rule match on the goods name (feature 007), the Chinese and the English one together: flagged
-    only when it is nothing but listed terms and filler words, or when there is none and a listed term appears in the
-    description. The flag cites the first term found, the firm list first (Stop-word), then the ICS2 lists and the
-    bilingual aliases (Vague). Returns None when no rule matches (judgement follows in the tool)."""
+    when it is nothing but listed terms and filler words and either one term ("Parts", "Various goods") or several that
+    nothing else in the description identifies ("Toy cars" alone, not "Toy cars, plastic"), or when there is no goods
+    name and a listed term appears in the description. The flag cites the first term found, the firm list first
+    (Stop-word), then the ICS2 lists and the bilingual aliases (Vague). Returns None when no rule matches (judgement
+    follows in the tool)."""
     name_zh, name_en = goods_name(text_zh), goods_name(text_en)
     named = bool(name_zh or name_en)
     scope = f"{name_zh} {name_en}" if named else f"{text_zh or ''} {text_en or ''}"
@@ -190,6 +231,10 @@ def check_rules(text_zh: str, text_en: str, rules: RuleSet) -> RuleMatch | None:
             cjk = cjk.replace(filler, " ")
         if rest or _CJK.search(cjk):
             return None
+        after = f"{(text_zh or '').strip()[len(name_zh):]} {(text_en or '').strip()[len(name_en):]}"
+        if _term_count(words, scope, rules) > 1 and _identifies(
+                [w for w, c in zip(words, covered) if not c] + _words(after), after):
+            return None   # the goods name's own numbers count too: "steel rods 10 mm"
     rl = first.rule_list
     return RuleMatch(kind=first.kind, rule_source=_source_for(rl.list), matched_term=first.matched_term, list_name=rl.list,
                      source_doc=rl.source_doc, source_date=rl.source_date, reason=first.reason)

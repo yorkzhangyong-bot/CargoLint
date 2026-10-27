@@ -1,10 +1,17 @@
 """Rule matching: whole-word English, CJK substring, firm precedence, pure stop-word, ask_for (FR-007 … FR-011)."""
 import pytest
 
+from agent.config import RULES_DIR
 from agent.schemas import FlagKind, RuleSource
 from rag.rules import RuleSet, check_rules, default_ask_for, goods_name, is_pure_stop_word
 
 pytestmark = pytest.mark.unit
+
+
+@pytest.fixture(scope="module")
+def shipped_rules() -> RuleSet:
+    """The shipped lists: unlike the test excerpt, their ICS2 lists name cars, metal, box and steel on their own."""
+    return RuleSet.load(RULES_DIR)
 
 
 class TestLoading:
@@ -63,7 +70,8 @@ class TestMatching:
 
 class TestGoodsNameOnly:
     """Feature 007: a listed term locks a line only when the goods name is nothing but listed terms, as ICS2 rejects a
-    general term used as the description, not one that sits in a property or qualifies a named good."""
+    general term used as the description, not one that sits in a property or qualifies a named good. Several listed
+    terms lock only when nothing else in the description says what the goods are: see TestSeveralListedTerms."""
 
     def test_a_stop_word_outside_the_goods_name_passes(self, rules):
         assert check_rules("", "T-shirts in various sizes", rules) is None
@@ -74,7 +82,7 @@ class TestGoodsNameOnly:
     def test_a_goods_name_of_nothing_but_stop_words_is_locked(self, rules):
         m = check_rules("", "various goods", rules)
         assert m.kind == FlagKind.stop_word and m.rule_source == RuleSource.firm_stop_words and m.matched_term == "various"
-        assert check_rules("", "Parts and accessories, 20 ctns", rules).matched_term == "accessories"
+        assert check_rules("", "Parts and accessories, 20 ctns", rules).matched_term == "accessories"   # a count is no size
 
     def test_a_qualified_generic_term_passes(self, rules):
         assert check_rules("", "spare parts for pumps", rules) is None   # the model's judgement still follows
@@ -106,6 +114,27 @@ class TestGoodsNameOnly:
         assert goods_name("spare parts for pumps") == "spare parts for pumps"
         assert goods_name("Steel wire 2.5 mm, galvanised") == "Steel wire 2.5 mm"   # a decimal point is no full stop
         assert goods_name("礼品套装，不锈钢保温杯") == "礼品套装"
+
+
+class TestSeveralListedTerms:
+    """A goods name of two or more listed terms locks only when nothing else in the description says what the goods
+    are, as the ICS2 guidance accepts a name that a material, property, size or use makes identifiable; a single listed
+    term locks whatever follows it."""
+
+    def test_a_material_size_or_use_after_the_goods_name_lets_the_line_pass(self, shipped_rules, rules):
+        assert check_rules("", "Toy cars, plastic, no motor, pull-back, for children 3+", shipped_rules) is None
+        assert check_rules("", "metal box, steel, 30x20 cm", shipped_rules) is None
+        assert check_rules("", "Parts and accessories, steel", rules) is None
+
+    def test_several_listed_terms_alone_are_locked(self, shipped_rules):
+        assert check_rules("", "Toy cars", shipped_rules).matched_term == "cars"
+        assert check_rules("", "metal box", shipped_rules).matched_term == "metal"
+
+    def test_a_single_listed_term_is_still_locked(self, shipped_rules):
+        m = check_rules("", "Various goods", shipped_rules)
+        assert m.kind == FlagKind.stop_word and m.rule_source == RuleSource.firm_stop_words and m.matched_term == "various"
+        m = check_rules("", "Parts", shipped_rules)
+        assert m.kind == FlagKind.vague and m.rule_source == RuleSource.ics2_unacceptable and m.matched_term == "parts"
 
 
 class TestPureStopWordAndAskFor:

@@ -404,9 +404,12 @@ has been made with these options yet.
 - Confidence is model-estimated and only loosely calibrated against 20 labelled lines; it must not be
   read as a probability.
 - Chinese product slang and brand-only names still miss; the hybrid index helps but does not solve it.
-- Known limitation of the stop-word rule: a goods name made only of listed words, such as "metal box" or "steel
-  rods", is still locked, even though the ICS2 guidance accepts names like "steel tubes". A narrower notion of stop
-  word is deferred until the eval set has more such lines.
+- Known limitation of the stop-word rule: a goods name of several listed words, such as "metal box" or "steel rods",
+  is locked only when nothing else in the description identifies the goods, so "metal box, steel, 30x20 cm" passes,
+  but on its own it is still locked, although the ICS2 guidance accepts names like "steel tubes". A single listed term
+  is locked whatever follows it ("Toys, plastic"). Any word after the goods name other than filler counts as
+  identifying, a listed one included, while a count of pieces ("20 ctns") does not. On the end-to-end eval set the
+  change unlocks one line (XIBTI505060394, "A metal box with a hinged lid …"); no eval run has measured it yet.
 - The precedent override runs at 5 of 5. At 4 of 5 it would give 7 more lines right end to end (67 → 74), at the cost
   of 3 more wrong HS-6 codes auto-accepted on the HS-6 eval (3 → 6), among them the shoe pair above. That trade-off is
   left for a later decision.
