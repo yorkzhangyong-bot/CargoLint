@@ -82,8 +82,9 @@ Output [Classification]            # one per input line
   status: checked|failed, error_reason
 ```
 
-Pipeline per line (constitution, Principle IV), in this order: translate + expand (ZH→EN,
-multi-query, optional HyDE) → metadata chapter filter → BM25 and vector retrieval → reciprocal rank fusion → precedent leg (the BTI rulings nearest to the same queries vote for their HS-6 codes; up to three codes join the candidate chunks, tagged with the best-matching ruling, FR-051) → ranking call with structured output `{candidates: [{code, confidence, rationale,
+Pipeline per line (constitution, Principle IV), in this order: queries (the raw text as typed, whatever its
+language, plus the shipper-confirmed attributes; with `CARGOLINT_QUERY_EXPANSION` on, one structured call appends up
+to five English queries and an optional HyDE sentence; feature 009: no translation) → metadata chapter filter → BM25 and vector retrieval → reciprocal rank fusion → precedent leg (the BTI rulings nearest to the same queries vote for their HS-6 codes; up to three codes join the candidate chunks, tagged with the best-matching ruling, FR-051) → ranking call with structured output `{candidates: [{code, confidence, rationale,
 history_only}]}` → **code-existence validation** against the nomenclature index (codes not found
 are dropped; `subheading_text` and `chapter` are filled from the index, never from the model).
 `hybrid=False` skips BM25 and fusion (baseline for SC-011). Shipper history codes are passed as

@@ -24,14 +24,12 @@ def main() -> int:
     sample = json.loads((ROOT / "data" / "samples" / "sample_lines.json").read_text(encoding="utf-8"))["lines"]
     labelled = [json.loads(l) for l in (ROOT / "data" / "labelled" / "lines_20.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
     judgement: dict[str, dict] = {}
-    translate: dict[str, dict] = {}
     rank: dict[str, dict] = {}
     for line in labelled + sample:  # sample last so its explicit values win
         k = key(line["text_zh"], line["text_en"])
         flag = line.get("expected_flag")
         judgement[k] = {"vague": flag != "ok", "missing": [] if flag == "ok" else ["material", "product_name", "use"],
                         "reason": "specific product with material and type" if flag == "ok" else "generic term, no material, product name or use"}
-        translate[k] = {"queries": [line["text_en"]] if line["text_en"] else ["unknown goods"], "hyde": None}
         code = line.get("expected_top_code") or line.get("expected_code")
         conf = line.get("expected_confidence", 90)
         rank[k] = {"candidates": [{"code": code, "confidence": conf, "rationale": f"matches subheading {code}", "history_only": False}]} if code else {"candidates": []}
@@ -47,7 +45,6 @@ def main() -> int:
     rank["塑料杯 / plastic cups for drinking"] = {"candidates": [{"code": "3924.10", "confidence": 90, "rationale": "plastic tableware", "history_only": False}]}
     judgement["steel bobbin cases for industrial sewing machines"] = {"vague": False, "missing": [], "reason": "material, part name and host machine given"}
     judgement["塑料杯 / plastic cups for drinking"] = {"vague": False, "missing": [], "reason": "material and product named"}
-    translate["塑料杯 / plastic cups for drinking"] = {"queries": ["plastic cups", "plastic tableware"], "hyde": None}
     extract = {
         "line 1 is steel bobbin cases for industrial sewing machines": {"material": "made of steel", "part_name": "bobbin cases", "use": "for industrial sewing machines"},
         "steel bobbin cases for industrial sewing machines": {"material": "steel", "part_name": "bobbin cases", "use": "industrial sewing machines"},
@@ -66,7 +63,7 @@ def main() -> int:
         elif attribute:
             cn8[k] = {"cn8": None, "confidence": 0, "deciding_attribute": attribute, "attribute_visible": False,
                       "evidence": "", "rationale": f"the description does not state {attribute}", "precedent": None}
-    for name, data in (("JudgementOut", judgement), ("TranslateOut", translate), ("RankOut", rank), ("ExtractOut", extract),
+    for name, data in (("JudgementOut", judgement), ("RankOut", rank), ("ExtractOut", extract),
                        ("Cn8Out", cn8), ("SubdivisionOut", {})):
         (OUT / f"{name}.json").write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
         print(f"{name}: {len(data)} recorded")

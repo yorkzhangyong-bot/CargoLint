@@ -99,10 +99,14 @@ plausible code that the description cannot support.
 
 ### IV. Hybrid, Structure-Aware Retrieval
 
-- `classify_hs6` MUST run this pipeline in this order: Chinese→English query translation with
-  multi-query expansion (HyDE optional) → chapter metadata filter → hybrid retrieval (BM25 plus
-  vector search in a local Chroma store, cosine similarity) fused by reciprocal rank fusion →
-  LLM ranking → code-existence validation. Routing follows, in code (Principle I).
+- `classify_hs6` MUST run this pipeline in this order: queries → chapter metadata filter →
+  hybrid retrieval (BM25 plus vector search in a local Chroma store, cosine similarity) fused by
+  reciprocal rank fusion → LLM ranking → code-existence validation. Routing follows, in code
+  (Principle I).
+- The queries MUST start with the line's raw text as typed, in whatever language, followed by
+  what the shipper confirmed; no language gets a path of its own or a translation step. Query
+  expansion (one model call per line adding up to five English queries and an optional HyDE
+  sentence) is one switch that applies to every language or to none, off by default.
 - The nomenclature MUST be chunked by structure: one chunk per HS-6 subheading (chapter title,
   heading text, subheading text and the CN-8 lines beneath it) with chapter, heading,
   subheading, language, source and year as metadata. BTI rulings: one chunk per ruling (goods
@@ -116,9 +120,11 @@ plausible code that the description cannot support.
 - The Admin page (Data) MUST state truthfully what the knowledge base covers and when it was last
   updated.
 
-**Rationale**: HS code numbers and exact product terms retrieve poorly with vectors alone,
-Chinese input needs translation, and one chunk per subheading mirrors how the nomenclature is
-organised.
+**Rationale**: HS code numbers and exact product terms retrieve poorly with vectors alone, and
+one chunk per subheading mirrors how the nomenclature is organised. The embedding model
+(`qwen/qwen3-embedding-8b`) is multilingual, and a 10-pair bilingual smoke test showed no gain
+from translating, so Chinese input is searched as typed and query expansion is a switch to be
+measured, not a default.
 
 ### V. Single-Purpose, Schema-Typed Tools
 
@@ -233,7 +239,7 @@ versions to the line store; the decision table reads from it.
 |------|-----------|
 | `parse_packing_list` | file parsers: openpyxl/pandas, pdfplumber and OCR, ZH/EN split, caps |
 | `check_description` | rule lists: ICS2 unacceptable terms, firm stop-words, vagueness check |
-| `classify_hs6` | RAG: ZH→EN translation, BM25 and embeddings fused by RRF, Chroma |
+| `classify_hs6` | RAG: raw-text queries in any language (optional expansion), BM25 and embeddings fused by RRF, Chroma |
 | `classify_cn8` | CN 2026 eight-digit lines under the decided HS-6; BTI rulings with a CN code as precedent |
 | `lookup_precedent` | BTI rulings, local, indexed by subheading |
 | `lookup_taric` | TARIC snapshot: subdivisions and measures for a CN-8 and an origin |
@@ -334,7 +340,7 @@ a listed element needs a spec change.
   pass, cost display, export, README and tests. This measures the riskiest part (retrieval
   quality) before the UI builds on it. A different order needs a recorded reason.
 - **Code organisation**: `app.py`, `agent/` (agent, prompts, routing rules), `tools/`, `rag/`
-  (loader, retriever, translation), `data/`, `store/`, `tests/` and `README.md`. Public
+  (loader, retriever, queries), `data/`, `store/`, `tests/` and `README.md`. Public
   functions are type-annotated and Pydantic models define every boundary.
 - **Data and privacy**: each dataset in `data/` is recorded with its source, version and
   retrieval date. Demo data is labelled as such, and no real shipper data or contact details
@@ -342,7 +348,7 @@ a listed element needs a spec change.
 - **Definition of done** for any feature: the Principle VII tests pass offline; the Constitution
   Check is re-run and clean; the UI matches the UI Design Contract for the elements it touches; no
   secrets are in the repository; the README is updated.
-- **Evaluation readiness**: the README MUST explain how RAG works in this pipeline (translation
+- **Evaluation readiness**: the README MUST explain how RAG works in this pipeline (queries
   → hybrid retrieval → ranking → validation), the tool-calling loop, the security measures, the
   named error scenarios, and how to rebuild the knowledge base and run the tests. It MUST also
   give an honest list of weaknesses and next steps: confidence is only loosely calibrated,
@@ -406,5 +412,12 @@ to depart from; MAY is optional.
   bar at `OVERRIDE_MIN` 5 (right end to end 67 → 69 of 120, the HS-6 eval's end-to-end estimate
   74 → 77, wrong auto-accepts unchanged) and not at 4 (wrong auto-accepts on the HS-6 eval 3 → 6),
   so the switch ships on with a default of 5 of 5 (feature 008, T027).
+- 1.7.0 (2026-10-27): Principle IV no longer requires Chinese→English query translation (feature
+  009). Every line, whatever its language, is retrieved with its raw text as typed, as the
+  embedding model is multilingual and a 10-pair bilingual smoke test showed no gain from
+  translating. Query expansion with an optional HyDE sentence is one switch for all languages or
+  none (`CARGOLINT_QUERY_EXPANSION`), off by default. The rationale, the `classify_hs6` row of the
+  architecture table, the code organisation and the README requirement follow; the open question
+  this amendment resolves was removed.
 
-**Version**: 1.6.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-26
+**Version**: 1.7.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-27

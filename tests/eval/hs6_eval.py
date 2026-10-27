@@ -50,9 +50,14 @@ how often the supported candidate was right; the report shows the switch off aga
 call; the replay keeps its own results file (hs6_eval.json stays the latest paid run) and a history entry marked as a
 replay.
 
+Feature 009: no line is translated; every line is searched with its raw text (rag/translate.build_queries).
+`--expansion on|off` sets query expansion for the run, over CARGOLINT_QUERY_EXPANSION. `--lang zh` runs the 30 lines
+of tests/eval/hs6_eval_zh.json in Chinese, each with its English line's expected HS-6 and leakage rule; `--lang en`,
+the default, runs the 120 as given. The entry keeps lang and expansion.
+
 The line-by-line results go to tests/eval/hs6_eval.json, the latest run, and to the run's own
-tests/eval/hs6_eval_<tag>.json (hs6_eval_iteration<N>.json without --tag), which a run with another tag leaves alone,
-as the CN-8 iteration files keep earlier CN-8 runs (feature 007).
+tests/eval/hs6_eval_<tag>_<lang>_expansion-<on|off>.json (iteration<N> in place of the tag without --tag), which a run
+with another tag leaves alone, as the CN-8 iteration files keep earlier CN-8 runs (feature 007).
 
 --model names another OpenRouter chat model for this run only (the default is the configured CARGOLINT_CHAT_MODEL,
 Gemini 2.5 Flash since feature 006; the entry keeps the model and the reasoning sent next to its tag), through
@@ -90,7 +95,7 @@ from agent.routing import SchemaError, hs6_choice, hs6_gate, hs6_ruling_vote, ro
 from agent.schemas import FlagKind, Hs6Vote, LineStatus, RankOut, SourceKind, Usage  # noqa: E402
 from rag.loader import open_knowledge_base  # noqa: E402
 from rag.retriever import DISTANCE_DECIMALS  # noqa: E402
-from rag.translate import clear_cache as clear_translations  # noqa: E402
+from rag.translate import clear_cache as clear_expansions  # noqa: E402
 from tests.eval.cn8_eval import (OverriddenClient, dump_results, expected_sent_share, majority, price_for_run,  # noqa: E402
                                  run_settings)
 from tools.check_description import check_descriptions  # noqa: E402
@@ -99,6 +104,7 @@ from tools.common import LineText, run_per_line  # noqa: E402
 from tools.parsers import split_mixed  # noqa: E402
 
 SET = ROOT / "tests" / "eval" / "cn8_eval_set.json"
+ZH_SET = ROOT / "tests" / "eval" / "hs6_eval_zh.json"   # feature 009: 30 of the set's lines written in Chinese
 OUT = ROOT / "tests" / "eval" / "hs6_eval.json"
 HISTORY = ROOT / "tests" / "eval" / "hs6_eval_history.json"
 REPORT = ROOT / "tests" / "eval" / "hs6_eval.md"
@@ -220,11 +226,29 @@ def confidence_table(runs: list[list[dict]]) -> dict[str, dict[str, int]]:
     return {str(v): {"right": c["right"], "wrong": c["wrong"]} for v, c in sorted(table.items(), reverse=True)}
 
 
-def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: int) -> tuple[list[dict], float]:
+def eval_rulings(data: dict, lang: str) -> list[dict]:
+    """Feature 009: the set's rulings in the run's language. "en": the 120 as given. "zh": the 30 of hs6_eval_zh.json,
+    each its ruling with the Chinese text as the description, so the expected codes and the leakage rule (the line's
+    own ruling) are the English line's."""
+    if lang == "en":
+        return data["rulings"]
+    by_ref = {r["reference"]: r for r in data["rulings"]}
+    return [{**by_ref[z["ref"]], "description": z["text_zh"]}
+            for z in json.loads(ZH_SET.read_text(encoding="utf-8"))["lines"]]
+
+
+def results_name(base: str, lang: str, expansion: bool) -> str:
+    """Feature 009: a run's own results file names its language and its query expansion."""
+    return f"{base}_{lang}_expansion-{'on' if expansion else 'off'}"
+
+
+def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: int,
+             expansion: bool = False) -> tuple[list[dict], float]:
     """One pass of the app's HS-6 path over the set: one row per ruling, and the elapsed seconds."""
-    clear_translations()   # an independent run: no translation carried over (only a Chinese line is translated)
+    clear_expansions()   # an independent run: no query expansion carried over
     lines = [line_text(i, r) for i, r in enumerate(rulings, start=1)]
-    base = ClassifyContext(hybrid=True, as_of=as_of)   # context_for_shipment for an unknown shipper, on the set's date
+    base = ClassifyContext(hybrid=True, as_of=as_of, expansion=expansion)   # context_for_shipment for an unknown
+                                                                            # shipper, on the set's date
     t0 = time.perf_counter()
     checks = check_descriptions(lines, kb.rules, client, workers)
     todo = []
@@ -498,7 +522,8 @@ def _wrong_auto(wrong_auto_runs: list[list[dict]]) -> list[str]:
 
 def _entry_sections(h: dict, descriptions: dict[str, str]) -> list[str]:
     n, x = h["n"], h["cross_layer"]
-    out = ["", f"## Iteration {h['iteration']} ({h.get('tag', '-')}, {h['model']}, {h['run_on']})"]
+    run = f", {h['lang']}, query expansion {h['expansion']}" if "lang" in h else ""   # feature 009
+    out = ["", f"## Iteration {h['iteration']} ({h.get('tag', '-')}, {h['model']}{run}, {h['run_on']})"]
     if h.get("replay_of"):
         r = h["replay_of"]
         out += ["", f"Replay of iteration {r['iteration']} ({r.get('tag') or '-'}) at OVERRIDE_MIN {h['override_min']}, "
@@ -641,8 +666,8 @@ def replay_main(args: argparse.Namespace, data: dict, cn8: dict[str, dict], cn8_
     entry = {"iteration": iteration, "run_on": date.today().isoformat(),
              "change": f"replay of iteration {s['iteration']} at OVERRIDE_MIN {override_min}; no model call",
              **({"tag": args.tag} if args.tag else {}),
-             **{k: s[k] for k in ("model", "reasoning", "threshold", "ask_floor", "temperature", "seed", "repeat", "n")
-                if k in s},
+             **{k: s[k] for k in ("model", "reasoning", "lang", "expansion", "threshold", "ask_floor", "temperature",
+                                  "seed", "repeat", "n") if k in s},
              "replay_of": {"iteration": s["iteration"], "tag": s.get("tag")}, **m,
              **({"parse": s["parse"]} if "parse" in s else {}), "confidence": confidence_table(runs),
              "elapsed_s": 0.0, "cost_usd": 0.0, "cost_eur": 0.0, "cost_eur_runs": [0.0] * len(runs)}
@@ -689,6 +714,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--replay", help="feature 008: a results file whose stored answers are replayed at --override-min, "
                                      "with no model call")
     ap.add_argument("--override-min", type=int, help=f"the OVERRIDE_MIN of a --replay (default {OVERRIDE_MIN})")
+    ap.add_argument("--lang", choices=("en", "zh"), default="en",
+                    help="feature 009: en, the 120 lines as given (default); zh, the 30 lines of hs6_eval_zh.json in Chinese")
+    ap.add_argument("--expansion", choices=("on", "off"),
+                    help="feature 009: query expansion for this run (default: CARGOLINT_QUERY_EXPANSION)")
     args = ap.parse_args(argv)
     if args.repeat < 1:
         ap.error("--repeat must be 1 or more")
@@ -701,7 +730,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.replay and not 1 <= (args.override_min or OVERRIDE_MIN) <= HS6_VOTE_K:
         ap.error(f"--override-min must be between 1 and {HS6_VOTE_K}")
     data = json.loads(SET.read_text(encoding="utf-8"))
-    rulings = data["rulings"][:args.limit] if args.limit else data["rulings"]
+    rulings = eval_rulings(data, args.lang)
+    rulings = rulings[:args.limit] if args.limit else rulings
     cn8_data = json.loads(Path(args.cn8).read_text(encoding="utf-8"))
     cn8 = cn8_results(cn8_data)
     missing = [r["reference"] for r in rulings if r["reference"] not in cn8]
@@ -728,7 +758,9 @@ def main(argv: list[str] | None = None) -> int:
     iteration = args.iteration if args.iteration is not None else max((h["iteration"] for h in history), default=0) + 1
     change = args.change or (f"{args.repeat} independent run{'s' if args.repeat > 1 else ''}, temperature {temperature}, "
                              f"seed {seed if seed is not None else 'none'}")
-    print(f"HS-6 iteration {iteration}: {len(rulings)} lines × {args.repeat} run(s); BTI vectors "
+    expansion = settings.query_expansion if args.expansion is None else args.expansion == "on"
+    print(f"HS-6 iteration {iteration}: {len(rulings)} lines ({args.lang}, query expansion "
+          f"{'on' if expansion else 'off'}) × {args.repeat} run(s); BTI vectors "
           f"{'loaded' if getattr(kb, 'bti_vectors', None) is not None else 'not loaded'}; model {settings.chat_model}, "
           f"temperature {temperature}, seed {seed}; CN-8 results: iteration {cn8_data['summary'].get('iteration')}")
 
@@ -736,7 +768,7 @@ def main(argv: list[str] | None = None) -> int:
     for k in range(args.repeat):
         before = usage.cost_eur
         invalid.clear()
-        rows, seconds = run_once(rulings, kb, client, as_of, settings.workers)
+        rows, seconds = run_once(rulings, kb, client, as_of, settings.workers, expansion)
         runs.append(rows)
         parsed.append(parse_counts(invalid, rows))
         elapsed += seconds
@@ -747,6 +779,7 @@ def main(argv: list[str] | None = None) -> int:
     entry = {
         "iteration": iteration, "run_on": date.today().isoformat(), "change": change,
         **({"tag": args.tag} if args.tag else {}), "model": settings.chat_model, "reasoning": reasoning,
+        "lang": args.lang, "expansion": "on" if expansion else "off",
         "threshold": DEFAULT_THRESHOLD, "ask_floor": ASK_FLOOR, "temperature": temperature, "seed": seed,
         "repeat": args.repeat, "n": len(rulings), **m,
         "parse": {"retry_limit": client.max_retries, "runs": parsed}, "confidence": confidence_table(runs),
@@ -774,7 +807,7 @@ def main(argv: list[str] | None = None) -> int:
         print("\n== tests/eval/hs6_eval.md:\n" + render_report(history, data))
         print("dry run: nothing written")
     else:
-        write_results(report, OUT, args.tag or f"iteration{iteration}")
+        write_results(report, OUT, results_name(args.tag or f"iteration{iteration}", args.lang, expansion))
         HISTORY.write_text(json.dumps(history, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
         REPORT.write_text(render_report(history, data), encoding="utf-8", newline="\n")
     print(f"HS-6 top-1 per run {m['top1_runs']} of {n}; majority {m['majority_top1']}/{n}; in top 3 per run {m['top3_runs']}; "

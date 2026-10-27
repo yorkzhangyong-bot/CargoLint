@@ -47,7 +47,7 @@ Two screens make up the MVP: a start screen (sidebar uploader, shipment fields, 
 |---|---|
 | Knowledge base relevant to the domain | Full HS 2022 / EU Combined Nomenclature text (one chunk per subheading, with chapter/heading metadata) plus EU BTI rulings for the target chapters, the ICS2 unacceptable-terms list and a firm stop-word list |
 | Standard retrieval with embeddings, chunking, similarity search | Structure-based chunking (one subheading per chunk), embeddings in a local Chroma store, cosine similarity |
-| Advanced RAG with query translation and structured retrieval | Chinese→English query translation with multi-query expansion (optionally HyDE); metadata filter by chapter; hybrid BM25 + vector retrieval fused with reciprocal rank fusion |
+| Advanced RAG with query translation and structured retrieval | Every line is searched with its raw text in any language, as the embedding model is multilingual (feature 009 dropped the Chinese→English translation, which showed no gain); multi-query expansion with HyDE is one switch, `CARGOLINT_QUERY_EXPANSION`, off by default after the feature 009 evals; metadata filter by chapter; hybrid BM25 + vector retrieval fused with reciprocal rank fusion |
 | At least 3 tool calls relevant to the domain | 5 tools: `parse_packing_list`, `check_description`, `classify_hs6`, `lookup_precedent`, `apply_shipper_reply` |
 | Domain-specific prompts, responses and security | Customs-specific system prompt; descriptions passed as fenced data; schema-validated outputs; routing enforced in code |
 | LangChain with OpenRouter (OpenAI-compatible SDK) | LangChain v1 agent; LLM and embeddings called through OpenRouter |
@@ -65,7 +65,7 @@ Two screens make up the MVP: a start screen (sidebar uploader, shipment fields, 
 
 ### Evaluation criteria to be ready for
 
-Explain how RAG works in this pipeline (translation → hybrid retrieval → ranking → validation); explain the tool-calling loop; show clean code organisation; name the error scenarios (scanned PDF with bad OCR, mixed-language cells, code that does not exist, model returning the wrong schema, shipper reply that contradicts the file); and give an honest list of weaknesses and improvements (§12).
+Explain how RAG works in this pipeline (raw-text queries → hybrid retrieval → ranking → validation); explain the tool-calling loop; show clean code organisation; name the error scenarios (scanned PDF with bad OCR, mixed-language cells, code that does not exist, model returning the wrong schema, shipper reply that contradicts the file); and give an honest list of weaknesses and improvements (§12).
 
 ## 6. Architecture
 

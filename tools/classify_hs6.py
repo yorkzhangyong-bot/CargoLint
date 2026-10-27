@@ -1,5 +1,5 @@
-"""Tool 3 — classify_hs6: translate → (history-boosted) hybrid retrieval → ranking → code-existence validation
-(FR-012 … FR-018, constitution Principles III and IV)."""
+"""Tool 3 — classify_hs6: queries (the raw text, optionally expanded) → (history-boosted) hybrid retrieval → ranking →
+code-existence validation (FR-012 … FR-018, constitution Principles III and IV)."""
 from __future__ import annotations
 
 import json
@@ -10,14 +10,14 @@ from datetime import date
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
-from agent.config import HS6_VOTE_MIN_SIMILARITY, RETRIEVAL_K
+from agent.config import HS6_VOTE_MIN_SIMILARITY, RETRIEVAL_K, get_settings
 from agent.llm import StructuredCaller
 from agent.prompts import fence
 from agent.routing import hs6_ruling_vote, validate_classification, validate_code
 from agent.schemas import Candidate, Classification, LineStatus, RankOut, RetrievalMode, RetrievalTrace, Source, SourceKind
 from rag.retriever import rrf, precedent_codes, stable_order
 from rag.rules import find_shipper, load_shippers
-from rag.translate import translate_and_expand
+from rag.translate import build_queries
 from tools import register
 from tools.common import LineText, get_context, run_per_line, select_lines
 
@@ -63,6 +63,7 @@ class ClassifyContext:
     as_of: date = field(default_factory=date.today)
     precedents: bool = True        # let matching BTI rulings propose candidate codes
     exclude_refs: frozenset[str] | None = None   # feature 006: rulings kept out of the precedents (an eval's own ruling)
+    expansion: bool = field(default_factory=lambda: get_settings().query_expansion)   # feature 009: query expansion
 
 
 def _history_chapters(codes: list[str]) -> list[str]:
@@ -93,8 +94,7 @@ def hs6_voters(hits: list[list[tuple[str, float]]], bti_store, index, as_of: dat
 def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCaller | None) -> Classification:
     if line.pure_stop_word:
         return Classification(line_no=line.line_no, candidates=[], no_valid_candidate=False, status=LineStatus.checked)
-    translated = translate_and_expand(client, line)
-    queries = list(translated.queries) + ([translated.hyde] if translated.hyde else [])
+    queries = build_queries(client, line, ctx.expansion)
     mode = "hybrid" if ctx.hybrid else "vector_only"
     query_vectors = kb.retriever.embed_queries(queries)  # one embedding request per line
     chunks, trace = kb.retriever.search(queries, chapter_filter=None, mode=mode, k=ctx.k, query_vectors=query_vectors)
@@ -186,7 +186,8 @@ def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCal
     rt = RetrievalTrace(original=line.display_text, queries=queries, chapter_filter=chapter_filter, filter_reason=filter_reason,
                         bm25_hits=trace["bm25_hits"], vector_hits=trace["vector_hits"], fused=trace["fused"],
                         sent_to_model=len(chunks), history_chunks=history_chunks, precedent_chunks=precedent_chunks,
-                        precedent_codes=[p["code"] for p in precedents], mode=RetrievalMode(mode))
+                        precedent_codes=[p["code"] for p in precedents], mode=RetrievalMode(mode),
+                        expansion=ctx.expansion)
     vote = (hs6_ruling_vote(hs6_voters(hits, kb.bti, kb.index, ctx.as_of, ctx.exclude_refs), [c.code for c in candidates])
             if candidates else None)   # feature 006: the HS-6 auto-accept gate
     return Classification(line_no=line.line_no, candidates=candidates, no_valid_candidate=not candidates, retrieval_trace=rt,
@@ -223,8 +224,8 @@ class ClassifyArgs(BaseModel):
 
 @tool("classify_hs6", args_schema=ClassifyArgs)
 def classify_hs6_tool(line_nos: list[int] | None = None, all_pending: bool = False) -> str:
-    """Suggest up to three HS-6 subheadings per line with confidence, reasoning and sources, using translation and
-    hybrid retrieval over the Combined Nomenclature. Call after check_description and before lookup_precedent."""
+    """Suggest up to three HS-6 subheadings per line with confidence, reasoning and sources, using hybrid retrieval
+    over the Combined Nomenclature. Call after check_description and before lookup_precedent."""
     ctx = get_context()
     store = ctx.store
     lines = select_lines(store, line_nos, all_pending or not line_nos)

@@ -82,6 +82,8 @@ class Settings:
                                  # parameter needs False (CARGOLINT_REASONING other than "off"), as OpenRouter refuses it
     hs6_override: bool = True    # feature 008: the precedent override at the HS-6, on since the evals (T027);
                                  # CARGOLINT_HS6_OVERRIDE "off" or "false" turns it off
+    query_expansion: bool = False   # feature 009: CARGOLINT_QUERY_EXPANSION "on" adds the model's English queries to
+                                    # every line's raw text (rag/translate.py)
 
     @property
     def has_key(self) -> bool:
@@ -92,6 +94,9 @@ def load_settings(env: dict | None = None) -> Settings:
     """Read settings from the environment (a `.env` at the repo root is loaded if present)."""
     load_dotenv(ROOT / ".env", override=False)
     e = env if env is not None else os.environ
+    expansion = (e.get("CARGOLINT_QUERY_EXPANSION") or "off").strip().lower()
+    if expansion not in ("on", "off"):
+        raise ValueError(f"CARGOLINT_QUERY_EXPANSION must be on or off, not {expansion!r}")
     return Settings(
         api_key=e.get("OPENROUTER_API_KEY") or None,
         http_referer=e.get("OPENROUTER_HTTP_REFERER") or None,
@@ -104,6 +109,7 @@ def load_settings(env: dict | None = None) -> Settings:
         ocr_min_score=float(e.get("CARGOLINT_OCR_MIN_SCORE") or 0.6),
         reasoning_off=(e.get("CARGOLINT_REASONING") or "off") == "off",
         hs6_override=(e.get("CARGOLINT_HS6_OVERRIDE") or "on").strip().lower() not in ("off", "false"),
+        query_expansion=expansion == "on",
     )
 
 
