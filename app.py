@@ -7,20 +7,36 @@ All line data is read from the LineStore; nothing in the UI is reconstructed fro
 """
 from __future__ import annotations
 
+import hmac
+
 import streamlit as st
 
 from agent.config import configure_logging, get_settings
 from agent.store import LineStore
+from rag.demo_store import DemoStoreError, demo_store_needed, fetch_demo_store
 from rag.retriever import IndexMismatchError
 
 st.set_page_config(page_title="CargoLint", page_icon="📦", layout="wide")
 
+DEMO_NOTICE = (   # feature 011: shown when CARGOLINT_DEMO_NOTICE is "on"
+    "This is a demo for evaluation, not customs advice. Every code and rewrite must be checked by the declarant before "
+    "use.",
+    "CargoLint stores nothing you upload. Each line is sent to an AI model through OpenRouter (US-hosted) to be classified. "
+    "Please use lists without personal data such as names, phone numbers or email addresses.",
+    "Your shipment lives only in this browser session: export your results before you close the tab.",
+)
+
 
 @st.cache_resource(show_spinner="Loading the knowledge base…")
 def load_kb():
+    """Once per server process. A hosted demo first fetches its store when it is missing (feature 011)."""
     from rag.loader import open_knowledge_base
 
-    return open_knowledge_base(get_settings())
+    settings = get_settings()
+    if demo_store_needed(settings.demo_store_url):
+        with st.spinner("Downloading the demo knowledge base…"):
+            fetch_demo_store(settings.demo_store_url, settings.demo_store_sha256)
+    return open_knowledge_base(settings)
 
 
 def get_store(kb) -> LineStore:
@@ -28,17 +44,41 @@ def get_store(kb) -> LineStore:
     return LineStore(backend=backend, index=kb.index)
 
 
+def password_ok(password: str) -> bool:
+    """True when no demo password is set or this session has entered it; until then only the password field shows
+    (feature 011)."""
+    if not password or st.session_state.get("gate_ok"):
+        return True
+    entered = st.text_input("Demo password", type="password", key="gate_password")
+    if entered and hmac.compare_digest(entered.encode(), password.encode()):
+        st.session_state["gate_ok"] = True
+        st.rerun()
+    if entered:
+        st.error("Wrong password.")
+    return False
+
+
 def main() -> None:
     configure_logging()
     settings = get_settings()
+    if not password_ok(settings.app_password):
+        st.stop()
+    if settings.demo_notice:
+        with st.expander("Before you upload", expanded=True):
+            for line in DEMO_NOTICE:
+                st.markdown(line)
     if not settings.api_key:
-        st.error("OPENROUTER_API_KEY is not set. Set it as an operating-system environment variable and restart CargoLint.", icon="🔑")
+        st.error("OPENROUTER_API_KEY is not set. Set it as an operating-system environment variable and restart CargoLint; "
+                 "on Streamlit Community Cloud, add it to the app's Secrets settings and reboot the app.", icon="🔑")
         st.stop()
     try:
         kb = load_kb()
     except IndexMismatchError as exc:
         st.error(f"Knowledge base problem: {exc}", icon="📚")
         st.code("python -m rag.loader --demo", language="bash")
+        st.stop()
+    except DemoStoreError as exc:
+        st.error(f"Demo knowledge base: {exc}", icon="📚")
         st.stop()
     store = get_store(kb)
     st.session_state.setdefault("chat", [])
