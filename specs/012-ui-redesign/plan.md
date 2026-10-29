@@ -21,8 +21,9 @@ The main page is rebuilt in native Streamlit elements:
 The Admin page loses the sidebar. The base font size goes to 18.
 
 Classification, routing, the CN-8 and TARIC steps and the store's logic do not change. Every clerk action calls an
-existing store method; the one store change is the export column `clerk_changed`. The work comes in three steps, each
-committed on its own: layout, results, polish. The constitution's UI Design Contract is amended first (D4).
+existing store method. Only files under `ui/` and `app.py` change (the hard rule of 2026-10-29), besides tests,
+documents and the theme file. The work comes in three steps, each committed on its own: layout, results, polish. The
+constitution's UI Design Contract is amended first (D4).
 
 ## Technical Context
 
@@ -31,7 +32,7 @@ committed on its own: layout, results, polish. The constitution's UI Design Cont
 **Primary Dependencies**: Streamlit native elements only, checked against the installed 1.65:
 
 - `st.badge` (colour, `help`);
-- `st.metric(border=True)`;
+- `st.selectbox` (type-to-filter);
 - `st.radio`;
 - `st.tabs`;
 - `st.expander` (`key`, `on_change`);
@@ -54,14 +55,14 @@ checks that no custom HTML or CSS exists.
 (`tests/ui/test_response_time.py`).
 
 **Constraints**:
-- no change to classification, routing, the CN-8 and TARIC steps or the store's logic, except FR-013's export column;
+- only files under `ui/` and `app.py` change, besides tests, documents and the theme file (the hard rule); no change
+  to classification, routing, the CN-8 and TARIC steps or the store;
 - native Streamlit only;
 - the password gate and the demo notice unchanged;
 - each file keeps its line endings (`.streamlit/config.toml` is CRLF in the working tree).
 
 **Scale/Scope**:
 - `ui/main_page.py`, `ui/upload.py`, `ui/table.py`, `ui/expand.py`, `ui/view.py` and `ui/admin.py`;
-- the export in `agent/store.py`;
 - the theme;
 - `tests/ui`: 72 tests today, 47 of them in `test_main_page.py`, many of which are rewritten to the new layout.
 
@@ -109,10 +110,9 @@ ui/
 ├── expand.py            # Step 2: blocks 1–4 and the decision buttons, built on today's forms
 ├── view.py              # Steps 1–2: status line, badge, sort group, need text, row cells, block texts (no Streamlit)
 └── admin.py             # Step 1: a segmented control instead of the sidebar radio
-agent/store.py           # Step 2: the export column clerk_changed (FR-013), the only store change
 tests/
 ├── ui/                  # the rewritten layout tests and the five new tests of FR-017
-└── unit/                # test_view.py additions; the export column; test_native_ui.py (Step 3, static)
+└── unit/                # test_view.py additions; test_native_ui.py (Step 3, static)
 README.md                # Step 3: "What the clerk sees"
 ```
 
@@ -132,11 +132,14 @@ README.md                # Step 3: "What the clerk sees"
    job ends, `selected_line_no` is set to it, so its row opens.
 4. **Status line.** A new `view.status_line` builds "Checked N lines in T s · model: <model>" from `view.summary` and
    the settings. The checking state, the queue and the job messages come from today's runner functions.
-5. **Origin box.** `st.container(border=True)` on the right of the title holds today's Origin field and its existing
-   callback, which calls `apply_taric_origin` and shows the toast. The caption is the one of D1.
+5. **Origin box.** `st.container(border=True)` on the right of the title holds an `st.selectbox` over a static list of
+   ISO two-letter codes in `ui/view.py`, which filters as the clerk types; the default is CN. Its callback is today's
+   origin callback, which calls `apply_taric_origin` and shows the toast. The caption is the one of D1. There is no
+   store change.
 6. **Counts row.** One horizontal container holds:
-   - three `st.metric(…, border=True)` for Ready to accept (`Summary.to_accept`), Needs review (`Summary.pick`) and
-     Ask shipper (`Summary.ask`);
+   - three `st.container(border=True)` cards, each with its label and its count in coloured markdown: `:green[…]` for
+     Ready to accept (`Summary.to_accept`), `:orange[…]` for Needs review (`Summary.pick`), `:red[…]` for Ask shipper
+     (`Summary.ask`);
    - "Accept all K ready", calling `actions.accept_ready`;
    - "Download CSV" and a tertiary "JSON", using the store's exports.
 7. **Sort and pages.**
@@ -150,8 +153,9 @@ README.md                # Step 3: "What the clerk sees"
    - **the need or current text**: a red line's need from its flag's `ask_for` (for example "needs goods name,
      material and use"), "check failed" for a failed check, or the TARIC question's attribute; other lines get the
      current description;
-   - **the HS-6**: the decided code or the top candidate;
-   - **the confidence**.
+   - **the HS code**: before a CN-8 or TARIC-10 is decided, the HS-6 (decided or top candidate) in dotted form; after
+     it, today's `view.code_display` text (4-2-2-2 groups, or the 8 digits and why);
+   - **the confidence**: the HS-6 candidate's.
 9. **Open line.** `st.expander(f"Line {n} · {text}", expanded=True, key=…)` under the selected row only, with today's
    `selected_line_no` as the open line. Collapsing it clears the selection through `on_change`.
 10. **Block 1.**
@@ -170,7 +174,7 @@ README.md                # Step 3: "What the clerk sees"
     - The vote and override sentences of `view.explain_a`.
     - The candidates' precedents with "Open ruling ↗".
 
-    Q1's alternative, individual rulings, waits for the author.
+    Q1: the author chose this default; the individual rulings are not stored.
 13. **Block 4.**
     - **When the selected code is the line's HS-6**: today's `line_taric_view` fills a bordered box. It holds "CN-8:
       … TARIC: …", the third-country duty (`view._duty`), "Requirements: none" or the requirement measures' types,
@@ -193,9 +197,10 @@ README.md                # Step 3: "What the clerk sees"
     - the caption "n questions ready for the shipper";
     - today's `shipper_email.draft` in `st.code`;
     - each red line's update field and "Re-check this line", the block 1 function under its own key prefix.
-16. **`clerk_changed`.** True when any version of the line was created by the clerk's edit (`CreatedBy.clerk`), or the
-    clerk decided or confirmed a code on the current version (`route_set_by` "clerk", or a clerk-confirmed CN-8 or
-    TARIC-10). It is added to `CSV_COLUMNS`, `export_rows` and the JSON lines. No other store code changes.
+16. **`clerk_changed`, pending (FR-013).** It would be true when any version of the line was created by the clerk's
+    edit (`CreatedBy.clerk`), or the clerk decided or confirmed a code on the current version. Under the hard rule it
+    could only be added by the UI's downloads in `ui/`, from the store's export rows and the line versions; the author
+    confirms before Step 2.
 17. **Admin page.** `st.segmented_control("Section", SECTIONS, key="admin_section", default="Rules", required=True)`
     at the top of the page, keeping today's session persistence, instead of `st.sidebar.radio`.
 18. **Advanced link.** At the bottom of the main page: `st.page_link(admin_page, label="Advanced: Ask the agent ·
@@ -297,7 +302,8 @@ Each step: write its tests first, then the code; run `pytest -q`; commit. The st
   - "Ask shipper" adding the line to the draft;
   - the draft section;
   - `clerk_changed` in both exports.
-- Code: `view` helpers; `table`; `expand`; `main_page` (counts row, draft section); `agent/store.py` (the column).
+- Code: `view` helpers; `table`; `expand`; `main_page` (counts row, draft section); the downloads' column in `ui/`, if
+  the author confirms FR-013.
 - Rewrite the existing table, row, summary and export tests.
 
 **Step 3, polish (native)**

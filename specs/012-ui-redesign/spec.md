@@ -68,6 +68,20 @@ prominent")". The brief, given on 2026-10-29, had five parts:
   - the re-check caption has no cost figure;
   - the draft's EN/中文 switch keeps today's default, EN.
 
+### Session 2026-10-29 (after the Step 0 review)
+
+- **Q1**: the default. Block 3 shows the vote summary by code, with no store change.
+- **HS codes** keep their dotted form ("9405.40").
+- **Origin**: an `st.selectbox` over a static list of ISO two-letter codes only, default CN, with type-to-filter, and
+  no store change.
+- **Count cards**: an `st.container(border=True)` each, with the number in coloured markdown (`:green`, `:orange`,
+  `:red`), not `st.metric`.
+- **List column**: labelled "HS code". It shows the HS-6 candidate before a decision and the decided 8- or 10-digit
+  code after, as today, so an auto-accepted Ready line shows its 10 digits directly.
+- **Hard rule**: this feature changes only files under `ui/` and `app.py`. It does not modify `agent/`, `tools/`,
+  `rag/`, routing, the store schema, or any behaviour. A UI change that seems to need a function change is asked
+  first.
+
 ## Brief and final picture
 
 Where they differ, this feature follows the final picture.
@@ -79,9 +93,9 @@ Where they differ, this feature follows the final picture.
 | Tabs | "Packing list file", "Single line" | "Upload file", "Check a single line" |
 | Primary button | "Check packing list" | "Check all lines"; "Check this line" in the single-line tab |
 | Sample | — | "Load sample invoice" in the upload area |
-| Count cards | Accept, Review, Ask shipper | "Ready to accept", "Needs review", "Ask shipper" |
+| Count cards | Accept, Review, Ask shipper | "Ready to accept", "Needs review", "Ask shipper", the counts coloured green, orange and red |
 | Counts row buttons | "Download results" (primary) | "Accept all K ready", "Download CSV", and a small "JSON" |
-| List | Route · Original line · Rewrite · Code · n of 5 | # · Status · Description · Need / description · HS-6 · Conf., under the heading "Lines (sorted: ask shipper → review → ready)" with "Page x of y" |
+| List | Route · Original line · Rewrite · Code · n of 5 | # · Status · Description · Need / description · HS code · Conf., under the heading "Lines (sorted: ask shipper → review → ready)" with "Page x of y" |
 | Badges | Accept, Review, Ask shipper | Ready (and Accepted), Review, Ask shipper |
 | Open row | five numbered blocks | "Line n · <description>", blocks 1 to 4 numbered, the two decision buttons unnumbered |
 | Block 2 label | "code · description · confidence · n of 5 rulings" | "<code> <description> — <confidence>%" with a bar; the ruling count is in block 3 |
@@ -89,20 +103,17 @@ Where they differ, this feature follows the final picture.
 | Block 4 | "Full EU tariff code" | "Tariff (Origin XX)": "CN-8: … TARIC: …", "Third-country duty …", "Requirements: …" |
 | Decision buttons | "Accept <code>" green, "Ask shipper" red outline | "Accept" (primary) and "Ask shipper" (secondary) |
 | Shipper questions | "Next step: n questions…" and the button "Open shipper questions" | the section "Shipper email draft · EN \| 中文" under the list; the count is its caption |
-| HS-6 format in the row | "9405.21" | the picture's "940540" is a sketch; the app keeps its dotted format, "9405.40" |
-| Origin control | "Import into" selectbox (D1: the existing Origin field instead) | the picture draws a dropdown; the existing two-letter field is kept (D1), since a country list would need a new accessor in the TARIC store, outside the brief's rules |
+| HS code in the row | "9405.21 · 3 of 5" | the picture's "940540" is a sketch. The column "HS code" shows the dotted HS-6 ("9405.40") before a decision and today's 8- or 10-digit display after it |
+| Origin control | "Import into" selectbox (D1: the Origin setting instead) | a dropdown, as drawn: an `st.selectbox` over a static list of ISO two-letter codes, default CN |
 
-## Open question before Step 2
+## Q1, resolved: block 3 detail
 
-- **Q1, block 3 detail.** The final picture lists each of the five nearest rulings with its country, year, short
-  description, code, ✓ or ✗, and a link. The line stores only the vote's summary: each HS-6 with the issuing
-  countries of its rulings. The individual rulings are not stored.
-  - **Default, with no store change**: block 3 lists each HS-6 among the nearest rulings with ✓ or ✗ and its
-    countries ("✓ 9405.40 · DE, NL, IE"), then "n of 5 agree with <code>". Each candidate's precedent ruling and its
-    "Open ruling ↗" link are added.
-  - **Alternative**: record the five rulings (reference, country, year, code) in the vote when it is taken. That is
-    a change to the classification's stored output, which the brief's rules exclude, so it needs the author's
-    approval.
+The final picture lists each of the five nearest rulings with its country, year, short description, code, ✓ or ✗,
+and a link. The line stores only the vote's summary: each HS-6 with the issuing countries of its rulings.
+
+The author chose the default, with no store change. Block 3 lists each HS-6 among the nearest rulings with ✓ or ✗ and
+its countries ("✓ 9405.40 · DE, NL, IE"), then "n of 5 agree with <code>". Each candidate's precedent ruling and its
+"Open ruling ↗" link are added.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -235,9 +246,10 @@ The operator follows "Advanced" at the bottom of the page to the Admin page.
   - the subtitle "Check invoice and packing-list lines before customs declaration";
   - on the right, a bordered Origin box.
 
-  The Origin box holds the existing Origin field (two letters, CN by default, the kept value otherwise), with the
-  caption "duty and measures for goods from this country · change → re-applied, no model call". A change MUST go
-  through the existing origin re-application and its toast (D1).
+  The Origin box holds an `st.selectbox` over a static list of ISO two-letter codes, defined in `ui/` (CN by default,
+  the kept value otherwise, type-to-filter), with the caption "duty and measures for goods from this country · change
+  → re-applied, no model call". A change MUST go through today's origin callback, which calls the existing origin
+  re-application and shows its toast (D1). There is no store change.
 - **FR-004**: The input area MUST have two tabs, "Upload file" and "Check a single line".
 - **FR-005**: The upload tab MUST hold:
   - the native uploader, labelled "Drag and drop a PDF, Excel, CSV or photo (jpg/png) here, or browse files", with
@@ -255,8 +267,9 @@ The operator follows "Advanced" at the bottom of the page to the Admin page.
   - while a job runs, "Checking N lines… T s";
   - the queued re-checks and the job messages (D10).
 - **FR-008**: The counts row MUST show:
-  - three bordered metrics: "Ready to accept" (green lines not yet accepted), "Needs review" (yellow lines) and
-    "Ask shipper" (red lines);
+  - three cards, each an `st.container(border=True)` with its label and its count in coloured markdown: "Ready to
+    accept" (`:green`, green lines not yet accepted), "Needs review" (`:orange`, yellow lines) and "Ask shipper"
+    (`:red`, red lines). Not `st.metric`;
   - "Accept all K ready", the existing batch accept (D8);
   - "Download CSV", with a small "JSON" download (D12).
 
@@ -271,8 +284,10 @@ The operator follows "Advanced" at the bottom of the page to the Admin page.
   - **Description**: the line as filed; clicking it opens the row;
   - **Need / description**: on a red line, what it needs, from its flag; on other lines, the current description,
     which differs from the filed one after the clerk edited it (D2);
-  - **HS-6**: the decided code or the top candidate, else "—";
-  - **Conf.**: that candidate's confidence, else "—".
+  - **HS code**: before a decision, the HS-6 candidate in dotted form ("9405.40"). Once a CN-8 or TARIC-10 is
+    decided, today's code display: 4-2-2-2 groups, undecided digits as underscores, or the 8 digits and why the line
+    stops there. So an auto-accepted Ready line shows its 10 digits directly. "—" when there is no candidate;
+  - **Conf.**: the HS-6 candidate's confidence, else "—".
 
   A line still being checked does not open.
 - **FR-011**: The open line MUST render in an `st.expander` "Line n · <description>" under its row, one line open at
@@ -312,13 +327,17 @@ The operator follows "Advanced" at the bottom of the page to the Admin page.
   - each red line's update field with "Re-check this line" (D18).
 
   A line routed to the shipper from its row appears in the draft.
-- **FR-013**: The CSV and JSON exports MUST keep their columns and add `clerk_changed`. It is true when the clerk
-  edited the line's description or decided one of its codes (D13). The edited description, the chosen code and the
-  final route are the existing text, `decided_code` and `route` columns.
+- **FR-013**: *Pending the author's confirmation before Step 2.* D13 added `clerk_changed` to the store's exports. The
+  hard rule now excludes `agent/store.py`. The column could instead be added by the UI's downloads in `ui/`, built
+  from the store's export rows and the line versions. The edited description, the chosen code and the final route are
+  already the existing text, `decided_code` and `route` columns.
 - **FR-014**: The bottom of the main page MUST hold a page link "Advanced: Ask the agent · paste shipper reply ·
   audit trail · Admin" to the Admin page, behind the password gate like every page.
 - **FR-015**: Unchanged: the password gate, the demo notice, classification, routing, the CN-8 and TARIC steps, and
-  the store's logic. Every clerk action uses an existing store method. The only store change is FR-013's column.
+  the store's logic. Every clerk action uses an existing store method.
+
+  Only files under `ui/` and `app.py` change (the hard rule), besides this feature's tests and documents. The theme in
+  `.streamlit/config.toml` (FR-001) is the one exception, flagged to the author.
 - **FR-016**: Native Streamlit only: no `unsafe_allow_html`, no `st.html`, no components and no custom CSS in
   `app.py` or `ui/`.
 - **FR-017**: All existing tests MUST pass. UI tests of moved or removed elements are rewritten to the new layout
@@ -332,7 +351,7 @@ The operator follows "Advanced" at the bottom of the page to the Admin page.
 ### Key Entities *(include if feature involves data)*
 
 - **Line status**: unchanged (`ui/view.py`). The badge, the sort group and the counts are read from it.
-- **Export row**: today's columns plus `clerk_changed`.
+- **Export row**: today's columns. `clerk_changed` is pending (FR-013).
 
 ## Success Criteria *(mandatory)*
 
@@ -343,15 +362,13 @@ The operator follows "Advanced" at the bottom of the page to the Admin page.
 - **SC-003**: No page has a sidebar (UI tests on both pages).
 - **SC-004**: No custom HTML or CSS: a static test finds none in `app.py` and `ui/`.
 - **SC-005**: The offline suite passes, with the five new UI tests of FR-017.
-- **SC-006**: Every clerk action goes through an existing store method; FR-013's export column is the only store
-  change.
+- **SC-006**: Every clerk action goes through an existing store method, and no file under `agent/`, `tools/` or `rag/`
+  changes.
 - **SC-007**: Clerk actions on the 12-line sample still return within 1 s (`tests/ui/test_response_time.py`).
 
 ## Assumptions
 
 - The author adopts the constitution amendment drafted in plan.md (UI Design Contract, 1.8.0) before the Step 1
   code (D4).
-- `st.metric` cannot colour its value, so the cards' counts are not coloured. The coloured counts in the final
-  picture are not reproduced.
 - The demo notice and the password gate keep their place and behaviour.
 - Feature 005's UI contract stays as history; this spec describes the main page from 012 on.
