@@ -152,12 +152,12 @@ auditor can follow.
   plan MUST say where and why.
 - The UI MUST show context, sources, tool results and progress, split between two pages:
   - the main page, which has no sidebar: progress while a check runs (each line's code fills in
-    and its running step shows), the routing counts in the summary bar, the evidence behind each
+    and its running step shows), the routing counts in the count cards, the evidence behind each
     decision in the expanded row (candidates, confidence, EBTI precedent, TARIC measures), and
-    the CSV and JSON export under the table;
+    the CSV and JSON downloads beside the count cards;
   - the Admin page: sources and retrieval steps (Ask the agent), per-shipment tokens and cost
     (Cost), and the knowledge-base statement (Data).
-- The decision table MUST be rendered from the line store, each line with a status that names the
+- The list of lines MUST be rendered from the line store, each line with a status that names the
   decision it needs. It MUST NOT be reconstructed from model prose.
 - Code-enforced guardrails MUST be visible: where auto-accept is locked for a line, the control
   is shown disabled with the reason.
@@ -229,11 +229,12 @@ text into their own mail program. Sending it stays out of scope.
 ### Architecture
 
 Flow: clerk inputs (packing list or invoice as xlsx, csv, pdf or photo; one typed line; an
-updated description; questions in the Admin page's chat) → Streamlit UI (main page: header,
-upload, summary bar and decision table with expanded rows; Admin page: Rules, Data, Cost,
-Quality, Ask the agent) → LangChain agent with its LLM via OpenRouter → seven tools → data.
-Admin settings reach the agent as explicit parameters; the agent writes per-line results and
-versions to the line store; the decision table reads from it.
+updated description; questions in the Admin page's chat) → Streamlit UI (main page: header
+with the Origin box, input tabs, status line, count cards, and the sorted list with its open
+line and the shipper email draft; Admin page: Rules, Data, Cost, Quality, Ask the agent) →
+LangChain agent with its LLM via OpenRouter → seven tools → data. Admin settings reach the agent
+as explicit parameters; the agent writes per-line results and versions to the line store; the
+list reads from it.
 
 | Tool | Backed by |
 |------|-----------|
@@ -434,5 +435,8 @@ to depart from; MAY is optional.
   list sorted by what needs attention, with status badges, and an open line in four blocks plus
   Accept and Ask shipper; the shipper email draft under the list; the Admin page reached from
   "Advanced", its sections in a switch instead of a sidebar. Native Streamlit only, as before.
+- 1.8.1 (2026-10-29): wording only (PATCH). The remaining "summary bar" and "decision table"
+  wording in Principle VI and the Architecture section follows the 012 layout: the count cards,
+  the list of lines, and the downloads beside the cards. No rule changes.
 
-**Version**: 1.8.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-29
+**Version**: 1.8.1 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-29

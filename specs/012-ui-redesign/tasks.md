@@ -186,8 +186,10 @@ need a function change is asked first. The theme file (T010) is the one exceptio
 - [X] T036 README.md: "What the clerk sees" for the new layout
 - [X] T037 Run `pytest -q`, including tests/ui/test_response_time.py (SC-007), then commit "feat(012): step 3,
   polish". On 2026-10-29: 1275 passed, 4 deselected
-- [ ] T038 Constitution 1.8.1 (PATCH), at the end of Step 3 when the wording is final: the four remaining "summary bar"
-  and "decision table" mentions follow the 012 layout (`/speckit-constitution`)
+- [X] T038 Constitution 1.8.1 (PATCH), at the end of Step 3 when the wording is final: the four remaining "summary bar"
+  and "decision table" mentions follow the 012 layout (`/speckit-constitution`). Run on 2026-10-29: Principle VI (the
+  count cards, the list of lines, and the same bullet's "export under the table", now the downloads beside the
+  cards) and the Architecture flow
 
 ---
 
