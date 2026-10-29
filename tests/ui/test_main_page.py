@@ -1,5 +1,6 @@
-"""The main page with AppTest (feature 005, contracts/ui.md §2 to §7): offline, a seeded store, jobs recorded instead
-of run, model calls counted."""
+"""The main page with AppTest (feature 005, contracts/ui.md §2 to §7; feature 012's frame: the header with the Origin
+box, the two input tabs, the status line and the Advanced link): offline, a seeded store, jobs recorded instead of run,
+model calls counted."""
 from __future__ import annotations
 
 import re
@@ -8,12 +9,16 @@ from types import SimpleNamespace
 
 import pytest
 
+from agent.config import get_settings
 from agent.schemas import CreatedBy, Decision, DecisionRoute, TaricSuggestion, Usage
 from tests.ui import harness as h
 from ui import view
 from ui.jobs import Job
 
 pytestmark = pytest.mark.integration
+
+ADVANCED = "Advanced: Ask the agent · paste shipper reply · audit trail · Admin"
+WAIT = "Wait for the running check"
 
 
 def plain(text: str) -> str:
@@ -43,21 +48,59 @@ def empty_store():
     return LineStore(backend={}, index=h.small_index())
 
 
-# --------------------------------------------------------------------------- US1: the empty state (FR-001, FR-003)
-def test_empty_state(kb, recorder):
+@pytest.fixture
+def widths(monkeypatch):
+    """The width each keyed button is drawn with, which AppTest does not keep: key → width."""
+    import streamlit
+    from streamlit.delta_generator import DeltaGenerator
+
+    seen: dict = {}
+    for name in ("button", "form_submit_button"):
+        def on_module(label, *args, _fn=getattr(streamlit, name), **kwargs):
+            seen[kwargs.get("key")] = kwargs.get("width", "content")
+            return _fn(label, *args, **kwargs)
+
+        def on_container(self, label, *args, _fn=getattr(DeltaGenerator, name), **kwargs):
+            seen[kwargs.get("key")] = kwargs.get("width", "content")
+            return _fn(self, label, *args, **kwargs)
+        monkeypatch.setattr(streamlit, name, on_module)
+        monkeypatch.setattr(DeltaGenerator, name, on_container)
+    return seen
+
+
+# --------------------------------------------------------------------------- feature 012, Step 1: the frame (FR-002 to FR-007)
+NOTHING_TO_CHECK = "Drop a file or load the sample invoice first"
+
+
+def test_the_page_frame(kb, recorder, widths):
     at = h.app(empty_store(), kb).run()
     assert not at.exception
-    assert any("CargoLint" in t for t in texts(at))
-    assert at.text_input(key="origin_field").value == "CN"
-    up = at.file_uploader[0]
-    assert up.label == "Drop a packing list or invoice here" and not up.disabled
-    assert "XLSX · CSV · PDF · JPG · PNG — up to 20 MB, one file per shipment" in texts(at)
-    assert at.button(key="sample_empty").label == "Try the sample invoice"
-    one = at.text_input(key="check_one_line")
-    assert one.placeholder == "Type a goods description and press Enter, e.g. bicycle frames, aluminium"
-    assert one.max_chars == 300
-    assert "No lines yet — drop a file or type one description" in texts(at)
-    assert [n.proto.label for n in at.get("page_link")] == ["Admin ⚙"]
+    assert "### CargoLint" in [m.value for m in at.markdown]
+    page = texts(at)
+    assert "Check invoice and packing-list lines before customs declaration" in page
+    origin = at.selectbox(key="origin_field")                        # FR-003: ISO codes only, CN by default
+    assert (origin.label, origin.value, origin.options) == ("Origin", "CN", list(view.ORIGIN_CODES))
+    assert "duty and measures for goods from this country · change → re-applied, no model call" in page
+    assert view.snapshot_caption(kb) in page                         # Principle I: the snapshot date stays displayed
+    assert [t.label for t in at.tabs] == ["Upload file", "Check a single line"]
+    upload_tab, line_tab = at.tabs
+    assert len(at.file_uploader) == len(upload_tab.file_uploader) == 1
+    up = upload_tab.file_uploader[0]
+    assert up.label == "Drag and drop a PDF, Excel, CSV or photo (jpg/png) here, or browse files" and not up.disabled
+    assert "about 1 minute for 30 lines" in page
+    assert [(b.key, b.label) for b in upload_tab.button] == [("sample", "Load sample invoice"),
+                                                             ("check_all", "Check all lines")]
+    check = at.button(key="check_all")
+    assert check.proto.type == "primary" and check.disabled and check.help == NOTHING_TO_CHECK
+    field = line_tab.text_input(key="single_line")
+    assert (field.label, field.max_chars, field.disabled) == ("Goods description, in English or Chinese", 300, False)
+    assert field.placeholder == "e.g. bicycle frames, aluminium"
+    assert [(b.key, b.label, b.proto.type) for b in line_tab.button] == [("check_line", "Check this line", "primary")]
+    assert widths["check_all"] == widths["check_line"] == "stretch"                       # SC-001
+    assert not any(t.startswith(("Checked ", "Checking ")) for t in page)                  # no status line yet
+    assert len(at.sidebar.children) == 0
+    last = list(at.main.children.values())[-1]
+    assert (last.type, last.proto.label) == ("page_link", ADVANCED)                       # FR-014: at the bottom
 
 
 def test_nothing_from_fr002_on_the_main_page(kb, recorder):
@@ -122,7 +165,7 @@ def running_check(**kw) -> Job:
     return job
 
 
-def test_a_running_check_shows_grey_rows_and_the_checking_summary(kb, recorder):
+def test_a_running_check_shows_grey_rows_and_the_checking_status(kb, recorder):
     store = h._store()
     for text in ("Ceramic coffee mugs", "Wooden chopsticks", "Plastic toy figures"):
         h._add(store, text)
@@ -132,27 +175,31 @@ def test_a_running_check_shows_grey_rows_and_the_checking_summary(kb, recorder):
     assert not at.exception
     page = texts(at)
     assert sum(1 for t in page if t == ":gray[◌] Running stop-word check…") == 3
-    assert any(re.fullmatch(r"\*\*Checking 3 lines… · \d+ s\*\*", t) for t in page)
+    assert any(re.fullmatch(r"Checking 3 lines… \d+ s", t) for t in page)                 # the status line (FR-007)
+    assert not any(t.startswith("3 lines checked in") for t in page)
 
 
-def test_reading_a_file_shows_checking_its_name(kb, recorder):
+def test_reading_a_file_shows_its_name_escaped(kb, recorder):
     store = h._store()                                               # a shipment, no line yet: the parse step runs
     at = h.app(store, kb)
     at.session_state["job"] = running_check(file_ref="f1")
-    at.session_state["uploaded_file"] = {"name": "sample_packing_list.xlsx", "size": 10, "ref": "f1"}
+    at.session_state["uploaded_file"] = {"name": "inv_[1].xlsx", "size": 10, "ref": "f1"}
     at.run()
-    assert "Checking sample_packing_list.xlsx…" in texts(at)
-    assert not at.file_uploader
+    status = [c.value for c in at.caption if plain(c.value).startswith("Checking ")]
+    assert len(status) == 1 and re.fullmatch(r"Checking inv_\[1\]\.xlsx… \d+ s", plain(status[0]))
+    assert r"inv\_\[1\]\.xlsx" in status[0]                         # escaped, never Markdown
+    assert at.file_uploader[0].disabled                              # no second file while the first is read
 
 
-def test_the_empty_state_is_disabled_while_any_job_runs(kb, recorder):
+def test_the_upload_tab_waits_while_any_job_runs(kb, recorder):
     at = h.app(empty_store(), kb)
     job = Job(kind="question", message="Which terms?", is_check=False)
     job.done = False
     at.session_state["job"] = job
     at.run()
-    assert at.file_uploader[0].disabled and at.button(key="sample_empty").disabled
-    assert at.text_input(key="check_one_line").disabled
+    assert at.file_uploader[0].disabled and at.button(key="sample").disabled
+    assert at.button(key="check_all").disabled and at.button(key="check_all").help == WAIT
+    assert not at.text_input(key="single_line").disabled and not at.button(key="check_line").disabled   # it queues
 
 
 def test_summary_after_a_check(kb, recorder):
@@ -164,83 +211,96 @@ def test_summary_after_a_check(kb, recorder):
     assert view.summary_text(s) in page and view.split_bar(s) in page
 
 
-def test_the_header_names_the_file_escaped(kb, recorder):
-    store, _ = h.store_with("ready", "review", kb=kb)
-    at = h.app(store, kb)
-    at.session_state["uploaded_file"] = {"name": "inv_[1].xlsx", "size": 10, "ref": "f1"}
-    at.run()
-    assert any(m.value == r"inv\_\[1\]\.xlsx · 2 lines" for m in at.markdown)
-    store2, _ = h.store_with("ready", kb=kb)
-    at2 = h.app(store2, kb).run()
-    assert any(plain(m.value) == "Typed lines · 1 line" for m in at2.markdown)
+def test_the_status_line_after_a_check(recorder):
+    kb = h.make_kb("sample")
+    store = h.sample_store(kb)
+    at = h.app(store, kb).run()
+    statuses = {l.line_no: view.line_status(store, l) for l in store.lines}
+    line = view.status_line(view.summary(store, statuses), get_settings().chat_model)
+    assert re.fullmatch(r"Checked 12 lines in \d+ s · model: \S+", line) and line in texts(at)
 
 
-# --------------------------------------------------------------------------- US1: starting checks
-def test_try_the_sample_invoice(kb, recorder):
+# --------------------------------------------------------------------------- US1, US3: starting checks
+def test_load_the_sample_then_check_all_lines(kb, recorder):
     store = empty_store()
     at = h.app(store, kb)
     at.session_state["chat"] = [{"role": "user", "content": "old"}]
     with h.ModelGuard() as guard:
         at.run()
-        at.button(key="sample_empty").click().run()
+        at.button(key="sample").click().run()
+        assert not recorder.jobs and not store.has_shipment()          # loading starts nothing (FR-005)
+        assert "Ready to check: sample_packing_list.xlsx" in texts(at) and not at.button(key="check_all").disabled
+        at.button(key="check_all").click().run()
     assert not at.exception
     assert [j.kind for j in recorder.jobs] == ["check"] and recorder.jobs[0].file_ref
     assert store.shipment.reference == h.SAMPLE_REFERENCE
     assert [m["content"] for m in at.session_state["chat"] if m["role"] == "user"] == [f"Check the packing list for {h.SAMPLE_REFERENCE}."]
     assert guard.calls == 0
+    assert "Ready to check: sample_packing_list.xlsx" not in texts(at)
 
 
-def test_check_one_line(kb, recorder):
+def test_a_dropped_file_starts_nothing_until_check_all_lines(kb, recorder):
     store = empty_store()
     at = h.app(store, kb).run()
-    at.text_input(key="check_one_line").set_value("Ceramic coffee mugs").run()
+    at.file_uploader[0].upload("inv.csv", b"description\nCeramic coffee mugs\n", "text/csv").run()
+    assert not at.exception and not recorder.jobs and not store.has_shipment()
+    assert "Ready to check: inv.csv" in texts(at)
+    at.button(key="check_all").click().run()
+    assert [(j.kind, bool(j.file_ref)) for j in recorder.jobs] == [("check", True)]
+    assert at.session_state["uploaded_file"]["name"] == "inv.csv"
+
+
+def test_check_a_single_line(kb, recorder):
+    store = empty_store()
+    at = h.app(store, kb).run()
+    at.button(key="check_line").click().run()                        # nothing typed
+    assert "Write the goods description first." in texts(at) and not recorder.jobs
+    recorder.keep_running()
+    at.text_input(key="single_line").set_value("Ceramic coffee mugs")
+    at.button(key="check_line").click().run()
     assert not at.exception
     assert len(store.lines) == 1 and store.lines[0].current.created_by == CreatedBy.paste
-    assert store.lines[0].current.text_en == "Ceramic coffee mugs"
-    assert [j.kind for j in recorder.jobs] == ["check"] and recorder.jobs[0].new_line_nos == [1]
+    assert store.lines[0].current.text_en == "Ceramic coffee mugs" and at.text_input(key="single_line").value == ""
+    assert [(j.kind, j.new_line_nos) for j in recorder.jobs] == [("check", [1])]
+    h._check(store, kb, 1)                                           # the job's work; then it ends
+    h._classify(store, 1, [("3924.10", 60), ("3924.90", 20)])
+    recorder.jobs[-1].done = True
+    at.run()
+    assert not at.exception
+    assert at.session_state["selected_line_no"] == 1 and at.button(key="close_1").label == "▲ close"   # FR-006: open
 
 
-def test_one_more_line_and_its_queue(kb, recorder):
+def test_a_single_line_joins_the_open_shipment_or_waits_in_the_queue(kb, recorder):
     store, _ = h.store_with("ready", kb=kb)
     at = h.app(store, kb).run()
-    at.button(key="more_line_button").click().run()
-    at.text_input(key="more_line").set_value("Wooden chopsticks").run()
+    at.text_input(key="single_line").set_value("Wooden chopsticks")
+    at.button(key="check_line").click().run()
     assert len(store.lines) == 2 and store.lines[1].current.text_en == "Wooden chopsticks"
     assert recorder.jobs[-1].new_line_nos == [2]
     recorder.keep_running()                                         # while a job runs, the next line waits
     at.session_state["job"] = running_check()
     at.run()
-    at.button(key="more_line_button").click().run()
-    at.text_input(key="more_line").set_value("Ceramic dinner plates").run()
+    at.text_input(key="single_line").set_value("Ceramic dinner plates")
+    at.button(key="check_line").click().run()
     assert len(store.lines) == 2
     assert at.session_state["job_queue"] == [("check", "Ceramic dinner plates")]
-    assert "Waits for the running check" in texts(at)
+    page = texts(at)
+    assert ":material/schedule: Ceramic dinner plates" in page and "Waits for the running check" in page
 
 
-def header_popover(at):
-    found = [b for b in at.get("popover") if b.proto.popover.label == "Open another file"]
-    assert len(found) == 1
-    return found[0]
-
-
-def test_open_another_file(kb, recorder):
+def test_a_new_file_on_an_open_shipment_asks_first(kb, recorder):
     store, _ = h.store_with("ready", kb=kb)
     store.add_usage(Usage(total_tokens=1000, cost_eur=0.5, calls=2))
     at = h.app(store, kb).run()
-    pop = header_popover(at)                                          # the drop zone collapses into the header
-    assert not pop.proto.popover.disabled
-    assert [u.label for u in pop.file_uploader] == ["Drop a packing list or invoice here"]
-    assert len(at.file_uploader) == 1 and [b.key for b in pop.button] == ["sample_open"]   # nowhere else on the page
-    at.button(key="sample_open").click().run()
+    assert len(at.file_uploader) == 1 and not at.get("popover")      # one drop zone, in the upload tab
+    at.button(key="sample").click().run()
+    at.button(key="check_all").click().run()
     assert ("A checked shipment is open. Replace it with sample_packing_list.xlsx? Results, counts and cost reset."
             in texts(at))
+    assert store.shipment.reference == "INV-TEST" and not recorder.jobs
     at.button(key="replace_yes").click().run()
     assert store.shipment.reference == h.SAMPLE_REFERENCE and at.session_state["session_usage"].total_tokens == 1000
-    store2, _ = h.store_with("ready", kb=kb)                          # the popover shows once lines exist
-    at2 = h.app(store2, kb)
-    at2.session_state["job"] = running_check()
-    at2.run()
-    assert header_popover(at2).proto.popover.disabled
+    assert [j.kind for j in recorder.jobs] == ["check"]
 
 
 # --------------------------------------------------------------------------- US2: kinds (a) and (b) in place (T018)
@@ -821,24 +881,20 @@ def test_the_email_block(kb, recorder):
     assert ([l.model_dump() for l in store.lines], [r.model_dump() for r in store.shipment.audit]) == before
 
 
-# --------------------------------------------------------------------------- US6: the origin (T041)
-REFUSED_C1 = "Origin not changed: the origin must be two letters, such as CN or US, not 'C1'"
-
-
+# --------------------------------------------------------------------------- US6: the origin (T041; feature 012: the Origin box)
 def test_changing_the_origin_reapplies_the_taric_rules(kb, recorder):
     store, nos = h.store_with("taric_two", "accepted_taric", "ready", kb=kb)
     at = h.app(store, kb).run()
+    assert at.selectbox(key="origin_field").value == "CN"
     with h.ModelGuard() as guard:
-        at.text_input(key="origin_field").set_value("us").run()
+        at.selectbox(key="origin_field").set_value("US").run()
     assert not at.exception
-    assert store.shipment.taric_origin == "US" and at.text_input(key="origin_field").value == "US"
+    assert store.shipment.taric_origin == "US" and at.selectbox(key="origin_field").value == "US"
     assert all(store.get_line(n).current.taric.origin == "US" for n in nos.values())
     assert [t.value for t in at.toast] == ["Origin US — TARIC rules re-applied to 3 lines, no model call"]
     assert store.decided_taric10(store.get_line(nos["accepted_taric"])) == "7318155810"   # the clerk's TARIC-10 stays
     assert guard.calls == 0
-    at.text_input(key="origin_field").set_value("C1").run()
-    assert REFUSED_C1 in texts(at)
-    assert at.text_input(key="origin_field").value == "US" and store.shipment.taric_origin == "US"
+    assert all(re.fullmatch(r"[A-Z]{2}", c) for c in at.selectbox(key="origin_field").options)   # no invalid origin
 
 
 def test_with_no_shipment_the_origin_is_kept_for_every_new_shipment(kb, recorder, monkeypatch):
@@ -848,20 +904,20 @@ def test_with_no_shipment_the_origin_is_kept_for_every_new_shipment(kb, recorder
 
     store = empty_store()
     at = h.app(store, kb).run()
-    at.text_input(key="origin_field").set_value("us").run()
-    assert at.text_input(key="origin_field").value == "US" and not at.toast
-    at.text_input(key="origin_field").set_value("C1").run()
-    assert REFUSED_C1 in texts(at) and at.text_input(key="origin_field").value == "US"
-    at.text_input(key="check_one_line").set_value("Ceramic coffee mugs").run()          # a typed line
+    at.selectbox(key="origin_field").set_value("US").run()
+    assert at.selectbox(key="origin_field").value == "US" and not at.toast
+    at.text_input(key="single_line").set_value("Ceramic coffee mugs")
+    at.button(key="check_line").click().run()                                         # a typed line
     assert store.shipment.taric_origin == "US"
     for start in ("sample", "upload"):
         other = empty_store()
         at = h.app(other, kb).run()
-        at.text_input(key="origin_field").set_value("US").run()
+        at.selectbox(key="origin_field").set_value("US").run()
         if start == "sample":
-            at.button(key="sample_empty").click().run()
+            at.button(key="sample").click().run()
         else:
             at.file_uploader[0].upload("inv.csv", b"description\nCeramic coffee mugs\n", "text/csv").run()
+        at.button(key="check_all").click().run()
         assert not at.exception and other.shipment.taric_origin == "US", start
     monkeypatch.setattr(upload, "st", NS(session_state={"origin_field": "US"}))           # the Admin chat's shipments
     admin_store = empty_store()
@@ -870,13 +926,13 @@ def test_with_no_shipment_the_origin_is_kept_for_every_new_shipment(kb, recorder
 
 
 def test_the_origin_stays_across_pages(kb, recorder):
-    at = h.app(empty_store(), kb).run()                               # no shipment: only the field holds US
-    at.text_input(key="origin_field").set_value("US").run()
+    at = h.app(empty_store(), kb).run()                               # no shipment: only the box holds US
+    at.selectbox(key="origin_field").set_value("US").run()
     at.session_state["_harness_page"] = "admin"
     at.run()
     at.session_state["_harness_page"] = "main"
     at.run()
-    assert at.text_input(key="origin_field").value == "US"
+    assert at.selectbox(key="origin_field").value == "US"
 
 
 # --------------------------------------------------------------------------- feature 008: the precedent override
@@ -892,7 +948,8 @@ def test_a_new_shipment_takes_the_override_switch(kb, recorder, monkeypatch, env
     try:
         store = empty_store()
         at = h.app(store, kb).run()
-        at.text_input(key="check_one_line").set_value("Ceramic coffee mugs").run()
+        at.text_input(key="single_line").set_value("Ceramic coffee mugs")
+        at.button(key="check_line").click().run()
         assert not at.exception and store.shipment.hs6_override_min == override_min
     finally:
         get_settings.cache_clear()

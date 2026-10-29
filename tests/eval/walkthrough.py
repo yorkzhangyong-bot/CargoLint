@@ -182,7 +182,8 @@ class Walk:
 
     def walk(self) -> None:
         self.at.run()
-        self.act("1 open the sample", "Try the sample invoice", lambda: self.at.button(key="sample_empty").click().run())
+        self.act("1 open the sample", "Load sample invoice", lambda: self.at.button(key="sample").click().run())
+        self.act("1 open the sample", "Check all lines", lambda: self.at.button(key="check_all").click().run())
         self.run_jobs("1 open the sample")
         self.accept_ready("1 accept the ready lines")
         self.resolve_yellow("2 choose and confirm the yellow lines")

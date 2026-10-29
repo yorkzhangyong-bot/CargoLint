@@ -2,7 +2,7 @@
 base = "light"
 primaryColor = "#1D4FB8"
 baseRadius = "medium"
-baseFontSize = 14
+baseFontSize = 18
 borderColor = "#E6E6EA"
 
 [theme.sidebar]

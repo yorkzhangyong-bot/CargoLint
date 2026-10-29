@@ -1,5 +1,5 @@
-"""app.py and the two pages' links (feature 005, contracts/ui.md §1): the hidden navigation, "Admin ⚙", "← Back to
-shipment", and the missing-key message. Feature 011: the demo password gate and a demo store that fails its checksum."""
+"""app.py and the two pages' links (feature 005, contracts/ui.md §1; feature 012: the "Advanced" link at the bottom):
+the hidden navigation, "Advanced: …", "← Back to shipment", no sidebar, and the missing-key message. Feature 011: the demo password gate and a demo store that fails its checksum."""
 from __future__ import annotations
 
 import dataclasses
@@ -14,6 +14,7 @@ from tests.ui import harness as h
 
 pytestmark = pytest.mark.integration
 APP = str(Path(__file__).resolve().parents[2] / "app.py")
+ADVANCED = "Advanced: Ask the agent · paste shipper reply · audit trail · Admin"
 
 
 @pytest.fixture
@@ -52,7 +53,7 @@ def test_app_opens_the_main_page_with_the_admin_link(monkeypatch, settings):
     monkeypatch.setattr(rag.loader, "open_knowledge_base", lambda *a, **k: h.make_kb())
     at = AppTest.from_file(APP, default_timeout=30).run()
     assert not at.exception
-    assert [n.proto.label for n in at.get("page_link")] == ["Admin ⚙"]
+    assert [n.proto.label for n in at.get("page_link")] == [ADVANCED]
     assert len(at.sidebar.children) == 0                           # hidden navigation: no page list
 
 
@@ -89,7 +90,7 @@ def test_the_right_password_opens_the_app(settings, kb_opened):
     at = AppTest.from_file(APP, default_timeout=30).run()
     at.text_input(key="gate_password").input("demo-pass").run()
     assert not at.exception and not at.error
-    assert [n.proto.label for n in at.get("page_link")] == ["Admin ⚙"]
+    assert [n.proto.label for n in at.get("page_link")] == [ADVANCED]
     assert kb_opened == [1]
 
 
@@ -140,6 +141,8 @@ def test_the_admin_page_links_back(monkeypatch):
     at = h.app(store, kb, page="admin").run()
     assert not at.exception
     assert [n.proto.label for n in at.get("page_link")] == ["← Back to shipment"]
+    assert len(at.sidebar.children) == 0 and at.segmented_control(key="admin_section").value == "Rules"
     at.session_state["_harness_page"] = "main"
     at.run()
-    assert [n.proto.label for n in at.get("page_link")] == ["Admin ⚙"]
+    assert [n.proto.label for n in at.get("page_link")] == [ADVANCED]
+    assert len(at.sidebar.children) == 0                           # feature 012: no sidebar on either page

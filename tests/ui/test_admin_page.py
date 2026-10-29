@@ -1,5 +1,6 @@
-"""The Admin page with AppTest (feature 005, contracts/ui.md §8): rules, data, cost, quality and the agent chat, for the
-operator and the course evaluators; offline, with a seeded store."""
+"""The Admin page with AppTest (feature 005, contracts/ui.md §8; feature 012: a section switch instead of the sidebar):
+rules, data, cost, quality and the agent chat, for the operator and the course evaluators; offline, with a seeded
+store."""
 from __future__ import annotations
 
 import json
@@ -69,7 +70,7 @@ def empty_store():
 def admin_app(store, kb, section: str | None = None):
     at = h.app(store, kb, page="admin").run()
     if section:
-        at.radio(key="admin_section").set_value(section).run()
+        at.segmented_control(key="admin_section").set_value(section).run()
     assert not at.exception
     return at
 
@@ -80,9 +81,9 @@ def test_layout(kb, recorder):
     assert "### CargoLint · Admin" in [m.value for m in at.markdown]
     assert "For the operator and course evaluators. The clerk's work happens on the shipment page." in texts(at)
     assert [n.proto.label for n in at.get("page_link")] == ["← Back to shipment"]
-    nav = at.sidebar.radio
-    assert len(nav) == 1 and nav[0].key == "admin_section"
-    assert nav[0].options == ["Rules", "Data", "Cost", "Quality", "Ask the agent"] and nav[0].value == "Rules"
+    assert len(at.sidebar.children) == 0                              # feature 012 (D17): no sidebar
+    switch = at.segmented_control(key="admin_section")
+    assert switch.options == ["Rules", "Data", "Cost", "Quality", "Ask the agent"] and switch.value == "Rules"
 
 
 def test_rules_start_at_85_and_on_even_when_admin_opens_first(kb, recorder):
@@ -115,16 +116,17 @@ def test_the_rules_and_the_section_stay_across_pages(kb, recorder):
     at = admin_app(store, kb)
     at.slider(key="threshold").set_value(90).run()
     at.toggle(key="hybrid").set_value(False).run()
-    at.radio(key="admin_section").set_value("Data").run()
+    at.segmented_control(key="admin_section").set_value("Data").run()
     at.session_state["_harness_page"] = "main"
     at.run()
-    at.button(key="sample_open").click().run()                       # a new shipment opened in between
+    at.button(key="sample").click().run()                            # a new shipment opened in between
+    at.button(key="check_all").click().run()
     at.button(key="replace_yes").click().run()
     assert (store.shipment.threshold, store.shipment.hybrid_search) == (90, False)
     at.session_state["_harness_page"] = "admin"
     at.run()
-    assert at.radio(key="admin_section").value == "Data"
-    at.radio(key="admin_section").set_value("Rules").run()
+    assert at.segmented_control(key="admin_section").value == "Data"
+    at.segmented_control(key="admin_section").set_value("Rules").run()
     assert at.slider(key="threshold").value == 90 and at.toggle(key="hybrid").value is False
 
 
@@ -145,7 +147,7 @@ def test_cost(kb, recorder):
     at = h.app(store, kb, page="admin")
     at.session_state["session_usage"] = Usage(total_tokens=1000, cost_eur=0.5, calls=2)   # a replaced shipment's
     at.run()
-    at.radio(key="admin_section").set_value("Cost").run()
+    at.segmented_control(key="admin_section").set_value("Cost").run()
     assert [(m.label, m.value) for m in at.metric] == [("Tokens", "1,500"), ("Cost", "€0.42"), ("Lines", "1"),
                                                        ("Check time", "0 s"), ("Tokens", "2,500"), ("Cost", "€0.92")]
     assert "**This shipment**" in texts(at) and "**This session**" in texts(at)

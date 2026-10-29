@@ -94,7 +94,7 @@ def test_accept_all_ready(page, recorder):
 
 def test_change_the_origin(page, recorder):
     store, at = page
-    assert timed(at, lambda: at.text_input(key="origin_field").set_value("US").run()) < LIMIT_S
+    assert timed(at, lambda: at.selectbox(key="origin_field").set_value("US").run()) < LIMIT_S
     assert store.shipment.taric_origin == "US" and not recorder.jobs
 
 

@@ -63,7 +63,7 @@ need a function change is asked first. The theme file (T010) is the one exceptio
 
 ### Tests for Step 1
 
-- [ ] T006 [P] [US1] tests/ui/test_main_page.py:
+- [X] T006 [P] [US1] tests/ui/test_main_page.py:
   - the title, the subtitle, and the Origin box: a selectbox over the static ISO list, CN by default, with the D1
     caption;
   - the tabs "Upload file" and "Check a single line";
@@ -71,32 +71,39 @@ need a function change is asked first. The theme file (T010) is the one exceptio
   - "Load sample invoice";
   - a dropped file starts nothing until "Check all lines";
   - the status line.
-- [ ] T007 [P] [US3] tests/ui/test_main_page.py: "Check this line" starts the typed-line job with the text, and the
+- [X] T007 [P] [US3] tests/ui/test_main_page.py: "Check this line" starts the typed-line job with the text, and the
   line's row opens when its job ends (a new test of FR-017)
-- [ ] T008 [P] [US1] tests/ui/test_main_page.py: choosing another Origin in the selectbox shows the re-apply note and
+- [X] T008 [P] [US1] tests/ui/test_main_page.py: choosing another Origin in the selectbox shows the re-apply note and
   calls no model (a new test of FR-017)
-- [ ] T009 [P] [US5] tests/ui/test_admin_page.py and tests/ui/test_app_navigation.py:
+- [X] T009 [P] [US5] tests/ui/test_admin_page.py and tests/ui/test_app_navigation.py:
   - no sidebar on either page;
   - the Admin section switch;
   - the "Advanced…" link at the bottom of the main page.
 
 ### Implementation for Step 1
 
-- [ ] T010 [US1] .streamlit/config.toml: `baseFontSize = 18`; the file keeps its CRLF line endings. This is the one
+- [X] T010 [US1] .streamlit/config.toml: `baseFontSize = 18`; the file keeps its CRLF line endings. This is the one
   file outside the hard rule, flagged to the author
-- [ ] T011 [US1] ui/view.py: `status_line` and the static list of ISO two-letter codes, with no Streamlit import
-- [ ] T012 [US1] ui/main_page.py: the header with the Origin box (a selectbox over the ISO list, using today's origin
-  callback), the tabs, the status line, and the Advanced link at the bottom
-- [ ] T013 [US1] ui/upload.py:
+- [X] T011 [US1] ui/view.py: `status_line` and the static list of ISO two-letter codes, with no Streamlit import
+- [X] T012 [US1] ui/main_page.py: the header with the Origin box (a selectbox over the ISO list, using today's origin
+  callback), the tabs, the status line, and the Advanced link at the bottom. Done on 2026-10-29:
+  - the TARIC snapshot date stays as a caption in the Origin box (Principle I: the snapshot date is displayed);
+  - the queue notes and the job messages moved under the status line (D10);
+  - "+ Check one more line" is removed: the single-line tab replaces it;
+  - the header no longer names the file; the status line names it while the file is read.
+- [X] T013 [US1] ui/upload.py:
   - the uploader and "Load sample invoice" set the pending file;
   - "Check all lines" starts the check through today's `begin` and `start_check`;
-  - the replace prompt stays as today.
-- [ ] T014 [US3] ui/main_page.py: the single-line tab and "Check this line", using today's `check_typed_line`; the
-  new line's row opens when its job ends
-- [ ] T015 [US5] ui/admin.py: a segmented control instead of `st.sidebar.radio`
-- [ ] T016 tests/ui/*: rewrite the existing tests of the header, the drop zone, the summary's place and the Admin
-  navigation to the new layout, keeping each test's intent
-- [ ] T017 Run `pytest -q`, then commit "feat(012): step 1, layout"
+  - the replace prompt stays as today; it now follows "Check all lines" in place of the button;
+  - a caption "Ready to check: <file>" names the pending file, which the sample button otherwise does not show.
+- [X] T014 [US3] ui/main_page.py: the single-line tab and "Check this line", using today's `check_typed_line`; the
+  new line's row opens when its job ends. The field and the button are a form, so Enter checks the line too, as
+  "Check one line" did; behind a running job the line waits in the queue.
+- [X] T015 [US5] ui/admin.py: a segmented control instead of `st.sidebar.radio`
+- [X] T016 tests/ui/*: rewrite the existing tests of the header, the drop zone, the summary's place and the Admin
+  navigation to the new layout, keeping each test's intent. tests/eval/walkthrough.py opens the sample with "Load
+  sample invoice" and "Check all lines" (offline run: 58 clerk actions, all 12 lines accepted, no failure).
+- [X] T017 Run `pytest -q`, then commit "feat(012): step 1, layout"
 
 **Checkpoint**: the frame is in place; the results still render as today below it.
 

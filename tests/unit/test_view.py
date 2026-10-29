@@ -225,6 +225,23 @@ def test_summary_text():
         "1 line checked in 3 s · 0 ready · 1 needs a pick · 1 needs the shipper"
 
 
+def test_status_line():                                                   # feature 012, FR-007
+    S, model = view.Summary, "google/gemini-2.5-flash"
+    assert view.status_line(S(lines=24, seconds=40.6), model) == "Checked 24 lines in 41 s · model: google/gemini-2.5-flash"
+    assert view.status_line(S(lines=1, seconds=3), model) == "Checked 1 line in 3 s · model: google/gemini-2.5-flash"
+    assert view.status_line(S(lines=0, seconds=0), model) == ""                       # nothing checked yet
+    assert view.status_line(S(lines=12, seconds=0), model, checking=12, elapsed=7.4) == "Checking 12 lines… 7 s"
+    assert view.status_line(S(lines=13, seconds=40), model, checking=1, elapsed=2) == "Checking 1 line… 2 s"
+    assert view.status_line(S(lines=0, seconds=0), model, checking=0, elapsed=1, file_name="inv.xlsx") == \
+        "Checking inv.xlsx… 1 s"                                                       # the file before its lines are read
+
+
+def test_origin_codes():                                                  # feature 012, FR-003: ISO 3166-1 alpha-2
+    codes = view.ORIGIN_CODES
+    assert len(codes) == len(set(codes)) == 249 and list(codes) == sorted(codes)
+    assert all(re.fullmatch(r"[A-Z]{2}", c) for c in codes) and {"CN", "US", "DE", "VN", "TW"} <= set(codes)
+
+
 def test_seconds_count_only_check_runs():
     from agent.schemas import CheckRun, CheckStep
 
