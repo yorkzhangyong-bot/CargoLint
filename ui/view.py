@@ -15,7 +15,8 @@ from typing import Any
 
 from agent.config import MAX_DESC_CHARS
 from agent.routing import cn8_precedent_conflict, hs6_choice, hs6_gate
-from agent.schemas import ChosenHow, Cn8Gate, CreatedBy, DecisionRoute, FlagKind, Hs6Gate, TaricRule, WrittenBy
+from agent.schemas import (Actor, ChangeKind, ChosenHow, Cn8Gate, CreatedBy, DecisionRoute, FlagKind, Hs6Gate, TaricRule,
+                           WrittenBy)
 from agent.schemas import LineStatus as CheckStatus
 from tools.parsers import split_mixed
 
@@ -766,31 +767,61 @@ def requirements_text(sv: Any) -> str:
 
 # --------------------------------------------------------------------------- feature 012: the downloads (FR-013)
 OVERRIDES = (ChosenHow.other_candidate.value, ChosenHow.typed.value)
+OFFERED_CN8 = (ChangeKind.cn8_written, ChangeKind.cn8_pending)
 
 
-def clerk_changed(line: Any, decided_how: str | None) -> bool:
-    """The clerk overrode the model: an HS-6 other than the top candidate (another candidate, or a typed code), or a
-    description the clerk edited. Accepting a line as it is, confirming its codes or asking the shipper changes nothing
-    (the Step 2 review)."""
-    return decided_how in OVERRIDES or any(v.created_by == CreatedBy.clerk for v in line.versions)
+def _records_by_line(store: Any) -> dict[int, list]:
+    records: dict[int, list] = {}
+    for r in store.shipment.audit:
+        records.setdefault(r.line_no, []).append(r)
+    return records
+
+
+def _offered_cn8(line: Any, hs6: str, records: list) -> str | None:
+    """The CN-8 the model offered under the decided HS-6 for the line's version: the CN-8 step's last record, written by
+    rule or left to the clerk. The line itself keeps only the clerk's code once another is confirmed."""
+    digits = hs6.replace(".", "")
+    offered = [r.new for r in records if r.version_no == line.current.version_no and r.actor != Actor.clerk
+               and r.change in OFFERED_CN8 and r.new and r.new.startswith(digits)]
+    return offered[-1] if offered else None
+
+
+def clerk_changed(store: Any, line: Any, decided_how: str | None, records: list) -> bool:
+    """The clerk overrode the model: an HS-6 other than the top candidate (another candidate, or a typed code); a CN-8
+    or a TARIC-10 other than the one the model offered (when it offered none, picking one is no override); or a
+    description the clerk edited. Accepting a line as it is, confirming its codes or asking the shipper changes nothing.
+    `records` are the line's audit records."""
+    if decided_how in OVERRIDES or any(x.created_by == CreatedBy.clerk for x in line.versions):
+        return True
+    v = line.current
+    cn8, t10 = store.decided_cn8(line), store.decided_taric10(line)
+    if cn8 and v.cn8.written_by == WrittenBy.clerk:
+        offered = _offered_cn8(line, store.decided_code(line)[0], records)
+        if offered is not None and offered != cn8:
+            return True
+    t = v.taric
+    return bool(t10 and t.written_by == WrittenBy.clerk and t.suggestion is not None and t.suggestion.code != t10)
 
 
 def export_csv(store: Any) -> bytes:
     """The store's CSV export, column for column, with `clerk_changed` added; the store's own export is unchanged."""
+    records = _records_by_line(store)
     buf = io.StringIO()
     writer = csv.DictWriter(buf, fieldnames=[*store.CSV_COLUMNS, "clerk_changed"], extrasaction="ignore",
                             lineterminator="\n")
     writer.writeheader()
     for line, row in zip(store.lines, store.export_rows()):
-        writer.writerow(row | {"clerk_changed": "true" if clerk_changed(line, row["decided_how"]) else "false"})
+        changed = clerk_changed(store, line, row["decided_how"], records.get(line.line_no, []))
+        writer.writerow(row | {"clerk_changed": "true" if changed else "false"})
     return ("\ufeff" + buf.getvalue()).encode("utf-8")
 
 
 def export_json(store: Any, knowledge_base_updated: str | None) -> bytes:
     """The store's JSON export with `clerk_changed` on every line."""
+    records = _records_by_line(store)
     payload = json.loads(store.to_json_bytes(knowledge_base_updated=knowledge_base_updated))
     for line, item in zip(store.lines, payload["lines"]):
-        item["clerk_changed"] = clerk_changed(line, item["decided_how"])
+        item["clerk_changed"] = clerk_changed(store, line, item["decided_how"], records.get(line.line_no, []))
     return json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
 
 

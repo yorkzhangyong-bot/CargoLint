@@ -908,3 +908,37 @@ def test_clerk_changed_in_the_downloads(kb):     # FR-013: the clerk's overrides
     for p in (payload, original):
         p["shipment"].pop("exported_at")
     assert payload == original
+
+
+def test_clerk_changed_at_the_cn8_and_the_taric10(kb):  # FR-013: another code than the model offered; none offered: no
+    import csv
+    import io
+
+    from agent.schemas import TaricSuggestion
+
+    store, nos = h.store_with("cn8_pending", "cn8_error", "taric_two", kb=kb)
+
+    def changed(n: int) -> str:
+        rows = csv.DictReader(io.StringIO(view.export_csv(store).decode("utf-8-sig")))
+        return next(r["clerk_changed"] for r in rows if r["line_no"] == str(n))
+
+    n = nos["cn8_pending"]                                           # the model offered 9503 00 95
+    other = next(c for c, _ in store.index.cn8_lines("9503.00") if c != "95030095")
+    store.confirm_cn8(n, "95030095")
+    assert changed(n) == "false"                                     # the offered CN-8, confirmed
+    store.confirm_cn8(n, other)
+    assert changed(n) == "true"                                      # another CN-8
+    store.confirm_cn8(n, "95030095")
+    assert changed(n) == "false"                                     # back to the offered one
+    m = nos["cn8_error"]                                             # the CN-8 step failed: nothing offered
+    store.confirm_cn8(m, "61091000")
+    assert changed(m) == "false"
+    t = nos["taric_two"]
+    outcome = store.get_line(t).current.taric
+    store.confirm_taric10(t, "7318155890")
+    assert changed(t) == "false"                                     # no TARIC-10 was suggested
+    store.set_taric_result(t, outcome.model_copy(update={"suggestion": TaricSuggestion(code="7318155890", confidence=70)}))
+    store.confirm_taric10(t, "7318155890")
+    assert changed(t) == "false"                                     # the suggested one
+    store.confirm_taric10(t, "7318155810")
+    assert changed(t) == "true"                                      # another subdivision

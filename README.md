@@ -133,7 +133,8 @@ operator and the course evaluators.
   lines and job messages follow it.
 - **Counts**: three cards, "Ready to accept" (green), "Needs review" (orange) and "Ask shipper" (red), then "Accept
   all K ready", "Download CSV" and a small "JSON". The downloads add `clerk_changed`, true where the clerk chose an
-  HS-6 other than the model's top candidate or edited the description.
+  HS-6 other than the model's top candidate, picked a CN-8 or TARIC-10 other than the one the model offered, or
+  edited the description.
 - **The list**, sorted ask shipper → review → ready → accepted, 50 lines a page: # · Status · Description (as filed)
   · Need / description · HS code · Conf.
   - The status is a coloured badge, and its tooltip names the decision it waits for ("Pick: 10 or 90", "Ask: what

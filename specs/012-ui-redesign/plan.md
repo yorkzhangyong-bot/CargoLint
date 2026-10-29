@@ -199,10 +199,17 @@ README.md                # Step 3: "What the clerk sees"
     - today's `shipper_email.draft` in `st.code`;
     - folded in an expander, each asking line's update field and "Re-check this line", the block 1 function under
       its own key prefix.
-16. **`clerk_changed` (FR-013, confirmed after Step 1, narrowed after Step 2).** True only for the clerk's overrides:
-    the export row's `decided_how` is "other_candidate" or "typed" (an HS-6 other than the top candidate), or a
-    version of the line was created by the clerk's edit (`CreatedBy.clerk`). Accepting a Ready line as it is,
-    confirming its codes or asking the shipper is false. `view.export_csv` and `view.export_json` add it to the
+16. **`clerk_changed` (FR-013, confirmed after Step 1, narrowed after Step 2, widened to the finer codes after Step 3).**
+    True only for the clerk's overrides:
+    - the export row's `decided_how` is "other_candidate" or "typed" (an HS-6 other than the top candidate);
+    - a CN-8 written by the clerk differs from the one the model offered: the line keeps only the clerk's code, so the
+      offer is the CN-8 step's last audit record (`cn8_written` or `cn8_pending`, not by the clerk) for the line's
+      version under the decided HS-6; none offered is no override;
+    - a TARIC-10 written by the clerk differs from the outcome's suggestion, which stays on the line; no suggestion is
+      no override;
+    - a version of the line was created by the clerk's edit (`CreatedBy.clerk`).
+
+    Accepting a Ready line as it is, confirming its codes or asking the shipper is false. `view.export_csv` and `view.export_json` add it to the
     store's export rows in `ui/`; `agent/store.py` does not change.
 17. **Admin page.** `st.segmented_control("Section", SECTIONS, key="admin_section", default="Rules", required=True)`
     at the top of the page, keeping today's session persistence, instead of `st.sidebar.radio`.

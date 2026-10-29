@@ -161,7 +161,8 @@ need a function change is asked first. The theme file (T010) is the one exceptio
   with a question in the draft, its field fitted to its text
 - [X] T030 `clerk_changed` in the UI's downloads (ui/view.py, ui/main_page.py), built from the store's export rows and
   the line versions; `agent/store.py` is not changed (FR-013, confirmed by the author after Step 1). Narrowed after
-  Step 2 to the clerk's overrides only (done in Step 3)
+  Step 2 to the clerk's overrides only (done in Step 3); after Step 3, a CN-8 or TARIC-10 other than the model's
+  offer counts too, read from the audit trail and the TARIC suggestion
 - [X] T031 tests/ui/*: rewrite the existing table, row, summary, email and export tests to the new layout, keeping
   each test's intent. "Accept n selected" is gone with its test (D8). tests/ui/test_response_time.py and
   tests/eval/walkthrough.py use "Accept" and "Ask shipper" (offline walkthrough: 57 clerk actions, all 12 lines

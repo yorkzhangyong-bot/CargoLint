@@ -100,6 +100,11 @@ prominent")". The brief, given on 2026-10-29, had five parts:
 - **Status line**: it keeps the model's name.
 - **Shipper email draft**: the asking lines' update fields fold into an expander under the draft.
 
+### Session 2026-10-29 (after the Step 3 review)
+
+- **`clerk_changed`** is also true when the clerk picks a CN-8 or a TARIC-10 other than the one the model offered,
+  and stays false when the model offered none.
+
 ## Brief and final picture
 
 Where they differ, this feature follows the final picture.
@@ -347,11 +352,12 @@ The operator follows "Advanced" at the bottom of the page to the Admin page.
 
   A line routed to the shipper from its row appears in the draft.
 - **FR-013**: The CSV and JSON downloads MUST add one column, `clerk_changed`, built in `ui/` from the store's export
-  rows and the line versions; `agent/store.py` does not change. It is true only for the clerk's overrides: an HS-6
-  other than the model's top candidate (`decided_how` "other_candidate" or "typed"), or a version of the line created
-  by the clerk's edit. Accepting a line as it is, confirming its codes or asking the shipper leaves it false. The
-  edited description, the chosen code and the final route are the existing text, `decided_code` and `route`
-  columns.
+  rows, the line versions and the audit trail; `agent/store.py` does not change. It is true only for the clerk's
+  overrides: an HS-6 other than the model's top candidate (`decided_how` "other_candidate" or "typed"); a CN-8 or a
+  TARIC-10 the clerk confirmed that differs from the one the model offered (the CN-8 step's last record under the
+  decided HS-6, or the TARIC suggestion), and none offered is no override; or a version of the line created by the
+  clerk's edit. Accepting a line as it is, confirming its codes or asking the shipper leaves it false. The edited
+  description, the chosen code and the final route are the existing text, `decided_code` and `route` columns.
 - **FR-014**: The bottom of the main page MUST hold a page link "Advanced: Ask the agent · paste shipper reply ·
   audit trail · Admin" to the Admin page, behind the password gate like every page.
 - **FR-015**: Unchanged: the password gate, the demo notice, classification, routing, the CN-8 and TARIC steps, and
