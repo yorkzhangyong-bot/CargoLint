@@ -70,7 +70,7 @@ def widths(monkeypatch):
 @pytest.fixture
 def layout(monkeypatch):
     """The layout arguments AppTest does not keep: each keyed container's keyword arguments, and each st.columns call's
-    spec and gap, in order."""
+    spec, gap and vertical alignment, in order."""
     import streamlit
     from streamlit.delta_generator import DeltaGenerator
 
@@ -80,7 +80,7 @@ def layout(monkeypatch):
         if name == "container" and kwargs.get("key"):
             seen["container"][kwargs["key"]] = kwargs
         elif name == "columns":
-            seen["columns"].append((args[0], kwargs.get("gap", "small")))
+            seen["columns"].append((args[0], kwargs.get("gap", "small"), kwargs.get("vertical_alignment", "top")))
 
     for name in ("container", "columns"):
         def on_module(*args, _fn=getattr(streamlit, name), _name=name, **kwargs):
@@ -302,20 +302,17 @@ def test_the_counts_row(kb, recorder):
 
 
 def test_the_compact_layout(kb, recorder, widths, layout):           # the author's polish after the check of the UI
-    from ui import main_page
-
     (store, _), _ = h.all_states(kb)
     at = h.app(store, kb).run()
     assert not at.exception
     boxes = layout["container"]
     assert (boxes["page"]["width"], boxes["page"]["gap"]) == (1400, "xsmall")      # about 1400 px wide, small gaps
     assert boxes["origin"]["border"] and boxes["origin"]["horizontal"]          # one compact Origin block
-    assert isinstance(main_page.CARD_HEIGHT, int)
-    for key in ("count_ready", "count_review", "count_ask"):                   # small fixed cards, label over number
-        assert (boxes[key]["gap"], boxes[key]["height"]) == (None, main_page.CARD_HEIGHT), key
-    assert ([2, 2, 2, 1.5, 1.5], "small") in layout["columns"]                # the cards and the buttons in one row
+    for key in ("count_ready", "count_review", "count_ask"):   # label over number, no gap; no fixed height, no scrollbar
+        assert boxes[key]["gap"] is None and boxes[key].get("height", "content") == "content", key
+    assert ([2, 2, 2, 1.5, 1.5], "small", "center") in layout["columns"]      # the cards and the buttons, centred
     assert widths["accept_all"] == widths["export_csv"] == "content"           # normal width, not full width
-    rows = [c for c in layout["columns"] if c == ([0.4, 1.2, 3, 3, 1.4, 0.8], "xsmall")]
+    rows = [c for c in layout["columns"] if c[:2] == ([0.4, 1.2, 3, 3, 1.4, 0.8], "xsmall")]
     assert len(rows) == 1 + len(store.lines)                                   # the list's head and each line's row
     assert boxes["lines"]["gap"] == 1                                          # rows 46 px apart
 

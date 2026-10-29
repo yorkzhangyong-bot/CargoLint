@@ -21,7 +21,6 @@ SUBTITLE = "Check invoice and packing-list lines before customs declaration"
 ORIGIN_CAPTION = "Duty and measures follow this country. Changing it re-applies them without a new model call."
 PAGE_WIDTH = 1400                # px: the content is capped at the final picture's width, centred (the author's polish)
 COUNTS = [2, 2, 2, 1.5, 1.5]     # three cards, then "Accept all K ready" and "Download CSV" at their normal width
-CARD_HEIGHT = 112                # px: a card's label and count on two lines, with no gap between them
 
 
 def _line_count(store: Any) -> int:
@@ -138,13 +137,14 @@ def _accept(store: Any, line_nos: list[int] | None) -> None:
 
 def _counts(store: Any, s: view.Summary) -> None:
     """Three small bordered cards with coloured counts, then "Accept all K ready" and "Download CSV" at their normal
-    width, in one row. The CSV adds `clerk_changed` to the store's export (FR-013); there is no JSON download. Nothing
-    is accepted or downloaded while a check runs."""
+    width, centred against the cards in one row. A card is as tall as its label and count, with no gap between them and
+    no fixed height, so it never scrolls. The CSV adds `clerk_changed` to the store's export (FR-013); there is no JSON
+    download. Nothing is accepted or downloaded while a check runs."""
     checking = _checking()
     wait = WAIT if checking else None
     c = st.columns(COUNTS, vertical_alignment="center")
     for col, key, (label, colour, count) in zip(c, ("count_ready", "count_review", "count_ask"), view.count_cards(s)):
-        with col.container(border=True, key=key, gap=None, height=CARD_HEIGHT):
+        with col.container(border=True, key=key, gap=None):
             st.caption(label)
             st.subheader(f":{colour}[{count}]", anchor=False)
     if s.to_accept and not checking:

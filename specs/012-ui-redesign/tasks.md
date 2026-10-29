@@ -203,12 +203,16 @@ need a function change is asked first. The theme file (T010) is the one exceptio
   gaps from the header to the status line, the sample button and its caption on one row; no trailing underscores in
   the HS code; the new Origin caption; one compact Origin block. ui/main_page.py, ui/table.py, ui/upload.py,
   ui/view.py, the tests, the spec and README.md. Streamlit's fixed 6rem padding above the page stays
+- [X] T041 The author's fixes after the polish (2026-10-29): the count cards lose their fixed height, which scrolled
+  in the author's browser; "Accept all K ready" and "Download CSV" stay centred against the cards (pinned in the
+  layout test); `client.toolbarMode = "minimal"` was already in .streamlit/config.toml and no top spacer exists, and
+  neither changes Streamlit's 6rem padding (measured). ui/main_page.py, the tests and the spec
 
 ---
 
 ## Dependencies & Execution Order
 
 - T004 comes before any code (T010 onwards). T005 came before T020 and T028. T038 closes Step 3; T039 follows the
-  author's check of the UI, and T040 the author's polish.
+  author's check of the UI, T040 the author's polish and T041 the author's fixes.
 - Within each step, the tests come before the code.
 - Step 1 comes before Step 2, and Step 2 before Step 3. Each step ends with its own commit. Nothing is merged.

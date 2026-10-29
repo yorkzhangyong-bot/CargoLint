@@ -118,7 +118,7 @@ prominent")". The brief, given on 2026-10-29, had five parts:
 ### Session 2026-10-29 (the author's polish: a compact page like the final picture)
 
 - **Width**: the content is capped at 1400 px, centred, the final picture's width; a narrower window shrinks it.
-- **Count cards**: small, of a fixed height (112 px), the label over the count with no gap between them. The three
+- **Count cards**: small (112 px), the label over the count with no gap between them. The three
   cards, "Accept all K ready" and "Download CSV" share one row (column ratios 2, 2, 2, 1.5, 1.5), and the buttons
   keep their normal width.
 - **List**: the rows sit 46 px apart, with small column gaps and the column ratios 0.4, 1.2, 3, 3, 1.4 and 0.8.
@@ -130,6 +130,16 @@ prominent")". The brief, given on 2026-10-29, had five parts:
   TARIC snapshot date beside it. A small gap separates the header from the tabs. Streamlit 1.65 keeps a fixed 6rem
   padding above the page for its toolbar (108 px at base font 18); no native option removes it, so the title starts
   there.
+
+### Session 2026-10-29 (the author's fixes after the polish)
+
+- **Count cards**: no fixed height. A fixed height that equals the content made a card scroll in the author's browser
+  (the count's heading overflows its box by a pixel); a card is now as tall as its label and count and never scrolls.
+- **Top of the page**: `client.toolbarMode = "minimal"` was already set in `.streamlit/config.toml`. It hides the
+  toolbar's buttons but leaves the 6rem padding (measured 108 px with "minimal" and with "auto"), and no top spacer
+  exists in app.py or `ui/`. The space above the title stays as Streamlit draws it.
+- **Counts row**: "Accept all K ready" and "Download CSV" are centred against the cards (the row's columns centre
+  their content; measured equal centres at 100 % and 125 %).
 
 ## Brief and final picture
 
@@ -326,9 +336,10 @@ check of the UI).
   - "Download CSV" (D12). The small "JSON" download was removed after the author's check of the UI: the app offers
     no JSON download.
 
-  The row checkboxes and "Accept K selected" are removed. The cards are small, of a fixed height, with the label over
-  the count and no gap between them; the cards and both buttons share one row (column ratios 2, 2, 2, 1.5 and 1.5),
-  and the buttons keep their normal width (the author's polish).
+  The row checkboxes and "Accept K selected" are removed. The cards are small, with the label over the count, no gap
+  between them and no fixed height, so they never scroll; the cards and both buttons share one row (column ratios 2,
+  2, 2, 1.5 and 1.5), the buttons at their normal width and centred against the cards (the author's polish and
+  fixes).
 - **FR-009**: The list MUST carry the heading "Lines (sorted: ask shipper → review → ready)" and "Page x of y". It
   shows 50 lines per page (D11), ordered Ask shipper, Review, Ready, Accepted, then Checking, and in file order within
   each group.
