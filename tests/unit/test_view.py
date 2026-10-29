@@ -874,7 +874,6 @@ def test_requirements_text():                                            # block
 def test_clerk_changed_in_the_downloads(kb):     # FR-013: the clerk's overrides only, built in ui/ from the export rows
     import csv
     import io
-    import json
 
     from agent.schemas import Decision, DecisionRoute
     from ui import actions
@@ -902,12 +901,7 @@ def test_clerk_changed_in_the_downloads(kb):     # FR-013: the clerk's overrides
     ours = list(csv.reader(io.StringIO(view.export_csv(store).decode("utf-8-sig"))))
     theirs = list(csv.reader(io.StringIO(store.to_csv_bytes().decode("utf-8-sig"))))
     assert [r[:-1] for r in ours] == theirs                                  # the store's own columns, unchanged
-    payload = json.loads(view.export_json(store, kb.updated))
-    original = json.loads(store.to_json_bytes(knowledge_base_updated=kb.updated))
-    assert [item.pop("clerk_changed") for item in payload["lines"]] == [True, False, False, True, False]
-    for p in (payload, original):
-        p["shipment"].pop("exported_at")
-    assert payload == original
+    assert not hasattr(view, "export_json")                                  # no JSON download in the app
 
 
 def test_clerk_changed_at_the_cn8_and_the_taric10(kb):  # FR-013: another code than the model offered; none offered: no

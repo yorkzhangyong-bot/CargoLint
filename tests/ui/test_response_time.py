@@ -108,9 +108,8 @@ def test_the_email_draft_in_both_languages(page, recorder):
     assert not recorder.jobs
 
 
-@pytest.mark.parametrize("key", ["export_csv", "export_json"])
-def test_each_export(page, recorder, key):
+def test_the_csv_download(page, recorder):
     store, at = page
-    button = next(b for b in at.get("download_button") if b.key == key)
+    button = next(b for b in at.get("download_button") if b.key == "export_csv")
     assert timed(at, lambda: button.click().run()) < LIMIT_S
     assert not recorder.jobs

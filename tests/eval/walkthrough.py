@@ -5,7 +5,7 @@ It drives the main page with AppTest, as a clerk would:
 2. choose and confirm each yellow line, including the TARIC-10 picks;
 3. draft the email in both languages, while the red lines wait for the shipper;
 4. for each red line, copy the question, write the shipper's scripted answer and re-check; then confirm the line;
-5. accept the lines that became ready, and export CSV and JSON.
+5. accept the lines that became ready, and download the CSV.
 
 Each action's machine time goes to tests/eval/walkthrough.json, with the action count and the total. The script
 measures machine time only: a first-time clerk's reading time is the author's timed run in the browser (T051).
@@ -170,9 +170,8 @@ class Walk:
             self.run_jobs(step)
 
     def export(self, step: str) -> None:
-        for key in ("export_csv", "export_json"):
-            button = next(b for b in self.at.get("download_button") if b.key == key)
-            self.act(step, button.label, lambda: button.click().run())
+        button = next(b for b in self.at.get("download_button") if b.key == "export_csv")
+        self.act(step, button.label, lambda: button.click().run())
 
     def walk(self) -> None:
         self.at.run()

@@ -17,7 +17,6 @@ from ui.jobs import Job
 
 pytestmark = pytest.mark.integration
 
-ADVANCED = "Advanced: Ask the agent · paste shipper reply · audit trail · Admin"
 WAIT = "Wait for the running check"
 
 
@@ -99,8 +98,7 @@ def test_the_page_frame(kb, recorder, widths):
     assert widths["check_all"] == widths["check_line"] == "stretch"                       # SC-001
     assert not any(t.startswith(("Checked ", "Checking ")) for t in page)                  # no status line yet
     assert len(at.sidebar.children) == 0
-    last = list(at.main.children.values())[-1]
-    assert (last.type, last.proto.label) == ("page_link", ADVANCED)                       # FR-014: at the bottom
+    assert not at.get("page_link")                                   # no link to the Admin page (the author's check)
 
 
 def test_nothing_from_fr002_on_the_main_page(kb, recorder):
@@ -270,8 +268,7 @@ def test_the_counts_row(kb, recorder):
         assert card is not None and card.proto.flex_container.border, key                  # a bordered card
         assert [c.value for c in card.caption] == [label] and [x.value for x in card.subheader] == [f":{colour}[{count}]"]
     assert at.button(key="accept_all").label == f"Accept all {s.to_accept} ready"
-    downloads = {b.key: b for b in at.get("download_button")}
-    assert (downloads["export_csv"].proto.label, downloads["export_json"].proto.label) == ("Download CSV", "JSON")
+    assert [(b.key, b.proto.label) for b in at.get("download_button")] == [("export_csv", "Download CSV")]   # no JSON
     assert not at.metric and not any("█" in t for t in texts(at))     # no metric, no split bar
     assert not [c for c in at.checkbox if c.key and c.key.startswith("accept_")]   # D8: no row checkboxes
 
@@ -916,9 +913,7 @@ def test_accept_all_ready(kb, recorder):
     assert not [b for b in at.button if b.key == "accept_all"]
 
 
-def test_the_downloads(kb, recorder, monkeypatch):
-    import json
-
+def test_the_csv_download(kb, recorder, monkeypatch):
     from streamlit.delta_generator import DeltaGenerator
 
     exports = {}
@@ -933,23 +928,15 @@ def test_the_downloads(kb, recorder, monkeypatch):
     check = running_check()
     at.session_state["job"] = check
     at.run()
-    assert exports["Download CSV"]["disabled"] and exports["JSON"]["disabled"]   # until the check has finished
+    assert exports["Download CSV"]["disabled"]                       # until the check has finished
     check.done = True
     at.run()
-    csv, js = exports["Download CSV"], exports["JSON"]
-    assert not csv["disabled"] and not js["disabled"] and js["type"] == "tertiary"
+    csv = exports["Download CSV"]
+    assert not csv["disabled"] and list(exports) == ["Download CSV"]   # the only download: no JSON (the author's check)
     assert csv["data"] == view.export_csv(store)
     header = csv["data"].decode("utf-8-sig").splitlines()[0].split(",")
     assert header == [*store.CSV_COLUMNS, "clerk_changed"] and len(header) == 24   # SC-005 and FR-013
-
-    def without_time(raw):
-        payload = json.loads(raw)
-        payload["shipment"].pop("exported_at")
-        return payload
-    assert without_time(js["data"]) == without_time(view.export_json(store, kb.updated))
-    assert json.loads(js["data"])["shipment"]["knowledge_base_updated"] == kb.updated
-    for item, ext in ((csv, "csv"), (js, "json")):
-        assert re.fullmatch(rf"cargolint_INV-TEST_\d{{8}}-\d{{4}}\.{ext}", item["file_name"])
+    assert re.fullmatch(r"cargolint_INV-TEST_\d{8}-\d{4}\.csv", csv["file_name"])
 
 
 # --------------------------------------------------------------------------- US4: the shipper email draft (FR-012, T037)

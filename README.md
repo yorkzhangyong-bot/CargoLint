@@ -5,7 +5,7 @@ for China→EU sea freight, CargoLint flags cargo descriptions that EU customs w
 top-3 HS-6 subheadings with confidence, reasoning and a BTI precedent, and routes every line to
 **auto-accept**, **human review** or **ask the shipper**. The clerk works one list, sorted by what needs attention:
 picks a code in the open line for the lines to review, drafts the email to the shipper for the red ones, updates a
-line with the shipper's answer and re-checks it, accepts the ready lines and downloads CSV/JSON. For a decided HS-6
+line with the shipper's answer and re-checks it, accepts the ready lines and downloads the CSV. For a decided HS-6
 it also chooses the CN-8 and completes the TARIC-10 by fixed rules from a local TARIC snapshot.
 
 Built for Turing College · AI Engineering · Sprint 2 ("Building Applications with AI": LangChain,
@@ -109,7 +109,7 @@ returns them, in three groups:
 
 Beside them are the snapshot date, "Open in EU TARIC ↗" to the consultation page for the code, origin and date,
 and "EZT-online ↗" to its start page, with the code and origin to copy. Changing the origin re-applies the rules
-without a model call, and codes the clerk confirmed stay. The CSV and JSON exports gain `cn8` and `taric10`, filled
+without a model call, and codes the clerk confirmed stay. The CSV export gains `cn8` and `taric10`, filled
 only with written codes; every existing column keeps its value.
 
 ## What the clerk sees
@@ -132,7 +132,7 @@ operator and the course evaluators.
   "Checking 12 lines… 8 s" while the agent turn runs in a worker thread and the list fills in every second. Queued
   lines and job messages follow it.
 - **Counts**: three cards, "Ready to accept" (green), "Needs review" (orange) and "Ask shipper" (red), then "Accept
-  all K ready", "Download CSV" and a small "JSON". The downloads add `clerk_changed`, true where the clerk chose an
+  all K ready" and "Download CSV", the app's one download. It adds `clerk_changed`, true where the clerk chose an
   HS-6 other than the model's top candidate, picked a CN-8 or TARIC-10 other than the one the model offered, or
   edited the description.
 - **The list**, sorted ask shipper → review → ready → accepted, 50 lines a page: # · Status · Description (as filed)
@@ -162,9 +162,9 @@ operator and the course evaluators.
 - **Shipper email draft**, when a line asks: string templates in English or Chinese, one numbered question per line,
   to copy and send by hand. Nothing is sent, and no model is called. Folded under it, each asking line's field for
   the shipper's answer, with "Re-check this line".
-- **"Advanced: Ask the agent · paste shipper reply · audit trail · Admin"** at the bottom opens the Admin page.
 
-**The Admin page**, with its sections in a switch at the top:
+**The Admin page**, at its own address `/admin` (the main page does not link to it), with its sections in a switch
+at the top:
 - **Rules**: the auto-accept threshold (60–99, default 85), used at either layer only when no eligible ruling votes,
   and hybrid search. Both survive a page switch, and every
   new shipment starts with them.
@@ -321,8 +321,8 @@ Live budget (`pytest -m live`): the 12-line sample plus two follow-up questions,
 70.7k tokens, 43 calls, €0.012; the check itself took 45 s (the budget is €0.10 and 60 s).
 
 Manual checks (not automated): moving the Admin › Rules threshold slider re-routes lines instantly without a model
-call; uploading a second file while a shipment is open asks for confirmation; the CSV/JSON downloads
-open with Chinese text intact.
+call; uploading a second file while a shipment is open asks for confirmation; the CSV download
+opens with Chinese text intact.
 
 CN-8 and TARIC-10 (feature 004), measured on 2026-10-23 with the 2026-10-01 TARIC snapshot:
 
@@ -497,7 +497,7 @@ What to expect:
 - **Memory**: an estimated 550–600 MB at rest with 5,000 rulings, and about 900 MB while a scanned PDF or photo is
   read. Community Cloud documents 690 MB to 2.7 GB.
 - **Sessions are lost on sleep.** They live in memory only, so a shipment is lost when the browser session ends, when
-  the app reboots, and when it sleeps after 12 hours without traffic. Export the CSV, the JSON or the audit trail before
+  the app reboots, and when it sleeps after 12 hours without traffic. Download the CSV or the audit trail before
   leaving.
 - **More review than in the evaluation.** The demo holds about 5,000 of the 73,899 rulings, so fewer lines find rulings
   that agree with the model than in the evaluation figures above.

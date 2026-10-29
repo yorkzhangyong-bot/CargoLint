@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import csv
 import io
-import json
 import re
 from dataclasses import dataclass
 from typing import Any
@@ -814,15 +813,6 @@ def export_csv(store: Any) -> bytes:
         changed = clerk_changed(store, line, row["decided_how"], records.get(line.line_no, []))
         writer.writerow(row | {"clerk_changed": "true" if changed else "false"})
     return ("\ufeff" + buf.getvalue()).encode("utf-8")
-
-
-def export_json(store: Any, knowledge_base_updated: str | None) -> bytes:
-    """The store's JSON export with `clerk_changed` on every line."""
-    records = _records_by_line(store)
-    payload = json.loads(store.to_json_bytes(knowledge_base_updated=knowledge_base_updated))
-    for line, item in zip(store.lines, payload["lines"]):
-        item["clerk_changed"] = clerk_changed(store, line, item["decided_how"], records.get(line.line_no, []))
-    return json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
 
 
 # --------------------------------------------------------------------------- §8 captions and other values

@@ -105,6 +105,14 @@ prominent")". The brief, given on 2026-10-29, had five parts:
 - **`clerk_changed`** is also true when the clerk picks a CN-8 or a TARIC-10 other than the one the model offered,
   and stays false when the model offered none.
 
+### Session 2026-10-29 (after the author's check of the UI)
+
+- **Counts row**: "Download CSV" sits level with "Accept all K ready".
+- **JSON**: the small "JSON" download is removed, and the app offers no JSON download anywhere; feature 001's FR-041
+  and constitution 1.9.0 follow. The store's JSON export stays in code, unused by the UI.
+- **Advanced link**: removed from the main page. The Admin page keeps its own address, `/admin`, behind the password
+  gate, with "← Back to shipment".
+
 ## Brief and final picture
 
 Where they differ, this feature follows the final picture.
@@ -112,12 +120,12 @@ Where they differ, this feature follows the final picture.
 | Element | Brief | Final picture, followed |
 |---|---|---|
 | Top of the page | a line "CargoLint · Demo · nothing you upload is stored · not customs advice · Advanced", then the title "Check goods descriptions for EU customs" and a sentence | title "CargoLint" with the subtitle "Check invoice and packing-list lines before customs declaration"; the Origin box on the right. The demo notice (unchanged, `CARGOLINT_DEMO_NOTICE`) carries the demo message |
-| Advanced | small link at the top right | a link at the bottom: "Advanced: Ask the agent · paste shipper reply · audit trail · Admin" |
+| Advanced | small link at the top right | a link at the bottom: "Advanced: Ask the agent · paste shipper reply · audit trail · Admin"; removed after the author's check of the UI, the Admin page keeping `/admin` |
 | Tabs | "Packing list file", "Single line" | "Upload file", "Check a single line" |
 | Primary button | "Check packing list" | "Check all lines"; "Check this line" in the single-line tab |
 | Sample | — | "Load sample invoice" in the upload area |
 | Count cards | Accept, Review, Ask shipper | "Ready to accept", "Needs review", "Ask shipper", the counts coloured green, orange and red |
-| Counts row buttons | "Download results" (primary) | "Accept all K ready", "Download CSV", and a small "JSON" |
+| Counts row buttons | "Download results" (primary) | "Accept all K ready", "Download CSV", and a small "JSON"; the "JSON" was removed after the author's check of the UI |
 | List | Route · Original line · Rewrite · Code · n of 5 | # · Status · Description · Need / description · HS code · Conf., under the heading "Lines (sorted: ask shipper → review → ready)" with "Page x of y" |
 | Badges | Accept, Review, Ask shipper | Ready (and Accepted), Review, Ask shipper |
 | Open row | five numbered blocks | "Line n · <description>", blocks 1 to 4 numbered, the two decision buttons unnumbered |
@@ -228,7 +236,8 @@ update field for the shipper's answer.
 
 ### User Story 5 - Advanced settings without the sidebar (Priority: P3)
 
-The operator follows "Advanced" at the bottom of the page to the Admin page.
+The operator opens the Admin page at its own address, `/admin`; the main page does not link to it (after the author's
+check of the UI).
 
 **Why this priority**: operator and evaluator use, not the clerk's daily work.
 
@@ -236,8 +245,8 @@ The operator follows "Advanced" at the bottom of the page to the Admin page.
 
 **Acceptance Scenarios**:
 
-1. **Given** the main page, **When** the operator follows "Advanced…", **Then** the Admin page opens, behind the same
-   password gate.
+1. **Given** the app's address with `/admin`, **When** the operator opens it, **Then** the Admin page opens, behind the
+   same password gate, with "← Back to shipment".
 2. **Given** the Admin page, **When** it renders, **Then** a segmented control switches between Rules, Data, Cost,
    Quality and Ask the agent, and there is no sidebar.
 
@@ -295,7 +304,8 @@ The operator follows "Advanced" at the bottom of the page to the Admin page.
     accept" (`:green`, green lines not yet accepted), "Needs review" (`:orange`, yellow lines) and "Ask shipper"
     (`:red`, red lines). Not `st.metric`;
   - "Accept all K ready", the existing batch accept (D8);
-  - "Download CSV", with a small "JSON" download (D12).
+  - "Download CSV" (D12). The small "JSON" download was removed after the author's check of the UI: the app offers
+    no JSON download.
 
   The row checkboxes and "Accept K selected" are removed.
 - **FR-009**: The list MUST carry the heading "Lines (sorted: ask shipper → review → ready)" and "Page x of y". It
@@ -351,15 +361,15 @@ The operator follows "Advanced" at the bottom of the page to the Admin page.
   - folded in an expander under it, each asking line's update field with "Re-check this line" (D18).
 
   A line routed to the shipper from its row appears in the draft.
-- **FR-013**: The CSV and JSON downloads MUST add one column, `clerk_changed`, built in `ui/` from the store's export
+- **FR-013**: The CSV download MUST add one column, `clerk_changed`, built in `ui/` from the store's export
   rows, the line versions and the audit trail; `agent/store.py` does not change. It is true only for the clerk's
   overrides: an HS-6 other than the model's top candidate (`decided_how` "other_candidate" or "typed"); a CN-8 or a
   TARIC-10 the clerk confirmed that differs from the one the model offered (the CN-8 step's last record under the
   decided HS-6, or the TARIC suggestion), and none offered is no override; or a version of the line created by the
   clerk's edit. Accepting a line as it is, confirming its codes or asking the shipper leaves it false. The edited
   description, the chosen code and the final route are the existing text, `decided_code` and `route` columns.
-- **FR-014**: The bottom of the main page MUST hold a page link "Advanced: Ask the agent · paste shipper reply ·
-  audit trail · Admin" to the Admin page, behind the password gate like every page.
+- **FR-014**: The main page MUST NOT link to the Admin page (after the author's check of the UI). The Admin page keeps
+  its own address, `/admin`, behind the password gate like every page, and links back with "← Back to shipment".
 - **FR-015**: Unchanged: the password gate, the demo notice, classification, routing, the CN-8 and TARIC steps, and
   the store's logic. Every clerk action uses an existing store method.
 
@@ -378,7 +388,7 @@ The operator follows "Advanced" at the bottom of the page to the Admin page.
 ### Key Entities *(include if feature involves data)*
 
 - **Line status**: unchanged (`ui/view.py`). The badge, the sort group and the counts are read from it.
-- **Export row**: today's columns; the UI's downloads add `clerk_changed` (FR-013).
+- **Export row**: today's columns; the CSV download adds `clerk_changed` (FR-013).
 
 ## Success Criteria *(mandatory)*
 

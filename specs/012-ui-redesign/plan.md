@@ -16,7 +16,7 @@ The main page is rebuilt in native Streamlit elements:
 - a list sorted ask shipper → review → ready, its rows built from columns, with the open line in an expander in four
   blocks plus "Accept" and "Ask shipper";
 - the shipper email draft;
-- the "Advanced" link.
+- no link to the Admin page, which keeps its own address (after the author's check of the UI).
 
 The Admin page loses the sidebar. The base font size goes to 18.
 
@@ -104,7 +104,7 @@ docs/design/
 ```text
 .streamlit/config.toml   # Step 1: baseFontSize 18 (the file stays CRLF)
 ui/
-├── main_page.py         # Steps 1–3: header and Origin box, tabs, status line, counts row, draft section, Advanced link
+├── main_page.py         # Steps 1–3: header and Origin box, tabs, status line, counts row, draft section
 ├── upload.py            # Step 1: the uploader in the upload tab, "Load sample invoice", "Check all lines" starts the check
 ├── table.py             # Step 2: rows from st.columns, sort groups, 50 per page, the open line in an st.expander
 ├── expand.py            # Step 2: blocks 1–4 and the decision buttons, built on today's forms
@@ -142,7 +142,7 @@ README.md                # Step 3: "What the clerk sees"
      Ready to accept (`Summary.to_accept`), `:orange[…]` for Needs review (`Summary.pick`), `:red[…]` for Ask shipper
      (`Summary.ask`);
    - "Accept all K ready", calling `actions.accept_ready`;
-   - "Download CSV" and a tertiary "JSON", using the store's exports.
+   - "Download CSV", using the store's export; the tertiary "JSON" was removed after the author's check of the UI.
 7. **Sort and pages.**
    - A new `view.sort_group(status)` orders the groups Ask shipper, Review, Ready, Accepted, Checking; within a group,
      lines keep file order.
@@ -209,12 +209,12 @@ README.md                # Step 3: "What the clerk sees"
       no override;
     - a version of the line was created by the clerk's edit (`CreatedBy.clerk`).
 
-    Accepting a Ready line as it is, confirming its codes or asking the shipper is false. `view.export_csv` and `view.export_json` add it to the
-    store's export rows in `ui/`; `agent/store.py` does not change.
+    Accepting a Ready line as it is, confirming its codes or asking the shipper is false. `view.export_csv` adds it to
+    the store's export rows in `ui/`; `agent/store.py` does not change.
 17. **Admin page.** `st.segmented_control("Section", SECTIONS, key="admin_section", default="Rules", required=True)`
     at the top of the page, keeping today's session persistence, instead of `st.sidebar.radio`.
-18. **Advanced link.** At the bottom of the main page: `st.page_link(admin_page, label="Advanced: Ask the agent ·
-    paste shipper reply · audit trail · Admin")`.
+18. **No Advanced link** (after the author's check of the UI). The main page links nowhere; the Admin page keeps its
+    own address, `/admin`, and its "← Back to shipment".
 19. **Theme.** `baseFontSize` goes from 14 to 18. `primaryColor` stays `#1D4FB8`, the canvas accent. The
     `[theme.sidebar]` table stays: it is harmless, and touching it would be cosmetic only.
 20. **The native-only check.** A static test reads `app.py` and `ui/*.py` and fails on `unsafe_allow_html`,

@@ -1,8 +1,8 @@
-"""The main page, the clerk's one page (feature 012, spec FR-002 to FR-014; feature 005, contracts/ui.md §2 to §7, before
+"""The main page, the clerk's one page (feature 012, spec FR-002 to FR-013; feature 005, contracts/ui.md §2 to §7, before
 it): no sidebar and no chat. The header with the Origin box, the two input tabs and the status line, then the counts
-row, the sorted list with the open line, the shipper email draft, and the "Advanced" link at the bottom. Every count,
-route and code comes from the line store through ui/view.py; the model is reached only through background jobs
-(ui/runner.py)."""
+row, the sorted list with the open line and the shipper email draft. It links nowhere: the Admin page keeps its own
+address, /admin. Every count, route and code comes from the line store through ui/view.py; the model is reached only
+through background jobs (ui/runner.py)."""
 from __future__ import annotations
 
 import re
@@ -19,7 +19,6 @@ WAIT = "Wait for the running check"
 WAITS = "Waits for the running check"
 SUBTITLE = "Check invoice and packing-list lines before customs declaration"
 ORIGIN_CAPTION = "duty and measures for goods from this country · change → re-applied, no model call"
-ADVANCED = "Advanced: Ask the agent · paste shipper reply · audit trail · Admin"
 
 
 def _line_count(store: Any) -> int:
@@ -130,9 +129,9 @@ def _accept(store: Any, line_nos: list[int] | None) -> None:
     actions.accept_ready(store, line_nos)
 
 
-def _counts(store: Any, kb: Any, s: view.Summary) -> None:
-    """Three bordered cards with coloured counts, "Accept all K ready" and the downloads, which add `clerk_changed`
-    to the store's export (FR-013). Nothing is accepted or downloaded while a check runs."""
+def _counts(store: Any, s: view.Summary) -> None:
+    """Three bordered cards with coloured counts, "Accept all K ready" and "Download CSV", which adds `clerk_changed`
+    to the store's export (FR-013); there is no JSON download. Nothing is accepted or downloaded while a check runs."""
     checking = _checking()
     wait = WAIT if checking else None
     c = st.columns([1, 1, 1, 1.25, 1.05], vertical_alignment="center")
@@ -143,13 +142,9 @@ def _counts(store: Any, kb: Any, s: view.Summary) -> None:
     if s.to_accept and not checking:
         c[3].button(view.accept_all_label(s.to_accept), key="accept_all", width="stretch", on_click=_accept,
                     args=(store, None))
-    downloads = c[4].container(horizontal=True, vertical_alignment="center")   # one row: level with "Accept all"
-    downloads.download_button("Download CSV", view.export_csv(store), file_name=store.export_filename("csv"),
-                              mime="text/csv", key="export_csv", width="stretch", disabled=checking, help=wait,
-                              on_click="ignore")
-    downloads.download_button("JSON", view.export_json(store, kb.updated), file_name=store.export_filename("json"),
-                              mime="application/json", key="export_json", type="tertiary", disabled=checking,
-                              help=wait, on_click="ignore")
+    c[4].download_button("Download CSV", view.export_csv(store), file_name=store.export_filename("csv"),
+                         mime="text/csv", key="export_csv", width="stretch", disabled=checking, help=wait,
+                         on_click="ignore")
 
 
 def _draft(store: Any, kb: Any, s: view.Summary) -> None:
@@ -192,14 +187,14 @@ def _live(store: Any, kb: Any, messages: list[tuple[str, str]]) -> None:
         _status(store, s, messages)
         if not count:
             return
-        _counts(store, kb, s)
+        _counts(store, s)
         table.render(store, kb, statuses)
         _draft(store, kb, s)
 
     _part()
 
 
-def render(store: Any, kb: Any, admin_page: Any = None) -> None:
+def render(store: Any, kb: Any) -> None:
     job = runner.current_job()
     if job is not None and job.done:
         _open_typed_line(job)
@@ -207,5 +202,3 @@ def render(store: Any, kb: Any, admin_page: Any = None) -> None:
     _header(store, kb)
     _input(store, kb)
     _live(store, kb, runner.pop_messages())
-    if admin_page is not None:
-        st.page_link(admin_page, label=ADVANCED, icon=":material/arrow_right:")

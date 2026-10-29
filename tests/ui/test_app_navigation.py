@@ -1,5 +1,5 @@
-"""app.py and the two pages' links (feature 005, contracts/ui.md §1; feature 012: the "Advanced" link at the bottom):
-the hidden navigation, "Advanced: …", "← Back to shipment", no sidebar, and the missing-key message. Feature 011: the demo password gate and a demo store that fails its checksum."""
+"""app.py and the two pages (feature 005, contracts/ui.md §1; feature 012): the hidden navigation, no link from the main
+page to the Admin page (which keeps its own address and "← Back to shipment"), no sidebar, and the missing-key message. Feature 011: the demo password gate and a demo store that fails its checksum."""
 from __future__ import annotations
 
 import dataclasses
@@ -14,7 +14,6 @@ from tests.ui import harness as h
 
 pytestmark = pytest.mark.integration
 APP = str(Path(__file__).resolve().parents[2] / "app.py")
-ADVANCED = "Advanced: Ask the agent · paste shipper reply · audit trail · Admin"
 
 
 @pytest.fixture
@@ -46,14 +45,14 @@ def kb_opened(monkeypatch):
     return calls
 
 
-def test_app_opens_the_main_page_with_the_admin_link(monkeypatch, settings):
+def test_app_opens_the_main_page_with_no_admin_link(monkeypatch, settings):
     import rag.loader
 
     settings("test-key-not-real")
     monkeypatch.setattr(rag.loader, "open_knowledge_base", lambda *a, **k: h.make_kb())
     at = AppTest.from_file(APP, default_timeout=30).run()
     assert not at.exception
-    assert [n.proto.label for n in at.get("page_link")] == [ADVANCED]
+    assert at.selectbox(key="origin_field").value == "CN" and not at.get("page_link")   # the Admin page: /admin only
     assert len(at.sidebar.children) == 0                           # hidden navigation: no page list
 
 
@@ -79,10 +78,10 @@ def test_with_a_password_nothing_loads_until_it_is_entered(settings, kb_opened):
     at = AppTest.from_file(APP, default_timeout=30).run()
     assert not at.exception
     assert [t.label for t in at.text_input] == ["Demo password"]
-    assert not at.get("page_link") and kb_opened == []
+    assert not at.selectbox and kb_opened == []                    # nothing of the main page yet
     at.text_input(key="gate_password").input("wrong").run()
     assert [e.value for e in at.error] == ["Wrong password."]
-    assert not at.get("page_link") and kb_opened == []
+    assert not at.selectbox and kb_opened == []
 
 
 def test_the_right_password_opens_the_app(settings, kb_opened):
@@ -90,7 +89,7 @@ def test_the_right_password_opens_the_app(settings, kb_opened):
     at = AppTest.from_file(APP, default_timeout=30).run()
     at.text_input(key="gate_password").input("demo-pass").run()
     assert not at.exception and not at.error
-    assert [n.proto.label for n in at.get("page_link")] == [ADVANCED]
+    assert at.selectbox(key="origin_field").value == "CN"            # the main page
     assert kb_opened == [1]
 
 
@@ -144,5 +143,5 @@ def test_the_admin_page_links_back(monkeypatch):
     assert len(at.sidebar.children) == 0 and at.segmented_control(key="admin_section").value == "Rules"
     at.session_state["_harness_page"] = "main"
     at.run()
-    assert [n.proto.label for n in at.get("page_link")] == [ADVANCED]
+    assert not at.get("page_link")                                 # the main page links nowhere
     assert len(at.sidebar.children) == 0                           # feature 012: no sidebar on either page

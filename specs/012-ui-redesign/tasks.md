@@ -192,11 +192,16 @@ need a function change is asked first. The theme file (T010) is the one exceptio
   and "decision table" mentions follow the 012 layout (`/speckit-constitution`). Run on 2026-10-29: Principle VI (the
   count cards, the list of lines, and the same bullet's "export under the table", now the downloads beside the
   cards) and the Architecture flow
+- [X] T039 After the author's check of the UI (2026-10-29): "Download CSV" level with "Accept all K ready"; no JSON
+  download anywhere in the app (`view.export_json` gone) and no "Advanced" link on the main page, the Admin page
+  keeping `/admin`. ui/main_page.py, ui/view.py, app.py, the tests, feature 001's FR-041 and README.md; constitution
+  1.9.0 (`/speckit-constitution`)
 
 ---
 
 ## Dependencies & Execution Order
 
-- T004 comes before any code (T010 onwards). T005 came before T020 and T028. T038 comes last.
+- T004 comes before any code (T010 onwards). T005 came before T020 and T028. T038 closes Step 3; T039 follows the
+  author's check of the UI.
 - Within each step, the tests come before the code.
 - Step 1 comes before Step 2, and Step 2 before Step 3. Each step ends with its own commit. Nothing is merged.

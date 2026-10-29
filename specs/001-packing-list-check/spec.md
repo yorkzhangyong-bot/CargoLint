@@ -98,15 +98,15 @@ After a check, the clerk asks follow-up questions about any line in the chat ("W
 
 ### User Story 4 - Export results and see the cost (Priority: P4)
 
-The clerk exports the current results as CSV or JSON for the filing or for the shipper query, and sees in the sidebar how many tokens the shipment has used and what it has cost so far.
+The clerk exports the current results as CSV (no JSON download since constitution 1.9.0, feature 012) for the filing or for the shipper query, and sees in the sidebar how many tokens the shipment has used and what it has cost so far.
 
 **Why this priority**: Needed for the filing workflow and for cost transparency, but not needed to demonstrate the core value.
 
-**Independent Test**: After checking the sample shipment, download the CSV and the JSON and verify that both contain all 12 lines with their current flag, candidates, route and version; verify that the sidebar shows a non-zero token count and a cost in EUR that increases after a follow-up question.
+**Independent Test**: After checking the sample shipment, download the CSV and verify that it contains all 12 lines with their current flag, candidates, route and version; verify that the sidebar shows a non-zero token count and a cost in EUR that increases after a follow-up question.
 
 **Acceptance Scenarios**:
 
-1. **Given** a checked shipment, **When** the clerk uses the export control, **Then** a CSV and a JSON file can be downloaded containing, per line: line number, original Chinese and English text, quantity, flag and matched rule, the top-3 candidates with confidence, the current route and who set it, the decided code where accepted, the version number and the time of last change.
+1. **Given** a checked shipment, **When** the clerk uses the export control, **Then** a CSV file can be downloaded containing, per line: line number, original Chinese and English text, quantity, flag and matched rule, the top-3 candidates with confidence, the current route and who set it, the decided code where accepted, the version number and the time of last change.
 2. **Given** any operation that used AI calls has completed, **When** the sidebar is viewed, **Then** the shipment's token total and estimated cost are updated.
 3. **Given** a new shipment is started, **When** the sidebar is viewed, **Then** the token and cost figures start from zero.
 
@@ -201,7 +201,7 @@ The clerk exports the current results as CSV or JSON for the filing or for the s
 #### Settings, cost and export
 
 - **FR-040**: The sidebar MUST show, per shipment, the total tokens used and the estimated cost in EUR, updated after every operation that uses AI calls and reset when a new shipment starts.
-- **FR-041**: Users MUST be able to download the current results as CSV and as JSON with, per line: line number, Chinese and English text, quantity, flag and rule, top-3 candidates with confidence, route and who set it, the decided code and how it was chosen (accepted lines), version number and time of last change.
+- **FR-041**: Users MUST be able to download the current results as CSV (since constitution 1.9.0, feature 012: no JSON download) with, per line: line number, Chinese and English text, quantity, flag and rule, top-3 candidates with confidence, route and who set it, the decided code and how it was chosen (accepted lines), version number and time of last change.
 - **FR-042**: Users MUST be able to enter a shipment reference and choose the shipper (detected from the file, a known shipper shown with its past-shipment count, or new); the filing type shown is ICS2 house (ENS).
 
 #### Security and input validation

@@ -89,7 +89,7 @@ def main() -> None:
     pages: dict = {}
 
     def shipment() -> None:
-        main_page.render(store, kb, pages["admin"])
+        main_page.render(store, kb)
 
     def admin_page() -> None:
         admin.render(store, kb, pages["main"])
