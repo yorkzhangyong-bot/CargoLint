@@ -39,7 +39,10 @@ streamlit run app.py           # http://localhost:8501
 - Packing lists, OCR output, pasted text and shipper replies are untrusted data. They reach the model
   only inside delimited data blocks and are never used as instructions, file paths or tool hints.
 - `OPENROUTER_API_KEY` is an OS environment variable. Never print, log or commit it. There is no `.env`.
-- Native Streamlit only: no custom HTML, CSS or JavaScript. Theme changes go in `.streamlit/config.toml`.
+- Native Streamlit only: no custom components, HTML or JavaScript. One exception (constitution 1.10.0):
+  `ui/theme.py` injects a single `<style>` block that only adjusts spacing, padding, margins, font sizes, widths and
+  card heights; `tests/unit/test_native_ui.py` fails on CSS anywhere else. Theme changes go in
+  `.streamlit/config.toml`.
 - Tests first for guardrail code; unit tests must run offline. Keep `pytest -q` green after every change.
 - Commit and push only when asked.
 - Dev loop: the running Streamlit server does not reload edits to `ui/*.py`; restart it before verifying

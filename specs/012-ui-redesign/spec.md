@@ -25,7 +25,8 @@ prominent")". The brief, given on 2026-10-29, had five parts:
 - **Behaviour**: the brief and the Step 0 decisions D1 to D19 below.
 - **Conflicts**: where the final picture and the brief differ, the final picture wins. Each difference and its
   resolution is listed in "Brief and final picture".
-- **Native Streamlit only** (D3): no custom CSS and no custom HTML.
+- **Native Streamlit** (D3; constitution 1.10.0): no custom components, HTML or JavaScript; CSS only in the one
+  layout block of `ui/theme.py`.
 
 ## Clarifications
 
@@ -140,6 +141,20 @@ prominent")". The brief, given on 2026-10-29, had five parts:
   exists in app.py or `ui/`. The space above the title stays as Streamlit draws it.
 - **Counts row**: "Accept all K ready" and "Download CSV" are centred against the cards (the row's columns centre
   their content; measured equal centres at 100 % and 125 %).
+
+### Session 2026-10-29 (the author's layout with one CSS block, constitution 1.10.0)
+
+- **CSS**: `ui/theme.py` injects one `<style>` block that only adjusts spacing, padding, margins, font sizes, widths
+  and card heights; every other file stays native, and the static test fails on CSS outside `ui/theme.py`.
+- **Top of the page**: 1rem above the title instead of Streamlit's 6rem. Streamlit's header bar there is transparent
+  and lets clicks through, so nothing is hidden and the Origin selectbox still opens.
+- **Count cards**: about 90 px tall, the count right under its label, little room below it, never scrolling.
+- **Gaps**: less padding in the Origin block and the upload box, and a tab's content closer to its tab.
+- **Unchanged**: the list rows stay 46 px apart, and "Accept all K ready" and "Download CSV" stay centred against
+  the cards.
+- **Block 1**: the stop-word result shows once. When a red line's reason states it (a stop word or listed term, a
+  vague description, a failed check, an unreadable line), the caption shows only the original; otherwise it keeps
+  "Stop-word check: <result>". An empty original reads "(no readable text)", as in its row.
 
 ## Brief and final picture
 
@@ -360,7 +375,8 @@ check of the UI).
   0.4, 1.2, 3, 3, 1.4 and 0.8 (the author's polish).
 - **FR-011**: The open line MUST render in an `st.expander` "Line n · <description>" under its row, one line open at
   a time, with these blocks in order:
-  - **1 Description**: the caption "Original: <filed text> · Stop-word check: <result>"; a text field prefilled with
+  - **1 Description**: the caption "Original: <filed text> · Stop-word check: <result>", or only "Original: <filed
+    text>" when a red line's reason states that result, so it shows once; a text field prefilled with
     the current description; "Re-check this line" with the caption "runs the model again" (no cost figure). The
     re-check is the existing per-line re-check, the shipper-reply path, and changes only that line.
   - **2 HS-6 candidates**:
@@ -409,8 +425,8 @@ check of the UI).
 
   Only files under `ui/` and `app.py` change (the hard rule), besides this feature's tests and documents. The theme in
   `.streamlit/config.toml` (FR-001) is the one exception, flagged to the author.
-- **FR-016**: Native Streamlit only: no `unsafe_allow_html`, no `st.html`, no components and no custom CSS in
-  `app.py` or `ui/`.
+- **FR-016**: Native Streamlit: no `st.html`, no components, no custom HTML elements and no JavaScript in `app.py`
+  or `ui/`; `unsafe_allow_html` and CSS only in `ui/theme.py`, one layout-only `<style>` block (constitution 1.10.0).
 - **FR-017**: All existing tests MUST pass. UI tests of moved or removed elements are rewritten to the new layout
   with the same intent. New UI tests cover:
   - the single-line tab;
@@ -431,7 +447,8 @@ check of the UI).
 - **SC-001**: The check button of each tab is primary and full width, and "Accept" is primary.
 - **SC-002**: The base font size is 18 (theme).
 - **SC-003**: No page has a sidebar (UI tests on both pages).
-- **SC-004**: No custom HTML or CSS: a static test finds none in `app.py` and `ui/`.
+- **SC-004**: No custom HTML, JavaScript or components, and CSS only in the one layout-only block of `ui/theme.py`:
+  a static test checks `app.py` and `ui/`.
 - **SC-005**: The offline suite passes, with the five new UI tests of FR-017.
 - **SC-006**: Every clerk action goes through an existing store method, and no file under `agent/`, `tools/` or `rag/`
   changes.

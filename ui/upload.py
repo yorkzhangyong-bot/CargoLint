@@ -119,7 +119,7 @@ def render(store, kb) -> None:
     running = runner.busy()
     wait = WAIT if running else None
     with st.container(gap="xsmall"):
-        with st.container(border=True, gap="xsmall"):
+        with st.container(border=True, key="upload_box", gap="xsmall"):
             _take_upload(st.file_uploader("Drag and drop a PDF, Excel, CSV or photo (jpg/png) here, or browse files",
                                           type=FILE_TYPES, key="uploader", disabled=running, help=wait))
             with st.container(horizontal=True, vertical_alignment="center"):

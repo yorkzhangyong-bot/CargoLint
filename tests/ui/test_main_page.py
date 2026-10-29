@@ -302,10 +302,16 @@ def test_the_counts_row(kb, recorder):
 
 
 def test_the_compact_layout(kb, recorder, widths, layout):           # the author's polish after the check of the UI
+    from ui import theme
+
     (store, _), _ = h.all_states(kb)
     at = h.app(store, kb).run()
     assert not at.exception
     boxes = layout["container"]
+    styles = [m for m in at.markdown if "<style>" in m.value]                  # constitution 1.10.0: one CSS block
+    assert len(styles) == 1 and styles[0].proto.allow_html and theme.CSS in styles[0].value
+    assert set(re.findall(r"\.st-key-(\w+)", theme.CSS)) <= set(boxes)        # every key the CSS names is drawn
+    assert {"count_ready", "count_review", "count_ask"} <= set(boxes) and 'class*="st-key-count_"' in theme.CSS
     assert (boxes["page"]["width"], boxes["page"]["gap"]) == (1400, "xsmall")      # about 1400 px wide, small gaps
     assert boxes["origin"]["border"] and boxes["origin"]["horizontal"]          # one compact Origin block
     for key in ("count_ready", "count_review", "count_ask"):   # label over number, no gap; no fixed height, no scrollbar
@@ -780,8 +786,8 @@ def test_a_red_line_on_an_ics2_term(kb, recorder):
     line = store.get_line(n)
     at = opened(store, kb, n)
     page = texts(at)
-    assert "Original: Spare parts · Stop-word check: ICS2 unacceptable term 'spare parts'" in page
-    assert "Reason: ICS2 unacceptable term 'spare parts'" in page
+    assert "Original: Spare parts" in page and not any("Stop-word check" in t for t in page)   # said once, as the
+    assert page.count("Reason: ICS2 unacceptable term 'spare parts'") == 1                     # reason (the author)
     assert view.question(store, line, "en", kb) in [c.value for c in at.code]
     assert ":material/content_copy: Copy question — the copy button at the top right of the box" in page
     assert "runs the model again" in page
@@ -798,6 +804,10 @@ def test_the_other_red_lines(kb, recorder, state):
     line = store.get_line(n)
     at = opened(store, kb, n)
     assert view.reason_line(store, line) in texts(at)
+    original = f"Original: {line.versions[0].display_text or '_(no readable text)_'}"   # the stop-word result once:
+    result = f"{original} · Stop-word check: {view.stop_word_result(line)}"   # as the reason or in the caption
+    caption = original if view.reason_is_stop_word(line) else result
+    assert caption in texts(at) and sum("Stop-word check" in t for t in texts(at)) == (caption != original)
     question = view.question(store, line, "en", kb)
     assert (question in [c.value for c in at.code]) is (state != "failed")
     assert at.text_area(key=keys(store, n).area).value == line.current.display_text

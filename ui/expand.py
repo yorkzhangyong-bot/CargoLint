@@ -184,8 +184,11 @@ def description(store: Any, kb: Any, line: Any) -> None:
 
 def _block1(store: Any, kb: Any, line: Any, status: view.LineStatus) -> None:
     st.markdown("**1 Description**")
-    st.caption(f"Original: {md_escape(line.versions[0].display_text)} · Stop-word check: "
-               f"{md_escape(view.stop_word_result(line))}")
+    original = f"Original: {md_escape(line.versions[0].display_text) or '_(no readable text)_'}"   # as in its row
+    if status.colour == "red" and view.reason_is_stop_word(line):   # the reason below states it: shown once
+        st.caption(original)
+    else:
+        st.caption(f"{original} · Stop-word check: {md_escape(view.stop_word_result(line))}")
     if status.colour == "red":
         _lines(view.reason_line(store, line) or "")
         if status.question:

@@ -45,7 +45,7 @@ constitution's UI Design Contract is amended first (D4).
 **Storage**: unchanged. The line store lives in the Streamlit session.
 
 **Testing**: pytest with Streamlit's AppTest on the seeded stores of `tests/ui/harness.py`, offline. A static test
-checks that no custom HTML or CSS exists.
+checks that no custom HTML, JavaScript or components exist, and CSS only in `ui/theme.py` (constitution 1.10.0).
 
 **Target Platform**: the local app and the Community Cloud demo (feature 011)
 
@@ -57,7 +57,7 @@ checks that no custom HTML or CSS exists.
 **Constraints**:
 - only files under `ui/` and `app.py` change, besides tests, documents and the theme file (the hard rule); no change
   to classification, routing, the CN-8 and TARIC steps or the store;
-- native Streamlit only;
+- native Streamlit, with one layout-only CSS block in `ui/theme.py` (constitution 1.10.0);
 - the password gate and the demo notice unchanged;
 - each file keeps its line endings (`.streamlit/config.toml` is CRLF in the working tree).
 
@@ -161,7 +161,8 @@ README.md                # Step 3: "What the clerk sees"
 9. **Open line.** `st.expander(f"Line {n} · {text}", expanded=True, key=…)` under the selected row only, with today's
    `selected_line_no` as the open line. Collapsing it clears the selection through `on_change`.
 10. **Block 1.**
-    - A caption with the original text and the stop-word result: the flag's rule and term, or "none found".
+    - A caption with the original text and the stop-word result: the flag's rule and term, or "none found". When a
+      red line's reason states that result, the caption shows only the original, so the result shows once.
     - A text field prefilled with the current description, keyed by line and version.
     - "Re-check this line", which uses today's `view.split_description`, `view.edit_problem` and
       `runner.start_recheck`, as the "Re-check line" button does now.
@@ -218,7 +219,11 @@ README.md                # Step 3: "What the clerk sees"
 19. **Theme.** `baseFontSize` goes from 14 to 18. `primaryColor` stays `#1D4FB8`, the canvas accent. The
     `[theme.sidebar]` table stays: it is harmless, and touching it would be cosmetic only.
 20. **The native-only check.** A static test reads `app.py` and `ui/*.py` and fails on `unsafe_allow_html`,
-    `st.html(` or `components.`.
+    `st.html(` or `components.`. Since constitution 1.10.0, `ui/theme.py` may hold one `<style>` block, whose CSS
+    properties the test checks; CSS anywhere else fails.
+21. **The layout CSS** (constitution 1.10.0). `ui/theme.py` holds the one `<style>` block, which the header injects
+    inside a container with no gap: 1rem above the title, less padding in the Origin block and the upload box, a
+    tab's content closer to its tab, and count cards of about 90 px with no padding above the count.
 
 ## Draft for task T004: constitution 1.8.0 (UI Design Contract)
 

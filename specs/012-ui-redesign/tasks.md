@@ -184,7 +184,7 @@ need a function change is asked first. The theme file (T010) is the one exceptio
   fields folded under the draft (Step 2 review), and an arrow before the Advanced link. After the author's check:
   the small "JSON" sits beside "Download CSV", so both downloads are level with "Accept all K ready"
 - [X] T035 [P] tests/unit/test_native_ui.py: no `unsafe_allow_html`, `st.html` or components in app.py and ui/
-  (SC-004)
+  (SC-004); since constitution 1.10.0 (T042), CSS in ui/theme.py only, and its properties checked
 - [X] T036 README.md: "What the clerk sees" for the new layout
 - [X] T037 Run `pytest -q`, including tests/ui/test_response_time.py (SC-007), then commit "feat(012): step 3,
   polish". On 2026-10-29: 1275 passed, 4 deselected
@@ -207,12 +207,18 @@ need a function change is asked first. The theme file (T010) is the one exceptio
   in the author's browser; "Accept all K ready" and "Download CSV" stay centred against the cards (pinned in the
   layout test); `client.toolbarMode = "minimal"` was already in .streamlit/config.toml and no top spacer exists, and
   neither changes Streamlit's 6rem padding (measured). ui/main_page.py, the tests and the spec
+- [X] T042 The author's layout with one CSS block (2026-10-29, constitution 1.10.0): ui/theme.py injects one
+  layout-only `<style>` block (1rem above the title; count cards about 90 px; less padding in the Origin block and
+  the upload box; a tab's content closer to its tab); the rows stay 46 px apart and the buttons centred; block 1
+  shows the stop-word result once; tests/unit/test_native_ui.py (T035) allows CSS in ui/theme.py only and checks its
+  properties. ui/theme.py, ui/main_page.py, ui/upload.py, ui/view.py, ui/expand.py, the tests, CLAUDE.md, the spec,
+  plan and README.md
 
 ---
 
 ## Dependencies & Execution Order
 
 - T004 comes before any code (T010 onwards). T005 came before T020 and T028. T038 closes Step 3; T039 follows the
-  author's check of the UI, T040 the author's polish and T041 the author's fixes.
+  author's check of the UI, T040 the author's polish, T041 the author's fixes and T042 the layout CSS.
 - Within each step, the tests come before the code.
 - Step 1 comes before Step 2, and Step 2 before Step 3. Each step ends with its own commit. Nothing is merged.

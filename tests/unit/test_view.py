@@ -830,6 +830,15 @@ def test_stop_word_result(states, name, result):                         # block
     assert view.stop_word_result(line_of(states, name)[1]) == result
 
 
+@pytest.mark.parametrize("name, repeats", [
+    ("ics2_term", True), ("firm_stop_word", True), ("vague_apart", True), ("unreadable", True), ("failed", True),
+    ("vague_close", False),                                                # close candidates are a reason of their own
+    ("cn8_question", False), ("sent", False), ("taric_question", False), ("review", False),
+])
+def test_reason_is_stop_word(states, name, repeats):                     # block 1 states the result once (the author)
+    assert view.reason_is_stop_word(line_of(states, name)[1]) is repeats
+
+
 def test_candidate_label():                                               # block 2's radio (FR-011): one line each
     R = view.CandidateRow
     sewing = "Sewing machines, other than book-sewing machines of heading 8440; sewing machine needles"

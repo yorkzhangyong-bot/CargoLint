@@ -735,6 +735,18 @@ def stop_word_result(line: Any) -> str:
     return "vague description"
 
 
+def reason_is_stop_word(line: Any) -> bool:
+    """Whether a red line's reason states its stop-word result, as `reason_line` builds it: the check failed, the
+    check flagged the line (close candidates are a reason of their own) or the line could not be read. Block 1 then
+    shows the result once, as the reason (the author's check of the UI)."""
+    v = line.current
+    if v.status == CheckStatus.failed:
+        return True
+    if v.unreadable:
+        return v.flag is None or v.flag.kind == FlagKind.ok
+    return v.flag is not None and v.flag.kind != FlagKind.ok and (_term_based(v.flag) or not _close(v.candidates))
+
+
 def candidate_label(r: CandidateRow) -> str:
     """Block 2's choice for one candidate: the dotted HS-6, its subheading's label (after its heading's when the label
     alone says little, as "Other" does), and its confidence."""

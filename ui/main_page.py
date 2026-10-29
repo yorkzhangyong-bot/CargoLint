@@ -13,7 +13,7 @@ import streamlit as st
 from agent.agent import apply_taric_origin
 from agent.config import MAX_DESC_CHARS, get_settings
 from agent.schemas import ORIGIN_PATTERN
-from ui import actions, expand, runner, shipper_email, table, upload, view
+from ui import actions, expand, runner, shipper_email, table, theme, upload, view
 
 WAIT = "Wait for the running check"
 WAITS = "Waits for the running check"
@@ -56,6 +56,7 @@ def _header(store: Any, kb: Any) -> None:
     caption and the TARIC snapshot date."""
     left, right = st.columns([1, 1.5])
     with left.container(gap=None):
+        theme.apply()                                # the layout CSS (constitution 1.10.0); no gap, so no room
         st.markdown("### CargoLint")
         st.caption(SUBTITLE)
     with right.container(border=True, key="origin", horizontal=True, vertical_alignment="bottom"):

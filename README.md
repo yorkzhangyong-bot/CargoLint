@@ -114,7 +114,8 @@ only with written codes; every existing column keeps its value.
 
 ## What the clerk sees
 
-Two pages, native Streamlit only, laid out by feature 012 (`specs/012-ui-redesign/`) after the first customer feedback:
+Two pages in native Streamlit, with one layout-only CSS block (`ui/theme.py`, constitution 1.10.0), laid out by
+feature 012 (`specs/012-ui-redesign/`) after the first customer feedback:
 "text too small, important buttons not prominent". The base font size is 18. The main page is the clerk's, with no
 sidebar and no chat. The Admin page holds the rules, the data, the cost, the quality and the agent chat, for the
 operator and the course evaluators.
@@ -144,7 +145,8 @@ operator and the course evaluators.
   - The HS code is the dotted HS-6 ("9405.21") until a CN-8 is decided, then the decided digits ("6109 10 00",
     "9617 00 00 00").
 - **A line opens under its row**, in four blocks:
-  1. Description: the original and the stop-word check; on a red line, the reason and the question to copy; the
+  1. Description: the original and the stop-word check, said once (a red line whose reason is that result shows it
+     as the reason); on a red line, the reason and the question to copy; the
      description field and "Re-check this line", which stores the clerk's edit as a new version and checks that line
      again from the stop-word check.
   2. HS-6 candidates: the model's three, each with its confidence bar, and "Other HS-6 code…" for a typed code that
