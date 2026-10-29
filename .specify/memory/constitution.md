@@ -147,9 +147,14 @@ auditor can follow.
 
 ### VI. A Native Streamlit UI That Shows Its Work
 
-- The UI MUST be built from native Streamlit components in the visual language of the design
-  canvas. Custom components or CSS are allowed only where no native component works, and the
-  plan MUST say where and why.
+- The UI MUST be built from native Streamlit components and behaviour, in the visual language of
+  the design canvas: no custom components, no custom HTML elements and no JavaScript. One
+  exception: `ui/theme.py` MAY inject a single CSS block, through
+  `st.markdown(..., unsafe_allow_html=True)`, that only adjusts spacing, padding, margins, font
+  sizes, widths and card heights. The block MUST be one `<style>` element and nothing else: no
+  HTML elements, no scripts, no components and no change of behaviour. The static native-UI test
+  (feature 012's T035) MUST fail on CSS outside `ui/theme.py` and on custom HTML, JavaScript or
+  components anywhere in `app.py` and `ui/`.
 - The UI MUST show context, sources, tool results and progress, split between two pages:
   - the main page, which has no sidebar: progress while a check runs (each line's code fills in
     and its running step shows), the routing counts in the count cards, the evidence behind each
@@ -169,7 +174,9 @@ auditor can follow.
   Contract".
 
 **Rationale**: the clerk must see why a line was flagged, which tool ran and where an answer
-came from, in a layout that feels native to Streamlit.
+came from, in a layout that feels native to Streamlit. The one CSS block changes only how much
+room things take, never what a control does, so the exception stays small, reviewable and
+tested.
 
 ### VII. Test-First and Measured (NON-NEGOTIABLE for guardrail code)
 
@@ -288,7 +295,8 @@ a listed element needs a spec change.
 
 - Styling: native Streamlit theme with the canvas accent (`#1D4FB8`) and a base font size of 18;
   Source Sans 3 for text, Source Code Pro for codes and numbers, a CJK-capable font for Chinese;
-  no custom HTML or CSS. Each line's status is a coloured badge: green "Ready" or "Accepted",
+  no custom HTML, and CSS only in the single layout block of `ui/theme.py` (Principle VI).
+  Each line's status is a coloured badge: green "Ready" or "Accepted",
   orange "Review", red "Ask shipper", grey "Checking…"; the decision it needs ("Pick: …",
   "Confirm: …", "Ask: …") is the badge's tooltip. Confidence is a percentage in the line's row and
   a bar beside each candidate in the open line; the CN-8's is labelled "model estimate". "Needs
@@ -444,5 +452,13 @@ to depart from; MAY is optional.
   the Admin page, which keeps its own address, /admin. The update fields under the shipper email
   draft go: a red line's description is updated in its open row (block 1). Principle VI and the
   UI Design Contract follow.
+- 1.10.0 (2026-10-29): Principle VI keeps native Streamlit components and behaviour as the rule,
+  with one exception: `ui/theme.py` may inject a single CSS block that only adjusts spacing,
+  padding, margins, font sizes, widths and card heights, with no HTML elements, no JavaScript, no
+  components and no change of behaviour. It replaces the earlier allowance of custom components
+  or CSS wherever no native component works. Reason: feature 012's compact page needs spacing
+  that Streamlit 1.65 cannot set natively, such as the fixed 6rem padding above the page
+  (measured in feature 012, T041). The static native-UI test allows CSS in `ui/theme.py` only, and
+  the UI Design Contract's styling line follows.
 
-**Version**: 1.9.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-29
+**Version**: 1.10.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-29
