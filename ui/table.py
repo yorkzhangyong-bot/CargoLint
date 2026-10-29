@@ -15,6 +15,7 @@ PAGE_SIZE = 50
 COLS = [0.45, 1.25, 3.2, 2.6, 1.4, 0.7]
 HEADERS = ("#", "Status", "Description", "Need / description", "HS code", "Conf.")
 SHOW = "show_open_line"          # set when a line opens by itself: the list shows that line's page once
+ROW_GAP = "xxsmall"              # the rows sit close, as in the final picture
 
 
 def _toggle(line_no: int) -> None:
@@ -38,7 +39,7 @@ def _row(store: Any, line: Any, status: view.LineStatus, selected: str | None) -
     with st.container(key=f"line_{n}"):
         c = st.columns(COLS, vertical_alignment="center")
         c[0].markdown(f"{n}")
-        c[1].badge(cells.badge, color=cells.colour, help=view.md_escape(status.text))
+        c[1].badge(f"**{cells.badge}**", color=cells.colour, help=view.md_escape(status.text))
         text = view.md_escape(cells.filed) or "_(no readable text)_"
         if status.colour == "grey":
             c[2].markdown(text)
@@ -63,14 +64,15 @@ def render(store: Any, kb: Any, statuses: dict[int, view.LineStatus]) -> None:
     st.markdown(f"**Lines (sorted: ask shipper → review → ready)** · Page {page} of {pages}")
     for col, name in zip(st.columns(COLS, vertical_alignment="bottom"), HEADERS):
         col.caption(f"**{name}**")
-    for line in lines[(page - 1) * PAGE_SIZE: page * PAGE_SIZE]:
-        n, status = line.line_no, statuses[line.line_no]
-        is_open = selected == n and status.colour != "grey"
-        _row(store, line, status, expand.selected_code(line) if is_open else None)
-        if is_open:
-            label = f"Line {n} · {view.md_escape(view.cut(line.current.display_text, 80))}"
-            with st.expander(label, expanded=True, key=f"row_{n}", on_change=_folded, args=(n,)):
-                expand.render(store, kb, line, status)
+    with st.container(gap=ROW_GAP):
+        for line in lines[(page - 1) * PAGE_SIZE: page * PAGE_SIZE]:
+            n, status = line.line_no, statuses[line.line_no]
+            is_open = selected == n and status.colour != "grey"
+            _row(store, line, status, expand.selected_code(line) if is_open else None)
+            if is_open:
+                label = f"Line {n} · {view.md_escape(view.cut(line.current.display_text, 80))}"
+                with st.expander(label, expanded=True, key=f"row_{n}", on_change=_folded, args=(n,)):
+                    expand.render(store, kb, line, status)
     if pages > 1:
         st.session_state["table_page"] = page        # within range for this shipment
         st.segmented_control("Page", list(range(1, pages + 1)), key="table_page", required=True)

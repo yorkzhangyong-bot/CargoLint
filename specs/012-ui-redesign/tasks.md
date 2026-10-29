@@ -160,7 +160,8 @@ need a function change is asked first. The theme file (T010) is the one exceptio
 - [X] T029 [US4] ui/main_page.py: the shipper email draft section with each red line's update field (D18): each line
   with a question in the draft, its field fitted to its text
 - [X] T030 `clerk_changed` in the UI's downloads (ui/view.py, ui/main_page.py), built from the store's export rows and
-  the line versions; `agent/store.py` is not changed (FR-013, confirmed by the author after Step 1)
+  the line versions; `agent/store.py` is not changed (FR-013, confirmed by the author after Step 1). Narrowed after
+  Step 2 to the clerk's overrides only (done in Step 3)
 - [X] T031 tests/ui/*: rewrite the existing table, row, summary, email and export tests to the new layout, keeping
   each test's intent. "Accept n selected" is gone with its test (D8). tests/ui/test_response_time.py and
   tests/eval/walkthrough.py use "Accept" and "Ask shipper" (offline walkthrough: 57 clerk actions, all 12 lines
@@ -174,13 +175,17 @@ need a function change is asked first. The theme file (T010) is the one exceptio
 
 ## Phase 5: Step 3, polish (native)
 
-- [ ] T033 [P] ui/expand.py: confidence bars beside the candidates (`st.progress`)
-- [ ] T034 [P] ui/main_page.py and ui/table.py: card and container spacing (`st.container` gaps, `st.divider`)
-- [ ] T035 [P] tests/unit/test_native_ui.py: no `unsafe_allow_html`, `st.html` or components in app.py and ui/
+- [X] T033 [P] ui/expand.py: confidence bars beside the candidates (`st.progress`). The bars stand in a column beside
+  the radio, 7 px apart, so each sits beside its option at base font 18; a candidate's label is cut to fit one line
+- [X] T034 [P] ui/main_page.py and ui/table.py: card and container spacing (`st.container` gaps, `st.divider`). Done
+  on 2026-10-29: the rows sit 4.5 px apart (gap "xxsmall"), as close as in the picture; `st.divider` between rows was
+  tried and dropped, as its margins put the rows 109 px apart. Also: bold badge labels, the asking lines' update
+  fields folded under the draft (Step 2 review), and an arrow before the Advanced link
+- [X] T035 [P] tests/unit/test_native_ui.py: no `unsafe_allow_html`, `st.html` or components in app.py and ui/
   (SC-004)
-- [ ] T036 README.md: "What the clerk sees" for the new layout
-- [ ] T037 Run `pytest -q`, including tests/ui/test_response_time.py (SC-007), then commit "feat(012): step 3,
-  polish"
+- [X] T036 README.md: "What the clerk sees" for the new layout
+- [X] T037 Run `pytest -q`, including tests/ui/test_response_time.py (SC-007), then commit "feat(012): step 3,
+  polish". On 2026-10-29: 1275 passed, 4 deselected
 - [ ] T038 Constitution 1.8.1 (PATCH), at the end of Step 3 when the wording is final: the four remaining "summary bar"
   and "decision table" mentions follow the 012 layout (`/speckit-constitution`)
 

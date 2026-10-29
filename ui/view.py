@@ -739,8 +739,8 @@ def candidate_label(r: CandidateRow) -> str:
     """Block 2's choice for one candidate: the dotted HS-6, its subheading's label (after its heading's when the label
     alone says little, as "Other" does), and its confidence."""
     path = r.description.split(" › ")
-    text = path[-1] if len(path) == 1 or len(path[-1]) >= 20 else f"{cut(path[-2], 60)} › {path[-1]}"
-    return f"{r.value} {cut(text, 100)} — {r.confidence}%"
+    text = path[-1] if len(path) == 1 or len(path[-1]) >= 20 else f"{cut(path[-2], 35)} › {path[-1]}"
+    return f"{r.value} {cut(text, 55)} — {r.confidence}%"   # one line, so its confidence bar sits beside it
 
 
 def vote_lines(vote: Any, code: str | None) -> list[tuple[bool, str, str]]:
@@ -765,10 +765,14 @@ def requirements_text(sv: Any) -> str:
 
 
 # --------------------------------------------------------------------------- feature 012: the downloads (FR-013)
-def clerk_changed(line: Any, route_set_by: str) -> bool:
-    """A version made by the clerk's edit, or a route the clerk set: a decision, a CN-8 or TARIC-10 confirmation, or a
-    question sent to the shipper (the store records each as the clerk's decision)."""
-    return route_set_by == "clerk" or any(v.created_by == CreatedBy.clerk for v in line.versions)
+OVERRIDES = (ChosenHow.other_candidate.value, ChosenHow.typed.value)
+
+
+def clerk_changed(line: Any, decided_how: str | None) -> bool:
+    """The clerk overrode the model: an HS-6 other than the top candidate (another candidate, or a typed code), or a
+    description the clerk edited. Accepting a line as it is, confirming its codes or asking the shipper changes nothing
+    (the Step 2 review)."""
+    return decided_how in OVERRIDES or any(v.created_by == CreatedBy.clerk for v in line.versions)
 
 
 def export_csv(store: Any) -> bytes:
@@ -778,7 +782,7 @@ def export_csv(store: Any) -> bytes:
                             lineterminator="\n")
     writer.writeheader()
     for line, row in zip(store.lines, store.export_rows()):
-        writer.writerow(row | {"clerk_changed": "true" if clerk_changed(line, row["route_set_by"]) else "false"})
+        writer.writerow(row | {"clerk_changed": "true" if clerk_changed(line, row["decided_how"]) else "false"})
     return ("\ufeff" + buf.getvalue()).encode("utf-8")
 
 
@@ -786,7 +790,7 @@ def export_json(store: Any, knowledge_base_updated: str | None) -> bytes:
     """The store's JSON export with `clerk_changed` on every line."""
     payload = json.loads(store.to_json_bytes(knowledge_base_updated=knowledge_base_updated))
     for line, item in zip(store.lines, payload["lines"]):
-        item["clerk_changed"] = clerk_changed(line, item["route_set_by"])
+        item["clerk_changed"] = clerk_changed(line, item["decided_how"])
     return json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
 
 

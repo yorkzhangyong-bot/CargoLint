@@ -830,14 +830,17 @@ def test_stop_word_result(states, name, result):                         # block
     assert view.stop_word_result(line_of(states, name)[1]) == result
 
 
-def test_candidate_label():                                               # block 2's radio (FR-011)
+def test_candidate_label():                                               # block 2's radio (FR-011): one line each
     R = view.CandidateRow
     sewing = "Sewing machines, other than book-sewing machines of heading 8440; sewing machine needles"
-    assert view.candidate_label(R("8452 90 00", "8452.90", f"{sewing} › Parts of sewing machines", 31)) ==         "8452.90 Parts of sewing machines — 31%"
-    assert view.candidate_label(R("9405 49", "9405.49", "Luminaires and lighting fittings › Other", 30)) ==         "9405.49 Luminaires and lighting fittings › Other — 30%"                   # "Other" alone says little
+    assert view.candidate_label(R("8452 90 00", "8452.90", f"{sewing} › Parts of sewing machines", 31)) == \
+        "8452.90 Parts of sewing machines — 31%"
+    assert view.candidate_label(R("9405 49", "9405.49", "Luminaires and lighting fittings › Other", 30)) == \
+        "9405.49 Luminaires and lighting fittings › Other — 30%"            # "Other" alone says little
     led = ("Electric table, desk, bedside or floor-standing luminaires designed for use solely with light-emitting "
            "diode (LED) light sources")
-    assert view.candidate_label(R("9405 21", "9405.21", f"Luminaires › {led}", 58)) ==         f"9405.21 {view.cut(led, 100)} — 58%"
+    label = view.candidate_label(R("9405 21", "9405.21", f"Luminaires › {led}", 58))
+    assert label == f"9405.21 {view.cut(led, 55)} — 58%" and len(label) <= 70
     assert view.candidate_label(R("9617 00", "9617.00", "Vacuum flasks", 92)) == "9617.00 Vacuum flasks — 92%"
 
 
@@ -868,14 +871,15 @@ def test_requirements_text():                                            # block
     assert view.requirements_text(NS(groups={"requirements": ()})) == "none"
 
 
-def test_clerk_changed_in_the_downloads(kb):                             # FR-013, built in ui/ from the export rows
+def test_clerk_changed_in_the_downloads(kb):     # FR-013: the clerk's overrides only, built in ui/ from the export rows
     import csv
     import io
     import json
 
     from agent.schemas import Decision, DecisionRoute
+    from ui import actions
 
-    store, nos = h.store_with("review", "ready", "accepted", "edited_never_flagged", kb=kb)
+    store, nos = h.store_with("review", "ready", "accepted", "edited_never_flagged", "sent", kb=kb)
 
     def changed() -> dict[int, str]:
         rows = csv.DictReader(io.StringIO(view.export_csv(store).decode("utf-8-sig")))
@@ -883,16 +887,24 @@ def test_clerk_changed_in_the_downloads(kb):                             # FR-01
 
     assert view.export_csv(store).startswith("\ufeff".encode("utf-8"))
     assert view.export_csv(store).decode("utf-8-sig").splitlines()[0].split(",") == [*store.CSV_COLUMNS, "clerk_changed"]
-    assert changed() == {nos["review"]: "false", nos["ready"]: "false", nos["accepted"]: "true",   # a confirmation
-                         nos["edited_never_flagged"]: "true"}                                       # the clerk's edit
-    store.set_decision(nos["review"], Decision(route=DecisionRoute.accepted, decided_code="8543.70"))
+    assert changed() == {nos["review"]: "false", nos["ready"]: "false",
+                         nos["accepted"]: "false",                     # its codes confirmed as they were
+                         nos["edited_never_flagged"]: "true",          # the clerk edited the description
+                         nos["sent"]: "false"}                         # asking the shipper overrides nothing
+    actions.accept_ready(store, [nos["ready"]])                        # a Ready line accepted as it is
+    assert changed()[nos["ready"]] == "false"
+    store.set_decision(nos["review"], Decision(route=DecisionRoute.accepted, decided_code="9405.21"))   # the top one
+    assert changed()[nos["review"]] == "false"
+    store.set_decision(nos["review"], Decision(route=DecisionRoute.accepted, decided_code="8543.70"))   # another one
+    assert changed()[nos["review"]] == "true"
+    store.set_decision(nos["review"], Decision(route=DecisionRoute.accepted, decided_code="8518.30"))   # typed
     assert changed()[nos["review"]] == "true"
     ours = list(csv.reader(io.StringIO(view.export_csv(store).decode("utf-8-sig"))))
     theirs = list(csv.reader(io.StringIO(store.to_csv_bytes().decode("utf-8-sig"))))
     assert [r[:-1] for r in ours] == theirs                                  # the store's own columns, unchanged
     payload = json.loads(view.export_json(store, kb.updated))
     original = json.loads(store.to_json_bytes(knowledge_base_updated=kb.updated))
-    assert [item.pop("clerk_changed") for item in payload["lines"]] == [True, False, True, True]
+    assert [item.pop("clerk_changed") for item in payload["lines"]] == [True, False, False, True, False]
     for p in (payload, original):
         p["shipment"].pop("exported_at")
     assert payload == original

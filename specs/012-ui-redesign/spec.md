@@ -92,6 +92,14 @@ prominent")". The brief, given on 2026-10-29, had five parts:
 - **Constitution**: the four remaining "summary bar" and "decision table" mentions wait for a 1.8.1 amendment at the
   end of Step 3, when the wording is final.
 
+### Session 2026-10-29 (after the Step 2 review)
+
+- **`clerk_changed`**: true only for the clerk's real overrides: an HS-6 other than the model's top candidate (another
+  candidate or a typed code), or an edited description. Accepting a Ready line as it is, confirming its codes or
+  asking the shipper is false.
+- **Status line**: it keeps the model's name.
+- **Shipper email draft**: the asking lines' update fields fold into an expander under the draft.
+
 ## Brief and final picture
 
 Where they differ, this feature follows the final picture.
@@ -335,14 +343,15 @@ The operator follows "Advanced" at the bottom of the page to the Admin page.
   - the heading "Shipper email draft · EN | 中文", with the existing language switch (default EN);
   - the caption "n questions ready for the shipper";
   - the existing draft in a code block, with its copy button;
-  - each red line's update field with "Re-check this line" (D18).
+  - folded in an expander under it, each asking line's update field with "Re-check this line" (D18).
 
   A line routed to the shipper from its row appears in the draft.
 - **FR-013**: The CSV and JSON downloads MUST add one column, `clerk_changed`, built in `ui/` from the store's export
-  rows and the line versions; `agent/store.py` does not change. It is true when a version of the line was created by
-  the clerk's edit, or when the route was set by the clerk (`route_set_by` "clerk": a decision, a CN-8 or TARIC-10
-  confirmation, or a question sent to the shipper). The edited description, the chosen code and the final route are
-  the existing text, `decided_code` and `route` columns.
+  rows and the line versions; `agent/store.py` does not change. It is true only for the clerk's overrides: an HS-6
+  other than the model's top candidate (`decided_how` "other_candidate" or "typed"), or a version of the line created
+  by the clerk's edit. Accepting a line as it is, confirming its codes or asking the shipper leaves it false. The
+  edited description, the chosen code and the final route are the existing text, `decided_code` and `route`
+  columns.
 - **FR-014**: The bottom of the main page MUST hold a page link "Advanced: Ask the agent · paste shipper reply ·
   audit trail · Admin" to the Admin page, behind the password gate like every page.
 - **FR-015**: Unchanged: the password gate, the demo notice, classification, routing, the CN-8 and TARIC steps, and

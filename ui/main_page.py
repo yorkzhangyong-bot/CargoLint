@@ -153,9 +153,10 @@ def _counts(store: Any, kb: Any, s: view.Summary) -> None:
 
 def _draft(store: Any, kb: Any, s: view.Summary) -> None:
     """The shipper email draft under the list (FR-012, D18): string templates to copy, in English or Chinese; nothing is
-    sent or stored. Under it, each asking line's update field and "Re-check this line"."""
+    sent or stored. Under it, folded, each asking line's update field and "Re-check this line"."""
     if not s.ask:
         return
+    st.space("small")
     with st.container(horizontal=True, vertical_alignment="center"):
         st.markdown("**Shipper email draft** ·", width="content")
         lang = st.segmented_control("Language", ["EN", "中文"], key="email_lang", default="EN", required=True,
@@ -165,10 +166,11 @@ def _draft(store: Any, kb: Any, s: view.Summary) -> None:
     st.caption(f"{q} question{'' if q == 1 else 's'} ready for the shipper")
     st.caption(":material/content_copy: Copy email — the copy button at the top right of the text")
     st.code(draft.text, language=None, wrap_lines=True)
-    for n in draft.line_nos:
-        line = store.get_line(n)
-        st.markdown(f"**Line {n}** · {view.md_escape(line.versions[0].display_text)}")
-        expand.description(store, kb, line, prefix="draft_")
+    with st.expander(f"Shipper's answers: update {q} line{'' if q == 1 else 's'} and re-check"):
+        for n in draft.line_nos:
+            line = store.get_line(n)
+            st.markdown(f"**Line {n}** · {view.md_escape(line.versions[0].display_text)}")
+            expand.description(store, kb, line, prefix="draft_")
 
 
 def _live(store: Any, kb: Any, messages: list[tuple[str, str]]) -> None:
@@ -205,4 +207,4 @@ def render(store: Any, kb: Any, admin_page: Any = None) -> None:
     _input(store, kb)
     _live(store, kb, runner.pop_messages())
     if admin_page is not None:
-        st.page_link(admin_page, label=ADVANCED)
+        st.page_link(admin_page, label=ADVANCED, icon=":material/arrow_right:")

@@ -197,11 +197,13 @@ README.md                # Step 3: "What the clerk sees"
     - the heading "Shipper email draft · EN | 中文", with today's language switch (default EN);
     - the caption "n questions ready for the shipper";
     - today's `shipper_email.draft` in `st.code`;
-    - each red line's update field and "Re-check this line", the block 1 function under its own key prefix.
-16. **`clerk_changed` (FR-013, confirmed after Step 1).** True when any version of the line was created by the clerk's
-    edit (`CreatedBy.clerk`), or the export row's `route_set_by` is "clerk": the store records a clerk decision for an
-    HS-6 decision, a CN-8 or TARIC-10 confirmation and a question sent to the shipper. `view.export_csv` and
-    `view.export_json` add it to the store's export rows in `ui/`; `agent/store.py` does not change.
+    - folded in an expander, each asking line's update field and "Re-check this line", the block 1 function under
+      its own key prefix.
+16. **`clerk_changed` (FR-013, confirmed after Step 1, narrowed after Step 2).** True only for the clerk's overrides:
+    the export row's `decided_how` is "other_candidate" or "typed" (an HS-6 other than the top candidate), or a
+    version of the line was created by the clerk's edit (`CreatedBy.clerk`). Accepting a Ready line as it is,
+    confirming its codes or asking the shipper is false. `view.export_csv` and `view.export_json` add it to the
+    store's export rows in `ui/`; `agent/store.py` does not change.
 17. **Admin page.** `st.segmented_control("Section", SECTIONS, key="admin_section", default="Rules", required=True)`
     at the top of the page, keeping today's session persistence, instead of `st.sidebar.radio`.
 18. **Advanced link.** At the bottom of the main page: `st.page_link(admin_page, label="Advanced: Ask the agent ·

@@ -32,6 +32,7 @@ B_COLS = [1.35, 2.9, 1.7, 1.45, 0.95]
 REFUSED = (LockedError, UnknownCodeError, ValueError)
 ESTIMATE = "Confidence is a model estimate, not a calibrated probability."
 FOLLOW = "CN-8 and TARIC-10 follow when you accept this code."
+BAR_GAP = 7      # px: a radio option is 25 px tall at base font 18 and a bar 18 px, so each bar sits beside its option
 
 
 def forget(line_no: int | None) -> None:
@@ -221,7 +222,11 @@ def _block2(store: Any, line: Any) -> str | None:
         r = rows[value]
         return md_escape(view.candidate_label(r)) + (" :gray-badge[history only]" if r.history_only else "")
 
-    picked = st.radio("HS-6 candidates", options, key=key, format_func=label, label_visibility="collapsed")
+    choice, bars, _ = st.columns([2.6, 1, 0.5])
+    picked = choice.radio("HS-6 candidates", options, key=key, format_func=label, label_visibility="collapsed")
+    with bars.container(gap=BAR_GAP):                # one confidence bar beside each candidate
+        for r in rows.values():
+            st.progress(r.confidence)                  # an int is a percentage, kept exact
     if picked == OTHER:
         if typed_key not in st.session_state:
             st.session_state[typed_key] = held
