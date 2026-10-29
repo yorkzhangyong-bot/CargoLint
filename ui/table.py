@@ -12,10 +12,11 @@ import streamlit as st
 from ui import expand, view
 
 PAGE_SIZE = 50
-COLS = [0.45, 1.25, 3.2, 2.6, 1.4, 0.7]
+COLS = [0.4, 1.2, 3, 3, 1.4, 0.8]
+COL_GAP = "xsmall"               # small gaps between the columns (the author's polish)
 HEADERS = ("#", "Status", "Description", "Need / description", "HS code", "Conf.")
 SHOW = "show_open_line"          # set when a line opens by itself: the list shows that line's page once
-ROW_GAP = "xxsmall"              # the rows sit close, as in the final picture
+ROW_GAP = 1                      # px: 45 px rows 46 px apart, as in the final picture
 
 
 def _toggle(line_no: int) -> None:
@@ -37,7 +38,7 @@ def _row(store: Any, line: Any, status: view.LineStatus, selected: str | None) -
     n = line.line_no
     cells = view.row_cells(store, line, status, selected)
     with st.container(key=f"line_{n}"):
-        c = st.columns(COLS, vertical_alignment="center")
+        c = st.columns(COLS, vertical_alignment="center", gap=COL_GAP)
         c[0].markdown(f"{n}")
         c[1].badge(f"**{cells.badge}**", color=cells.colour, help=view.md_escape(status.text))
         text = view.md_escape(cells.filed) or "_(no readable text)_"
@@ -62,9 +63,9 @@ def render(store: Any, kb: Any, statuses: dict[int, view.LineStatus]) -> None:
             st.session_state["table_page"] = at // PAGE_SIZE + 1
     page = min(max(int(st.session_state.get("table_page") or 1), 1), pages)
     st.markdown(f"**Lines (sorted: ask shipper → review → ready)** · Page {page} of {pages}")
-    for col, name in zip(st.columns(COLS, vertical_alignment="bottom"), HEADERS):
+    for col, name in zip(st.columns(COLS, vertical_alignment="bottom", gap=COL_GAP), HEADERS):
         col.caption(f"**{name}**")
-    with st.container(gap=ROW_GAP):
+    with st.container(key="lines", gap=ROW_GAP):
         for line in lines[(page - 1) * PAGE_SIZE: page * PAGE_SIZE]:
             n, status = line.line_no, statuses[line.line_no]
             is_open = selected == n and status.colour != "grey"

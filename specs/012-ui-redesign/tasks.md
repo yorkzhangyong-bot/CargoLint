@@ -197,12 +197,18 @@ need a function change is asked first. The theme file (T010) is the one exceptio
   `/admin`; no update fields under the email draft (the expander "Shipper's answers…" is gone; block 1 of the open
   row keeps the field). ui/main_page.py, ui/expand.py, ui/view.py, app.py, the tests, feature 001's FR-041 and
   README.md; constitution 1.9.0 (`/speckit-constitution`)
+- [X] T040 The author's polish (2026-10-29), a compact page like the final picture, native only: the content capped
+  at 1400 px and centred; small fixed-height count cards in one row with the two buttons at their normal width
+  (ratios 2, 2, 2, 1.5, 1.5); list rows 46 px apart with small column gaps (ratios 0.4, 1.2, 3, 3, 1.4, 0.8); small
+  gaps from the header to the status line, the sample button and its caption on one row; no trailing underscores in
+  the HS code; the new Origin caption; one compact Origin block. ui/main_page.py, ui/table.py, ui/upload.py,
+  ui/view.py, the tests, the spec and README.md. Streamlit's fixed 6rem padding above the page stays
 
 ---
 
 ## Dependencies & Execution Order
 
 - T004 comes before any code (T010 onwards). T005 came before T020 and T028. T038 closes Step 3; T039 follows the
-  author's check of the UI.
+  author's check of the UI, and T040 the author's polish.
 - Within each step, the tests come before the code.
 - Step 1 comes before Step 2, and Step 2 before Step 3. Each step ends with its own commit. Nothing is merged.

@@ -165,12 +165,12 @@ def test_next_step(states, kb):
 
 
 # --------------------------------------------------------------------------- §3 code display
-@pytest.mark.parametrize("name, text, note", [
-    ("pending", "____ __ __ __", None),
-    ("cn8_missing", "9503 00 __ __", None),
-    ("cn8_pending", "9503 00 __ __", None),                   # a CN-8 suggestion fills no digit
-    ("taric_missing", "9503 00 95 __", None),
-    ("taric_two", "7318 15 58 __", None),                     # a TARIC-10 to pick fills no digit
+@pytest.mark.parametrize("name, text, note", [                # feature 012: no underscores (the author's polish)
+    ("pending", "—", None),
+    ("cn8_missing", "9503 00", None),
+    ("cn8_pending", "9503 00", None),                         # a CN-8 suggestion fills no digit
+    ("taric_missing", "9503 00 95", None),
+    ("taric_two", "7318 15 58", None),                        # a TARIC-10 to pick fills no digit
     ("accepted_taric", "7318 15 58 10", None),
     ("ready", "9617 00 00", "TARIC not available"),
     ("ready_not_loaded", "9617 00 00", "TARIC not loaded"),
@@ -528,7 +528,7 @@ OVERRIDDEN = ("Decided: HS-6 9405 21, candidate 2 chosen, rulings overrode the m
 def test_feature_008_an_overridden_line_says_which_candidate_was_chosen(kb):
     store, line = _voted_lamp(kb, FOUR_AT_2)
     assert view.explain_a(store, line, "a_change")[0] == OVERRIDDEN
-    assert view.code_display(store, line).text == "9405 21 __ __"
+    assert view.code_display(store, line).text == "9405 21"
     store.confirm_cn8(line.line_no, "94052140")
     assert view.explain_a(store, line, "a_change")[0].split(" · ")[0] == OVERRIDDEN + ", accepted by you"
 
@@ -561,7 +561,7 @@ def test_feature_008_with_the_switch_off_the_texts_are_as_before(kb):
         "Rulings disagree: model 8543 70, nearest rulings 9405 21 (IE, DE, DE, FR), 8543 70 (NL). Precedents support "
         "candidate 2. TARIC runs after your pick.")
     assert view.preselect(store, line, "a_hs6", "hs6")[0] == "8543.70"
-    assert view.code_display(store, line).text == "____ __ __ __"
+    assert view.code_display(store, line).text == "—"
 
 
 OUTSIDE = "Rulings disagree: model 8543 70, nearest rulings 9617 00 (IE, DE, DE, FR), 8543 70 (NL). TARIC runs after your pick."

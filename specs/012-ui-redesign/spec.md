@@ -115,6 +115,22 @@ prominent")". The brief, given on 2026-10-29, had five parts:
 - **Shipper email draft**: the expander "Shipper's answers: update n lines and re-check" is removed, with the update
   fields in it. The clerk updates an asking line's description in its open row (block 1).
 
+### Session 2026-10-29 (the author's polish: a compact page like the final picture)
+
+- **Width**: the content is capped at 1400 px, centred, the final picture's width; a narrower window shrinks it.
+- **Count cards**: small, of a fixed height (112 px), the label over the count with no gap between them. The three
+  cards, "Accept all K ready" and "Download CSV" share one row (column ratios 2, 2, 2, 1.5, 1.5), and the buttons
+  keep their normal width.
+- **List**: the rows sit 46 px apart, with small column gaps and the column ratios 0.4, 1.2, 3, 3, 1.4 and 0.8.
+- **Gaps**: small gaps (9 px) between the header, the tabs, the upload box, "Check all lines" and the status line.
+  "Load sample invoice" and its caption share one row under the drop zone.
+- **HS code**: no trailing underscores ("6109 10 00", not "6109 10 00 __").
+- **Origin caption**: "Duty and measures follow this country. Changing it re-applies them without a new model call."
+- **Header**: title on the left, and on the right one compact Origin block: the selectbox, with its caption and the
+  TARIC snapshot date beside it. A small gap separates the header from the tabs. Streamlit 1.65 keeps a fixed 6rem
+  padding above the page for its toolbar (108 px at base font 18); no native option removes it, so the title starts
+  there.
+
 ## Brief and final picture
 
 Where they differ, this feature follows the final picture.
@@ -282,9 +298,10 @@ check of the UI).
 
   The Origin box holds an `st.selectbox` over a static list of ISO two-letter codes and TARIC's six country codes
   outside ISO (XC Ceuta, XI Northern Ireland, XK Kosovo, XL Melilla, XS Serbia, XU the United Kingdom without
-  Northern Ireland), defined in `ui/` (CN by default, the kept value otherwise, type-to-filter), with the caption "duty and measures for goods from this country · change
-  → re-applied, no model call". A change MUST go through today's origin callback, which calls the existing origin
-  re-application and shows its toast (D1). There is no store change.
+  Northern Ireland), defined in `ui/` (CN by default, the kept value otherwise, type-to-filter), with the caption
+  "Duty and measures follow this country. Changing it re-applies them without a new model call." and the TARIC
+  snapshot date beside it, in one compact block (the author's polish). A change MUST go through today's origin
+  callback, which calls the existing origin re-application and shows its toast (D1). There is no store change.
 - **FR-004**: The input area MUST have two tabs, "Upload file" and "Check a single line".
 - **FR-005**: The upload tab MUST hold:
   - the native uploader, labelled "Drag and drop a PDF, Excel, CSV or photo (jpg/png) here, or browse files", with
@@ -309,7 +326,9 @@ check of the UI).
   - "Download CSV" (D12). The small "JSON" download was removed after the author's check of the UI: the app offers
     no JSON download.
 
-  The row checkboxes and "Accept K selected" are removed.
+  The row checkboxes and "Accept K selected" are removed. The cards are small, of a fixed height, with the label over
+  the count and no gap between them; the cards and both buttons share one row (column ratios 2, 2, 2, 1.5 and 1.5),
+  and the buttons keep their normal width (the author's polish).
 - **FR-009**: The list MUST carry the heading "Lines (sorted: ask shipper → review → ready)" and "Page x of y". It
   shows 50 lines per page (D11), ordered Ask shipper, Review, Ready, Accepted, then Checking, and in file order within
   each group.
@@ -321,11 +340,13 @@ check of the UI).
   - **Need / description**: on a red line, what it needs, from its flag; on other lines, the current description,
     which differs from the filed one after the clerk edited it (D2);
   - **HS code**: before a decision, the HS-6 candidate in dotted form ("9405.40"). Once a CN-8 or TARIC-10 is
-    decided, today's code display: 4-2-2-2 groups, undecided digits as underscores, or the 8 digits and why the line
-    stops there. So an auto-accepted Ready line shows its 10 digits directly. "—" when there is no candidate;
+    decided, today's code display: 4-2-2-2 groups of the decided digits, with no underscores for the undecided ones
+    (the author's polish), or the 8 digits and why the line stops there. So an auto-accepted Ready line shows its 10
+    digits directly. "—" when there is no candidate;
   - **Conf.**: the HS-6 candidate's confidence, else "—".
 
-  A line still being checked does not open.
+  A line still being checked does not open. The rows sit 46 px apart, with small column gaps and the column ratios
+  0.4, 1.2, 3, 3, 1.4 and 0.8 (the author's polish).
 - **FR-011**: The open line MUST render in an `st.expander` "Line n · <description>" under its row, one line open at
   a time, with these blocks in order:
   - **1 Description**: the caption "Original: <filed text> · Stop-word check: <result>"; a text field prefilled with

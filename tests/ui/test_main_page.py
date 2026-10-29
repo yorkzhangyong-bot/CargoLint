@@ -54,7 +54,7 @@ def widths(monkeypatch):
     from streamlit.delta_generator import DeltaGenerator
 
     seen: dict = {}
-    for name in ("button", "form_submit_button"):
+    for name in ("button", "form_submit_button", "download_button"):
         def on_module(label, *args, _fn=getattr(streamlit, name), **kwargs):
             seen[kwargs.get("key")] = kwargs.get("width", "content")
             return _fn(label, *args, **kwargs)
@@ -62,6 +62,34 @@ def widths(monkeypatch):
         def on_container(self, label, *args, _fn=getattr(DeltaGenerator, name), **kwargs):
             seen[kwargs.get("key")] = kwargs.get("width", "content")
             return _fn(self, label, *args, **kwargs)
+        monkeypatch.setattr(streamlit, name, on_module)
+        monkeypatch.setattr(DeltaGenerator, name, on_container)
+    return seen
+
+
+@pytest.fixture
+def layout(monkeypatch):
+    """The layout arguments AppTest does not keep: each keyed container's keyword arguments, and each st.columns call's
+    spec and gap, in order."""
+    import streamlit
+    from streamlit.delta_generator import DeltaGenerator
+
+    seen: dict = {"container": {}, "columns": []}
+
+    def record(name, args, kwargs):
+        if name == "container" and kwargs.get("key"):
+            seen["container"][kwargs["key"]] = kwargs
+        elif name == "columns":
+            seen["columns"].append((args[0], kwargs.get("gap", "small")))
+
+    for name in ("container", "columns"):
+        def on_module(*args, _fn=getattr(streamlit, name), _name=name, **kwargs):
+            record(_name, args, kwargs)
+            return _fn(*args, **kwargs)
+
+        def on_container(self, *args, _fn=getattr(DeltaGenerator, name), _name=name, **kwargs):
+            record(_name, args, kwargs)
+            return _fn(self, *args, **kwargs)
         monkeypatch.setattr(streamlit, name, on_module)
         monkeypatch.setattr(DeltaGenerator, name, on_container)
     return seen
@@ -79,7 +107,7 @@ def test_the_page_frame(kb, recorder, widths):
     assert "Check invoice and packing-list lines before customs declaration" in page
     origin = at.selectbox(key="origin_field")                        # FR-003: ISO codes only, CN by default
     assert (origin.label, origin.value, origin.options) == ("Origin", "CN", list(view.ORIGIN_CODES))
-    assert "duty and measures for goods from this country · change → re-applied, no model call" in page
+    assert "Duty and measures follow this country. Changing it re-applies them without a new model call." in page
     assert view.snapshot_caption(kb) in page                         # Principle I: the snapshot date stays displayed
     assert [t.label for t in at.tabs] == ["Upload file", "Check a single line"]
     upload_tab, line_tab = at.tabs
@@ -271,6 +299,25 @@ def test_the_counts_row(kb, recorder):
     assert [(b.key, b.proto.label) for b in at.get("download_button")] == [("export_csv", "Download CSV")]   # no JSON
     assert not at.metric and not any("█" in t for t in texts(at))     # no metric, no split bar
     assert not [c for c in at.checkbox if c.key and c.key.startswith("accept_")]   # D8: no row checkboxes
+
+
+def test_the_compact_layout(kb, recorder, widths, layout):           # the author's polish after the check of the UI
+    from ui import main_page
+
+    (store, _), _ = h.all_states(kb)
+    at = h.app(store, kb).run()
+    assert not at.exception
+    boxes = layout["container"]
+    assert (boxes["page"]["width"], boxes["page"]["gap"]) == (1400, "xsmall")      # about 1400 px wide, small gaps
+    assert boxes["origin"]["border"] and boxes["origin"]["horizontal"]          # one compact Origin block
+    assert isinstance(main_page.CARD_HEIGHT, int)
+    for key in ("count_ready", "count_review", "count_ask"):                   # small fixed cards, label over number
+        assert (boxes[key]["gap"], boxes[key]["height"]) == (None, main_page.CARD_HEIGHT), key
+    assert ([2, 2, 2, 1.5, 1.5], "small") in layout["columns"]                # the cards and the buttons in one row
+    assert widths["accept_all"] == widths["export_csv"] == "content"           # normal width, not full width
+    rows = [c for c in layout["columns"] if c == ([0.4, 1.2, 3, 3, 1.4, 0.8], "xsmall")]
+    assert len(rows) == 1 + len(store.lines)                                   # the list's head and each line's row
+    assert boxes["lines"]["gap"] == 1                                          # rows 46 px apart
 
 
 def test_the_status_line_after_a_check(recorder):

@@ -119,7 +119,7 @@ Two pages, native Streamlit only, laid out by feature 012 (`specs/012-ui-redesig
 sidebar and no chat. The Admin page holds the rules, the data, the cost, the quality and the agent chat, for the
 operator and the course evaluators.
 
-**The main page**, top to bottom:
+**The main page**, at most 1400 px wide and centred, top to bottom:
 - **Header**: "CargoLint" and the Origin box, a dropdown of the ISO country codes and TARIC's six own codes (XC, XI,
   XK, XL, XS, XU), CN by default, with the TARIC snapshot date. Changing the origin re-applies the TARIC rules to every
   line without a model call, and a toast says so.
@@ -141,8 +141,8 @@ operator and the course evaluators.
     exactly is “spare parts”?").
   - A red line shows what it needs ("needs material, product name and use"); the others show their current
     description.
-  - The HS code is the dotted HS-6 ("9405.21") until a CN-8 is decided, then the decided digits with underscores for
-    the rest ("6109 10 00 __", "9617 00 00 00").
+  - The HS code is the dotted HS-6 ("9405.21") until a CN-8 is decided, then the decided digits ("6109 10 00",
+    "9617 00 00 00").
 - **A line opens under its row**, in four blocks:
   1. Description: the original and the stop-word check; on a red line, the reason and the question to copy; the
      description field and "Re-check this line", which stores the clerk's edit as a new version and checks that line

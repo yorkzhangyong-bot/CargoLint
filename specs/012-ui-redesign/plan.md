@@ -135,8 +135,9 @@ README.md                # Step 3: "What the clerk sees"
 5. **Origin box.** `st.container(border=True)` on the right of the title holds an `st.selectbox` over a static list of
    ISO two-letter codes and TARIC's six country codes outside ISO (XC, XI, XK, XL, XS, XU) in `ui/view.py`, which
    filters as the clerk types; the default is CN. Its callback is today's
-   origin callback, which calls `apply_taric_origin` and shows the toast. The caption is the one of D1. There is no
-   store change.
+   origin callback, which calls `apply_taric_origin` and shows the toast. The caption, "Duty and measures follow this
+   country. Changing it re-applies them without a new model call.", and the snapshot date sit beside the selectbox
+   in the same box (the author's polish; D1 worded the caption before). There is no store change.
 6. **Counts row.** One horizontal container holds:
    - three `st.container(border=True)` cards, each with its label and its count in coloured markdown: `:green[…]` for
      Ready to accept (`Summary.to_accept`), `:orange[…]` for Needs review (`Summary.pick`), `:red[…]` for Ask shipper

@@ -18,7 +18,10 @@ from ui import actions, expand, runner, shipper_email, table, upload, view
 WAIT = "Wait for the running check"
 WAITS = "Waits for the running check"
 SUBTITLE = "Check invoice and packing-list lines before customs declaration"
-ORIGIN_CAPTION = "duty and measures for goods from this country · change → re-applied, no model call"
+ORIGIN_CAPTION = "Duty and measures follow this country. Changing it re-applies them without a new model call."
+PAGE_WIDTH = 1400                # px: the content is capped at the final picture's width, centred (the author's polish)
+COUNTS = [2, 2, 2, 1.5, 1.5]     # three cards, then "Accept all K ready" and "Download CSV" at their normal width
+CARD_HEIGHT = 112                # px: a card's label and count on two lines, with no gap between them
 
 
 def _line_count(store: Any) -> int:
@@ -50,17 +53,21 @@ def _origin_changed(store: Any, kb: Any, previous: str) -> None:
 
 
 def _header(store: Any, kb: Any) -> None:
-    left, right = st.columns([2.6, 1.4])
-    left.markdown("### CargoLint")
-    left.caption(SUBTITLE)
-    with right.container(border=True):
+    """The title and the subtitle on the left; on the right, one compact Origin block: the selectbox, and beside it its
+    caption and the TARIC snapshot date."""
+    left, right = st.columns([1, 1.5])
+    with left.container(gap=None):
+        st.markdown("### CargoLint")
+        st.caption(SUBTITLE)
+    with right.container(border=True, key="origin", horizontal=True, vertical_alignment="bottom"):
         if "origin_field" not in st.session_state:   # the box would otherwise start at the list's first code
             st.session_state["origin_field"] = store.shipment.taric_origin if store.has_shipment() else "CN"
         st.selectbox("Origin", view.ORIGIN_CODES, key="origin_field", persist_state="session", width=160,
                      help="The goods' country of origin for TARIC, as an ISO code; type to filter",
                      on_change=_origin_changed, args=(store, kb, st.session_state["origin_field"]))
-        st.caption(ORIGIN_CAPTION)
-        st.caption(view.snapshot_caption(kb))
+        with st.container(gap=None):
+            st.caption(ORIGIN_CAPTION)
+            st.caption(view.snapshot_caption(kb))
 
 
 # --------------------------------------------------------------------------- input tabs (FR-004 to FR-006)
@@ -130,21 +137,20 @@ def _accept(store: Any, line_nos: list[int] | None) -> None:
 
 
 def _counts(store: Any, s: view.Summary) -> None:
-    """Three bordered cards with coloured counts, "Accept all K ready" and "Download CSV", which adds `clerk_changed`
-    to the store's export (FR-013); there is no JSON download. Nothing is accepted or downloaded while a check runs."""
+    """Three small bordered cards with coloured counts, then "Accept all K ready" and "Download CSV" at their normal
+    width, in one row. The CSV adds `clerk_changed` to the store's export (FR-013); there is no JSON download. Nothing
+    is accepted or downloaded while a check runs."""
     checking = _checking()
     wait = WAIT if checking else None
-    c = st.columns([1, 1, 1, 1.25, 1.05], vertical_alignment="center")
+    c = st.columns(COUNTS, vertical_alignment="center")
     for col, key, (label, colour, count) in zip(c, ("count_ready", "count_review", "count_ask"), view.count_cards(s)):
-        with col.container(border=True, key=key):
+        with col.container(border=True, key=key, gap=None, height=CARD_HEIGHT):
             st.caption(label)
             st.subheader(f":{colour}[{count}]", anchor=False)
     if s.to_accept and not checking:
-        c[3].button(view.accept_all_label(s.to_accept), key="accept_all", width="stretch", on_click=_accept,
-                    args=(store, None))
+        c[3].button(view.accept_all_label(s.to_accept), key="accept_all", on_click=_accept, args=(store, None))
     c[4].download_button("Download CSV", view.export_csv(store), file_name=store.export_filename("csv"),
-                         mime="text/csv", key="export_csv", width="stretch", disabled=checking, help=wait,
-                         on_click="ignore")
+                         mime="text/csv", key="export_csv", disabled=checking, help=wait, on_click="ignore")
 
 
 def _draft(store: Any, kb: Any, s: view.Summary) -> None:
@@ -190,10 +196,12 @@ def _live(store: Any, kb: Any, messages: list[tuple[str, str]]) -> None:
 
 
 def render(store: Any, kb: Any) -> None:
+    """The page in one centred container of at most PAGE_WIDTH, its parts at small gaps."""
     job = runner.current_job()
     if job is not None and job.done:
         _open_typed_line(job)
         runner.finish(store, kb)   # reruns the app
-    _header(store, kb)
-    _input(store, kb)
-    _live(store, kb, runner.pop_messages())
+    with st.container(horizontal_alignment="center"), st.container(key="page", width=PAGE_WIDTH, gap="xsmall"):
+        _header(store, kb)
+        _input(store, kb)
+        _live(store, kb, runner.pop_messages())

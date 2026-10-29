@@ -257,13 +257,13 @@ def reason_line(store: Any, line: Any) -> str | None:
 
 # --------------------------------------------------------------------------- §3 code display
 def code_display(store: Any, line: Any) -> CodeDisplay:
-    """The decided digits in 4-2-2-2 groups with underscores, or the 8 digits and why the line stops there."""
+    """The decided digits in 4-2-2-2 groups, with no underscores for the undecided ones (feature 012, the author's
+    polish), or the 8 digits and why the line stops there."""
     t10, cn8, hs6 = store.decided_taric10(line), store.decided_cn8(line), store.decided_code(line)[0]
     t = line.current.taric
     if cn8 and not t10 and t is not None and t.rule in NOT_8_DIGITS and t.origin == store.shipment.taric_origin:
         return CodeDisplay(spaced(cn8), NOT_8_DIGITS[t.rule])
-    digits = (t10 or cn8 or (hs6 or "").replace(".", "")).ljust(10, "_")
-    return CodeDisplay(f"{digits[:4]} {digits[4:6]} {digits[6:8]} {digits[8:10]}")
+    return CodeDisplay(spaced(t10 or cn8 or hs6) or "—")
 
 
 # --------------------------------------------------------------------------- §5 kind (a) rows and the HS-6 candidates block

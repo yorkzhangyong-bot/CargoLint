@@ -114,28 +114,31 @@ def _replace_prompt(store, kb, pending: dict, running: bool) -> None:
 
 def render(store, kb) -> None:
     """The upload tab: a dropped file or the sample waits as the pending file until "Check all lines" (FR-005), which
-    asks first when a checked shipment is open; everything waits while any job runs."""
+    asks first when a checked shipment is open; everything waits while any job runs. Compact: the sample button and
+    its captions share one row under the drop zone, at small gaps."""
     running = runner.busy()
     wait = WAIT if running else None
-    with st.container(border=True):
-        _take_upload(st.file_uploader("Drag and drop a PDF, Excel, CSV or photo (jpg/png) here, or browse files",
-                                      type=FILE_TYPES, key="uploader", disabled=running, help=wait))
-        st.caption("about 1 minute for 30 lines")
-        if st.button("Load sample invoice", key="sample", disabled=running, help=wait):
-            st.session_state[PENDING] = {"data": SAMPLE_PATH.read_bytes(), "name": SAMPLE_PATH.name,
-                                         "reference": SAMPLE_REFERENCE, "source": "sample"}
-        pending = st.session_state.get(PENDING)
-        if pending:
-            st.caption(f"Ready to check: {md_escape(pending['name'])}")
-    replacing = st.session_state.get("pending_replacement")
-    if replacing:
-        _replace_prompt(store, kb, replacing, running)
-        return
-    if st.button("Check all lines", key="check_all", type="primary", width="stretch", disabled=running or not pending,
-                 help=wait or (None if pending else NOTHING_TO_CHECK)):
-        st.session_state.pop(PENDING)
-        if needs_confirmation(store):
-            st.session_state["pending_replacement"] = pending
-        else:
-            begin(store, kb, pending["data"], pending["name"], reference=pending.get("reference"))
-        st.rerun()
+    with st.container(gap="xsmall"):
+        with st.container(border=True, gap="xsmall"):
+            _take_upload(st.file_uploader("Drag and drop a PDF, Excel, CSV or photo (jpg/png) here, or browse files",
+                                          type=FILE_TYPES, key="uploader", disabled=running, help=wait))
+            with st.container(horizontal=True, vertical_alignment="center"):
+                if st.button("Load sample invoice", key="sample", disabled=running, help=wait):
+                    st.session_state[PENDING] = {"data": SAMPLE_PATH.read_bytes(), "name": SAMPLE_PATH.name,
+                                                 "reference": SAMPLE_REFERENCE, "source": "sample"}
+                st.caption("about 1 minute for 30 lines", width="content")
+                pending = st.session_state.get(PENDING)
+                if pending:
+                    st.caption(f"Ready to check: {md_escape(pending['name'])}", width="content")
+        replacing = st.session_state.get("pending_replacement")
+        if replacing:
+            _replace_prompt(store, kb, replacing, running)
+            return
+        if st.button("Check all lines", key="check_all", type="primary", width="stretch",
+                     disabled=running or not pending, help=wait or (None if pending else NOTHING_TO_CHECK)):
+            st.session_state.pop(PENDING)
+            if needs_confirmation(store):
+                st.session_state["pending_replacement"] = pending
+            else:
+                begin(store, kb, pending["data"], pending["name"], reference=pending.get("reference"))
+            st.rerun()
