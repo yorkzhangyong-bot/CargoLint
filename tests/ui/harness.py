@@ -421,7 +421,7 @@ def _app_script(store, kb):   # no annotations: AppTest runs this function's sou
     pages: dict = {}
 
     def _main() -> None:
-        main_page.render(store, kb, pages["admin"])
+        main_page.render(store, kb)
 
     def _admin() -> None:
         admin.render(store, kb, pages["main"])

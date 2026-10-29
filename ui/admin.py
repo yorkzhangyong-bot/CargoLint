@@ -1,5 +1,6 @@
 """The Admin page (feature 005, contracts/ui.md §8), for the operator and the course evaluators: the rules, the data,
-the cost, the quality and the agent chat, in a left navigation. The clerk's work happens on the main page."""
+the cost, the quality and the agent chat, behind a section switch at the top (feature 012, D17). The clerk's work
+happens on the main page."""
 from __future__ import annotations
 
 import json
@@ -109,7 +110,9 @@ def render(store: Any, kb: Any, main_page: Any = None) -> None:
     if main_page is not None:
         head[1].page_link(main_page, label="← Back to shipment")
     st.caption("For the operator and course evaluators. The clerk's work happens on the shipment page.")
-    section = st.sidebar.radio("Admin", SECTIONS, key="admin_section", persist_state="session")
+    st.caption(f"Model: {get_settings().chat_model} via OpenRouter")   # here only, not on the main page
+    section = st.segmented_control("Section", SECTIONS, key="admin_section", default="Rules", required=True,
+                                   persist_state="session", label_visibility="collapsed")
     if section == "Rules":
         _rules(store)
     elif section == "Data":

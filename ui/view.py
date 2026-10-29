@@ -14,13 +14,13 @@ from typing import Any
 
 from agent.config import MAX_DESC_CHARS
 from agent.routing import cn8_precedent_conflict, hs6_choice, hs6_gate
-from agent.schemas import ChosenHow, Cn8Gate, DecisionRoute, FlagKind, Hs6Gate, TaricRule, WrittenBy
+from agent.schemas import (Actor, ChangeKind, ChosenHow, Cn8Gate, CreatedBy, DecisionRoute, FlagKind, Hs6Gate, TaricRule,
+                           WrittenBy)
 from agent.schemas import LineStatus as CheckStatus
 from tools.parsers import split_mixed
 
 STATUS_MAX = 44          # status texts are cut here; lock reasons, questions and reason lines never are
 CLOSE_POINTS = 10        # "too close to call": the top two confidences differ by at most this (research R-16)
-DOTS = {"green": ":green[●]", "yellow": ":yellow[●]", "red": ":red[●]", "grey": ":gray[◌]"}
 RULE_LABEL = {"ics2_unacceptable": "ICS2 unacceptable term", "ics2_stop_words": "ICS2 stop word",
               "firm_stop_words": "firm stop word"}
 UNLOCK = " — update the description and re-check"
@@ -37,14 +37,10 @@ class LineStatus:
     text: str
     action: str | None = None        # Choose, Update, Change or None
     kind: str | None = None          # a_hs6, a_cn8, a_change, b, c, c_failed or None
-    selectable: bool = False         # the Accept checkbox is enabled (Ready lines)
-    lock_reason: str | None = None   # red lines: the Accept checkbox is shown disabled with this reason
+    selectable: bool = False         # a Ready line: green and not accepted yet, for "Accept all K ready"
+    lock_reason: str | None = None   # red lines: "Accept" is disabled with this reason
     question: str | None = None      # red lines with a question: the full English question
     accepted: bool = False
-
-    @property
-    def dot(self) -> str:
-        return DOTS[self.colour]
 
 
 @dataclass(frozen=True)
@@ -238,16 +234,6 @@ def _close(candidates: list) -> bool:
     return len(candidates) >= 2 and candidates[0].confidence - candidates[1].confidence <= CLOSE_POINTS
 
 
-def candidates_line(line: Any) -> str | None:
-    """A vague line's candidates, ending " — too close to call" when the top two are close (display only, R-16). A
-    line flagged by an ICS2 term or a stop word has none: its reason names the term."""
-    v = line.current
-    if v.flag is None or v.flag.kind == FlagKind.ok or _term_based(v.flag) or not v.candidates:
-        return None
-    text = "Candidates: " + " · ".join(f"{spaced(c.code)} ({c.confidence} %)" for c in v.candidates[:3])
-    return text + (" — too close to call" if _close(v.candidates) else "")
-
-
 def reason_line(store: Any, line: Any) -> str | None:
     """Why a red line waits for the shipper (contracts/view.md §2.1); a term-based flag always wins."""
     v = line.current
@@ -271,13 +257,13 @@ def reason_line(store: Any, line: Any) -> str | None:
 
 # --------------------------------------------------------------------------- §3 code display
 def code_display(store: Any, line: Any) -> CodeDisplay:
-    """The decided digits in 4-2-2-2 groups with underscores, or the 8 digits and why the line stops there."""
+    """The decided digits in 4-2-2-2 groups, with no underscores for the undecided ones (feature 012, the author's
+    polish), or the 8 digits and why the line stops there."""
     t10, cn8, hs6 = store.decided_taric10(line), store.decided_cn8(line), store.decided_code(line)[0]
     t = line.current.taric
     if cn8 and not t10 and t is not None and t.rule in NOT_8_DIGITS and t.origin == store.shipment.taric_origin:
         return CodeDisplay(spaced(cn8), NOT_8_DIGITS[t.rule])
-    digits = (t10 or cn8 or (hs6 or "").replace(".", "")).ljust(10, "_")
-    return CodeDisplay(f"{digits[:4]} {digits[4:6]} {digits[6:8]} {digits[8:10]}")
+    return CodeDisplay(spaced(t10 or cn8 or hs6) or "—")
 
 
 # --------------------------------------------------------------------------- §5 kind (a) rows and the HS-6 candidates block
@@ -332,9 +318,10 @@ def cn8_rows(store: Any, line: Any) -> list[CandidateRow]:
 
 
 def change_forms(store: Any, line: Any) -> list[str]:
-    """The forms "Change" offers on a green row: HS-6; CN-8 when the decided HS-6 has more than one CN-8 line;
-    TARIC-10 when the stored TARIC outcome has more than one subdivision."""
-    forms = ["HS-6"]
+    """The levels "Change the code at" offers on a decided line (feature 012; the HS-6 changes through the candidates):
+    CN-8 when the decided HS-6 has more than one CN-8 line; TARIC-10 when the stored TARIC outcome has more than one
+    subdivision."""
+    forms = []
     hs6 = store.decided_code(line)[0]
     if hs6 and len(_cn8_options(store, line, hs6)) > 1:
         forms.append("CN-8")
@@ -625,45 +612,218 @@ def summary(store: Any, statuses: dict[int, LineStatus]) -> Summary:
                    to_accept=sum(1 for s in values if s.colour == "green" and not s.accepted))
 
 
-def _needs(n: int) -> str:
-    return f"{n} needs" if n == 1 else f"{n} need"
-
-
-def summary_text(s: Summary) -> str:
-    text = (f"{_plural(s.lines, 'line')} checked in {s.seconds:.0f} s · {s.ready} ready · {_needs(s.pick)} a pick · "
-            f"{_needs(s.ask)} the shipper")
-    if s.failed:
-        text += f" · {s.failed} check failed"
-    if s.running:
-        text += f" · {s.running} updating"
-    return text
-
-
-def split_bar(s: Summary, width: int = 60) -> str:
-    """One Markdown line of `width` blocks split green, yellow, red, grey by largest remainder; each non-zero count gets
-    at least one block (research R-09)."""
-    parts = [(c, n) for c, n in (("green", s.ready), ("yellow", s.pick), ("red", s.ask + s.failed), ("gray", s.running)) if n]
-    if not parts:
-        return ""
-    total = sum(n for _, n in parts)
-    rest = width - len(parts)
-    exact = [n * rest / total for _, n in parts]
-    blocks = [1 + int(e) for e in exact]
-    for i in sorted(range(len(parts)), key=lambda i: exact[i] - int(exact[i]), reverse=True)[: width - sum(blocks)]:
-        blocks[i] += 1
-    return "".join(f":{c}[{'█' * b}]" for (c, _), b in zip(parts, blocks))
-
-
 def accept_all_label(k: int) -> str:
     return f"Accept all {k} ready"
 
 
-def accept_selected_label(n: int) -> str:
-    return f"Accept {n} selected"
+def count_cards(s: Summary) -> list[tuple[str, str, int]]:
+    """The counts row's three cards (feature 012, FR-008): label, colour and count. A failed check is red too."""
+    return [("Ready to accept", "green", s.to_accept), ("Needs review", "orange", s.pick),
+            ("Ask shipper", "red", s.ask + s.failed)]
 
 
-def email_label(c: int) -> str:
-    return f"Draft shipper email ({_plural(c, 'line')})"
+# --------------------------------------------------------------------------- feature 012: the status line and the origins
+def status_line(s: Summary, *, checking: int | None = None, elapsed: float = 0.0, file_name: str | None = None) -> str:
+    """The line under the check buttons (feature 012, FR-007). While a check runs, `checking` is its line count: its
+    lines and time, or the file's name before its lines are read. Otherwise the lines checked, the file they came from
+    and their time; "" before the first line. The model shows on the Admin page only (the author's check)."""
+    if checking is not None:
+        what = _plural(checking, "line") if checking else (file_name or "the file")
+        return f"Checking {what}… {elapsed:.0f} s"
+    if not s.lines:
+        return ""
+    source = f" of {file_name}" if file_name else ""
+    return f"Checked {_plural(s.lines, 'line')}{source} in {s.seconds:.0f} s"
+
+
+# The Origin box's choices (feature 012, FR-003): the ISO 3166-1 alpha-2 codes and TARIC's six country codes outside
+# ISO: XC Ceuta, XI Northern Ireland, XK Kosovo, XL Melilla, XS Serbia, XU the United Kingdom without Northern Ireland.
+ORIGIN_CODES = tuple("""
+    AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC
+    CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD
+    GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH
+    KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW
+    MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC
+    SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY
+    UZ VA VC VE VG VI VN VU WF WS XC XI XK XL XS XU YE YT ZA ZM ZW
+""".split())
+
+
+# --------------------------------------------------------------------------- feature 012: the list's rows (FR-009, FR-010)
+BADGES = {"green": ("Ready", "green"), "yellow": ("Review", "orange"), "red": ("Ask shipper", "red"),
+          "grey": ("Checking…", "gray")}
+ROW_GROUPS = {"red": 0, "yellow": 1, "green": 2, "grey": 4}   # accepted lines come after the Ready ones, as 3
+
+
+def sort_group(status: LineStatus) -> int:
+    """The list's order (FR-009): ask shipper, review, ready, accepted, then the lines still being checked."""
+    return 3 if status.accepted else ROW_GROUPS[status.colour]
+
+
+def _and(items: list[str]) -> str:
+    return items[0] if len(items) == 1 else f"{', '.join(items[:-1])} and {items[-1]}"
+
+
+def need_text(store: Any, line: Any) -> str:
+    """What a red line needs (FR-010): the facts its flag asks for, the open question, or the failed check."""
+    v = line.current
+    if v.status == CheckStatus.failed:
+        return "check failed"
+    if v.flag is not None and v.flag.kind != FlagKind.ok:
+        return "needs " + _and([a.replace("_", " ") for a in v.flag.ask_for] or ["material", "product name", "use"])
+    if v.unreadable:
+        return "needs a readable description"
+    c, t = v.cn8, v.taric
+    if c is not None and c.question:
+        return f"needs: {c.deciding_attribute or 'an attribute the description does not state'}"
+    if t is not None and t.question:
+        return "needs: which TARIC subdivision applies"
+    return "needs: what exactly the goods are"
+
+
+@dataclass(frozen=True)
+class RowCells:
+    """One row of the list (FR-010), from the line store."""
+
+    badge: str                       # Ready, Accepted, Review, Ask shipper or Checking…
+    colour: str                      # the badge's colour: green, orange, red or gray
+    filed: str                       # the line as filed: its first version's text
+    need: str                        # a red line's need, else the current description
+    code: str                        # the HS code cell, or "—"
+    note: str | None                 # why the code stops at 8 digits
+    conf: str                        # the HS-6 candidate's confidence, or "—"
+
+
+def _confidence(line: Any, code: str | None) -> str:
+    c = next((c for c in line.current.candidates[:3] if c.code == code), None)
+    return f"{c.confidence}%" if c is not None else "—"
+
+
+def row_cells(store: Any, line: Any, status: LineStatus, selected: str | None = None) -> RowCells:
+    """The row's cells. Before a CN-8 is decided, the HS code is the HS-6: the decided one, else the candidate the line
+    would take; after it, `code_display`. `selected` is the open line's choice in its candidates (D5): another code is
+    shown with its confidence, before anything is written."""
+    label, colour = ("Accepted", "green") if status.accepted else BADGES[status.colour]
+    v = line.current
+    need = need_text(store, line) if status.colour == "red" else v.display_text
+    hs6 = store.decided_code(line)[0] or hs6_choice(v.candidates, v.hs6_vote, v.hs6_gate)[1]
+    if selected is not None and selected != hs6:
+        return RowCells(label, colour, line.versions[0].display_text, need, selected or "—", None,
+                        _confidence(line, selected))
+    code, note = hs6 or "—", None
+    if store.decided_cn8(line):
+        d = code_display(store, line)
+        code, note = d.text, d.note
+    return RowCells(label, colour, line.versions[0].display_text, need, code, note, _confidence(line, hs6))
+
+
+# --------------------------------------------------------------------------- feature 012: the open line's blocks (FR-011)
+def stop_word_result(line: Any) -> str:
+    """Block 1: what the stop-word check found."""
+    v = line.current
+    if v.status == CheckStatus.failed:
+        return "the check failed"
+    if v.unreadable:
+        return "the line could not be read"
+    if v.flag is None:
+        return "not run yet"
+    if v.flag.kind == FlagKind.ok:
+        return "none found"
+    if _term_based(v.flag):
+        return f"{_rule_label(v.flag)} '{v.flag.matched_term}'"
+    return "vague description"
+
+
+def reason_is_stop_word(line: Any) -> bool:
+    """Whether a red line's reason states its stop-word result, as `reason_line` builds it: the check failed, the
+    check flagged the line (close candidates are a reason of their own) or the line could not be read. Block 1 then
+    shows the result once, as the reason (the author's check of the UI)."""
+    v = line.current
+    if v.status == CheckStatus.failed:
+        return True
+    if v.unreadable:
+        return v.flag is None or v.flag.kind == FlagKind.ok
+    return v.flag is not None and v.flag.kind != FlagKind.ok and (_term_based(v.flag) or not _close(v.candidates))
+
+
+def candidate_label(r: CandidateRow) -> str:
+    """Block 2's choice for one candidate: the dotted HS-6, its subheading's label (after its heading's when the label
+    alone says little, as "Other" does), and its confidence."""
+    path = r.description.split(" › ")
+    text = path[-1] if len(path) == 1 or len(path[-1]) >= 20 else f"{cut(path[-2], 35)} › {path[-1]}"
+    return f"{r.value} {cut(text, 55)} — {r.confidence}%"   # one line, so its confidence bar sits beside it
+
+
+def vote_lines(vote: Any, code: str | None) -> list[tuple[bool, str, str]]:
+    """Block 3 (Q1): each HS-6 among the nearest rulings, whether it is the chosen code, and its rulings' countries."""
+    return [(c == code, c, ", ".join(k or "?" for k in countries)) for c, countries in vote.competing]
+
+
+def agree_text(vote: Any, code: str) -> str:
+    n, m = _hs6_votes(vote, code)
+    return f"{n} of {m} agree with {code}"
+
+
+def cn8_lines(store: Any, line: Any, code: str) -> list[tuple[str, str]]:
+    """Block 4 before "Accept": the CN-8 lines under the chosen HS-6, spaced, with the last two levels of their labels."""
+    return [(spaced(cn8), " › ".join(_path(path)[-2:])) for cn8, path in _cn8_options(store, line, code)]
+
+
+def requirements_text(sv: Any) -> str:
+    """Block 4 (D16): the requirement measures' kinds, or "none"."""
+    labels = dict.fromkeys(m.measure_type_label or m.measure_type for m in sv.groups.get("requirements", ()))
+    return ", ".join(labels) or "none"
+
+
+# --------------------------------------------------------------------------- feature 012: the downloads (FR-013)
+OVERRIDES = (ChosenHow.other_candidate.value, ChosenHow.typed.value)
+OFFERED_CN8 = (ChangeKind.cn8_written, ChangeKind.cn8_pending)
+
+
+def _records_by_line(store: Any) -> dict[int, list]:
+    records: dict[int, list] = {}
+    for r in store.shipment.audit:
+        records.setdefault(r.line_no, []).append(r)
+    return records
+
+
+def _offered_cn8(line: Any, hs6: str, records: list) -> str | None:
+    """The CN-8 the model offered under the decided HS-6 for the line's version: the CN-8 step's last record, written by
+    rule or left to the clerk. The line itself keeps only the clerk's code once another is confirmed."""
+    digits = hs6.replace(".", "")
+    offered = [r.new for r in records if r.version_no == line.current.version_no and r.actor != Actor.clerk
+               and r.change in OFFERED_CN8 and r.new and r.new.startswith(digits)]
+    return offered[-1] if offered else None
+
+
+def clerk_changed(store: Any, line: Any, decided_how: str | None, records: list) -> bool:
+    """The clerk overrode the model: an HS-6 other than the top candidate (another candidate, or a typed code); a CN-8
+    or a TARIC-10 other than the one the model offered (when it offered none, picking one is no override); or a
+    description the clerk edited. Accepting a line as it is, confirming its codes or asking the shipper changes nothing.
+    `records` are the line's audit records."""
+    if decided_how in OVERRIDES or any(x.created_by == CreatedBy.clerk for x in line.versions):
+        return True
+    v = line.current
+    cn8, t10 = store.decided_cn8(line), store.decided_taric10(line)
+    if cn8 and v.cn8.written_by == WrittenBy.clerk:
+        offered = _offered_cn8(line, store.decided_code(line)[0], records)
+        if offered is not None and offered != cn8:
+            return True
+    t = v.taric
+    return bool(t10 and t.written_by == WrittenBy.clerk and t.suggestion is not None and t.suggestion.code != t10)
+
+
+def export_csv(store: Any) -> bytes:
+    """The store's CSV export, column for column, with `clerk_changed` added; the store's own export is unchanged."""
+    records = _records_by_line(store)
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=[*store.CSV_COLUMNS, "clerk_changed"], extrasaction="ignore",
+                            lineterminator="\n")
+    writer.writeheader()
+    for line, row in zip(store.lines, store.export_rows()):
+        changed = clerk_changed(store, line, row["decided_how"], records.get(line.line_no, []))
+        writer.writerow(row | {"clerk_changed": "true" if changed else "false"})
+    return ("\ufeff" + buf.getvalue()).encode("utf-8")
 
 
 # --------------------------------------------------------------------------- §8 captions and other values

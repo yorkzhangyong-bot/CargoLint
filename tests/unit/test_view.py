@@ -165,12 +165,12 @@ def test_next_step(states, kb):
 
 
 # --------------------------------------------------------------------------- §3 code display
-@pytest.mark.parametrize("name, text, note", [
-    ("pending", "____ __ __ __", None),
-    ("cn8_missing", "9503 00 __ __", None),
-    ("cn8_pending", "9503 00 __ __", None),                   # a CN-8 suggestion fills no digit
-    ("taric_missing", "9503 00 95 __", None),
-    ("taric_two", "7318 15 58 __", None),                     # a TARIC-10 to pick fills no digit
+@pytest.mark.parametrize("name, text, note", [                # feature 012: no underscores (the author's polish)
+    ("pending", "—", None),
+    ("cn8_missing", "9503 00", None),
+    ("cn8_pending", "9503 00", None),                         # a CN-8 suggestion fills no digit
+    ("taric_missing", "9503 00 95", None),
+    ("taric_two", "7318 15 58", None),                        # a TARIC-10 to pick fills no digit
     ("accepted_taric", "7318 15 58 10", None),
     ("ready", "9617 00 00", "TARIC not available"),
     ("ready_not_loaded", "9617 00 00", "TARIC not loaded"),
@@ -215,14 +215,30 @@ def test_summary_counts(states):
     assert s.to_accept == sum(1 for x in st if x.colour == "green" and not x.accepted)
 
 
-def test_summary_text():
+def test_count_cards():                                                   # feature 012, FR-008
+    s = view.Summary(lines=12, seconds=0, ready=6, pick=2, ask=3, failed=1, running=0, to_accept=5)
+    assert view.count_cards(s) == [("Ready to accept", "green", 5), ("Needs review", "orange", 2),
+                                   ("Ask shipper", "red", 4)]                      # a failed check is red too
+
+
+def test_status_line():                                   # feature 012, FR-007; the model is on the Admin page only
     S = view.Summary
-    assert view.summary_text(S(lines=12, seconds=19.2, ready=6, pick=2, ask=4)) == \
-        "12 lines checked in 19 s · 6 ready · 2 need a pick · 4 need the shipper"
-    assert view.summary_text(S(lines=12, seconds=19, ready=6, pick=2, ask=2, failed=1, running=2)) == \
-        "12 lines checked in 19 s · 6 ready · 2 need a pick · 2 need the shipper · 1 check failed · 2 updating"
-    assert view.summary_text(S(lines=1, seconds=3, ready=0, pick=1, ask=1)) == \
-        "1 line checked in 3 s · 0 ready · 1 needs a pick · 1 needs the shipper"
+    assert view.status_line(S(lines=24, seconds=40.6)) == "Checked 24 lines in 41 s"
+    assert view.status_line(S(lines=1, seconds=3)) == "Checked 1 line in 3 s"
+    assert view.status_line(S(lines=0, seconds=0)) == ""                              # nothing checked yet
+    assert view.status_line(S(lines=12, seconds=0), checking=12, elapsed=7.4) == "Checking 12 lines… 7 s"
+    assert view.status_line(S(lines=13, seconds=40), checking=1, elapsed=2) == "Checking 1 line… 2 s"
+    assert view.status_line(S(lines=0, seconds=0), checking=0, elapsed=1, file_name="inv.xlsx") == \
+        "Checking inv.xlsx… 1 s"                                                       # the file before its lines are read
+    assert view.status_line(S(lines=12, seconds=41), file_name="sample_packing_list.xlsx") == \
+        "Checked 12 lines of sample_packing_list.xlsx in 41 s"
+
+
+def test_origin_codes():                                                  # feature 012, FR-003: ISO 3166-1 alpha-2
+    codes = view.ORIGIN_CODES
+    assert len(codes) == len(set(codes)) == 255 and list(codes) == sorted(codes)
+    assert all(re.fullmatch(r"[A-Z]{2}", c) for c in codes) and {"CN", "US", "DE", "VN", "TW"} <= set(codes)
+    assert {"XC", "XI", "XK", "XL", "XS", "XU"} <= set(codes)                  # TARIC's country codes outside ISO
 
 
 def test_seconds_count_only_check_runs():
@@ -235,17 +251,6 @@ def test_seconds_count_only_check_runs():
         CheckRun(id="c", elapsed_s=8.0, steps=[CheckStep(tool="lookup_precedent")]),      # a chat question: not a check
     ]
     assert view.summary(store, {}).seconds == pytest.approx(15.5)
-
-
-@pytest.mark.parametrize("counts", [(6, 2, 4, 0, 0), (1, 6, 5, 0, 0), (0, 0, 12, 0, 0), (10, 1, 0, 1, 0), (3, 3, 3, 1, 2)])
-def test_split_bar(counts):
-    ready, pick, ask, failed, running = counts
-    s = view.Summary(lines=sum(counts), seconds=0, ready=ready, pick=pick, ask=ask, failed=failed, running=running)
-    bar = view.split_bar(s)
-    parts = re.findall(r":(green|yellow|red|gray)\[(█+)\]", bar)
-    assert sum(len(b) for _, b in parts) == 60
-    expected = [c for c, n in (("green", ready), ("yellow", pick), ("red", ask + failed), ("gray", running)) if n]
-    assert [c for c, _ in parts] == expected                     # in order, empty parts left out, none below one block
 
 
 def test_invoice_id(states):
@@ -285,9 +290,6 @@ def test_kb_statement(kb):
 
 def test_button_labels():
     assert view.accept_all_label(6) == "Accept all 6 ready"
-    assert view.accept_selected_label(2) == "Accept 2 selected"
-    assert [view.email_label(n) for n in (4, 1, 0)] == ["Draft shipper email (4 lines)", "Draft shipper email (1 line)",
-                                                        "Draft shipper email (0 lines)"]
 
 
 # --------------------------------------------------------------------------- §5 kind (a) rows (US2, T017)
@@ -392,10 +394,10 @@ def test_preselect_b_takes_the_suggestion(kb):
 
 
 @pytest.mark.parametrize("name, forms", [
-    ("ready", ["HS-6"]),                                       # 9617 00: one CN-8 line; TARIC not available
-    ("accepted", ["HS-6"]),
-    ("ready_taric", ["HS-6", "CN-8"]),                         # 7318 15: 12 CN-8 lines; one subdivision
-    ("accepted_taric", ["HS-6", "CN-8", "TARIC-10"]),          # 7318 15 58: two subdivisions
+    ("ready", []),                                             # 9617 00: one CN-8 line; TARIC not available
+    ("accepted", []),
+    ("ready_taric", ["CN-8"]),                                 # 7318 15: 12 CN-8 lines; one subdivision
+    ("accepted_taric", ["CN-8", "TARIC-10"]),                  # 7318 15 58: two subdivisions
 ])
 def test_change_forms(states, name, forms):
     store, line = line_of(states, name)
@@ -526,7 +528,7 @@ OVERRIDDEN = ("Decided: HS-6 9405 21, candidate 2 chosen, rulings overrode the m
 def test_feature_008_an_overridden_line_says_which_candidate_was_chosen(kb):
     store, line = _voted_lamp(kb, FOUR_AT_2)
     assert view.explain_a(store, line, "a_change")[0] == OVERRIDDEN
-    assert view.code_display(store, line).text == "9405 21 __ __"
+    assert view.code_display(store, line).text == "9405 21"
     store.confirm_cn8(line.line_no, "94052140")
     assert view.explain_a(store, line, "a_change")[0].split(" · ")[0] == OVERRIDDEN + ", accepted by you"
 
@@ -559,7 +561,7 @@ def test_feature_008_with_the_switch_off_the_texts_are_as_before(kb):
         "Rulings disagree: model 8543 70, nearest rulings 9405 21 (IE, DE, DE, FR), 8543 70 (NL). Precedents support "
         "candidate 2. TARIC runs after your pick.")
     assert view.preselect(store, line, "a_hs6", "hs6")[0] == "8543.70"
-    assert view.code_display(store, line).text == "____ __ __ __"
+    assert view.code_display(store, line).text == "—"
 
 
 OUTSIDE = "Rulings disagree: model 8543 70, nearest rulings 9617 00 (IE, DE, DE, FR), 8543 70 (NL). TARIC runs after your pick."
@@ -683,27 +685,14 @@ def test_reason_lines(states, name, reason):
     assert view.reason_line(store, line) == reason
 
 
-@pytest.mark.parametrize("name, text", [
-    ("vague_close", "Candidates: 3924 90 (41 %) · 3924 10 (39 %) · 9403 60 (12 %) — too close to call"),
-    ("vague_apart", "Candidates: 3924 90 (40 %) · 3924 10 (10 %) · 9403 60 (5 %)"),
-    ("ics2_term", None),                                                              # a term flagged it: its reason says so
-    ("firm_stop_word", None),
-    ("review", None),                                                                 # not flagged
-])
-def test_candidates_line(states, name, text):
-    store, line = line_of(states, name)
-    assert view.candidates_line(line) == text
-
-
 @pytest.mark.parametrize("second, close", [(31, True), (30, False)])                 # 41 − 31 = 10 is close, 11 is not
 def test_too_close_to_call_at_the_boundary(kb, second, close):
     store, n = one_line(kb, "Mixed household articles", [("3924.90", 41), ("3924.10", second)])
     line = store.get_line(n)
-    assert view.candidates_line(line).endswith(" — too close to call") is close
     assert (view.reason_line(store, line) == "Reason: candidates too close") is close
 
 
-def test_a_term_flag_gives_its_reason_and_no_candidates_line(kb):
+def test_a_term_flag_gives_its_reason(kb):
     from agent.schemas import DescriptionCheck, Flag, FlagKind, LineStatus, RuleSource
 
     store = h._store()
@@ -713,8 +702,7 @@ def test_a_term_flag_gives_its_reason_and_no_candidates_line(kb):
         ask_for=["material", "product_name", "use"])))
     h._classify(store, n, [("8714.91", 41), ("8487.90", 39)])
     line = store.get_line(n)
-    assert view.reason_line(store, line) == "Reason: ICS2 unacceptable term 'parts'"
-    assert view.candidates_line(line) is None                                         # close candidates, yet no line
+    assert view.reason_line(store, line) == "Reason: ICS2 unacceptable term 'parts'"     # close candidates, yet the term
 
 
 @pytest.mark.parametrize("name", RED)
@@ -775,3 +763,185 @@ def test_audit_csv(states):
     assert len(rows) == 1 + len(store.shipment.audit)
     first = store.shipment.audit[0]
     assert rows[1][1:4] == [str(first.line_no), str(first.version_no), first.change.value]
+
+
+# --------------------------------------------------------------------------- feature 012: the list's rows (FR-009, FR-010)
+def row_of(states, name, selected=None):
+    store, line = line_of(states, name)
+    return view.row_cells(store, line, view.line_status(store, line), selected)
+
+
+@pytest.mark.parametrize("name, badge, colour, need, code, note, conf", [
+    ("review", "Review", "orange", "LED台灯 USB供电 / LED desk lamp, USB powered", "9405.21", None, "58%"),
+    ("no_candidate", "Review", "orange", "无线蓝牙耳机 / Wireless Bluetooth earphones", "—", None, "—"),
+    ("ready", "Ready", "green", "不锈钢保温杯 500ml / Stainless steel vacuum flask, 500 ml", "9617 00 00",
+     "TARIC not available", "92%"),
+    ("accepted", "Accepted", "green", "不锈钢保温杯 500ml / Stainless steel vacuum flask, 500 ml", "9617 00 00",
+     "TARIC not available", "92%"),
+    ("accepted_taric", "Accepted", "green", "不锈钢六角螺栓 / Stainless steel hexagon bolts, threaded", "7318 15 58 10",
+     None, "92%"),
+    ("ics2_term", "Ask shipper", "red", "needs material, product name and use", "8714.91", None, "41%"),
+    ("vague_close", "Ask shipper", "red", "needs material, product name and use", "3924.90", None, "41%"),
+    ("failed", "Ask shipper", "red", "check failed", "—", None, "—"),
+    ("unreadable", "Ask shipper", "red", "needs a readable description", "—", None, "—"),
+    ("cn8_question", "Ask shipper", "red", "needs: whether the toy cars incorporate a motor", "9503.00", None, "93%"),
+    ("sent", "Ask shipper", "red", "needs: what exactly the goods are", "3924.10", None, "60%"),
+    ("taric_question", "Ask shipper", "red", "needs: which TARIC subdivision applies", "7318.15", None, "92%"),
+    ("pending", "Checking…", "gray", "Ceramic coffee mugs", "—", None, "—"),
+])
+def test_row_row_of(states, name, badge, colour, need, code, note, conf):
+    store, line = line_of(states, name)
+    c = row_of(states, name)
+    assert (c.badge, c.colour, c.need, c.code, c.note, c.conf) == (badge, colour, need, code, note, conf)
+    assert c.filed == line.versions[0].display_text
+
+
+def test_the_row_follows_the_open_lines_choice(states):                  # D5: before "Accept", with no store write
+    assert (row_of(states, "review", "8543.70").code, row_of(states, "review", "8543.70").conf) == ("8543.70", "20%")
+    assert (row_of(states, "review", "8518.30").code, row_of(states, "review", "8518.30").conf) == ("8518.30", "—")
+    assert (row_of(states, "review", "").code, row_of(states, "review", "").conf) == ("—", "—")   # nothing typed yet
+    assert row_of(states, "review", "9405.21") == row_of(states, "review")
+    assert row_of(states, "ready", "9617.00") == row_of(states, "ready")      # its own HS-6: the 8 digits stay
+
+
+def test_an_overridden_line_shows_the_chosen_candidate(kb):              # feature 008: candidate 2, at its confidence
+    store, nos = h.store_with("hs6_override", kb=kb, hs6_override_min=4)
+    line = store.get_line(nos["hs6_override"])
+    c = view.row_cells(store, line, view.line_status(store, line))
+    assert (c.badge, c.code, c.note, c.conf) == ("Ready", "9405 21 40", "TARIC not available", "60%")
+
+
+@pytest.mark.parametrize("name, group", [("ics2_term", 0), ("failed", 0), ("review", 1), ("taric_two", 1), ("ready", 2),
+                                         ("accepted", 3), ("pending", 4)])
+def test_sort_group(states, name, group):                                # ask shipper, review, ready, accepted, checking
+    assert view.sort_group(status(states, name)) == group
+
+
+@pytest.mark.parametrize("name, result", [
+    ("ics2_term", "ICS2 unacceptable term 'spare parts'"),
+    ("firm_stop_word", "firm stop word 'gift'"),
+    ("vague_close", "vague description"),
+    ("review", "none found"),
+    ("failed", "the check failed"),
+    ("unreadable", "the line could not be read"),
+    ("pending", "not run yet"),
+])
+def test_stop_word_result(states, name, result):                         # block 1's caption (FR-011)
+    assert view.stop_word_result(line_of(states, name)[1]) == result
+
+
+@pytest.mark.parametrize("name, repeats", [
+    ("ics2_term", True), ("firm_stop_word", True), ("vague_apart", True), ("unreadable", True), ("failed", True),
+    ("vague_close", False),                                                # close candidates are a reason of their own
+    ("cn8_question", False), ("sent", False), ("taric_question", False), ("review", False),
+])
+def test_reason_is_stop_word(states, name, repeats):                     # block 1 states the result once (the author)
+    assert view.reason_is_stop_word(line_of(states, name)[1]) is repeats
+
+
+def test_candidate_label():                                               # block 2's radio (FR-011): one line each
+    R = view.CandidateRow
+    sewing = "Sewing machines, other than book-sewing machines of heading 8440; sewing machine needles"
+    assert view.candidate_label(R("8452 90 00", "8452.90", f"{sewing} › Parts of sewing machines", 31)) == \
+        "8452.90 Parts of sewing machines — 31%"
+    assert view.candidate_label(R("9405 49", "9405.49", "Luminaires and lighting fittings › Other", 30)) == \
+        "9405.49 Luminaires and lighting fittings › Other — 30%"            # "Other" alone says little
+    led = ("Electric table, desk, bedside or floor-standing luminaires designed for use solely with light-emitting "
+           "diode (LED) light sources")
+    label = view.candidate_label(R("9405 21", "9405.21", f"Luminaires › {led}", 58))
+    assert label == f"9405.21 {view.cut(led, 55)} — 58%" and len(label) <= 70
+    assert view.candidate_label(R("9617 00", "9617.00", "Vacuum flasks", 92)) == "9617.00 Vacuum flasks — 92%"
+
+
+def test_vote_lines_and_the_agreeing_share(kb):                          # block 3 (Q1: the vote by code)
+    store, nos = h.store_with("hs6_override", kb=kb, hs6_override_min=4)
+    vote = store.get_line(nos["hs6_override"]).current.hs6_vote
+    assert view.vote_lines(vote, "9405.21") == [(True, "9405.21", "IE, DE, DE, FR"), (False, "8543.70", "NL")]
+    assert view.agree_text(vote, "9405.21") == "4 of 5 agree with 9405.21"
+    assert view.agree_text(vote, "8543.70") == "1 of 5 agree with 8543.70"
+    assert view.agree_text(vote, "9403.60") == "0 of 5 agree with 9403.60"
+
+
+def test_cn8_lines_under_a_chosen_code(states):                          # block 4 before "Accept"
+    store, line = line_of(states, "review")
+    lines = view.cn8_lines(store, line, "9405.21")
+    assert [code for code, _ in lines] == [view.spaced(c) for c, _ in store.index.cn8_lines("9405.21")]
+    assert len(lines) == 3 and all(label for _, label in lines)
+    assert view.cn8_lines(store, line, "9999.99") == []
+
+
+def test_requirements_text():                                            # block 4 (D16)
+    from types import SimpleNamespace as NS
+
+    sv = NS(groups={"requirements": (NS(measure_type="750", measure_type_label="Import control"),
+                                     NS(measure_type="750", measure_type_label="Import control"),
+                                     NS(measure_type="710", measure_type_label="Import control - CITES"))})
+    assert view.requirements_text(sv) == "Import control, Import control - CITES"
+    assert view.requirements_text(NS(groups={"requirements": ()})) == "none"
+
+
+def test_clerk_changed_in_the_downloads(kb):     # FR-013: the clerk's overrides only, built in ui/ from the export rows
+    import csv
+    import io
+
+    from agent.schemas import Decision, DecisionRoute
+    from ui import actions
+
+    store, nos = h.store_with("review", "ready", "accepted", "edited_never_flagged", "sent", kb=kb)
+
+    def changed() -> dict[int, str]:
+        rows = csv.DictReader(io.StringIO(view.export_csv(store).decode("utf-8-sig")))
+        return {int(r["line_no"]): r["clerk_changed"] for r in rows}
+
+    assert view.export_csv(store).startswith("\ufeff".encode("utf-8"))
+    assert view.export_csv(store).decode("utf-8-sig").splitlines()[0].split(",") == [*store.CSV_COLUMNS, "clerk_changed"]
+    assert changed() == {nos["review"]: "false", nos["ready"]: "false",
+                         nos["accepted"]: "false",                     # its codes confirmed as they were
+                         nos["edited_never_flagged"]: "true",          # the clerk edited the description
+                         nos["sent"]: "false"}                         # asking the shipper overrides nothing
+    actions.accept_ready(store, [nos["ready"]])                        # a Ready line accepted as it is
+    assert changed()[nos["ready"]] == "false"
+    store.set_decision(nos["review"], Decision(route=DecisionRoute.accepted, decided_code="9405.21"))   # the top one
+    assert changed()[nos["review"]] == "false"
+    store.set_decision(nos["review"], Decision(route=DecisionRoute.accepted, decided_code="8543.70"))   # another one
+    assert changed()[nos["review"]] == "true"
+    store.set_decision(nos["review"], Decision(route=DecisionRoute.accepted, decided_code="8518.30"))   # typed
+    assert changed()[nos["review"]] == "true"
+    ours = list(csv.reader(io.StringIO(view.export_csv(store).decode("utf-8-sig"))))
+    theirs = list(csv.reader(io.StringIO(store.to_csv_bytes().decode("utf-8-sig"))))
+    assert [r[:-1] for r in ours] == theirs                                  # the store's own columns, unchanged
+    assert not hasattr(view, "export_json")                                  # no JSON download in the app
+
+
+def test_clerk_changed_at_the_cn8_and_the_taric10(kb):  # FR-013: another code than the model offered; none offered: no
+    import csv
+    import io
+
+    from agent.schemas import TaricSuggestion
+
+    store, nos = h.store_with("cn8_pending", "cn8_error", "taric_two", kb=kb)
+
+    def changed(n: int) -> str:
+        rows = csv.DictReader(io.StringIO(view.export_csv(store).decode("utf-8-sig")))
+        return next(r["clerk_changed"] for r in rows if r["line_no"] == str(n))
+
+    n = nos["cn8_pending"]                                           # the model offered 9503 00 95
+    other = next(c for c, _ in store.index.cn8_lines("9503.00") if c != "95030095")
+    store.confirm_cn8(n, "95030095")
+    assert changed(n) == "false"                                     # the offered CN-8, confirmed
+    store.confirm_cn8(n, other)
+    assert changed(n) == "true"                                      # another CN-8
+    store.confirm_cn8(n, "95030095")
+    assert changed(n) == "false"                                     # back to the offered one
+    m = nos["cn8_error"]                                             # the CN-8 step failed: nothing offered
+    store.confirm_cn8(m, "61091000")
+    assert changed(m) == "false"
+    t = nos["taric_two"]
+    outcome = store.get_line(t).current.taric
+    store.confirm_taric10(t, "7318155890")
+    assert changed(t) == "false"                                     # no TARIC-10 was suggested
+    store.set_taric_result(t, outcome.model_copy(update={"suggestion": TaricSuggestion(code="7318155890", confidence=70)}))
+    store.confirm_taric10(t, "7318155890")
+    assert changed(t) == "false"                                     # the suggested one
+    store.confirm_taric10(t, "7318155810")
+    assert changed(t) == "true"                                      # another subdivision

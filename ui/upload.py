@@ -1,5 +1,6 @@
-"""The drop zone, the sample, the replacement question, and the one way a new shipment opens (feature 005,
-contracts/ui.md §2). The file is parsed by the agent's check, as before; this module only starts it."""
+"""The upload tab (feature 012, FR-005; feature 005 before it): the drop zone, the sample, "Check all lines", the
+replacement question, and the one way a new shipment opens. The file is parsed by the agent's check, as before; this
+module only starts it."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -18,6 +19,9 @@ SAMPLE_REFERENCE = "HOL-2026-10-0472"
 FILE_TYPES = ["xlsx", "csv", "pdf", "jpg", "jpeg", "png"]
 DETECT = "Detect from file"
 NEW_SHIPPER = "New shipper…"
+PENDING = "pending_file"          # feature 012: the dropped file or the sample, waiting for "Check all lines"
+WAIT = "Wait for the running check"
+NOTHING_TO_CHECK = "Drop a file or load the sample invoice first"
 
 
 def needs_confirmation(store) -> bool:
@@ -77,41 +81,64 @@ def _validate(data: bytes, name: str) -> str | None:
     return None
 
 
-def render_drop_zone(store, kb, key: str = "empty") -> None:
-    """The drop zone and "Try the sample invoice", disabled while any job runs, with the replacement question when a
-    checked shipment is open."""
+def _take_upload(uploaded) -> None:
+    """A new file is validated as before and becomes the pending file; taking it out of the drop zone drops it."""
+    if uploaded is None:
+        if (st.session_state.get(PENDING) or {}).get("source") == "upload":
+            st.session_state.pop(PENDING)
+        return
+    if st.session_state.get("last_upload_id") == uploaded.file_id:
+        return
+    data = uploaded.getvalue()
+    st.session_state["last_upload_id"] = uploaded.file_id
+    err = _validate(data, uploaded.name)
+    if err:
+        st.session_state.pop(PENDING, None)
+        st.error(err, icon="⚠️")
+    else:
+        st.session_state[PENDING] = {"data": data, "name": uploaded.name, "source": "upload"}
+
+
+def _replace_prompt(store, kb, pending: dict, running: bool) -> None:
+    st.warning(f"A checked shipment is open. Replace it with {md_escape(pending['name'])}? Results, counts and cost "
+               "reset.", icon=":material/swap_horiz:")
+    c1, c2 = st.columns(2)
+    if c1.button("Replace", type="primary", width="stretch", key="replace_yes", disabled=running):
+        st.session_state.pop("pending_replacement", None)
+        begin(store, kb, pending["data"], pending["name"], reference=pending.get("reference"))
+        st.rerun()
+    if c2.button("Cancel", width="stretch", key="replace_no"):
+        st.session_state.pop("pending_replacement", None)
+        st.rerun()
+
+
+def render(store, kb) -> None:
+    """The upload tab: a dropped file or the sample waits as the pending file until "Check all lines" (FR-005), which
+    asks first when a checked shipment is open; everything waits while any job runs. Compact: the sample button and
+    its captions share one row under the drop zone, at small gaps."""
     running = runner.busy()
-    wait = "Wait for the running check" if running else None
-    uploaded = st.file_uploader("Drop a packing list or invoice here", type=FILE_TYPES, key=f"uploader_{key}",
-                                disabled=running, help=wait)
-    st.caption("XLSX · CSV · PDF · JPG · PNG — up to 20 MB, one file per shipment")
-    if uploaded is not None and st.session_state.get("last_upload_id") != uploaded.file_id:
-        data = uploaded.getvalue()
-        st.session_state["last_upload_id"] = uploaded.file_id
-        err = _validate(data, uploaded.name)
-        if err:
-            st.error(err, icon="⚠️")
-        elif needs_confirmation(store):
-            st.session_state["pending_replacement"] = {"data": data, "name": uploaded.name}
-        else:
-            begin(store, kb, data, uploaded.name)
-            st.rerun()
-    if st.button("Try the sample invoice", key=f"sample_{key}", disabled=running, help=wait):
-        data = SAMPLE_PATH.read_bytes()
-        if needs_confirmation(store):
-            st.session_state["pending_replacement"] = {"data": data, "name": SAMPLE_PATH.name, "reference": SAMPLE_REFERENCE}
-        else:
-            begin(store, kb, data, SAMPLE_PATH.name, reference=SAMPLE_REFERENCE)
-            st.rerun()
-    pending = st.session_state.get("pending_replacement")
-    if pending:
-        st.warning(f"A checked shipment is open. Replace it with {md_escape(pending['name'])}? Results, counts and cost "
-                   "reset.", icon=":material/swap_horiz:")
-        c1, c2 = st.columns(2)
-        if c1.button("Replace", type="primary", width="stretch", key="replace_yes", disabled=running):
-            st.session_state.pop("pending_replacement", None)
-            begin(store, kb, pending["data"], pending["name"], reference=pending.get("reference"))
-            st.rerun()
-        if c2.button("Cancel", width="stretch", key="replace_no"):
-            st.session_state.pop("pending_replacement", None)
+    wait = WAIT if running else None
+    with st.container(gap="xsmall"):
+        with st.container(border=True, key="upload_box", gap="xsmall"):
+            _take_upload(st.file_uploader("Drag and drop a PDF, Excel, CSV or photo (jpg/png) here, or browse files",
+                                          type=FILE_TYPES, key="uploader", disabled=running, help=wait))
+            with st.container(horizontal=True, vertical_alignment="center"):
+                if st.button("Load sample invoice", key="sample", disabled=running, help=wait):
+                    st.session_state[PENDING] = {"data": SAMPLE_PATH.read_bytes(), "name": SAMPLE_PATH.name,
+                                                 "reference": SAMPLE_REFERENCE, "source": "sample"}
+                st.caption("about 1 minute for 30 lines", width="content")
+                pending = st.session_state.get(PENDING)
+                if pending:
+                    st.caption(f"Ready to check: {md_escape(pending['name'])}", width="content")
+        replacing = st.session_state.get("pending_replacement")
+        if replacing:
+            _replace_prompt(store, kb, replacing, running)
+            return
+        if st.button("Check all lines", key="check_all", type="primary", width="stretch",
+                     disabled=running or not pending, help=wait or (None if pending else NOTHING_TO_CHECK)):
+            st.session_state.pop(PENDING)
+            if needs_confirmation(store):
+                st.session_state["pending_replacement"] = pending
+            else:
+                begin(store, kb, pending["data"], pending["name"], reference=pending.get("reference"))
             st.rerun()

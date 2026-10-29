@@ -147,17 +147,22 @@ auditor can follow.
 
 ### VI. A Native Streamlit UI That Shows Its Work
 
-- The UI MUST be built from native Streamlit components in the visual language of the design
-  canvas. Custom components or CSS are allowed only where no native component works, and the
-  plan MUST say where and why.
+- The UI MUST be built from native Streamlit components and behaviour, in the visual language of
+  the design canvas: no custom components, no custom HTML elements and no JavaScript. One
+  exception: `ui/theme.py` MAY inject a single CSS block, through
+  `st.markdown(..., unsafe_allow_html=True)`, that only adjusts spacing, padding, margins, font
+  sizes, widths and card heights. The block MUST be one `<style>` element and nothing else: no
+  HTML elements, no scripts, no components and no change of behaviour. The static native-UI test
+  (feature 012's T035) MUST fail on CSS outside `ui/theme.py` and on custom HTML, JavaScript or
+  components anywhere in `app.py` and `ui/`.
 - The UI MUST show context, sources, tool results and progress, split between two pages:
   - the main page, which has no sidebar: progress while a check runs (each line's code fills in
-    and its running step shows), the routing counts in the summary bar, the evidence behind each
+    and its running step shows), the routing counts in the count cards, the evidence behind each
     decision in the expanded row (candidates, confidence, EBTI precedent, TARIC measures), and
-    the CSV and JSON export under the table;
+    the CSV download beside the count cards;
   - the Admin page: sources and retrieval steps (Ask the agent), per-shipment tokens and cost
     (Cost), and the knowledge-base statement (Data).
-- The decision table MUST be rendered from the line store, each line with a status that names the
+- The list of lines MUST be rendered from the line store, each line with a status that names the
   decision it needs. It MUST NOT be reconstructed from model prose.
 - Code-enforced guardrails MUST be visible: where auto-accept is locked for a line, the control
   is shown disabled with the reason.
@@ -169,7 +174,9 @@ auditor can follow.
   Contract".
 
 **Rationale**: the clerk must see why a line was flagged, which tool ran and where an answer
-came from, in a layout that feels native to Streamlit.
+came from, in a layout that feels native to Streamlit. The one CSS block changes only how much
+room things take, never what a control does, so the exception stays small, reviewable and
+tested.
 
 ### VII. Test-First and Measured (NON-NEGOTIABLE for guardrail code)
 
@@ -229,11 +236,12 @@ text into their own mail program. Sending it stays out of scope.
 ### Architecture
 
 Flow: clerk inputs (packing list or invoice as xlsx, csv, pdf or photo; one typed line; an
-updated description; questions in the Admin page's chat) → Streamlit UI (main page: header,
-upload, summary bar and decision table with expanded rows; Admin page: Rules, Data, Cost,
-Quality, Ask the agent) → LangChain agent with its LLM via OpenRouter → seven tools → data.
-Admin settings reach the agent as explicit parameters; the agent writes per-line results and
-versions to the line store; the decision table reads from it.
+updated description; questions in the Admin page's chat) → Streamlit UI (main page: header
+with the Origin box, input tabs, status line, count cards, and the sorted list with its open
+line and the shipper email draft; Admin page: Rules, Data, Cost, Quality, Ask the agent) →
+LangChain agent with its LLM via OpenRouter → seven tools → data. Admin settings reach the agent
+as explicit parameters; the agent writes per-line results and versions to the line store; the
+list reads from it.
 
 | Tool | Backed by |
 |------|-----------|
@@ -278,44 +286,54 @@ embedded or indexed. Download locations are listed in the intro, section 10.
 ### UI Design Contract
 
 The design canvas `CargoLint — MVP screens.html` (repository root) is the source of truth for
-styling in Streamlit's visual language. Since v1.3.0 the layout of the two pages follows feature
-005 (`specs/005-decision-first-ui/`) and its wireframes ("CargoLint UI redesign — wireframes"),
-which replace the canvas's two screens. `CargoLint_Project_Intro.md` is the source of truth for
+styling in Streamlit's visual language. Since v1.8.0 the layout of the two pages follows feature
+012 (`specs/012-ui-redesign/`) and its final picture (`docs/design/012-wireframe-final.png`),
+which replace feature 005's layout. `CargoLint_Project_Intro.md` is the source of truth for
 scope and behaviour. A conflict between them MUST be resolved in the spec, not silently in code.
 The inventory below is the minimum: cosmetic changes need no amendment, but removing or relocating
 a listed element needs a spec change.
 
-- Styling: native Streamlit theme with the canvas accent (`#1D4FB8`); Source Sans 3 for text,
-  Source Code Pro for codes and numbers, a CJK-capable font for Chinese. Each line's status is a
-  coloured dot with the decision it needs: green "Ready" or "Accepted", yellow "Pick: …" or
-  "Confirm: …", red "Ask: …". Confidence is a percentage with a bar, shown only inside an expanded
-  row; the CN-8's is labelled "model estimate". "Needs action" means any yellow or red line.
+- Styling: native Streamlit theme with the canvas accent (`#1D4FB8`) and a base font size of 18;
+  Source Sans 3 for text, Source Code Pro for codes and numbers, a CJK-capable font for Chinese;
+  no custom HTML, and CSS only in the single layout block of `ui/theme.py` (Principle VI).
+  Each line's status is a coloured badge: green "Ready" or "Accepted",
+  orange "Review", red "Ask shipper", grey "Checking…"; the decision it needs ("Pick: …",
+  "Confirm: …", "Ask: …") is the badge's tooltip. Confidence is a percentage in the line's row and
+  a bar beside each candidate in the open line; the CN-8's is labelled "model estimate". "Needs
+  action" means any orange or red line.
 - Main page, with no sidebar:
-  - Header: CargoLint; the open file's name and line count; the origin field (two letters, CN by
-    default; a change re-applies the TARIC rules without a model call and shows a toast); the link
-    to the Admin page.
-  - Upload, before a file is open: a drop zone (20 MB limit, XLSX/CSV/PDF/JPG/PNG); "Try the sample
-    invoice" (the bundled sample of 12 lines, 6 needing action); "Check one line" for a single
-    description; and the empty table.
-  - Summary bar, after a check: "N lines checked in T s · A ready · B need a pick · C need the
-    shipper", a green, yellow and red split bar, and "Accept all K ready" for batch acceptance of
-    the green lines.
-  - The single decision table: # · Description as filed (Chinese and English) · Code (the 10-digit
-    TARIC code, undecided digits as underscores) · Status · Action ("Choose" or "Update"). A line
-    expands in place into one of three kinds:
-    - (a) choose the HS-6 or CN-8 from the top candidates, with confidence bars and EBTI precedent;
-      for the HS-6 and the CN-8, the nearest rulings behind the vote with their issuing countries,
-      and for the HS-6 the candidate they support and, when the precedent override decided the
-      line, which candidate was chosen, with the issuing countries of the rulings that agree; with
-      the override switched on, a code outside the top three is shown as a hint;
-    - (b) choose the TARIC-10 subdivision, with duty and anti-dumping columns, all measures and the
-      EU TARIC link;
-    - (c) ask the shipper: the question, the reason, "Copy question", the description to update and
-      "Re-check line".
-  - Under the table: "Export CSV", "Export JSON", "Draft shipper email" (a text block from
-    templates, English or Chinese, copy only) and "+ Check one more line".
-- Admin page, for the operator and course evaluators, reached from the header link, with a left
-  navigation:
+  - Header: "CargoLint", the subtitle, and the Origin box. The Origin is two letters, CN by
+    default; a change re-applies the TARIC rules without a model call and shows a toast.
+  - Input, in two tabs:
+    - "Upload file": a drop zone (20 MB limit, XLSX/CSV/PDF/JPG/PNG), "Load sample invoice" (the
+      bundled sample of 12 lines), and the full-width primary "Check all lines";
+    - "Check a single line": one description and the full-width primary "Check this line".
+
+    A status line follows: lines checked, time and model, or the progress and the queue while a
+    job runs.
+  - Counts row, after a check: "Ready to accept", "Needs review" and "Ask shipper" as bordered
+    cards with coloured counts; "Accept all K ready" for batch acceptance of the green lines;
+    "Download CSV", the one download (no JSON).
+  - The list, sorted ask shipper → review → ready, 50 lines per page: # · Status · Description as
+    filed · Need / description · HS code · Conf. A line opens under its row with:
+    - 1, Description: the original and the stop-word check, the editable description, and
+      "Re-check this line";
+    - 2, HS-6 candidates: the model's three and "Other HS-6 code…", with confidence bars and the
+      reason;
+    - 3, Similar rulings: for the HS-6, the nearest rulings behind the vote with their issuing
+      countries and the share that agrees. When the precedent override decided the line, it shows
+      which candidate was chosen, with the issuing countries of the rulings that agree; with the
+      override switched on, a code outside the top three is shown as a hint. The candidates'
+      precedents come with their links;
+    - 4, Tariff: the CN-8 and TARIC-10, the third-country duty, the requirements, all measures and
+      the EU TARIC link. The CN-8 or subdivision choice appears here while it is open, with the
+      nearest rulings behind the CN-8 vote, and so does the change of a decided code at CN-8 or
+      TARIC-10;
+    - then "Accept" and "Ask shipper".
+  - Under the list: the shipper email draft (templates in English or Chinese, copy only).
+- Admin page, for the operator and course evaluators, at its own address (/admin), behind the
+  password gate like every page and not linked from the main page, with "← Back to shipment" and
+  a section switch at the top:
   - Rules: the auto-accept threshold, used at either layer only when no eligible ruling votes
     (60–99, default 85), and the hybrid-search switch (on by default);
   - Data: the EBTI ruling count, the TARIC snapshot date and source, the model, and the
@@ -419,5 +437,28 @@ to depart from; MAY is optional.
   none (`CARGOLINT_QUERY_EXPANSION`), off by default. The rationale, the `classify_hs6` row of the
   architecture table, the code organisation and the README requirement follow; the open question
   this amendment resolves was removed.
+- 1.8.0 (2026-10-29): the UI Design Contract follows feature 012, after the first customer
+  feedback ("text too small, important buttons not prominent"): base font size 18; tabs for a file
+  and a single line, with full-width primary check buttons; count cards and batch acceptance; a
+  list sorted by what needs attention, with status badges, and an open line in four blocks plus
+  Accept and Ask shipper; the shipper email draft under the list; the Admin page reached from
+  "Advanced", its sections in a switch instead of a sidebar. Native Streamlit only, as before.
+- 1.8.1 (2026-10-29): wording only (PATCH). The remaining "summary bar" and "decision table"
+  wording in Principle VI and the Architecture section follows the 012 layout: the count cards,
+  the list of lines, and the downloads beside the cards. No rule changes.
+- 1.9.0 (2026-10-29): after the author's check of the feature 012 UI, the JSON download leaves
+  the app: the clerk downloads the CSV, which adds `clerk_changed`; feature 001's FR-041 follows,
+  and the store's JSON export stays in code, unused by the UI. The main page no longer links to
+  the Admin page, which keeps its own address, /admin. The update fields under the shipper email
+  draft go: a red line's description is updated in its open row (block 1). Principle VI and the
+  UI Design Contract follow.
+- 1.10.0 (2026-10-29): Principle VI keeps native Streamlit components and behaviour as the rule,
+  with one exception: `ui/theme.py` may inject a single CSS block that only adjusts spacing,
+  padding, margins, font sizes, widths and card heights, with no HTML elements, no JavaScript, no
+  components and no change of behaviour. It replaces the earlier allowance of custom components
+  or CSS wherever no native component works. Reason: feature 012's compact page needs spacing
+  that Streamlit 1.65 cannot set natively, such as the fixed 6rem padding above the page
+  (measured in feature 012, T041). The static native-UI test allows CSS in `ui/theme.py` only, and
+  the UI Design Contract's styling line follows.
 
-**Version**: 1.7.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-27
+**Version**: 1.10.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-29

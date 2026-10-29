@@ -1,6 +1,8 @@
-"""The main page, the clerk's one page (feature 005, contracts/ui.md §2, §3, §7): no sidebar and no chat. The header,
-then the empty state, or the summary bar over the decision table with the buttons under it. Every count, route and
-code comes from the line store through ui/view.py; the model is reached only through background jobs (ui/runner.py)."""
+"""The main page, the clerk's one page (feature 012, spec FR-002 to FR-013; feature 005, contracts/ui.md §2 to §7, before
+it): no sidebar and no chat. The header with the Origin box, the two input tabs and the status line, then the counts
+row, the sorted list with the open line and the shipper email draft. It links nowhere: the Admin page keeps its own
+address, /admin. Every count, route and code comes from the line store through ui/view.py; the model is reached only
+through background jobs (ui/runner.py)."""
 from __future__ import annotations
 
 import re
@@ -11,41 +13,26 @@ import streamlit as st
 from agent.agent import apply_taric_origin
 from agent.config import MAX_DESC_CHARS
 from agent.schemas import ORIGIN_PATTERN
-from ui import actions, runner, shipper_email, table, upload, view
+from ui import actions, expand, runner, shipper_email, table, theme, upload, view
 
 WAIT = "Wait for the running check"
 WAITS = "Waits for the running check"
-
-
-def _flip(flag: str) -> None:
-    st.session_state[flag] = not st.session_state.get(flag, False)
+SUBTITLE = "Check invoice and packing-list lines before customs declaration"
+ORIGIN_CAPTION = "Duty and measures follow this country. Changing it re-applies them without a new model call."
+PAGE_WIDTH = 1400                # px: the content is capped at the final picture's width, centred (the author's polish)
+COUNTS = [2, 2, 2, 1.5, 1.5]     # three cards, then "Accept all K ready" and "Download CSV" at their normal width
 
 
 def _line_count(store: Any) -> int:
     return len(store.lines) if store.has_shipment() else 0
 
 
-def _lines(n: int) -> str:
-    return f"{n} line{'' if n == 1 else 's'}"
-
-
 def _file_name(store: Any) -> str | None:
-    source = store.shipment.source
+    source = store.shipment.source if store.has_shipment() else None
     return source.name if source is not None else (st.session_state.get("uploaded_file") or {}).get("name")
 
 
-def _typed(store: Any, kb: Any, key: str, close: str | None = None) -> None:
-    """Enter in "Check one line" or "+ Check one more line": the line is added and checked, or waits behind the
-    running job (runner.check_typed_line)."""
-    text = (st.session_state.get(key) or "").strip()
-    st.session_state[key] = ""
-    if close:
-        st.session_state[close] = False
-    if text:
-        runner.check_typed_line(store, kb, text)
-
-
-# --------------------------------------------------------------------------- header (§2)
+# --------------------------------------------------------------------------- header (FR-003)
 def _origin_changed(store: Any, kb: Any, previous: str) -> None:
     """A new origin re-applies the TARIC rules with no model call (FR-022). With no shipment open, a valid origin is
     kept for every new shipment. A refused one puts the field back."""
@@ -64,100 +51,73 @@ def _origin_changed(store: Any, kb: Any, previous: str) -> None:
     st.session_state["origin_field"] = value
 
 
-def _header(store: Any, kb: Any, admin_page: Any) -> None:
-    n = _line_count(store)
-    c = st.columns([1.5, 3.3, 1.2, 1.5, 0.9], vertical_alignment="center")
-    c[0].markdown("### CargoLint")
-    if n:
-        name = _file_name(store)
-        c[1].markdown(f"{view.md_escape(name) if name else 'Typed lines'} · {_lines(n)}")
-    with c[2]:
-        if "origin_field" not in st.session_state:   # the field would otherwise start empty
+def _header(store: Any, kb: Any) -> None:
+    """The title and the subtitle on the left; on the right, one compact Origin block: the selectbox, and beside it its
+    caption and the TARIC snapshot date."""
+    left, right = st.columns([1, 1.5])
+    with left.container(gap=None):
+        theme.apply()                                # the layout CSS (constitution 1.10.0); no gap, so no room
+        st.markdown("### CargoLint")
+        st.caption(SUBTITLE)
+    with right.container(border=True, key="origin", horizontal=True, vertical_alignment="bottom"):
+        if "origin_field" not in st.session_state:   # the box would otherwise start at the list's first code
             st.session_state["origin_field"] = store.shipment.taric_origin if store.has_shipment() else "CN"
-        st.text_input("Origin", key="origin_field", max_chars=2, persist_state="session",
-                      help="The goods' country of origin for TARIC, two letters; CN by default",
-                      on_change=_origin_changed, args=(store, kb, st.session_state["origin_field"]))
-        st.caption(view.snapshot_caption(kb))
-    if n:   # the drop zone collapses into the header once lines exist; its replacement question comes first
-        busy = runner.busy()
-        with c[3].popover("Open another file", key="open_file_button", disabled=busy, help=WAIT if busy else None):
-            upload.render_drop_zone(store, kb, key="open")
-    if admin_page is not None:
-        c[4].page_link(admin_page, label="Admin ⚙")
+        st.selectbox("Origin", view.ORIGIN_CODES, key="origin_field", persist_state="session", width=160,
+                     help="The goods' country of origin for TARIC, as an ISO code; type to filter",
+                     on_change=_origin_changed, args=(store, kb, st.session_state["origin_field"]))
+        with st.container(gap=None):
+            st.caption(ORIGIN_CAPTION)
+            st.caption(view.snapshot_caption(kb))
 
 
-# --------------------------------------------------------------------------- empty state (§2)
-def _empty_state(store: Any, kb: Any) -> None:
-    job = runner.current_job()
-    if job is not None and not job.done and job.kind == "check" and job.file_ref:
-        name = (st.session_state.get("uploaded_file") or {}).get("name") or "the file"
-        st.info(f"Checking {view.md_escape(name)}…", icon=":material/hourglass_top:")
+# --------------------------------------------------------------------------- input tabs (FR-004 to FR-006)
+def _check_line(store: Any, kb: Any) -> None:
+    """"Check this line" (D14): the line joins the open shipment, or opens one, through the typed-line path; behind a
+    running job it waits in the queue."""
+    text = (st.session_state.get("single_line") or "").strip()
+    st.session_state["single_line"] = ""
+    if not text:
+        runner.note("warning", "Write the goods description first.")
         return
-    upload.render_drop_zone(store, kb, key="empty")
-    busy = runner.busy()
-    st.text_input("Check one line", key="check_one_line", max_chars=MAX_DESC_CHARS,
-                  placeholder="Type a goods description and press Enter, e.g. bicycle frames, aluminium",
-                  on_change=_typed, args=(store, kb, "check_one_line"), disabled=busy, help=WAIT if busy else None)
-    table.render(store, kb, {})
+    runner.check_typed_line(store, kb, text)
 
 
-# --------------------------------------------------------------------------- summary, table and buttons (§3, §4, §7)
+def _input(store: Any, kb: Any) -> None:
+    upload_tab, line_tab = st.tabs(["Upload file", "Check a single line"])
+    with upload_tab:
+        upload.render(store, kb)
+    with line_tab, st.form("single_line_form", border=False):   # Enter checks the line too
+        st.text_input("Goods description, in English or Chinese", key="single_line", max_chars=MAX_DESC_CHARS,
+                      placeholder="e.g. bicycle frames, aluminium")
+        st.form_submit_button("Check this line", key="check_line", type="primary", width="stretch",
+                              on_click=_check_line, args=(store, kb))
+
+
+def _open_typed_line(job: Any) -> None:
+    """FR-006: a single typed line opens when its check ends; runner.finish itself never opens a row."""
+    if job.kind == "check" and not job.file_ref and job.new_line_nos and len(job.new_line_nos) == 1:
+        expand.forget(st.session_state.get("selected_line_no"))
+        st.session_state["selected_line_no"] = job.new_line_nos[0]
+        st.session_state[table.SHOW] = True
+
+
+# --------------------------------------------------------------------------- status line (FR-007, D10)
 def _checking() -> bool:
     job = runner.current_job()
     return job is not None and not job.done and job.kind == "check"
 
 
-def _accept(store: Any, line_nos: list[int] | None) -> None:
-    actions.accept_ready(store, line_nos)
-
-
-def _summary(store: Any, statuses: dict[int, view.LineStatus]) -> None:
-    s = view.summary(store, statuses)
+def _status(store: Any, s: view.Summary, messages: list[tuple[str, str]]) -> None:
+    """The running check, else the lines checked, their file and time; then the queue and the job messages."""
     if _checking():
-        st.markdown(f"**Checking {_lines(s.lines)}… · {runner.current_job().elapsed:.0f} s**")
+        job = runner.current_job()
+        name = (st.session_state.get("uploaded_file") or {}).get("name") if job.file_ref else None
+        text = view.status_line(s, checking=len(job.new_line_nos) if job.new_line_nos else s.lines,
+                                elapsed=job.elapsed, file_name=name)
     else:
-        st.markdown(view.summary_text(s))
-    bar = view.split_bar(s)
-    if bar:
-        st.markdown(bar)
-    if _checking():
-        return
-    selected = [n for n, status in statuses.items() if status.selectable and st.session_state.get(f"accept_{n}")]
-    c = st.columns([1.3, 1.3, 3])
-    if s.to_accept:
-        c[0].button(view.accept_all_label(s.to_accept), key="accept_all", type="primary", on_click=_accept,
-                    args=(store, None))
-    if selected:
-        c[1].button(view.accept_selected_label(len(selected)), key="accept_selected", on_click=_accept,
-                    args=(store, selected))
-
-
-def _email(store: Any, kb: Any, c: int) -> None:
-    """The draft under the button row (FR-020, FR-021): string templates, to copy; nothing is sent or stored."""
-    with st.container(border=True):
-        st.markdown(f"**Email to shipper — generated from the {c} open question{'' if c == 1 else 's'}, no model call**")
-        lang = st.segmented_control("Language", ["EN", "中文"], key="email_lang", default="EN", required=True,
-                                    label_visibility="collapsed")
-        st.caption(":material/content_copy: Copy email — the copy button at the top right of the text")
-        st.code(shipper_email.draft(store, kb, "zh" if lang == "中文" else "en").text, language=None, wrap_lines=True)
-
-
-def _buttons(store: Any, kb: Any, ask: int) -> None:
-    row = st.columns([1, 1, 1.8, 1.8])
-    checking = _checking()
-    wait = WAIT if checking else None
-    row[0].download_button("Export CSV", store.to_csv_bytes(), file_name=store.export_filename("csv"), mime="text/csv",
-                           key="export_csv", disabled=checking, help=wait, on_click="ignore")
-    row[1].download_button("Export JSON", store.to_json_bytes(knowledge_base_updated=kb.updated),
-                           file_name=store.export_filename("json"), mime="application/json", key="export_json",
-                           disabled=checking, help=wait, on_click="ignore")
-    row[2].button(view.email_label(ask), key="email_button", on_click=_flip, args=("email_open",), disabled=not ask)
-    row[3].button("+ Check one more line", key="more_line_button", on_click=_flip, args=("more_line_open",))
-    if ask and st.session_state.get("email_open"):
-        _email(store, kb, ask)
-    if st.session_state.get("more_line_open"):
-        st.text_input("Type a goods description and press Enter", key="more_line", max_chars=MAX_DESC_CHARS,
-                      on_change=_typed, args=(store, kb, "more_line", "more_line_open"))
+        text = view.status_line(s, file_name=_file_name(store))
+    if text:
+        st.caption(view.md_escape(text))
     for entry in runner.queue():
         if entry[0] == "check":
             st.markdown(f":material/schedule: {view.md_escape(entry[1])}")
@@ -166,11 +126,53 @@ def _buttons(store: Any, kb: Any, ask: int) -> None:
             text = " / ".join(part for part in entry[2:] if part)
             st.markdown(f":material/schedule: Re-check line {entry[1]}: {view.md_escape(text)}")
             st.caption(WAITS)
+    for level, text in messages:
+        getattr(st, level)(view.md_escape(text))
 
 
-def _live(store: Any, kb: Any) -> None:
-    """The summary, the table and the blocks under it, in one fragment that refreshes every second while a job runs or
-    waits; when a job starts or ends, or lines appear, the whole page renders again."""
+# --------------------------------------------------------------------------- counts row and email draft (FR-008, FR-012)
+def _accept(store: Any, line_nos: list[int] | None) -> None:
+    actions.accept_ready(store, line_nos)
+
+
+def _counts(store: Any, s: view.Summary) -> None:
+    """Three small bordered cards with coloured counts, then "Accept all K ready" and "Download CSV" at their normal
+    width, centred against the cards in one row. A card is as tall as its label and count, with no gap between them and
+    no fixed height, so it never scrolls. The CSV adds `clerk_changed` to the store's export (FR-013); there is no JSON
+    download. Nothing is accepted or downloaded while a check runs."""
+    checking = _checking()
+    wait = WAIT if checking else None
+    c = st.columns(COUNTS, vertical_alignment="center")
+    for col, key, (label, colour, count) in zip(c, ("count_ready", "count_review", "count_ask"), view.count_cards(s)):
+        with col.container(border=True, key=key, gap=None):
+            st.caption(label)
+            st.subheader(f":{colour}[{count}]", anchor=False)
+    if s.to_accept and not checking:
+        c[3].button(view.accept_all_label(s.to_accept), key="accept_all", on_click=_accept, args=(store, None))
+    c[4].download_button("Download CSV", view.export_csv(store), file_name=store.export_filename("csv"),
+                         mime="text/csv", key="export_csv", disabled=checking, help=wait, on_click="ignore")
+
+
+def _draft(store: Any, kb: Any, s: view.Summary) -> None:
+    """The shipper email draft under the list (FR-012, D18): string templates to copy, in English or Chinese; nothing is
+    sent or stored. An asking line's description is updated in its open row (block 1)."""
+    if not s.ask:
+        return
+    st.space("small")
+    with st.container(horizontal=True, vertical_alignment="center"):
+        st.markdown("**Shipper email draft** ·", width="content")
+        lang = st.segmented_control("Language", ["EN", "中文"], key="email_lang", default="EN", required=True,
+                                    label_visibility="collapsed")
+    draft = shipper_email.draft(store, kb, "zh" if lang == "中文" else "en")
+    q = len(draft.line_nos)
+    st.caption(f"{q} question{'' if q == 1 else 's'} ready for the shipper")
+    st.caption(":material/content_copy: Copy email — the copy button at the top right of the text")
+    st.code(draft.text, language=None, wrap_lines=True)
+
+
+def _live(store: Any, kb: Any, messages: list[tuple[str, str]]) -> None:
+    """The status line, the counts row, the list and the email draft, in one fragment that refreshes every second
+    while a job runs or waits; when a job starts or ends, or lines appear, the whole page renders again."""
     live = runner.occupied() or bool(runner.queue())
     count = _line_count(store)
 
@@ -180,23 +182,26 @@ def _live(store: Any, kb: Any) -> None:
         if (job is not None and job.done) or (runner.occupied() or bool(runner.queue())) != live \
                 or _line_count(store) != count:
             st.rerun()
+        statuses = {l.line_no: view.line_status(store, l, runner.line_activity(l.line_no)) for l in store.lines} \
+            if count else {}
+        s = view.summary(store, statuses)
+        _status(store, s, messages)
         if not count:
             return
-        statuses = {l.line_no: view.line_status(store, l, runner.line_activity(l.line_no)) for l in store.lines}
-        _summary(store, statuses)
+        _counts(store, s)
         table.render(store, kb, statuses)
-        _buttons(store, kb, view.summary(store, statuses).ask)
+        _draft(store, kb, s)
 
     _part()
 
 
-def render(store: Any, kb: Any, admin_page: Any = None) -> None:
+def render(store: Any, kb: Any) -> None:
+    """The page in one centred container of at most PAGE_WIDTH, its parts at small gaps."""
     job = runner.current_job()
     if job is not None and job.done:
+        _open_typed_line(job)
         runner.finish(store, kb)   # reruns the app
-    _header(store, kb, admin_page)
-    for level, text in runner.pop_messages():
-        getattr(st, level)(view.md_escape(text))
-    if not _line_count(store):
-        _empty_state(store, kb)
-    _live(store, kb)
+    with st.container(horizontal_alignment="center"), st.container(key="page", width=PAGE_WIDTH, gap="xsmall"):
+        _header(store, kb)
+        _input(store, kb)
+        _live(store, kb, runner.pop_messages())
