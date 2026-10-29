@@ -154,7 +154,7 @@ auditor can follow.
   - the main page, which has no sidebar: progress while a check runs (each line's code fills in
     and its running step shows), the routing counts in the count cards, the evidence behind each
     decision in the expanded row (candidates, confidence, EBTI precedent, TARIC measures), and
-    the CSV and JSON downloads beside the count cards;
+    the CSV download beside the count cards;
   - the Admin page: sources and retrieval steps (Ask the agent), per-shipment tokens and cost
     (Cost), and the knowledge-base statement (Data).
 - The list of lines MUST be rendered from the line store, each line with a status that names the
@@ -305,7 +305,7 @@ a listed element needs a spec change.
     job runs.
   - Counts row, after a check: "Ready to accept", "Needs review" and "Ask shipper" as bordered
     cards with coloured counts; "Accept all K ready" for batch acceptance of the green lines;
-    "Download CSV" and a small "JSON".
+    "Download CSV", the one download (no JSON).
   - The list, sorted ask shipper → review → ready, 50 lines per page: # · Status · Description as
     filed · Need / description · HS code · Conf. A line opens under its row with:
     - 1, Description: the original and the stop-word check, the editable description, and
@@ -322,10 +322,10 @@ a listed element needs a spec change.
       nearest rulings behind the CN-8 vote, and so does the change of a decided code at CN-8 or
       TARIC-10;
     - then "Accept" and "Ask shipper".
-  - Under the list: the shipper email draft (templates in English or Chinese, copy only) with each
-    red line's update field and "Re-check this line"; then the "Advanced" link to the Admin page.
-- Admin page, for the operator and course evaluators, reached from the "Advanced" link at the
-  bottom of the main page, with a section switch at the top:
+  - Under the list: the shipper email draft (templates in English or Chinese, copy only).
+- Admin page, for the operator and course evaluators, at its own address (/admin), behind the
+  password gate like every page and not linked from the main page, with "← Back to shipment" and
+  a section switch at the top:
   - Rules: the auto-accept threshold, used at either layer only when no eligible ruling votes
     (60–99, default 85), and the hybrid-search switch (on by default);
   - Data: the EBTI ruling count, the TARIC snapshot date and source, the model, and the
@@ -438,5 +438,11 @@ to depart from; MAY is optional.
 - 1.8.1 (2026-10-29): wording only (PATCH). The remaining "summary bar" and "decision table"
   wording in Principle VI and the Architecture section follows the 012 layout: the count cards,
   the list of lines, and the downloads beside the cards. No rule changes.
+- 1.9.0 (2026-10-29): after the author's check of the feature 012 UI, the JSON download leaves
+  the app: the clerk downloads the CSV, which adds `clerk_changed`; feature 001's FR-041 follows,
+  and the store's JSON export stays in code, unused by the UI. The main page no longer links to
+  the Admin page, which keeps its own address, /admin. The update fields under the shipper email
+  draft go: a red line's description is updated in its open row (block 1). Principle VI and the
+  UI Design Contract follow.
 
-**Version**: 1.8.1 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-29
+**Version**: 1.9.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-29
