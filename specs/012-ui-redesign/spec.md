@@ -112,6 +112,8 @@ prominent")". The brief, given on 2026-10-29, had five parts:
   and constitution 1.9.0 follow. The store's JSON export stays in code, unused by the UI.
 - **Advanced link**: removed from the main page. The Admin page keeps its own address, `/admin`, behind the password
   gate, with "← Back to shipment".
+- **Shipper email draft**: the expander "Shipper's answers: update n lines and re-check" is removed, with the update
+  fields in it. The clerk updates an asking line's description in its open row (block 1).
 
 ## Brief and final picture
 
@@ -218,8 +220,8 @@ The clerk types one description, in English or Chinese, in the second tab and pr
 
 ### User Story 4 - Ask the shipper (Priority: P2)
 
-Under the list, the clerk finds the email draft for every red line, in English or Chinese, and each red line's
-update field for the shipper's answer.
+Under the list, the clerk finds the email draft for every red line, in English or Chinese. The shipper's answer
+goes into the line's open row (block 1).
 
 **Why this priority**: it closes the loop for the lines that cannot be decided.
 
@@ -228,7 +230,7 @@ update field for the shipper's answer.
 **Acceptance Scenarios**:
 
 1. **Given** red lines, **When** the page renders, **Then** the section "Shipper email draft · EN | 中文" shows the
-   existing draft, its count, and each red line's update field with "Re-check this line".
+   existing draft and its count. The update fields stay in the lines' open rows (after the author's check of the UI).
 2. **Given** a line not yet red, **When** the clerk presses "Ask shipper" in its row, **Then** the draft includes
    it.
 
@@ -357,10 +359,10 @@ check of the UI).
 - **FR-012**: When at least one line asks, a section under the list MUST show:
   - the heading "Shipper email draft · EN | 中文", with the existing language switch (default EN);
   - the caption "n questions ready for the shipper";
-  - the existing draft in a code block, with its copy button;
-  - folded in an expander under it, each asking line's update field with "Re-check this line" (D18).
+  - the existing draft in a code block, with its copy button.
 
-  A line routed to the shipper from its row appears in the draft.
+  A line routed to the shipper from its row appears in the draft. The section holds no update fields (after the
+  author's check of the UI): the shipper's answer goes into the line's open row (block 1).
 - **FR-013**: The CSV download MUST add one column, `clerk_changed`, built in `ui/` from the store's export
   rows, the line versions and the audit trail; `agent/store.py` does not change. It is true only for the clerk's
   overrides: an HS-6 other than the model's top candidate (`decided_how` "other_candidate" or "typed"); a CN-8 or a

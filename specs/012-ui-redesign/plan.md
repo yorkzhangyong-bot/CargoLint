@@ -197,8 +197,7 @@ README.md                # Step 3: "What the clerk sees"
     - the heading "Shipper email draft · EN | 中文", with today's language switch (default EN);
     - the caption "n questions ready for the shipper";
     - today's `shipper_email.draft` in `st.code`;
-    - folded in an expander, each asking line's update field and "Re-check this line", the block 1 function under
-      its own key prefix.
+    - no update fields: an asking line is updated in its open row (after the author's check of the UI).
 16. **`clerk_changed` (FR-013, confirmed after Step 1, narrowed after Step 2, widened to the finer codes after Step 3).**
     True only for the clerk's overrides:
     - the export row's `decided_how` is "other_candidate" or "typed" (an HS-6 other than the top candidate);

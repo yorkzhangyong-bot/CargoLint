@@ -964,22 +964,14 @@ def test_the_shipper_email_draft(kb, recorder):
         assert [c.value for c in at.code] == [shipper_email.draft(store, kb, "en").text]
         at.segmented_control(key="email_lang").set_value("中文").run()
         assert [c.value for c in at.code] == [shipper_email.draft(store, kb, "zh").text]
-        answers = [e for e in at.expander if e.label.startswith("Shipper's answers")]
-        assert [e.label for e in answers] == ["Shipper's answers: update 2 lines and re-check"]   # folded (Step 3)
-        for state in ("ics2_term", "sent"):                          # each asking line's update field (D18)
-            n = nos[state]
-            vn = store.get_line(n).current.version_no
-            assert answers[0].text_area(key=f"draft_edit_{n}_{vn}").value == store.get_line(n).current.display_text
-            assert answers[0].button(key=f"draft_recheck_{n}_{vn}").label == "Re-check this line"
-        assert not [t for t in at.text_area if t.key.startswith(f"draft_edit_{nos['failed']}_")]
+        assert not at.text_area and not at.expander                  # no update fields under the draft (the author's check)
     assert guard.calls == 0
     assert ([l.model_dump() for l in store.lines], [r.model_dump() for r in store.shipment.audit]) == before
-    n = nos["sent"]
-    at.text_area(key=f"draft_edit_{n}_1").set_value("Ceramic dinner plates, porcelain").run()
-    recorder.keep_running()
-    at.button(key=f"draft_recheck_{n}_1").click().run()              # the shipper answered: re-check that line
-    assert [(j.kind, j.line_no) for j in recorder.jobs] == [("recheck", n)]
-    assert store.get_line(n).current.text_en == "Ceramic dinner plates, porcelain"
+    n = nos["sent"]                                                  # an asking line is updated in its open row
+    at.button(key=f"open_{n}").click().run()
+    k = keys(store, n)
+    assert at.text_area(key=k.area).value == store.get_line(n).current.display_text
+    assert at.button(key=k.recheck).label == "Re-check this line"
 
 
 def test_ask_shipper_adds_the_line_to_the_draft(kb, recorder):      # FR-017
@@ -994,7 +986,7 @@ def test_ask_shipper_adds_the_line_to_the_draft(kb, recorder):      # FR-017
     draft = shipper_email.draft(store, kb, "en")
     assert draft.line_nos == [n] and draft.text in [c.value for c in at.code]
     assert DRAFT_HEAD in texts(at) and "1 question ready for the shipper" in texts(at)
-    assert at.button(key=f"draft_recheck_{n}_1").label == "Re-check this line"
+    assert [b.key for b in at.button if b.label == "Re-check this line"] == [keys(store, n).recheck]   # the row's only
     assert not recorder.jobs and guard.calls == 0
 
 

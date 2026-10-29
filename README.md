@@ -160,8 +160,8 @@ operator and the course evaluators.
   background, and "Ask shipper", which turns the line red. On a red line "Accept" is locked and says why; a line that
   was ever flagged still needs the clerk's click after its update.
 - **Shipper email draft**, when a line asks: string templates in English or Chinese, one numbered question per line,
-  to copy and send by hand. Nothing is sent, and no model is called. Folded under it, each asking line's field for
-  the shipper's answer, with "Re-check this line".
+  to copy and send by hand. Nothing is sent, and no model is called. The shipper's answer goes into the line's
+  description field in its open row (block 1).
 
 **The Admin page**, at its own address `/admin` (the main page does not link to it), with its sections in a switch
 at the top:

@@ -193,9 +193,10 @@ need a function change is asked first. The theme file (T010) is the one exceptio
   count cards, the list of lines, and the same bullet's "export under the table", now the downloads beside the
   cards) and the Architecture flow
 - [X] T039 After the author's check of the UI (2026-10-29): "Download CSV" level with "Accept all K ready"; no JSON
-  download anywhere in the app (`view.export_json` gone) and no "Advanced" link on the main page, the Admin page
-  keeping `/admin`. ui/main_page.py, ui/view.py, app.py, the tests, feature 001's FR-041 and README.md; constitution
-  1.9.0 (`/speckit-constitution`)
+  download anywhere in the app (`view.export_json` gone); no "Advanced" link on the main page, the Admin page keeping
+  `/admin`; no update fields under the email draft (the expander "Shipper's answers…" is gone; block 1 of the open
+  row keeps the field). ui/main_page.py, ui/expand.py, ui/view.py, app.py, the tests, feature 001's FR-041 and
+  README.md; constitution 1.9.0 (`/speckit-constitution`)
 
 ---
 

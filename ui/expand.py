@@ -150,12 +150,11 @@ def _ad_cell(text: str) -> str:
 
 
 # --------------------------------------------------------------------------- 1 Description
-def description(store: Any, kb: Any, line: Any, prefix: str = "") -> None:
-    """The description field and "Re-check this line", in block 1 and under the shipper email draft (D2, D18). The edit
-    is checked at once; the store takes it when the re-check starts, which waits behind a running job
-    (contracts/ui.md §6)."""
+def description(store: Any, kb: Any, line: Any) -> None:
+    """The description field and "Re-check this line", in block 1 (D2). The edit is checked at once; the store takes it
+    when the re-check starts, which waits behind a running job (contracts/ui.md §6)."""
     n, v = line.line_no, line.current
-    area_key, button_key = f"{prefix}edit_{n}_{v.version_no}", f"{prefix}recheck_{n}_{v.version_no}"
+    area_key, button_key = f"edit_{n}_{v.version_no}", f"recheck_{n}_{v.version_no}"
     if area_key not in st.session_state:
         st.session_state[area_key] = v.display_text
     field, act = st.columns([4, 1.3])
