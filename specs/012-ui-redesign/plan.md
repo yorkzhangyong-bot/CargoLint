@@ -240,10 +240,10 @@ Version 1.7.0 → 1.8.0, MINOR: the UI Design Contract's inventory changes mater
   >   - "Check a single line": one description and the full-width primary "Check this line".
   >
   >   A status line follows: lines checked, time and model, or the progress and the queue while a job runs.
-  > - Counts row, after a check: "Ready to accept", "Needs review" and "Ask shipper" as bordered metrics; "Accept all
-  >   K ready" for batch acceptance of the green lines; "Download CSV" and a small "JSON".
+  > - Counts row, after a check: "Ready to accept", "Needs review" and "Ask shipper" as bordered cards with coloured
+  >   counts; "Accept all K ready" for batch acceptance of the green lines; "Download CSV" and a small "JSON".
   > - The list, sorted ask shipper → review → ready, 50 lines per page: # · Status · Description as filed · Need /
-  >   description · HS-6 · Conf. A line opens under its row with:
+  >   description · HS code · Conf. A line opens under its row with:
   >   - 1, Description: the original and the stop-word check, the editable description, and "Re-check this line";
   >   - 2, HS-6 candidates: the model's three and "Other HS-6 code…", with confidence bars and the reason;
   >   - 3, Similar rulings: for the HS-6, the nearest rulings behind the vote with their issuing countries and the

@@ -39,8 +39,9 @@ need a function change is asked first. The theme file (T010) is the one exceptio
 
 ## Phase 2: Governance (blocks all code)
 
-- [ ] T004 The author runs `/speckit-constitution` with the 1.8.0 draft in specs/012-ui-redesign/plan.md, which
-  amends the UI Design Contract
+- [X] T004 Run `/speckit-constitution` with the 1.8.0 draft in specs/012-ui-redesign/plan.md, which amends the UI
+  Design Contract. Run for the author on 2026-10-29, with the counts row and the "HS code" column aligned to the
+  spec's later decisions
 - [X] T005 The author answers Q1: the default, so block 3 is the vote summary by code, with no store change
 
 **Checkpoint**: Step 1's code starts only after T004.

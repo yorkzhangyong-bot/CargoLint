@@ -278,44 +278,53 @@ embedded or indexed. Download locations are listed in the intro, section 10.
 ### UI Design Contract
 
 The design canvas `CargoLint — MVP screens.html` (repository root) is the source of truth for
-styling in Streamlit's visual language. Since v1.3.0 the layout of the two pages follows feature
-005 (`specs/005-decision-first-ui/`) and its wireframes ("CargoLint UI redesign — wireframes"),
-which replace the canvas's two screens. `CargoLint_Project_Intro.md` is the source of truth for
+styling in Streamlit's visual language. Since v1.8.0 the layout of the two pages follows feature
+012 (`specs/012-ui-redesign/`) and its final picture (`docs/design/012-wireframe-final.png`),
+which replace feature 005's layout. `CargoLint_Project_Intro.md` is the source of truth for
 scope and behaviour. A conflict between them MUST be resolved in the spec, not silently in code.
 The inventory below is the minimum: cosmetic changes need no amendment, but removing or relocating
 a listed element needs a spec change.
 
-- Styling: native Streamlit theme with the canvas accent (`#1D4FB8`); Source Sans 3 for text,
-  Source Code Pro for codes and numbers, a CJK-capable font for Chinese. Each line's status is a
-  coloured dot with the decision it needs: green "Ready" or "Accepted", yellow "Pick: …" or
-  "Confirm: …", red "Ask: …". Confidence is a percentage with a bar, shown only inside an expanded
-  row; the CN-8's is labelled "model estimate". "Needs action" means any yellow or red line.
+- Styling: native Streamlit theme with the canvas accent (`#1D4FB8`) and a base font size of 18;
+  Source Sans 3 for text, Source Code Pro for codes and numbers, a CJK-capable font for Chinese;
+  no custom HTML or CSS. Each line's status is a coloured badge: green "Ready" or "Accepted",
+  orange "Review", red "Ask shipper", grey "Checking…"; the decision it needs ("Pick: …",
+  "Confirm: …", "Ask: …") is the badge's tooltip. Confidence is a percentage in the line's row and
+  a bar beside each candidate in the open line; the CN-8's is labelled "model estimate". "Needs
+  action" means any orange or red line.
 - Main page, with no sidebar:
-  - Header: CargoLint; the open file's name and line count; the origin field (two letters, CN by
-    default; a change re-applies the TARIC rules without a model call and shows a toast); the link
-    to the Admin page.
-  - Upload, before a file is open: a drop zone (20 MB limit, XLSX/CSV/PDF/JPG/PNG); "Try the sample
-    invoice" (the bundled sample of 12 lines, 6 needing action); "Check one line" for a single
-    description; and the empty table.
-  - Summary bar, after a check: "N lines checked in T s · A ready · B need a pick · C need the
-    shipper", a green, yellow and red split bar, and "Accept all K ready" for batch acceptance of
-    the green lines.
-  - The single decision table: # · Description as filed (Chinese and English) · Code (the 10-digit
-    TARIC code, undecided digits as underscores) · Status · Action ("Choose" or "Update"). A line
-    expands in place into one of three kinds:
-    - (a) choose the HS-6 or CN-8 from the top candidates, with confidence bars and EBTI precedent;
-      for the HS-6 and the CN-8, the nearest rulings behind the vote with their issuing countries,
-      and for the HS-6 the candidate they support and, when the precedent override decided the
-      line, which candidate was chosen, with the issuing countries of the rulings that agree; with
-      the override switched on, a code outside the top three is shown as a hint;
-    - (b) choose the TARIC-10 subdivision, with duty and anti-dumping columns, all measures and the
-      EU TARIC link;
-    - (c) ask the shipper: the question, the reason, "Copy question", the description to update and
-      "Re-check line".
-  - Under the table: "Export CSV", "Export JSON", "Draft shipper email" (a text block from
-    templates, English or Chinese, copy only) and "+ Check one more line".
-- Admin page, for the operator and course evaluators, reached from the header link, with a left
-  navigation:
+  - Header: "CargoLint", the subtitle, and the Origin box. The Origin is two letters, CN by
+    default; a change re-applies the TARIC rules without a model call and shows a toast.
+  - Input, in two tabs:
+    - "Upload file": a drop zone (20 MB limit, XLSX/CSV/PDF/JPG/PNG), "Load sample invoice" (the
+      bundled sample of 12 lines), and the full-width primary "Check all lines";
+    - "Check a single line": one description and the full-width primary "Check this line".
+
+    A status line follows: lines checked, time and model, or the progress and the queue while a
+    job runs.
+  - Counts row, after a check: "Ready to accept", "Needs review" and "Ask shipper" as bordered
+    cards with coloured counts; "Accept all K ready" for batch acceptance of the green lines;
+    "Download CSV" and a small "JSON".
+  - The list, sorted ask shipper → review → ready, 50 lines per page: # · Status · Description as
+    filed · Need / description · HS code · Conf. A line opens under its row with:
+    - 1, Description: the original and the stop-word check, the editable description, and
+      "Re-check this line";
+    - 2, HS-6 candidates: the model's three and "Other HS-6 code…", with confidence bars and the
+      reason;
+    - 3, Similar rulings: for the HS-6, the nearest rulings behind the vote with their issuing
+      countries and the share that agrees. When the precedent override decided the line, it shows
+      which candidate was chosen, with the issuing countries of the rulings that agree; with the
+      override switched on, a code outside the top three is shown as a hint. The candidates'
+      precedents come with their links;
+    - 4, Tariff: the CN-8 and TARIC-10, the third-country duty, the requirements, all measures and
+      the EU TARIC link. The CN-8 or subdivision choice appears here while it is open, with the
+      nearest rulings behind the CN-8 vote, and so does the change of a decided code at CN-8 or
+      TARIC-10;
+    - then "Accept" and "Ask shipper".
+  - Under the list: the shipper email draft (templates in English or Chinese, copy only) with each
+    red line's update field and "Re-check this line"; then the "Advanced" link to the Admin page.
+- Admin page, for the operator and course evaluators, reached from the "Advanced" link at the
+  bottom of the main page, with a section switch at the top:
   - Rules: the auto-accept threshold, used at either layer only when no eligible ruling votes
     (60–99, default 85), and the hybrid-search switch (on by default);
   - Data: the EBTI ruling count, the TARIC snapshot date and source, the model, and the
@@ -419,5 +428,11 @@ to depart from; MAY is optional.
   none (`CARGOLINT_QUERY_EXPANSION`), off by default. The rationale, the `classify_hs6` row of the
   architecture table, the code organisation and the README requirement follow; the open question
   this amendment resolves was removed.
+- 1.8.0 (2026-10-29): the UI Design Contract follows feature 012, after the first customer
+  feedback ("text too small, important buttons not prominent"): base font size 18; tabs for a file
+  and a single line, with full-width primary check buttons; count cards and batch acceptance; a
+  list sorted by what needs attention, with status badges, and an open line in four blocks plus
+  Accept and Ask shipper; the shipper email draft under the list; the Admin page reached from
+  "Advanced", its sections in a switch instead of a sidebar. Native Streamlit only, as before.
 
-**Version**: 1.7.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-27
+**Version**: 1.8.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-29
