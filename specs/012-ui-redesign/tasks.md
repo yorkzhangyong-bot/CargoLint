@@ -181,7 +181,8 @@ need a function change is asked first. The theme file (T010) is the one exceptio
 - [X] T034 [P] ui/main_page.py and ui/table.py: card and container spacing (`st.container` gaps, `st.divider`). Done
   on 2026-10-29: the rows sit 4.5 px apart (gap "xxsmall"), as close as in the picture; `st.divider` between rows was
   tried and dropped, as its margins put the rows 109 px apart. Also: bold badge labels, the asking lines' update
-  fields folded under the draft (Step 2 review), and an arrow before the Advanced link
+  fields folded under the draft (Step 2 review), and an arrow before the Advanced link. After the author's check:
+  the small "JSON" sits beside "Download CSV", so both downloads are level with "Accept all K ready"
 - [X] T035 [P] tests/unit/test_native_ui.py: no `unsafe_allow_html`, `st.html` or components in app.py and ui/
   (SC-004)
 - [X] T036 README.md: "What the clerk sees" for the new layout

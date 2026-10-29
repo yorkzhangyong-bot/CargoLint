@@ -143,12 +143,13 @@ def _counts(store: Any, kb: Any, s: view.Summary) -> None:
     if s.to_accept and not checking:
         c[3].button(view.accept_all_label(s.to_accept), key="accept_all", width="stretch", on_click=_accept,
                     args=(store, None))
-    c[4].download_button("Download CSV", view.export_csv(store), file_name=store.export_filename("csv"),
-                         mime="text/csv", key="export_csv", width="stretch", disabled=checking, help=wait,
-                         on_click="ignore")
-    c[4].download_button("JSON", view.export_json(store, kb.updated), file_name=store.export_filename("json"),
-                         mime="application/json", key="export_json", type="tertiary", disabled=checking, help=wait,
-                         on_click="ignore")
+    downloads = c[4].container(horizontal=True, vertical_alignment="center")   # one row: level with "Accept all"
+    downloads.download_button("Download CSV", view.export_csv(store), file_name=store.export_filename("csv"),
+                              mime="text/csv", key="export_csv", width="stretch", disabled=checking, help=wait,
+                              on_click="ignore")
+    downloads.download_button("JSON", view.export_json(store, kb.updated), file_name=store.export_filename("json"),
+                              mime="application/json", key="export_json", type="tertiary", disabled=checking,
+                              help=wait, on_click="ignore")
 
 
 def _draft(store: Any, kb: Any, s: view.Summary) -> None:
