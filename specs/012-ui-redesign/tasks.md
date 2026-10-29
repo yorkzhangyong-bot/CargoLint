@@ -123,36 +123,50 @@ need a function change is asked first. The theme file (T010) is the one exceptio
 
 ### Tests for Step 2
 
-- [ ] T018 [P] [US1] tests/unit/test_view.py: `sort_group`, `row_cells` (badge, need text, current text, HS code,
-  Conf.) and the counts. The HS code is the dotted HS-6 before a decision and today's 8- or 10-digit display after it
-- [ ] T019 [P] [US1] tests/ui/test_main_page.py:
+- [X] T018 [P] [US1] tests/unit/test_view.py: `sort_group`, `row_cells` (badge, need text, current text, HS code,
+  Conf.) and the counts. The HS code is the dotted HS-6 before a decision and today's 8- or 10-digit display after it.
+  Also, from the Step 1 review: the Origin list with TARIC's six codes outside ISO, and the status line naming the
+  file
+- [X] T019 [P] [US1] tests/ui/test_main_page.py:
   - the counts row: three bordered cards with coloured counts, "Accept all K ready", "Download CSV" and "JSON";
   - the list order and the 50-line pages;
   - the row cells.
-- [ ] T020 [P] [US2] tests/ui/test_main_page.py: the open line's blocks for each kind: an HS-6 to choose, a CN-8 to
+- [X] T020 [P] [US2] tests/ui/test_main_page.py: the open line's blocks for each kind: an HS-6 to choose, a CN-8 to
   pick, a subdivision to pick, ready, accepted, and ask
-- [ ] T021 [P] [US2] tests/ui/test_main_page.py: a radio choice then "Accept" updates the export: `decided_code` and
-  `route_set_by` "clerk", plus `clerk_changed` if FR-013 is confirmed (a new test of FR-017)
-- [ ] T022 [P] [US2] tests/ui/test_main_page.py: "Re-check this line" on an edited description re-checks that line
+- [X] T021 [P] [US2] tests/ui/test_main_page.py: a radio choice then "Accept" updates the export: `decided_code`,
+  `route_set_by` "clerk" and `clerk_changed` true (a new test of FR-017)
+- [X] T022 [P] [US2] tests/ui/test_main_page.py: "Re-check this line" on an edited description re-checks that line
   only and changes only its row (a new test of FR-017)
-- [ ] T023 [P] [US4] tests/ui/test_main_page.py: "Ask shipper" on a row adds the line to the draft; the draft section
+- [X] T023 [P] [US4] tests/ui/test_main_page.py: "Ask shipper" on a row adds the line to the draft; the draft section
   shows its count and each red line's update field (a new test of FR-017)
-- [ ] T024 [P] tests/unit: `clerk_changed` in the CSV and the JSON downloads, only if the author confirms FR-013
+- [X] T024 [P] tests/unit: `clerk_changed` in the CSV and the JSON downloads (FR-013, confirmed after Step 1)
 
 ### Implementation for Step 2
 
-- [ ] T025 [US1] ui/view.py: `sort_group`, `row_cells`, the need text and the block texts, with no Streamlit import
-- [ ] T026 [US1] ui/main_page.py: the counts row: three `st.container(border=True)` cards with the counts in `:green`,
+- [X] T025 [US1] ui/view.py: `sort_group`, `row_cells`, the need text and the block texts, with no Streamlit import;
+  the six TARIC-only Origin codes; the file name in the status line
+- [X] T026 [US1] ui/main_page.py: the counts row: three `st.container(border=True)` cards with the counts in `:green`,
   `:orange` and `:red` markdown, then "Accept all K ready", "Download CSV" and "JSON"
-- [ ] T027 [US1] ui/table.py: rows from `st.columns` with `st.badge` and the "HS code" column; the sort; 50 lines per
-  page; the open line in an `st.expander`
-- [ ] T028 [US2] ui/expand.py: blocks 1 to 4 and the decision buttons on today's callbacks (D5, D6, D7, Q1)
-- [ ] T029 [US4] ui/main_page.py: the shipper email draft section with each red line's update field (D18)
-- [ ] T030 Ask the author first, because of the hard rule. If FR-013 is confirmed, add `clerk_changed` in the UI's
-  downloads (ui/), built from the store's export rows and the line versions; `agent/store.py` is not changed
-- [ ] T031 tests/ui/*: rewrite the existing table, row, summary, email and export tests to the new layout, keeping
-  each test's intent
-- [ ] T032 Run `pytest -q`, then commit "feat(012): step 2, results"
+- [X] T027 [US1] ui/table.py: rows from `st.columns` with `st.badge` and the "HS code" column; the sort; 50 lines per
+  page; the open line in an `st.expander`. Each row is a keyed container (`line_{n}`); the need or current description
+  is a caption, as in the picture; a line that opens by itself shows its page
+- [X] T028 [US2] ui/expand.py: blocks 1 to 4 and the decision buttons on today's callbacks (D5, D6, D7, Q1). Done on
+  2026-10-29:
+  - "Change the code at" offers CN-8 and TARIC-10 only; the HS-6 changes through block 2 (`view.change_forms` follows);
+  - a candidate's label is its subheading's, after its heading's when it alone says little ("Other"), cut at 100
+    characters;
+  - a red line's reason and question (with its copy button) are in block 1; "Accept" shows its lock reason, and "Ask
+    shipper" is disabled because the line asks already.
+- [X] T029 [US4] ui/main_page.py: the shipper email draft section with each red line's update field (D18): each line
+  with a question in the draft, its field fitted to its text
+- [X] T030 `clerk_changed` in the UI's downloads (ui/view.py, ui/main_page.py), built from the store's export rows and
+  the line versions; `agent/store.py` is not changed (FR-013, confirmed by the author after Step 1)
+- [X] T031 tests/ui/*: rewrite the existing table, row, summary, email and export tests to the new layout, keeping
+  each test's intent. "Accept n selected" is gone with its test (D8). tests/ui/test_response_time.py and
+  tests/eval/walkthrough.py use "Accept" and "Ask shipper" (offline walkthrough: 57 clerk actions, all 12 lines
+  accepted, no failure). `view.summary_text`, `split_bar`, `accept_selected_label`, `email_label`,
+  `candidates_line` and the status dots went with the elements they served, with their unit tests
+- [X] T032 Run `pytest -q`, then commit "feat(012): step 2, results"
 
 **Checkpoint**: the clerk can check, read and decide every line on the new page.
 
@@ -167,11 +181,13 @@ need a function change is asked first. The theme file (T010) is the one exceptio
 - [ ] T036 README.md: "What the clerk sees" for the new layout
 - [ ] T037 Run `pytest -q`, including tests/ui/test_response_time.py (SC-007), then commit "feat(012): step 3,
   polish"
+- [ ] T038 Constitution 1.8.1 (PATCH), at the end of Step 3 when the wording is final: the four remaining "summary bar"
+  and "decision table" mentions follow the 012 layout (`/speckit-constitution`)
 
 ---
 
 ## Dependencies & Execution Order
 
-- T004 comes before any code (T010 onwards). T005 came before T020 and T028. T030 waits for the author.
+- T004 comes before any code (T010 onwards). T005 came before T020 and T028. T038 comes last.
 - Within each step, the tests come before the code.
 - Step 1 comes before Step 2, and Step 2 before Step 3. Each step ends with its own commit. Nothing is merged.

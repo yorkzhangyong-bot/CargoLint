@@ -1,5 +1,7 @@
-"""The decision table (feature 005, contracts/ui.md §4): one row per line, built from the view module, in file order
-and in pages of 25. A row opens in place under itself; grey rows do not open."""
+"""The list (feature 012, FR-009 to FR-011; feature 005's decision table before it): one row per line, built from
+columns and a status badge, sorted ask shipper → review → ready, then the accepted lines and the lines still being
+checked, 50 a page. The open line unfolds in an expander under its row; a line still being checked does not open.
+Every cell comes from ui/view.py."""
 from __future__ import annotations
 
 import math
@@ -9,75 +11,66 @@ import streamlit as st
 
 from ui import expand, view
 
-PAGE_SIZE = 25
-COLS = [0.32, 0.38, 3.3, 1.35, 2.25, 0.85]
-HEADERS = ("✓", "#", "Description", "Code", "Status", "Action")
-EMPTY = "No lines yet — drop a file or type one description"
+PAGE_SIZE = 50
+COLS = [0.45, 1.25, 3.2, 2.6, 1.4, 0.7]
+HEADERS = ("#", "Status", "Description", "Need / description", "HS code", "Conf.")
+SHOW = "show_open_line"          # set when a line opens by itself: the list shows that line's page once
 
 
 def _toggle(line_no: int) -> None:
     current = st.session_state.get("selected_line_no")
-    expand.forget(current)        # a row opens again on its pre-selection
+    expand.forget(current)        # a line opens again on its pre-selection
     expand.forget(line_no)
     st.session_state["selected_line_no"] = None if current == line_no else line_no
 
 
-def render_header() -> None:
-    for col, name in zip(st.columns(COLS, vertical_alignment="bottom"), HEADERS):
-        col.caption(f"**{name}**")
+def _folded(line_no: int) -> None:
+    """The open line's expander was folded: the line closes, as a click on its description does."""
+    if not st.session_state.get(f"row_{line_no}"):
+        expand.forget(line_no)
+        if st.session_state.get("selected_line_no") == line_no:
+            st.session_state["selected_line_no"] = None
+
+
+def _row(store: Any, line: Any, status: view.LineStatus, selected: str | None) -> None:
+    n = line.line_no
+    cells = view.row_cells(store, line, status, selected)
+    with st.container(key=f"line_{n}"):
+        c = st.columns(COLS, vertical_alignment="center")
+        c[0].markdown(f"{n}")
+        c[1].badge(cells.badge, color=cells.colour, help=view.md_escape(status.text))
+        text = view.md_escape(cells.filed) or "_(no readable text)_"
+        if status.colour == "grey":
+            c[2].markdown(text)
+        else:
+            c[2].button(text, key=f"open_{n}", type="tertiary", on_click=_toggle, args=(n,), help="Open the line")
+        c[3].caption(view.md_escape(cells.need))
+        c[4].markdown(f"`{cells.code}`" if cells.code != "—" else "—")
+        if cells.note:
+            c[4].caption(cells.note)
+        c[5].markdown(cells.conf)
 
 
 def render(store: Any, kb: Any, statuses: dict[int, view.LineStatus]) -> None:
-    render_header()
-    lines = store.lines if store.has_shipment() else []
-    if not lines:
-        st.caption(EMPTY)
-        return
+    lines = sorted(store.lines, key=lambda l: (view.sort_group(statuses[l.line_no]), l.line_no))
     pages = max(1, math.ceil(len(lines) / PAGE_SIZE))
+    selected = st.session_state.get("selected_line_no")
+    if st.session_state.pop(SHOW, False):
+        at = next((i for i, l in enumerate(lines) if l.line_no == selected), None)
+        if at is not None:
+            st.session_state["table_page"] = at // PAGE_SIZE + 1
     page = min(max(int(st.session_state.get("table_page") or 1), 1), pages)
+    st.markdown(f"**Lines (sorted: ask shipper → review → ready)** · Page {page} of {pages}")
+    for col, name in zip(st.columns(COLS, vertical_alignment="bottom"), HEADERS):
+        col.caption(f"**{name}**")
     for line in lines[(page - 1) * PAGE_SIZE: page * PAGE_SIZE]:
-        status = statuses[line.line_no]
-        _row(store, line, status)
-        if st.session_state.get("selected_line_no") == line.line_no and status.colour != "grey":
-            _open_row(store, kb, line, status)
+        n, status = line.line_no, statuses[line.line_no]
+        is_open = selected == n and status.colour != "grey"
+        _row(store, line, status, expand.selected_code(line) if is_open else None)
+        if is_open:
+            label = f"Line {n} · {view.md_escape(view.cut(line.current.display_text, 80))}"
+            with st.expander(label, expanded=True, key=f"row_{n}", on_change=_folded, args=(n,)):
+                expand.render(store, kb, line, status)
     if pages > 1:
-        st.segmented_control("Page", list(range(1, pages + 1)), key="table_page", default=1, required=True)
-
-
-def _accept_cell(col: Any, line: Any, status: view.LineStatus) -> None:
-    """The Accept control: enabled on Ready rows for "Accept n selected" (FR-006); locked on red rows, with the lock
-    reason as its help (FR-011); empty otherwise."""
-    if status.selectable:
-        col.checkbox("Accept", key=f"accept_{line.line_no}", label_visibility="collapsed",
-                     help="Tick to accept this line with the other ticked Ready lines")
-    elif status.lock_reason:
-        col.checkbox("Accept", key=f"accept_{line.line_no}", disabled=True, help=view.md_escape(status.lock_reason),
-                     label_visibility="collapsed")
-
-
-def _row(store: Any, line: Any, status: view.LineStatus) -> None:
-    n = line.line_no
-    c = st.columns(COLS, vertical_alignment="center")
-    _accept_cell(c[0], line, status)
-    c[1].markdown(f"**{n}**")
-    text = view.md_escape(line.current.display_text) or "_(no readable text)_"
-    if status.colour == "grey":
-        c[2].markdown(text)
-    else:
-        c[2].button(text, key=f"open_{n}", type="tertiary", on_click=_toggle, args=(n,), help="Open the line")
-    if status.lock_reason:
-        c[2].caption(f":material/lock: {view.md_escape(status.lock_reason)}")
-    code = view.code_display(store, line)
-    c[3].markdown(f"`{code.text}`")
-    if code.note:
-        c[3].caption(code.note)
-    c[4].markdown(f"{status.dot} {view.md_escape(status.text)}")
-    if status.action:
-        c[5].button(status.action, key=f"act_{n}", on_click=_toggle, args=(n,))
-
-
-def _open_row(store: Any, kb: Any, line: Any, status: view.LineStatus) -> None:
-    with st.container(border=True):
-        top = st.columns([6, 1])
-        top[1].button("▲ close", key=f"close_{line.line_no}", type="tertiary", on_click=_toggle, args=(line.line_no,))
-        expand.render(store, kb, line, status)
+        st.session_state["table_page"] = page        # within range for this shipment
+        st.segmented_control("Page", list(range(1, pages + 1)), key="table_page", required=True)

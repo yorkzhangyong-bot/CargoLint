@@ -130,10 +130,11 @@ README.md                # Step 3: "What the clerk sees"
    - "Check all lines" starts the check through the existing `upload.begin` and `runner.start_check`.
 3. **Single line.** A text field and "Check this line" call the existing `runner.check_typed_line`. When the line's
    job ends, `selected_line_no` is set to it, so its row opens.
-4. **Status line.** A new `view.status_line` builds "Checked N lines in T s · model: <model>" from `view.summary` and
-   the settings. The checking state, the queue and the job messages come from today's runner functions.
+4. **Status line.** A new `view.status_line` builds "Checked N lines of <file name> in T s · model: <model>" from
+   `view.summary`, the shipment's file and the settings. The checking state, the queue and the job messages come from today's runner functions.
 5. **Origin box.** `st.container(border=True)` on the right of the title holds an `st.selectbox` over a static list of
-   ISO two-letter codes in `ui/view.py`, which filters as the clerk types; the default is CN. Its callback is today's
+   ISO two-letter codes and TARIC's six country codes outside ISO (XC, XI, XK, XL, XS, XU) in `ui/view.py`, which
+   filters as the clerk types; the default is CN. Its callback is today's
    origin callback, which calls `apply_taric_origin` and shows the toast. The caption is the one of D1. There is no
    store change.
 6. **Counts row.** One horizontal container holds:
@@ -197,10 +198,10 @@ README.md                # Step 3: "What the clerk sees"
     - the caption "n questions ready for the shipper";
     - today's `shipper_email.draft` in `st.code`;
     - each red line's update field and "Re-check this line", the block 1 function under its own key prefix.
-16. **`clerk_changed`, pending (FR-013).** It would be true when any version of the line was created by the clerk's
-    edit (`CreatedBy.clerk`), or the clerk decided or confirmed a code on the current version. Under the hard rule it
-    could only be added by the UI's downloads in `ui/`, from the store's export rows and the line versions; the author
-    confirms before Step 2.
+16. **`clerk_changed` (FR-013, confirmed after Step 1).** True when any version of the line was created by the clerk's
+    edit (`CreatedBy.clerk`), or the export row's `route_set_by` is "clerk": the store records a clerk decision for an
+    HS-6 decision, a CN-8 or TARIC-10 confirmation and a question sent to the shipper. `view.export_csv` and
+    `view.export_json` add it to the store's export rows in `ui/`; `agent/store.py` does not change.
 17. **Admin page.** `st.segmented_control("Section", SECTIONS, key="admin_section", default="Rules", required=True)`
     at the top of the page, keeping today's session persistence, instead of `st.sidebar.radio`.
 18. **Advanced link.** At the bottom of the main page: `st.page_link(admin_page, label="Advanced: Ask the agent ·

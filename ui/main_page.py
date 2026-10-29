@@ -1,7 +1,8 @@
 """The main page, the clerk's one page (feature 012, spec FR-002 to FR-014; feature 005, contracts/ui.md §2 to §7, before
-it): no sidebar and no chat. The header with the Origin box, the two input tabs and the status line, then the summary
-bar over the decision table with the buttons under it, and the "Advanced" link at the bottom. Every count, route and
-code comes from the line store through ui/view.py; the model is reached only through background jobs (ui/runner.py)."""
+it): no sidebar and no chat. The header with the Origin box, the two input tabs and the status line, then the counts
+row, the sorted list with the open line, the shipper email draft, and the "Advanced" link at the bottom. Every count,
+route and code comes from the line store through ui/view.py; the model is reached only through background jobs
+(ui/runner.py)."""
 from __future__ import annotations
 
 import re
@@ -21,12 +22,13 @@ ORIGIN_CAPTION = "duty and measures for goods from this country · change → re
 ADVANCED = "Advanced: Ask the agent · paste shipper reply · audit trail · Admin"
 
 
-def _flip(flag: str) -> None:
-    st.session_state[flag] = not st.session_state.get(flag, False)
-
-
 def _line_count(store: Any) -> int:
     return len(store.lines) if store.has_shipment() else 0
+
+
+def _file_name(store: Any) -> str | None:
+    source = store.shipment.source if store.has_shipment() else None
+    return source.name if source is not None else (st.session_state.get("uploaded_file") or {}).get("name")
 
 
 # --------------------------------------------------------------------------- header (FR-003)
@@ -90,6 +92,7 @@ def _open_typed_line(job: Any) -> None:
     if job.kind == "check" and not job.file_ref and job.new_line_nos and len(job.new_line_nos) == 1:
         expand.forget(st.session_state.get("selected_line_no"))
         st.session_state["selected_line_no"] = job.new_line_nos[0]
+        st.session_state[table.SHOW] = True
 
 
 # --------------------------------------------------------------------------- status line (FR-007, D10)
@@ -99,7 +102,7 @@ def _checking() -> bool:
 
 
 def _status(store: Any, s: view.Summary, messages: list[tuple[str, str]]) -> None:
-    """The running check, else the lines checked, their time and the model; then the queue and the job messages."""
+    """The running check, else the lines checked, their file, time and model; then the queue and the job messages."""
     model = get_settings().chat_model
     if _checking():
         job = runner.current_job()
@@ -107,7 +110,7 @@ def _status(store: Any, s: view.Summary, messages: list[tuple[str, str]]) -> Non
         text = view.status_line(s, model, checking=len(job.new_line_nos) if job.new_line_nos else s.lines,
                                 elapsed=job.elapsed, file_name=name)
     else:
-        text = view.status_line(s, model)
+        text = view.status_line(s, model, file_name=_file_name(store))
     if text:
         st.caption(view.md_escape(text))
     for entry in runner.queue():
@@ -122,57 +125,54 @@ def _status(store: Any, s: view.Summary, messages: list[tuple[str, str]]) -> Non
         getattr(st, level)(view.md_escape(text))
 
 
-# --------------------------------------------------------------------------- summary, table and buttons (§3, §4, §7)
+# --------------------------------------------------------------------------- counts row and email draft (FR-008, FR-012)
 def _accept(store: Any, line_nos: list[int] | None) -> None:
     actions.accept_ready(store, line_nos)
 
 
-def _summary(store: Any, statuses: dict[int, view.LineStatus]) -> None:
-    s = view.summary(store, statuses)
-    checking = _checking()
-    if not checking:   # while a check runs, the status line says so
-        st.markdown(view.summary_text(s))
-    bar = view.split_bar(s)
-    if bar:
-        st.markdown(bar)
-    if checking:
-        return
-    selected = [n for n, status in statuses.items() if status.selectable and st.session_state.get(f"accept_{n}")]
-    c = st.columns([1.3, 1.3, 3])
-    if s.to_accept:
-        c[0].button(view.accept_all_label(s.to_accept), key="accept_all", type="primary", on_click=_accept,
-                    args=(store, None))
-    if selected:
-        c[1].button(view.accept_selected_label(len(selected)), key="accept_selected", on_click=_accept,
-                    args=(store, selected))
-
-
-def _email(store: Any, kb: Any, c: int) -> None:
-    """The draft under the button row (FR-020, FR-021): string templates, to copy; nothing is sent or stored."""
-    with st.container(border=True):
-        st.markdown(f"**Email to shipper — generated from the {c} open question{'' if c == 1 else 's'}, no model call**")
-        lang = st.segmented_control("Language", ["EN", "中文"], key="email_lang", default="EN", required=True,
-                                    label_visibility="collapsed")
-        st.caption(":material/content_copy: Copy email — the copy button at the top right of the text")
-        st.code(shipper_email.draft(store, kb, "zh" if lang == "中文" else "en").text, language=None, wrap_lines=True)
-
-
-def _buttons(store: Any, kb: Any, ask: int) -> None:
-    row = st.columns([1, 1, 3.6])
+def _counts(store: Any, kb: Any, s: view.Summary) -> None:
+    """Three bordered cards with coloured counts, "Accept all K ready" and the downloads, which add `clerk_changed`
+    to the store's export (FR-013). Nothing is accepted or downloaded while a check runs."""
     checking = _checking()
     wait = WAIT if checking else None
-    row[0].download_button("Export CSV", store.to_csv_bytes(), file_name=store.export_filename("csv"), mime="text/csv",
-                           key="export_csv", disabled=checking, help=wait, on_click="ignore")
-    row[1].download_button("Export JSON", store.to_json_bytes(knowledge_base_updated=kb.updated),
-                           file_name=store.export_filename("json"), mime="application/json", key="export_json",
-                           disabled=checking, help=wait, on_click="ignore")
-    row[2].button(view.email_label(ask), key="email_button", on_click=_flip, args=("email_open",), disabled=not ask)
-    if ask and st.session_state.get("email_open"):
-        _email(store, kb, ask)
+    c = st.columns([1, 1, 1, 1.25, 1.05], vertical_alignment="center")
+    for col, key, (label, colour, count) in zip(c, ("count_ready", "count_review", "count_ask"), view.count_cards(s)):
+        with col.container(border=True, key=key):
+            st.caption(label)
+            st.subheader(f":{colour}[{count}]", anchor=False)
+    if s.to_accept and not checking:
+        c[3].button(view.accept_all_label(s.to_accept), key="accept_all", width="stretch", on_click=_accept,
+                    args=(store, None))
+    c[4].download_button("Download CSV", view.export_csv(store), file_name=store.export_filename("csv"),
+                         mime="text/csv", key="export_csv", width="stretch", disabled=checking, help=wait,
+                         on_click="ignore")
+    c[4].download_button("JSON", view.export_json(store, kb.updated), file_name=store.export_filename("json"),
+                         mime="application/json", key="export_json", type="tertiary", disabled=checking, help=wait,
+                         on_click="ignore")
+
+
+def _draft(store: Any, kb: Any, s: view.Summary) -> None:
+    """The shipper email draft under the list (FR-012, D18): string templates to copy, in English or Chinese; nothing is
+    sent or stored. Under it, each asking line's update field and "Re-check this line"."""
+    if not s.ask:
+        return
+    with st.container(horizontal=True, vertical_alignment="center"):
+        st.markdown("**Shipper email draft** ·", width="content")
+        lang = st.segmented_control("Language", ["EN", "中文"], key="email_lang", default="EN", required=True,
+                                    label_visibility="collapsed")
+    draft = shipper_email.draft(store, kb, "zh" if lang == "中文" else "en")
+    q = len(draft.line_nos)
+    st.caption(f"{q} question{'' if q == 1 else 's'} ready for the shipper")
+    st.caption(":material/content_copy: Copy email — the copy button at the top right of the text")
+    st.code(draft.text, language=None, wrap_lines=True)
+    for n in draft.line_nos:
+        line = store.get_line(n)
+        st.markdown(f"**Line {n}** · {view.md_escape(line.versions[0].display_text)}")
+        expand.description(store, kb, line, prefix="draft_")
 
 
 def _live(store: Any, kb: Any, messages: list[tuple[str, str]]) -> None:
-    """The status line, the summary, the table and the blocks under it, in one fragment that refreshes every second
+    """The status line, the counts row, the list and the email draft, in one fragment that refreshes every second
     while a job runs or waits; when a job starts or ends, or lines appear, the whole page renders again."""
     live = runner.occupied() or bool(runner.queue())
     count = _line_count(store)
@@ -185,12 +185,13 @@ def _live(store: Any, kb: Any, messages: list[tuple[str, str]]) -> None:
             st.rerun()
         statuses = {l.line_no: view.line_status(store, l, runner.line_activity(l.line_no)) for l in store.lines} \
             if count else {}
-        _status(store, view.summary(store, statuses), messages)
+        s = view.summary(store, statuses)
+        _status(store, s, messages)
         if not count:
             return
-        _summary(store, statuses)
+        _counts(store, kb, s)
         table.render(store, kb, statuses)
-        _buttons(store, kb, view.summary(store, statuses).ask)
+        _draft(store, kb, s)
 
     _part()
 

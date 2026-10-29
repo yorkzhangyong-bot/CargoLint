@@ -29,9 +29,8 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "tests" / "eval" / "walkthrough.json"
 LIMIT_S = 1.0
-FORMS = {"a_hs6": "hs6", "a_cn8": "cn8", "b": "taric10"}
 
-# The shipper's answers for the red lines of the sample, which the clerk types before "Re-check line".
+# The shipper's answers for the red lines of the sample, which the clerk types before "Re-check this line".
 ANSWERS = {
     1: "Steel bobbin cases for industrial sewing machines",       # 配件 / Parts
     2: "LED desk lamp, USB powered, plastic housing",             # its CN-8 depends on the material, once its HS-6 is chosen
@@ -133,9 +132,6 @@ class Walk:
 
         return {line.line_no: view.line_status(self.store, line) for line in self.store.lines}
 
-    def key(self, n: int, kind: str) -> str:
-        return f"{n}_{self.store.get_line(n).current.version_no}_{kind}_{FORMS[kind]}"
-
     def accept_ready(self, step: str) -> None:
         if any(b.key == "accept_all" for b in self.at.button):
             label = self.at.button(key="accept_all").label
@@ -149,16 +145,14 @@ class Walk:
                 return
             n, status = yellow[0]
             self.act(step, f"open line {n} ({status.text})", lambda: self.at.button(key=f"open_{n}").click().run(), n)
-            confirm = f"confirm_{self.key(n, status.kind)}"
-            label = self.at.button(key=confirm).label
-            self.act(step, f"{label} (line {n})", lambda: self.at.button(key=confirm).click().run(), n)
+            accept = f"accept_{n}_{self.store.get_line(n).current.version_no}"
+            self.act(step, f"Accept (line {n})", lambda: self.at.button(key=accept).click().run(), n)
             self.run_jobs(step)
         raise RuntimeError("yellow lines did not settle")
 
     def draft_email(self, step: str) -> None:
-        if self.at.button(key="email_button").disabled:
+        if not any(s.key == "email_lang" for s in self.at.segmented_control):   # no line asks the shipper
             return
-        self.act(step, self.at.button(key="email_button").label, lambda: self.at.button(key="email_button").click().run())
         self.act(step, "中文", lambda: self.at.segmented_control(key="email_lang").set_value("中文").run())
 
     def answer_red(self, step: str) -> None:
@@ -172,7 +166,7 @@ class Walk:
                                  "seconds": 0.0})
             self.act(step, f"type the shipper's answer (line {n})",
                      lambda: self.at.text_area(key=f"edit_{n}_{vn}").set_value(answer).run(), n, kind="input")
-            self.act(step, f"Re-check line {n}", lambda: self.at.button(key=f"recheck_{n}_{vn}").click().run(), n)
+            self.act(step, f"Re-check this line (line {n})", lambda: self.at.button(key=f"recheck_{n}_{vn}").click().run(), n)
             self.run_jobs(step)
 
     def export(self, step: str) -> None:

@@ -114,31 +114,69 @@ def test_nothing_from_fr002_on_the_main_page(kb, recorder):
     assert not any("%" in r for r in rows)
 
 
-# --------------------------------------------------------------------------- US1: the table (FR-007 to FR-011)
-def test_rows_codes_statuses_and_actions(kb, recorder):
+# --------------------------------------------------------------------------- feature 012, Step 2: the list (FR-009, FR-010)
+HEADERS = ("#", "Status", "Description", "Need / description", "HS code", "Conf.")
+LIST_HEAD = "**Lines (sorted: ask shipper → review → ready)** · Page {} of {}"
+
+
+def keyed(node, key):
+    """The keyed container `key` under `node`; AppTest keeps the key at the end of the block's id."""
+    for child in getattr(node, "children", {}).values():
+        if child.type == "flex_container" and child.proto.id.endswith(f"-{key}"):
+            return child
+        found = keyed(child, key)
+        if found is not None:
+            return found
+    return None
+
+
+def row_of(at, n) -> SimpleNamespace:
+    """Line n's row: the line number, the badge and its tooltip, the need or current description, the HS code and its
+    note, Conf., and the description's open button."""
+    block = keyed(at.main, f"line_{n}")
+    assert block is not None, f"no row for line {n}"
+    md = list(block.markdown)
+    badge = next(m for m in md if "-badge[" in m.value)
+    rest = [plain(m.value) for m in md if m is not badge]
+    captions = [plain(c.value) for c in block.caption]               # the need or current description, then the note
+    return SimpleNamespace(no=rest[0], badge=badge.value, help=plain(badge.proto.help), need=captions[0], code=rest[-2],
+                           conf=rest[-1], note=captions[1:], open=[b for b in block.button if b.key == f"open_{n}"])
+
+
+def cells_of(at, n) -> tuple:
+    r = row_of(at, n)
+    return r.no, r.badge, r.help, r.need, r.code, r.conf, r.note
+
+
+def expected_cells(store, n, selected=None) -> tuple:
+    """What view.row_cells says line n's row shows (FR-010)."""
+    line = store.get_line(n)
+    s = view.line_status(store, line)
+    c = view.row_cells(store, line, s, selected)
+    return (str(n), f":{c.colour}-badge[{c.badge}]", s.text, c.need, f"`{c.code}`" if c.code != "—" else "—", c.conf,
+            [c.note] if c.note else [])
+
+
+def open_order(at) -> list[int]:
+    return [int(b.key[5:]) for b in at.button if b.key and re.fullmatch(r"open_\d+", b.key)]
+
+
+def line_rows(at) -> list:
+    return [e for e in at.expander if e.label.startswith("Line ")]
+
+
+def test_the_list_sorted_with_its_rows(kb, recorder):
     (store, nos), _ = h.all_states(kb)
-    extra = h._add(store, "Ceramic coffee mugs")                    # line 26: a second page of 25 rows
-    h._check(store, kb, extra)
-    h._classify(store, extra, [])                                    # the fake judge: vague, so a red row with a button
     at = h.app(store, kb).run()
     assert not at.exception
-    assert at.segmented_control(key="table_page").options == ["1", "2"]
-    keys = [b.key for b in at.button if b.key and re.fullmatch(r"open_\d+", b.key)]
-    order = [int(k.split("_")[1]) for k in keys]
-    assert order == sorted(order)                                    # file order
     page = texts(at)
+    assert LIST_HEAD.format(1, 1) in page and all(f"**{name}**" in page for name in HEADERS)
+    statuses = {l.line_no: view.line_status(store, l) for l in store.lines}
+    order = sorted(statuses, key=lambda n: (view.sort_group(statuses[n]), n))   # ask shipper, review, ready, accepted
+    assert open_order(at) == [n for n in order if statuses[n].colour != "grey"]  # grey rows do not open
     for name, n in nos.items():
-        line = store.get_line(n)
-        s = view.line_status(store, line)
-        code = view.code_display(store, line)
-        assert f"`{code.text}`" in page, name
-        assert f"{s.dot} {s.text}" in page, name
-        if s.action:
-            assert at.button(key=f"act_{n}").label == s.action, name
-        else:
-            assert not [b for b in at.button if b.key == f"act_{n}"], name
-    assert not [b for b in at.button if b.key == f"open_{nos['pending']}"]                  # grey rows do not open
-    assert not [b for b in at.button if b.key == f"open_{extra}"]                           # on page 2
+        assert cells_of(at, n) == expected_cells(store, n), name
+        assert bool(row_of(at, n).open) is (statuses[n].colour != "grey"), name
     store2, _ = h.store_with("ready", kb=kb)
     weird = h._add(store2, "[click](https://x.test)")
     h._check(store2, kb, weird)
@@ -147,18 +185,38 @@ def test_rows_codes_statuses_and_actions(kb, recorder):
     assert at2.button(key=f"open_{weird}").label == r"\[click\]\(https\://x\.test\)"    # escaped, never a link
 
 
-def test_opening_and_closing_a_row(kb, recorder):
-    store, nos = h.store_with("review", "ready", kb=kb)
+def test_fifty_lines_a_page(kb, recorder):
+    store = h._store()
+    for i in range(51):
+        h._add(store, f"Ceramic coffee mugs, lot {i + 1}")
     at = h.app(store, kb).run()
-    at.button(key=f"open_{nos['review']}").click().run()
-    assert at.session_state["selected_line_no"] == nos["review"]
-    assert at.button(key=f"close_{nos['review']}").label == "▲ close"
-    at.button(key=f"act_{nos['review']}").click().run()              # choosing it again closes it
-    assert at.session_state["selected_line_no"] is None
-    assert not [b for b in at.button if b.key == f"close_{nos['review']}"]
+    assert at.segmented_control(key="table_page").options == ["1", "2"]
+    assert LIST_HEAD.format(1, 2) in texts(at)
+    assert keyed(at.main, "line_50") is not None and keyed(at.main, "line_51") is None
+    at.segmented_control(key="table_page").set_value(2).run()
+    assert LIST_HEAD.format(2, 2) in texts(at)
+    assert keyed(at.main, "line_51") is not None and keyed(at.main, "line_1") is None
+    at.segmented_control(key="table_page").set_value(1).run()
+    at.session_state["selected_line_no"] = 51                        # a line that opens by itself shows its page
+    at.session_state["show_open_line"] = True
+    at.run()
+    assert LIST_HEAD.format(2, 2) in texts(at)
 
 
-# --------------------------------------------------------------------------- US1: live check and summary (FR-004, FR-005)
+def test_opening_and_closing_a_line(kb, recorder):
+    store, nos = h.store_with("review", "ready", kb=kb)
+    n, m = nos["review"], nos["ready"]
+    at = h.app(store, kb).run()
+    at.button(key=f"open_{n}").click().run()
+    assert at.session_state["selected_line_no"] == n
+    assert [plain(e.label) for e in line_rows(at)] == [f"Line {n} · {store.get_line(n).current.display_text}"]
+    at.button(key=f"open_{m}").click().run()                         # one line open at a time
+    assert [plain(e.label) for e in line_rows(at)] == [f"Line {m} · {store.get_line(m).current.display_text}"]
+    at.button(key=f"open_{m}").click().run()                         # its description again closes it
+    assert at.session_state["selected_line_no"] is None and not line_rows(at)
+
+
+# --------------------------------------------------------------------------- US1: live check, status line and counts (FR-007, FR-008)
 def running_check(**kw) -> Job:
     job = Job(kind="check", message="Check", is_check=True, **kw)
     job.done = False
@@ -173,10 +231,11 @@ def test_a_running_check_shows_grey_rows_and_the_checking_status(kb, recorder):
     at.session_state["job"] = running_check()
     at.run()
     assert not at.exception
-    page = texts(at)
-    assert sum(1 for t in page if t == ":gray[◌] Running stop-word check…") == 3
-    assert any(re.fullmatch(r"Checking 3 lines… \d+ s", t) for t in page)                 # the status line (FR-007)
-    assert not any(t.startswith("3 lines checked in") for t in page)
+    for n in (1, 2, 3):
+        r = row_of(at, n)
+        assert (r.badge, r.help, r.open) == (":gray-badge[Checking…]", "Running stop-word check…", []), n
+    assert any(re.fullmatch(r"Checking 3 lines… \d+ s", t) for t in texts(at))         # the status line (FR-007)
+    assert not [b for b in at.button if b.key == "accept_all"]
 
 
 def test_reading_a_file_shows_its_name_escaped(kb, recorder):
@@ -202,13 +261,19 @@ def test_the_upload_tab_waits_while_any_job_runs(kb, recorder):
     assert not at.text_input(key="single_line").disabled and not at.button(key="check_line").disabled   # it queues
 
 
-def test_summary_after_a_check(kb, recorder):
+def test_the_counts_row(kb, recorder):
     (store, _), _ = h.all_states(kb)
     at = h.app(store, kb).run()
-    statuses = {l.line_no: view.line_status(store, l) for l in store.lines}
-    s = view.summary(store, statuses)
-    page = texts(at)
-    assert view.summary_text(s) in page and view.split_bar(s) in page
+    s = view.summary(store, {l.line_no: view.line_status(store, l) for l in store.lines})
+    for key, (label, colour, count) in zip(("count_ready", "count_review", "count_ask"), view.count_cards(s)):
+        card = keyed(at.main, key)
+        assert card is not None and card.proto.flex_container.border, key                  # a bordered card
+        assert [c.value for c in card.caption] == [label] and [x.value for x in card.subheader] == [f":{colour}[{count}]"]
+    assert at.button(key="accept_all").label == f"Accept all {s.to_accept} ready"
+    downloads = {b.key: b for b in at.get("download_button")}
+    assert (downloads["export_csv"].proto.label, downloads["export_json"].proto.label) == ("Download CSV", "JSON")
+    assert not at.metric and not any("█" in t for t in texts(at))     # no metric, no split bar
+    assert not [c for c in at.checkbox if c.key and c.key.startswith("accept_")]   # D8: no row checkboxes
 
 
 def test_the_status_line_after_a_check(recorder):
@@ -216,8 +281,9 @@ def test_the_status_line_after_a_check(recorder):
     store = h.sample_store(kb)
     at = h.app(store, kb).run()
     statuses = {l.line_no: view.line_status(store, l) for l in store.lines}
-    line = view.status_line(view.summary(store, statuses), get_settings().chat_model)
-    assert re.fullmatch(r"Checked 12 lines in \d+ s · model: \S+", line) and line in texts(at)
+    line = view.status_line(view.summary(store, statuses), get_settings().chat_model, file_name=store.shipment.source.name)
+    assert re.fullmatch(r"Checked 12 lines of sample_packing_list\.xlsx in \d+ s · model: \S+", line)
+    assert line in texts(at)
 
 
 # --------------------------------------------------------------------------- US1, US3: starting checks
@@ -267,7 +333,8 @@ def test_check_a_single_line(kb, recorder):
     recorder.jobs[-1].done = True
     at.run()
     assert not at.exception
-    assert at.session_state["selected_line_no"] == 1 and at.button(key="close_1").label == "▲ close"   # FR-006: open
+    assert at.session_state["selected_line_no"] == 1                 # FR-006: its row opens
+    assert [plain(e.label) for e in line_rows(at)] == ["Line 1 · Ceramic coffee mugs"]
 
 
 def test_a_single_line_joins_the_open_shipment_or_waits_in_the_queue(kb, recorder):
@@ -303,19 +370,22 @@ def test_a_new_file_on_an_open_shipment_asks_first(kb, recorder):
     assert [j.kind for j in recorder.jobs] == ["check"]
 
 
-# --------------------------------------------------------------------------- US2: kinds (a) and (b) in place (T018)
-def opened(store, kb, n, action=False):
+# --------------------------------------------------------------------------- US2: the open line, blocks 1 to 4 (FR-011, T020)
+BLOCKS = ("**1 Description**", "**2 HS-6 candidates**", "**3 Similar rulings (5 nearest, EBTI)**")
+
+
+def opened(store, kb, n):
     at = h.app(store, kb).run()
-    at.button(key=f"{'act' if action else 'open'}_{n}").click().run()
+    at.button(key=f"open_{n}").click().run()
     assert not at.exception
     return at
 
 
-def keys(store, n, kind, form):
+def keys(store, n) -> SimpleNamespace:
     vn = store.get_line(n).current.version_no
-    base = f"{n}_{vn}_{kind}_{form}"
-    return SimpleNamespace(pick=f"pick_{base}", confirm=f"confirm_{base}", none=f"none_{base}", typed=f"typed_{n}_{vn}",
-                           level=f"change_level_{n}_{vn}")
+    return SimpleNamespace(hs6=f"pick_{n}_{vn}_hs6", typed=f"typed_{n}_{vn}", accept=f"accept_{n}_{vn}",
+                           ask=f"ask_{n}_{vn}", area=f"edit_{n}_{vn}", recheck=f"recheck_{n}_{vn}",
+                           level=f"change_level_{n}_{vn}", base=f"{n}_{vn}")
 
 
 def picks(at, pick):
@@ -329,124 +399,128 @@ def taric_view_of(store, kb, n):
     return line_taric_view(store, kb, n)
 
 
-def candidates_block(at):
-    return [e for e in at.expander if e.label == "HS-6 candidates (model estimate)"]
+def radio_labels(at, key) -> list[str]:
+    return [plain(o) for o in at.radio(key=key).options]
 
 
-def test_kind_a_on_a_review_line(kb, recorder):
+def test_an_hs6_to_choose(kb, recorder):
     store, nos = h.store_with("review", kb=kb)
     n = nos["review"]
     line = store.get_line(n)
     at = opened(store, kb, n)
     page = texts(at)
-    assert all(t in page for t in view.explain_a(store, line, "a_hs6"))
-    assert all(f"**{t}**" in page for t in ("Code", "Description · precedent", "Confidence", "Pick"))
-    assert "model estimate" in page and "Confidence is a model estimate, not a calibrated probability." in page
-    for r in view.hs6_rows(store, line):
-        assert f"`{r.code}`" in page and r.rationale in page
-        assert " › " in r.description and any(t.startswith(r.description) for t in page)   # heading › subheading
-    assert sum(1 for t in page if ":gray-badge[history only]" in t) == 1
+    assert all(b in page for b in BLOCKS) and "**4 Tariff (Origin CN)**" in page
+    assert f"Original: {line.versions[0].display_text} · Stop-word check: none found" in page
+    k = keys(store, n)
+    rows = view.hs6_rows(store, line)
+    assert at.radio(key=k.hs6).value == "9405.21"                    # the top candidate
+    assert radio_labels(at, k.hs6) == [view.candidate_label(r) + (" :gray-badge[history only]" if r.history_only else "")
+                                       for r in rows] + ["Other HS-6 code…"]
+    assert sum(1 for label in radio_labels(at, k.hs6) if label.endswith(":gray-badge[history only]")) == 1
+    assert "Why: matches the subheading 9405.21" in page
+    assert "Confidence is a model estimate, not a calibrated probability." in page
+    assert "No ruling was within the similarity floor." in page      # block 3: no ruling voted
+    assert view.explain_a(store, line, "a_hs6")[1] in page           # why the clerk decides
     rulings = [plain(p.proto.popover.label) for p in at.get("popover") if p.proto.popover.label.startswith("BTI")]
-    assert rulings == ["BTI DE DE-940521-01"]
-    assert page.count("no close precedent") == 2
-    assert [p.proto.text for p in at.get("progress")] == ["58 %", "20 %", "10 %"]
-    k = keys(store, n, "a_hs6", "hs6")
-    assert picks(at, k.pick) == {"9405.21": "◉ Picked", "8543.70": "○ Pick", "9403.60": "○ Pick", "other": "○ Pick"}
-    assert at.button(key=k.confirm).label == "Confirm 9405 21"
-    at.button(key=f"{k.pick}_8543.70").click().run()
-    assert picks(at, k.pick)["8543.70"] == "◉ Picked" and picks(at, k.pick)["9405.21"] == "○ Pick"
-    assert at.button(key=k.confirm).label == "Confirm 8543 70 00"
-    assert "then TARIC-10 runs on this code" in texts(at)
+    assert rulings == ["BTI DE DE-940521-01 · 9405.21"]
+    assert all(f"`{c}` {label}" in page for c, label in view.cn8_lines(store, line, "9405.21"))
+    assert "CN-8 and TARIC-10 follow when you accept this code." in page
+    accept, ask = at.button(key=k.accept), at.button(key=k.ask)
+    assert (accept.label, accept.proto.type, accept.disabled) == ("Accept", "primary", False)
+    assert (ask.label, ask.proto.type, ask.disabled) == ("Ask shipper", "secondary", False)
+    with h.ModelGuard() as guard:
+        at.radio(key=k.hs6).set_value("8543.70").run()               # D5: shown only, nothing written
+    page = texts(at)
+    assert "Why: matches the subheading 8543.70" in page
+    assert all(f"`{c}` {label}" in page for c, label in view.cn8_lines(store, line, "8543.70"))
+    assert (row_of(at, n).code, row_of(at, n).conf) == ("`8543.70`", "20%")
+    assert store.get_line(n).current.decision is None and not recorder.jobs and guard.calls == 0
 
 
-def test_confirm_returns_at_once_and_the_later_steps_run_in_the_background(kb, recorder):
+def test_accept_returns_at_once_and_the_later_steps_run_in_the_background(kb, recorder):
     store, nos = h.store_with("review", kb=kb)
     n = nos["review"]
     at = opened(store, kb, n)
-    k = keys(store, n, "a_hs6", "hs6")
+    k = keys(store, n)
     recorder.keep_running()
     with h.ModelGuard() as guard:
-        at.button(key=f"{k.pick}_8543.70").click().run()
-        at.button(key=k.confirm).click().run()
+        at.radio(key=k.hs6).set_value("8543.70").run()
+        at.button(key=k.accept).click().run()
     assert not at.exception
     d = store.get_line(n).current.decision
     assert (d.route, d.decided_code, d.chosen_how.value) == (DecisionRoute.accepted, "8543.70", "other_candidate")
     assert [(j.kind, j.line_no, j.taric_only) for j in recorder.jobs] == [("finer_codes", n, False)]
-    assert guard.calls == 0
-    assert at.session_state["selected_line_no"] is None
-    assert ":gray[◌] Running CN-8 step…" in texts(at)
+    assert guard.calls == 0 and at.session_state["selected_line_no"] is None and not line_rows(at)
+    assert (row_of(at, n).badge, row_of(at, n).help) == (":gray-badge[Checking…]", "Running CN-8 step…")
     recorder.run(store, kb)
     at.run()
     s = view.line_status(store, store.get_line(n))
-    assert s.colour in ("green", "yellow") and f"{s.dot} {s.text}" in texts(at)
+    assert s.colour in ("green", "yellow") and cells_of(at, n) == expected_cells(store, n)
 
 
 def test_other_hs6_code(kb, recorder):
     store, nos = h.store_with("review", "no_candidate", kb=kb)
     n = nos["review"]
     at = opened(store, kb, n)
-    k = keys(store, n, "a_hs6", "hs6")
+    k = keys(store, n)
     assert not [t for t in at.text_input if t.key == k.typed]
-    at.button(key=f"{k.pick}_other").click().run()
+    at.radio(key=k.hs6).set_value(view.OTHER).run()
     typed = at.text_input(key=k.typed)
     assert typed.placeholder == "e.g. 8452.90" and typed.max_chars == 7
     for bad in ("", "8452", "9999.99"):                              # empty, malformed, not in the nomenclature
         at.text_input(key=k.typed).set_value(bad).run()
-        at.button(key=k.confirm).click().run()
+        at.button(key=k.accept).click().run()
         assert any(t.startswith("Not confirmed: ") for t in texts(at)), bad
         assert store.get_line(n).current.decision is None and not recorder.jobs
     at.text_input(key=k.typed).set_value("8543.70").run()           # equal to a candidate: recorded as that candidate
-    at.button(key=k.confirm).click().run()
+    at.button(key=k.accept).click().run()
     d = store.get_line(n).current.decision
     assert (d.decided_code, d.chosen_how.value) == ("8543.70", "other_candidate")
     assert [j.kind for j in recorder.jobs] == ["finer_codes"]
     m = nos["no_candidate"]                                          # no candidate: typing is the way to decide
     at = opened(store, kb, m)
-    k = keys(store, m, "a_hs6", "hs6")
-    assert picks(at, k.pick) == {"other": "○ Pick"}
-    at.button(key=f"{k.pick}_other").click().run()
+    k = keys(store, m)
+    assert radio_labels(at, k.hs6) == ["Other HS-6 code…"] and at.radio(key=k.hs6).value == view.OTHER
     at.text_input(key=k.typed).set_value("8518.30").run()
-    at.button(key=k.confirm).click().run()
+    at.button(key=k.accept).click().run()
     d = store.get_line(m).current.decision
     assert (d.decided_code, d.chosen_how.value) == ("8518.30", "typed")
     assert [j.kind for j in recorder.jobs] == ["finer_codes", "finer_codes"]
 
 
-def test_none_of_these_asks_the_shipper(kb, recorder):
+def test_ask_shipper_on_a_line_to_review(kb, recorder):
     store, nos = h.store_with("review", kb=kb)
     n = nos["review"]
     at = opened(store, kb, n)
-    k = keys(store, n, "a_hs6", "hs6")
-    assert at.button(key=k.none).label == "None of these → ask shipper"
     with h.ModelGuard() as guard:
-        at.button(key=k.none).click().run()
+        at.button(key=keys(store, n).ask).click().run()
     assert store.get_line(n).current.decision.route == DecisionRoute.ask_shipper
-    assert ":red[●] Ask: what exactly are the goods?" in texts(at)
-    assert not recorder.jobs and guard.calls == 0
+    assert (row_of(at, n).badge, row_of(at, n).help) == (":red-badge[Ask shipper]", "Ask: what exactly are the goods?")
+    assert line_rows(at) and not recorder.jobs and guard.calls == 0  # the line stays open on its question
 
 
 @pytest.mark.parametrize("state", ["cn8_pending", "cn8_error", "cn8_missing", "taric_missing"])
-def test_kind_a_for_a_cn8(kb, recorder, state):
+def test_a_cn8_to_pick(kb, recorder, state):
     store, nos = h.store_with(state, kb=kb)
     n = nos[state]
     line = store.get_line(n)
     at = opened(store, kb, n)
     assert all(t in texts(at) for t in view.explain_a(store, line, "a_cn8"))
-    block = candidates_block(at)
-    assert len(block) == 1 and not block[0].proto.expanded
-    k = keys(store, n, "a_cn8", "cn8")
+    k = keys(store, n)
+    assert at.radio(key=k.hs6).value == store.decided_code(line)[0]
+    pick = f"pick_{k.base}_a_cn8_cn8"
     picked, _ = view.preselect(store, line, "a_cn8", "cn8")
-    assert picks(at, k.pick)[picked] == "◉ Picked" and len(picks(at, k.pick)) == len(view.cn8_rows(store, line))
+    assert picks(at, pick)[picked] == "◉ Picked" and len(picks(at, pick)) == len(view.cn8_rows(store, line))
     estimates = [r for r in view.cn8_rows(store, line) if r.confidence is not None and r.precedent is None]
-    assert texts(at).count("no close precedent") == len(estimates)                # the other CN-8 rows show none
+    assert texts(at).count("no close precedent") == len(estimates)  # the other CN-8 rows show none
     with h.ModelGuard() as guard:
-        at.button(key=k.confirm).click().run()
+        at.button(key=k.accept).click().run()
     assert store.decided_cn8(store.get_line(n)) == picked
     assert [(j.kind, j.taric_only) for j in recorder.jobs] == [("finer_codes", True)]   # view.next_step: "TARIC step"
     assert guard.calls == 0
 
 
-def test_kind_b_on_two_subdivisions(kb, recorder):
+def test_a_subdivision_to_pick(kb, recorder):
     from agent.taric_rules import eu_taric_url
 
     store, nos = h.store_with("taric_two", kb=kb)
@@ -460,48 +534,46 @@ def test_kind_b_on_two_subdivisions(kb, recorder):
     assert all(f"**{t}**" in page for t in ("Code", "Description", "Duty", "Anti-dumping", "Pick"))
     for r in view.subdivision_rows(tv):
         assert f"`{r.code}`" in page and r.duty in page and f":red[{r.anti_dumping}]" in page
-    block = candidates_block(at)
-    assert len(block) == 1 and not block[0].proto.expanded
     measures = [e for e in at.expander if e.label == "All measures"]
     assert len(measures) == 1
     assert [plain(m.value) for m in measures[0].markdown] == ["**Duties** · 1", "**Trade defence** · 2", "**Requirements** · 4"]
     links = {b.proto.label: b.proto.url for b in at.get("link_button")}
-    assert {"EZT-online ↗", "Open in EU TARIC ↗"} <= set(links)       # beside the rulings' "Open ruling ↗"
+    assert {"EZT-online ↗", "Open in EU TARIC ↗"} <= set(links)
     assert links["Open in EU TARIC ↗"] == eu_taric_url("7318155810", "CN", date(2026, 10, 1))
     assert [c.value for c in at.code] == ["7318155810 CN"]
-    k = keys(store, n, "b", "taric10")
-    at.button(key=f"{k.pick}_7318155890").click().run()
+    k = keys(store, n)
+    at.button(key=f"pick_{k.base}_b_taric10_7318155890").click().run()
     assert {b.proto.label: b.proto.url for b in at.get("link_button")}["Open in EU TARIC ↗"] == \
         eu_taric_url("7318155890", "CN", date(2026, 10, 1))
     with h.ModelGuard() as guard:
-        at.button(key=k.confirm).click().run()
+        at.button(key=k.accept).click().run()
     line = store.get_line(n)
     assert store.decided_taric10(line) == "7318155890" and line.current.cn8.written_by.value == "clerk"
     clerk = [r.change.value for r in store.shipment.audit if r.line_no == n and r.actor.value == "clerk"]
     assert clerk[-2:] == ["cn8_written", "taric_written"]
-    assert ":green[●] Accepted" in texts(at)
+    assert row_of(at, n).badge == ":green-badge[Accepted]"
     assert not recorder.jobs and guard.calls == 0
 
 
-def test_kind_b_none_of_these_asks_the_shipper(kb, recorder):
+def test_ask_shipper_at_the_subdivision_step(kb, recorder):
     store, nos = h.store_with("taric_two", kb=kb)
     n = nos["taric_two"]
     at = opened(store, kb, n)
     with h.ModelGuard() as guard:
-        at.button(key=keys(store, n, "b", "taric10").none).click().run()
+        at.button(key=keys(store, n).ask).click().run()
     line = store.get_line(n)
     assert line.current.taric.question == h.TARIC_QUESTION and store.effective_route(line) == "ask_shipper"
-    assert ":red[●] Ask: which TARIC subdivision applies?" in texts(at)
+    assert (row_of(at, n).badge, row_of(at, n).help) == (":red-badge[Ask shipper]", "Ask: which TARIC subdivision applies?")
     assert not recorder.jobs and guard.calls == 0
 
 
-def test_kind_b_suggestion(kb, recorder):
+def test_a_suggested_subdivision(kb, recorder):
     store, nos = h.store_with("taric_two", kb=kb)
     n = nos["taric_two"]
     t = store.get_line(n).current.taric
     store.set_taric_result(n, t.model_copy(update={"suggestion": TaricSuggestion(code="7318155890", confidence=70)}))
     at = opened(store, kb, n)
-    assert picks(at, keys(store, n, "b", "taric10").pick)["7318155890"] == "◉ Picked"
+    assert picks(at, f"pick_{keys(store, n).base}_b_taric10")["7318155890"] == "◉ Picked"
     store.set_taric_result(n, t.model_copy(update={"suggestion_error": "the model did not answer"}))
     at.run()
     assert "Suggestion unavailable: the model did not answer" in texts(at)
@@ -511,8 +583,8 @@ def test_refused_confirmations_change_nothing(kb, recorder, monkeypatch):
     from agent.store import LockedError, UnknownCodeError
 
     store, nos = h.store_with("taric_two", "cn8_pending", kb=kb)
-    for state, kind, form, method, exc in (("taric_two", "b", "taric10", "confirm_taric10", LockedError("line is locked")),
-                                           ("cn8_pending", "a_cn8", "cn8", "confirm_cn8", UnknownCodeError("not a CN line"))):
+    for state, method, exc in (("taric_two", "confirm_taric10", LockedError("line is locked")),
+                               ("cn8_pending", "confirm_cn8", UnknownCodeError("not a CN line"))):
         n = nos[state]
 
         def refuse(*a, _exc=exc, **kw):
@@ -520,147 +592,183 @@ def test_refused_confirmations_change_nothing(kb, recorder, monkeypatch):
         monkeypatch.setattr(store, method, refuse)
         before = store.get_line(n).current.model_dump()
         at = opened(store, kb, n)
-        at.button(key=keys(store, n, kind, form).confirm).click().run()
+        at.button(key=keys(store, n).accept).click().run()
         assert f"Not confirmed: {exc}" in texts(at)
         assert store.get_line(n).current.model_dump() == before and not recorder.jobs
 
 
 @pytest.mark.parametrize("state", ["ready", "ready_taric", "accepted", "accepted_taric"])
-def test_change_opens_kind_a_on_the_decided_codes(kb, recorder, state):
+def test_a_decided_line_opens_on_its_codes(kb, recorder, state):
     origin = "US" if state == "ready_taric" else "CN"
     store, nos = h.store_with(state, origin=origin, kb=kb)
     n = nos[state]
     line = store.get_line(n)
-    at = opened(store, kb, n, action=True)                           # "Change"
+    at = opened(store, kb, n)
     page = texts(at)
-    assert view.explain_a(store, line, "a_change")[0] in page
-    k = keys(store, n, "a_change", "hs6")
-    hs6 = store.decided_code(line)[0]
-    assert picks(at, k.pick)[hs6] == "◉ Picked" and picks(at, k.pick)["other"] == "○ Pick"
-    confirm = at.button(key=k.confirm)
-    assert confirm.disabled and confirm.help == "This is the current code"
-    forms = view.change_forms(store, line)
+    assert view.explain_a(store, line, "a_change")[0] in page        # "Decided: …", who decided each code
+    k = keys(store, n)
+    assert at.radio(key=k.hs6).value == store.decided_code(line)[0]
     level = [s for s in at.segmented_control if s.key == k.level]
-    assert (level[0].options if level else ["HS-6"]) == forms
-    if store.decided_taric10(line):                                  # the TARIC block
+    assert (level[0].options if level else []) == view.change_forms(store, line)
+    accept = at.button(key=k.accept)
+    accepted = view.line_status(store, line).accepted
+    assert (accept.label, accept.disabled) == (("Accepted", True) if accepted else ("Accept", False))
+    cn8, t10 = store.decided_cn8(line), store.decided_taric10(line)
+    assert f"**CN-8: {view.spaced(cn8)} · TARIC: {view.spaced(t10) if t10 else '—'}**" in page
+    if t10:
         assert f"TARIC snapshot 2026-10-01 · origin {origin}" in page and "All measures" in [e.label for e in at.expander]
+        assert any(t.startswith("Third-country duty ") and " · Requirements: " in t for t in page)
+    else:
+        assert "TARIC not available" in page
 
 
-def test_change_on_a_typed_hs6_holds_it_in_other(kb, recorder):
+def test_accept_on_a_ready_line_accepts_it(kb, recorder):
+    store, nos = h.store_with("ready", kb=kb)
+    n = nos["ready"]
+    at = opened(store, kb, n)
+    with h.ModelGuard() as guard:
+        at.button(key=keys(store, n).accept).click().run()
+    assert view.line_status(store, store.get_line(n)).text == "Accepted" and row_of(at, n).badge == ":green-badge[Accepted]"
+    assert not line_rows(at) and not recorder.jobs and guard.calls == 0
+
+
+def test_a_typed_hs6_holds_it_in_other(kb, recorder):
     store, nos = h.store_with("ready", kb=kb)
     n = nos["ready"]
     store.set_decision(n, Decision(route=DecisionRoute.accepted, decided_code="8518.30"))   # not a candidate: typed
     h._cn8(store, n, "8518.30", "85183000", conf=100)
     h._taric(store, kb, n)
-    at = opened(store, kb, n, action=True)
-    k = keys(store, n, "a_change", "hs6")
-    assert picks(at, k.pick)["other"] == "◉ Picked" and at.text_input(key=k.typed).value == "8518.30"
-    assert at.button(key=k.confirm).disabled
+    at = opened(store, kb, n)
+    k = keys(store, n)
+    assert at.radio(key=k.hs6).value == view.OTHER and at.text_input(key=k.typed).value == "8518.30"
+    assert cells_of(at, n) == expected_cells(store, n)               # the line's own code: the row stays as it is
 
 
-def test_change_confirms_another_hs6_or_cn8_in_the_background(kb, recorder):
+def test_change_the_cn8_or_the_hs6_in_the_background(kb, recorder):
     store, nos = h.store_with("ready_taric", origin="US", kb=kb)
     n = nos["ready_taric"]
-    at = opened(store, kb, n, action=True)
-    k = keys(store, n, "a_change", "cn8")
+    at = opened(store, kb, n)
+    k = keys(store, n)
     at.segmented_control(key=k.level).set_value("CN-8").run()
-    assert picks(at, k.pick)["73181568"] == "◉ Picked" and at.button(key=k.confirm).disabled
-    assert len(candidates_block(at)) == 1 and not candidates_block(at)[0].proto.expanded
-    at.button(key=f"{k.pick}_73181558").click().run()
+    pick = f"pick_{k.base}_a_change_cn8"
+    assert picks(at, pick)["73181568"] == "◉ Picked" and at.button(key=k.accept).label == "Accept"
+    at.button(key=f"{pick}_73181558").click().run()
     recorder.keep_running()
     with h.ModelGuard() as guard:
-        at.button(key=k.confirm).click().run()
+        at.button(key=k.accept).click().run()
     assert store.decided_cn8(store.get_line(n)) == "73181558"
     assert [(j.kind, j.taric_only) for j in recorder.jobs] == [("finer_codes", True)] and guard.calls == 0
-    assert ":gray[◌] Running TARIC step…" in texts(at)
+    assert (row_of(at, n).badge, row_of(at, n).help) == (":gray-badge[Checking…]", "Running TARIC step…")
     store2, nos2 = h.store_with("ready", kb=kb)
     m = nos2["ready"]
-    at2 = opened(store2, kb, m, action=True)
-    k2 = keys(store2, m, "a_change", "hs6")
-    at2.button(key=f"{k2.pick}_other").click().run()
+    at2 = opened(store2, kb, m)
+    k2 = keys(store2, m)
+    at2.radio(key=k2.hs6).set_value(view.OTHER).run()
     at2.text_input(key=k2.typed).set_value("8518.30").run()
+    assert "CN-8 and TARIC-10 follow when you accept this code." in texts(at2)
     with h.ModelGuard() as guard:
-        at2.button(key=k2.confirm).click().run()
+        at2.button(key=k2.accept).click().run()
     d = store2.get_line(m).current.decision
     assert (d.decided_code, d.chosen_how.value) == ("8518.30", "typed") and guard.calls == 0
     assert (recorder.jobs[-1].kind, recorder.jobs[-1].taric_only) == ("finer_codes", False)
-    assert ":gray[◌] Running CN-8 step…" in texts(at2)
+    assert (row_of(at2, m).badge, row_of(at2, m).help) == (":gray-badge[Checking…]", "Running CN-8 step…")
 
 
-def test_change_forms_keep_their_picks(kb, recorder):
+def test_the_change_levels_keep_their_picks(kb, recorder):
     store, nos = h.store_with("accepted_taric", kb=kb)
     n = nos["accepted_taric"]
-    at = opened(store, kb, n, action=True)
-    hs6, cn8 = keys(store, n, "a_change", "hs6"), keys(store, n, "a_change", "cn8")
-    at.button(key=f"{hs6.pick}_other").click().run()
-    at.segmented_control(key=hs6.level).set_value("CN-8").run()
-    at.button(key=f"{cn8.pick}_73181552").click().run()
-    at.segmented_control(key=hs6.level).set_value("HS-6").run()
-    assert picks(at, hs6.pick)["other"] == "◉ Picked"
-    at.segmented_control(key=hs6.level).set_value("CN-8").run()
-    assert picks(at, cn8.pick)["73181552"] == "◉ Picked"
+    at = opened(store, kb, n)
+    k = keys(store, n)
+    cn8, taric = f"pick_{k.base}_a_change_cn8", f"pick_{k.base}_a_change_taric10"
+    at.segmented_control(key=k.level).set_value("CN-8").run()
+    at.button(key=f"{cn8}_73181552").click().run()
+    at.segmented_control(key=k.level).set_value("TARIC-10").run()
+    at.button(key=f"{taric}_7318155890").click().run()
+    at.segmented_control(key=k.level).set_value("CN-8").run()
+    assert picks(at, cn8)["73181552"] == "◉ Picked"
+    at.segmented_control(key=k.level).set_value("TARIC-10").run()
+    assert picks(at, taric)["7318155890"] == "◉ Picked"
 
 
 def test_change_the_taric10(kb, recorder):
     store, nos = h.store_with("accepted_taric", kb=kb)
     n = nos["accepted_taric"]
-    at = opened(store, kb, n, action=True)
-    k = keys(store, n, "a_change", "taric10")
+    at = opened(store, kb, n)
+    k = keys(store, n)
     at.segmented_control(key=k.level).set_value("TARIC-10").run()
-    assert picks(at, k.pick)["7318155810"] == "◉ Picked" and at.button(key=k.confirm).disabled
-    at.button(key=f"{k.pick}_7318155890").click().run()
+    pick = f"pick_{k.base}_a_change_taric10"
+    assert picks(at, pick)["7318155810"] == "◉ Picked"
+    assert (at.button(key=k.accept).label, at.button(key=k.accept).disabled) == ("Accepted", True)
+    at.button(key=f"{pick}_7318155890").click().run()
+    assert (at.button(key=k.accept).label, at.button(key=k.accept).disabled) == ("Accept", False)
     with h.ModelGuard() as guard:
-        at.button(key=k.confirm).click().run()
+        at.button(key=k.accept).click().run()
     line = store.get_line(n)
     assert store.decided_taric10(line) == "7318155890" and not recorder.jobs and guard.calls == 0
-    page = texts(at)
-    assert ":green[●] Accepted" in page and "`7318 15 58 90`" in page
+    assert (row_of(at, n).badge, row_of(at, n).code) == (":green-badge[Accepted]", "`7318 15 58 90`")
     assert any(r.change.value == "taric_written" and r.new == "7318155890" and r.actor.value == "clerk"
                for r in store.shipment.audit)
 
 
-# --------------------------------------------------------------------------- US3: kind (c), the edit and the re-check (T026)
+def test_a_radio_choice_then_accept_updates_the_export(kb, recorder):   # FR-017
+    import csv
+    import io
+
+    store, nos = h.store_with("review", kb=kb)
+    n = nos["review"]
+    at = opened(store, kb, n)
+    k = keys(store, n)
+    at.radio(key=k.hs6).set_value("8543.70").run()
+    with h.ModelGuard() as guard:
+        at.button(key=k.accept).click().run()
+    rows = {int(r["line_no"]): r for r in csv.DictReader(io.StringIO(view.export_csv(store).decode("utf-8-sig")))}
+    assert (rows[n]["decided_code"], rows[n]["decided_how"], rows[n]["route_set_by"], rows[n]["clerk_changed"]) == \
+        ("8543.70", "other_candidate", "clerk", "true")
+    assert guard.calls == 0
+
+
+# --------------------------------------------------------------------------- US2: red lines, the edit and the re-check (T026)
 RED = ("failed", "ics2_term", "firm_stop_word", "vague_close", "vague_apart", "unreadable", "cn8_question", "sent",
        "taric_question")
 
 
-def edit_keys(store, n):
-    vn = store.get_line(n).current.version_no
-    return SimpleNamespace(area=f"edit_{n}_{vn}", recheck=f"recheck_{n}_{vn}")
-
-
-def test_kind_c_on_an_ics2_term(kb, recorder):
+def test_a_red_line_on_an_ics2_term(kb, recorder):
     store, nos = h.store_with("ics2_term", kb=kb)
     n = nos["ics2_term"]
     line = store.get_line(n)
     at = opened(store, kb, n)
     page = texts(at)
-    assert "**Ask the shipper**" in page
-    assert [c.value for c in at.code] == [view.question(store, line, "en", kb)]
-    assert ":material/content_copy: Copy question — the copy button at the top right of the box" in page
+    assert "Original: Spare parts · Stop-word check: ICS2 unacceptable term 'spare parts'" in page
     assert "Reason: ICS2 unacceptable term 'spare parts'" in page
-    assert not any(t.startswith("Candidates: ") for t in page)       # the term is the reason: no candidates line
-    block = candidates_block(at)
-    assert len(block) == 1 and block[0].proto.expanded
-    assert "All steps run again for this line, from the stop-word check." in page
+    assert view.question(store, line, "en", kb) in [c.value for c in at.code]
+    assert ":material/content_copy: Copy question — the copy button at the top right of the box" in page
+    assert "runs the model again" in page
+    k = keys(store, n)
+    s = view.line_status(store, line)
+    assert at.button(key=k.accept).disabled and plain(at.button(key=k.accept).help) == s.lock_reason
+    assert at.button(key=k.ask).disabled                             # it asks the shipper already
 
 
 @pytest.mark.parametrize("state", [s for s in RED if s != "ics2_term"])
-def test_kind_c_on_the_other_red_rows(kb, recorder, state):
+def test_the_other_red_lines(kb, recorder, state):
     store, nos = h.store_with(state, kb=kb)
     n = nos[state]
     line = store.get_line(n)
     at = opened(store, kb, n)
-    page = texts(at)
-    assert view.reason_line(store, line) in page
-    assert [c.value for c in at.code] == ([] if state == "failed" else [view.question(store, line, "en", kb)])
-    assert ("**Ask the shipper**" in page) is (state != "failed")
-    assert at.text_area(key=edit_keys(store, n).area).value == line.current.display_text
-    if line.current.candidates:
-        assert candidates_block(at)[0].proto.expanded
-    candidates = view.candidates_line(line)                           # only a line flagged as vague by judgement
-    assert (candidates is not None) is (state in ("vague_close", "vague_apart"))
-    assert [t for t in page if t.startswith("Candidates: ")] == ([candidates] if candidates else [])
+    assert view.reason_line(store, line) in texts(at)
+    question = view.question(store, line, "en", kb)
+    assert (question in [c.value for c in at.code]) is (state != "failed")
+    assert at.text_area(key=keys(store, n).area).value == line.current.display_text
+
+
+@pytest.mark.parametrize("state", RED)
+def test_accept_is_locked_on_red_lines(kb, recorder, state):
+    store, nos = h.store_with(state, kb=kb)
+    n = nos[state]
+    s = view.line_status(store, store.get_line(n))
+    at = opened(store, kb, n)
+    accept = at.button(key=keys(store, n).accept)
+    assert accept.disabled and plain(accept.help) == s.lock_reason
 
 
 def test_the_description_field_is_never_cut_and_names_the_original(kb, recorder):
@@ -670,7 +778,7 @@ def test_the_description_field_is_never_cut_and_names_the_original(kb, recorder)
     h._classify(store, n, [])
     original = store.get_line(n).current.display_text
     at = opened(store, kb, n)
-    k = edit_keys(store, n)
+    k = keys(store, n)
     area = at.text_area(key=k.area)
     assert area.value == original and area.max_chars == 603
     assert plain(area.help) == f"Original: '{original}' — kept in the audit trail as 'description updated by clerk'"
@@ -680,7 +788,7 @@ def test_the_description_field_is_never_cut_and_names_the_original(kb, recorder)
     assert store.get_line(n).current.version_no == 1 and not recorder.jobs
 
 
-def test_the_top_of_the_row_shows_the_contradiction_and_the_reply_fields(kb, recorder):
+def test_the_top_of_the_line_shows_the_contradiction_and_the_reply_fields(kb, recorder):
     from agent.schemas import Extracted, LineVersion
 
     store, nos = h.store_with("review", kb=kb)
@@ -699,7 +807,7 @@ def test_recheck_with_no_job_running(kb, recorder):
     store, nos = h.store_with("ics2_term", kb=kb)
     n = nos["ics2_term"]
     at = opened(store, kb, n)
-    k = edit_keys(store, n)
+    k = keys(store, n)
     recorder.keep_running()
     at.text_area(key=k.area).set_value("  ").run()
     at.button(key=k.recheck).click().run()
@@ -711,14 +819,14 @@ def test_recheck_with_no_job_running(kb, recorder):
     assert (v.version_no, v.created_by, v.text_zh, v.text_en) == (2, CreatedBy.clerk, "刹车片", "Brake pads for bicycles, steel")
     assert [(j.kind, j.line_no) for j in recorder.jobs] == [("recheck", n)] and guard.calls == 0
     assert at.session_state["selected_line_no"] is None
-    assert ":gray[◌] Running stop-word check…" in texts(at)
+    assert (row_of(at, n).badge, row_of(at, n).help) == (":gray-badge[Checking…]", "Running stop-word check…")
 
 
 def test_recheck_while_a_job_runs_waits_as_data(kb, recorder):
     store, nos = h.store_with("ics2_term", "review", kb=kb)
     n = nos["ics2_term"]
     at = opened(store, kb, n)
-    k = edit_keys(store, n)
+    k = keys(store, n)
     recorder.keep_running()
     running = Job(kind="finer_codes", message="", is_check=False, line_no=nos["review"])
     running.done = False
@@ -727,8 +835,8 @@ def test_recheck_while_a_job_runs_waits_as_data(kb, recorder):
     at.button(key=k.recheck).click().run()
     assert store.get_line(n).current.version_no == 1                 # nothing new while a worker reads the store
     assert at.session_state["job_queue"] == [("recheck", n, "", "Brake pads for bicycles, steel")]
-    page = texts(at)
-    assert ":gray[◌] Queued: re-check" in page and "Waits for the running check" in page
+    assert (row_of(at, n).badge, row_of(at, n).help) == (":gray-badge[Checking…]", "Queued: re-check")
+    assert "Waits for the running check" in texts(at)
     running.done = True                                              # it finishes: the edit is stored, then the job starts
     at.run()
     v = store.get_line(n).current
@@ -742,7 +850,7 @@ def test_after_the_recheck(kb, recorder, state, text):
     store, nos = h.store_with(state, kb=kb)
     n = nos[state]
     at = opened(store, kb, n)
-    k = edit_keys(store, n)
+    k = keys(store, n)
     at.text_area(key=k.area).set_value(text).run()
     recorder.keep_running()
     at.button(key=k.recheck).click().run()
@@ -753,10 +861,27 @@ def test_after_the_recheck(kb, recorder, state, text):
         assert s.colour == "yellow" and s.text.startswith("Confirm: ")
     else:
         assert s.colour in ("green", "yellow")
-    assert f"{s.dot} {s.text}" in texts(at)
+    assert cells_of(at, n) == expected_cells(store, n)
     record = at.session_state["chat"][-1]
     assert record["label"].startswith(f"Line {n} re-checked") and record["source_lines"] == [n]
     assert record["trace_from"] == n
+
+
+def test_a_recheck_changes_only_its_row(kb, recorder):            # FR-017
+    store, nos = h.store_with("ics2_term", "review", "ready", kb=kb)
+    n = nos["ics2_term"]
+    others = (nos["review"], nos["ready"])
+    at = opened(store, kb, n)
+    before = {m: (cells_of(at, m), store.get_line(m).current.model_dump()) for m in others}
+    k = keys(store, n)
+    at.text_area(key=k.area).set_value("Brake pads for bicycles, steel").run()
+    recorder.keep_running()
+    at.button(key=k.recheck).click().run()
+    assert [(j.kind, j.line_no) for j in recorder.jobs] == [("recheck", n)]
+    recorder.run(store, kb)
+    at.run()
+    assert {m: (cells_of(at, m), store.get_line(m).current.model_dump()) for m in others} == before
+    assert row_of(at, n).badge != ":red-badge[Ask shipper]" and cells_of(at, n) == expected_cells(store, n)
 
 
 def test_the_edited_states(kb, recorder):
@@ -766,21 +891,14 @@ def test_the_edited_states(kb, recorder):
     never = view.line_status(store, store.get_line(nos["edited_never_flagged"]))
     assert never.colour in ("green", "yellow")
     at = h.app(store, kb).run()
-    assert not at.exception and f"{ever.dot} {ever.text}" in texts(at)
+    assert not at.exception
+    for n in nos.values():
+        assert cells_of(at, n) == expected_cells(store, n)
+    edited = row_of(at, nos["edited_never_flagged"])
+    assert edited.need == "Plastic toy cars without a motor"          # the current description, not the filed one
 
 
-@pytest.mark.parametrize("state", RED)
-def test_the_accept_control_is_locked_on_red_rows(kb, recorder, state):
-    store, nos = h.store_with(state, kb=kb)
-    n = nos[state]
-    s = view.line_status(store, store.get_line(n))
-    at = h.app(store, kb).run()
-    box = at.checkbox(key=f"accept_{n}")
-    assert box.disabled and plain(box.help) == s.lock_reason
-    assert f":material/lock: {s.lock_reason}" in texts(at)
-
-
-# --------------------------------------------------------------------------- US4: accept the ready lines and export (T033)
+# --------------------------------------------------------------------------- US1: accept the ready lines and download (T033)
 def test_accept_all_ready(kb, recorder):
     store, _ = h.store_with("review", "ics2_term", kb=kb)
     at = h.app(store, kb).run()
@@ -793,29 +911,11 @@ def test_accept_all_ready(kb, recorder):
     assert [view.line_status(store, store.get_line(nos[s])).text for s in ("ready", "ready_not_loaded", "accepted")] == \
         ["Accepted"] * 3
     assert not recorder.jobs and guard.calls == 0
-    assert texts(at).count(":green[●] Accepted") == 3 and not [b for b in at.button if b.key == "accept_all"]
+    assert [row_of(at, nos[s]).badge for s in ("ready", "ready_not_loaded", "accepted")] == [":green-badge[Accepted]"] * 3
+    assert not [b for b in at.button if b.key == "accept_all"]
 
 
-def test_accept_selected(kb, recorder):
-    (store, _), _ = h.all_states(kb)
-    at = h.app(store, kb).run()
-    enabled = {int(c.key.split("_")[1]) for c in at.checkbox if c.key.startswith("accept_") and not c.disabled}
-    assert enabled == {l.line_no for l in store.lines if view.line_status(store, l).selectable}
-    store, nos = h.store_with("ready", "ready_not_loaded", "review", kb=kb)
-    third = h.build_state(store, kb, "ready")
-    at = h.app(store, kb).run()
-    assert not [b for b in at.button if b.key == "accept_selected"]
-    at.checkbox(key=f"accept_{nos['ready']}").check().run()
-    at.checkbox(key=f"accept_{third}").check().run()
-    assert at.button(key="accept_selected").label == "Accept 2 selected"
-    with h.ModelGuard() as guard:
-        at.button(key="accept_selected").click().run()
-    assert [view.line_status(store, store.get_line(n)).text for n in (nos["ready"], third, nos["ready_not_loaded"])] == \
-        ["Accepted", "Accepted", "Ready"]
-    assert not recorder.jobs and guard.calls == 0
-
-
-def test_exports(kb, recorder, monkeypatch):
+def test_the_downloads(kb, recorder, monkeypatch):
     import json
 
     from streamlit.delta_generator import DeltaGenerator
@@ -832,53 +932,80 @@ def test_exports(kb, recorder, monkeypatch):
     check = running_check()
     at.session_state["job"] = check
     at.run()
-    assert exports["Export CSV"]["disabled"] and exports["Export JSON"]["disabled"]   # until the check has finished
+    assert exports["Download CSV"]["disabled"] and exports["JSON"]["disabled"]   # until the check has finished
     check.done = True
     at.run()
-    csv, js = exports["Export CSV"], exports["Export JSON"]
-    assert not csv["disabled"] and not js["disabled"]
-    assert csv["data"] == store.to_csv_bytes()
+    csv, js = exports["Download CSV"], exports["JSON"]
+    assert not csv["disabled"] and not js["disabled"] and js["type"] == "tertiary"
+    assert csv["data"] == view.export_csv(store)
     header = csv["data"].decode("utf-8-sig").splitlines()[0].split(",")
-    assert header == store.CSV_COLUMNS and len(header) == 23 and header[-2:] == ["cn8", "taric10"]   # SC-005
+    assert header == [*store.CSV_COLUMNS, "clerk_changed"] and len(header) == 24   # SC-005 and FR-013
 
     def without_time(raw):
         payload = json.loads(raw)
         payload["shipment"].pop("exported_at")
         return payload
-    assert without_time(js["data"]) == without_time(store.to_json_bytes(knowledge_base_updated=kb.updated))
+    assert without_time(js["data"]) == without_time(view.export_json(store, kb.updated))
     assert json.loads(js["data"])["shipment"]["knowledge_base_updated"] == kb.updated
     for item, ext in ((csv, "csv"), (js, "json")):
         assert re.fullmatch(rf"cargolint_INV-TEST_\d{{8}}-\d{{4}}\.{ext}", item["file_name"])
 
 
-# --------------------------------------------------------------------------- US5: the shipper email (T037)
-def test_the_email_button_with_no_open_question(kb, recorder):
-    store, _ = h.store_with("ready", "review", kb=kb)
+# --------------------------------------------------------------------------- US4: the shipper email draft (FR-012, T037)
+DRAFT_HEAD = "**Shipper email draft** ·"
+
+
+def test_no_draft_without_a_question(kb, recorder):
+    store, _ = h.store_with("ready", "review", "failed", kb=kb)      # a failed check asks nothing of the shipper
     at = h.app(store, kb).run()
-    button = at.button(key="email_button")
-    assert button.label == "Draft shipper email (0 lines)" and button.disabled
+    assert DRAFT_HEAD not in texts(at) and not [s for s in at.segmented_control if s.key == "email_lang"]
 
 
-def test_the_email_block(kb, recorder):
+def test_the_shipper_email_draft(kb, recorder):
     from ui import shipper_email
 
     store, nos = h.store_with("ics2_term", "sent", "ready", "failed", kb=kb)
     before = [l.model_dump() for l in store.lines], [r.model_dump() for r in store.shipment.audit]
     at = h.app(store, kb).run()
-    assert at.button(key="email_button").label == "Draft shipper email (2 lines)"
     with h.ModelGuard() as guard:
-        at.button(key="email_button").click().run()
         page = texts(at)
-        assert "**Email to shipper — generated from the 2 open questions, no model call**" in page
+        assert DRAFT_HEAD in page and "2 questions ready for the shipper" in page
         assert ":material/content_copy: Copy email — the copy button at the top right of the text" in page
-        assert at.segmented_control(key="email_lang").options == ["EN", "中文"]
+        lang = at.segmented_control(key="email_lang")
+        assert (lang.options, lang.value) == (["EN", "中文"], "EN")
         assert [c.value for c in at.code] == [shipper_email.draft(store, kb, "en").text]
         at.segmented_control(key="email_lang").set_value("中文").run()
         assert [c.value for c in at.code] == [shipper_email.draft(store, kb, "zh").text]
-        at.button(key="email_button").click().run()                  # closes it again
-        assert not at.code
+        for state in ("ics2_term", "sent"):                          # each asking line's update field (D18)
+            n = nos[state]
+            vn = store.get_line(n).current.version_no
+            assert at.text_area(key=f"draft_edit_{n}_{vn}").value == store.get_line(n).current.display_text
+            assert at.button(key=f"draft_recheck_{n}_{vn}").label == "Re-check this line"
+        assert not [t for t in at.text_area if t.key.startswith(f"draft_edit_{nos['failed']}_")]
     assert guard.calls == 0
     assert ([l.model_dump() for l in store.lines], [r.model_dump() for r in store.shipment.audit]) == before
+    n = nos["sent"]
+    at.text_area(key=f"draft_edit_{n}_1").set_value("Ceramic dinner plates, porcelain").run()
+    recorder.keep_running()
+    at.button(key=f"draft_recheck_{n}_1").click().run()              # the shipper answered: re-check that line
+    assert [(j.kind, j.line_no) for j in recorder.jobs] == [("recheck", n)]
+    assert store.get_line(n).current.text_en == "Ceramic dinner plates, porcelain"
+
+
+def test_ask_shipper_adds_the_line_to_the_draft(kb, recorder):      # FR-017
+    from ui import shipper_email
+
+    store, nos = h.store_with("review", "ready", kb=kb)
+    n = nos["review"]
+    at = opened(store, kb, n)
+    assert DRAFT_HEAD not in texts(at)                               # no line asks yet
+    with h.ModelGuard() as guard:
+        at.button(key=keys(store, n).ask).click().run()
+    draft = shipper_email.draft(store, kb, "en")
+    assert draft.line_nos == [n] and draft.text in [c.value for c in at.code]
+    assert DRAFT_HEAD in texts(at) and "1 question ready for the shipper" in texts(at)
+    assert at.button(key=f"draft_recheck_{n}_1").label == "Re-check this line"
+    assert not recorder.jobs and guard.calls == 0
 
 
 # --------------------------------------------------------------------------- US6: the origin (T041; feature 012: the Origin box)
@@ -963,12 +1090,12 @@ def test_an_overridden_line_shows_the_chosen_candidate_and_its_audit_entry(kb, r
     line = store.get_line(n)
     s, code = view.line_status(store, line), view.code_display(store, line)
     assert (s.colour, s.text, code.text) == ("green", "Ready", "9405 21 40")      # candidate 2's code, not 8543 70
-    page = texts(h.app(store, kb).run())
-    assert f"{s.dot} {s.text}" in page and f"`{code.text}`" in page
+    r = row_of(h.app(store, kb).run(), n)
+    assert (r.badge, r.code, r.conf) == (":green-badge[Ready]", "`9405 21 40`", "60%")   # at candidate 2's confidence
     decided = view.explain_a(store, line, "a_change")[0]
     assert decided.startswith("Decided: HS-6 9405 21, candidate 2 chosen, rulings overrode the model: 4 of 5 agree on "
                               "9405 21 (IE, DE, DE, FR); the model's top candidate was 8543 70 · ")
-    assert decided in texts(opened(store, kb, n, action=True))                    # "Change" opens the "Decided:" line
+    assert decided in texts(opened(store, kb, n))                                  # the open line says who decided
     assert [(r.previous, r.new, r.note) for r in store.shipment.audit if r.line_no == n and r.change == ChangeKind.code_decided] \
         == [("8543.70", "9405.21", "rulings overrode the model: 4 of 5 agree on 9405.21; candidate 2 chosen")]
 
@@ -978,6 +1105,6 @@ def test_an_overridden_line_whose_cn8_is_to_pick_says_the_rulings_overrode_the_m
     n = nos["hs6_override_cn8"]
     s = view.line_status(store, store.get_line(n))
     assert (s.colour, s.text, s.kind) == ("yellow", "Pick: CN-8, 3 lines", "a_cn8")
-    page = texts(opened(store, kb, n, action=True))                                 # "Choose" opens the CN-8 pick
+    page = texts(opened(store, kb, n))                                              # the open line holds the CN-8 pick
     assert ("The HS-6 is 9405 21; rulings overrode the model: 4 of 5 agree on 9405 21; its subheading has 3 CN-8 "
             "lines.") in page

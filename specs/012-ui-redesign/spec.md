@@ -82,6 +82,16 @@ prominent")". The brief, given on 2026-10-29, had five parts:
   `rag/`, routing, the store schema, or any behaviour. A UI change that seems to need a function change is asked
   first.
 
+### Session 2026-10-29 (after the Step 1 review)
+
+- **FR-013 confirmed**: `clerk_changed` is built in `ui/`, from the store's export rows and the line versions;
+  `agent/store.py` does not change.
+- **Origin list**: TARIC's six country codes outside ISO join the list (XC, XI, XK, XL, XS, XU), so every TARIC
+  origin can be chosen; Serbia, for one, is XS in TARIC.
+- **Status line**: it names the file, "Checked N lines of <file name> in T s · model: <chat model>".
+- **Constitution**: the four remaining "summary bar" and "decision table" mentions wait for a 1.8.1 amendment at the
+  end of Step 3, when the wording is final.
+
 ## Brief and final picture
 
 Where they differ, this feature follows the final picture.
@@ -104,7 +114,7 @@ Where they differ, this feature follows the final picture.
 | Decision buttons | "Accept <code>" green, "Ask shipper" red outline | "Accept" (primary) and "Ask shipper" (secondary) |
 | Shipper questions | "Next step: n questions…" and the button "Open shipper questions" | the section "Shipper email draft · EN \| 中文" under the list; the count is its caption |
 | HS code in the row | "9405.21 · 3 of 5" | the picture's "940540" is a sketch. The column "HS code" shows the dotted HS-6 ("9405.40") before a decision and today's 8- or 10-digit display after it |
-| Origin control | "Import into" selectbox (D1: the Origin setting instead) | a dropdown, as drawn: an `st.selectbox` over a static list of ISO two-letter codes, default CN |
+| Origin control | "Import into" selectbox (D1: the Origin setting instead) | a dropdown, as drawn: an `st.selectbox` over a static list of ISO two-letter codes and TARIC's six country codes outside ISO, default CN |
 
 ## Q1, resolved: block 3 detail
 
@@ -246,8 +256,9 @@ The operator follows "Advanced" at the bottom of the page to the Admin page.
   - the subtitle "Check invoice and packing-list lines before customs declaration";
   - on the right, a bordered Origin box.
 
-  The Origin box holds an `st.selectbox` over a static list of ISO two-letter codes, defined in `ui/` (CN by default,
-  the kept value otherwise, type-to-filter), with the caption "duty and measures for goods from this country · change
+  The Origin box holds an `st.selectbox` over a static list of ISO two-letter codes and TARIC's six country codes
+  outside ISO (XC Ceuta, XI Northern Ireland, XK Kosovo, XL Melilla, XS Serbia, XU the United Kingdom without
+  Northern Ireland), defined in `ui/` (CN by default, the kept value otherwise, type-to-filter), with the caption "duty and measures for goods from this country · change
   → re-applied, no model call". A change MUST go through today's origin callback, which calls the existing origin
   re-application and shows its toast (D1). There is no store change.
 - **FR-004**: The input area MUST have two tabs, "Upload file" and "Check a single line".
@@ -263,7 +274,7 @@ The operator follows "Advanced" at the bottom of the page to the Admin page.
   primary "Check this line" that uses the existing typed-line path (D14). When the line's check ends, its row is
   open.
 - **FR-007**: A status line under the check button MUST show:
-  - "Checked N lines in T s · model: <chat model>";
+  - "Checked N lines of <file name> in T s · model: <chat model>", without "of <file name>" when no file was read;
   - while a job runs, "Checking N lines… T s";
   - the queued re-checks and the job messages (D10).
 - **FR-008**: The counts row MUST show:
@@ -327,10 +338,11 @@ The operator follows "Advanced" at the bottom of the page to the Admin page.
   - each red line's update field with "Re-check this line" (D18).
 
   A line routed to the shipper from its row appears in the draft.
-- **FR-013**: *Pending the author's confirmation before Step 2.* D13 added `clerk_changed` to the store's exports. The
-  hard rule now excludes `agent/store.py`. The column could instead be added by the UI's downloads in `ui/`, built
-  from the store's export rows and the line versions. The edited description, the chosen code and the final route are
-  already the existing text, `decided_code` and `route` columns.
+- **FR-013**: The CSV and JSON downloads MUST add one column, `clerk_changed`, built in `ui/` from the store's export
+  rows and the line versions; `agent/store.py` does not change. It is true when a version of the line was created by
+  the clerk's edit, or when the route was set by the clerk (`route_set_by` "clerk": a decision, a CN-8 or TARIC-10
+  confirmation, or a question sent to the shipper). The edited description, the chosen code and the final route are
+  the existing text, `decided_code` and `route` columns.
 - **FR-014**: The bottom of the main page MUST hold a page link "Advanced: Ask the agent · paste shipper reply ·
   audit trail · Admin" to the Admin page, behind the password gate like every page.
 - **FR-015**: Unchanged: the password gate, the demo notice, classification, routing, the CN-8 and TARIC steps, and
@@ -351,7 +363,7 @@ The operator follows "Advanced" at the bottom of the page to the Admin page.
 ### Key Entities *(include if feature involves data)*
 
 - **Line status**: unchanged (`ui/view.py`). The badge, the sort group and the counts are read from it.
-- **Export row**: today's columns. `clerk_changed` is pending (FR-013).
+- **Export row**: today's columns; the UI's downloads add `clerk_changed` (FR-013).
 
 ## Success Criteria *(mandatory)*
 
