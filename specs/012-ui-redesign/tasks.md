@@ -213,12 +213,18 @@ need a function change is asked first. The theme file (T010) is the one exceptio
   shows the stop-word result once; tests/unit/test_native_ui.py (T035) allows CSS in ui/theme.py only and checks its
   properties. ui/theme.py, ui/main_page.py, ui/upload.py, ui/view.py, ui/expand.py, the tests, CLAUDE.md, the spec,
   plan and README.md
+- [X] T043 After the author's check (2026-10-29): the status line drops the model ("Checked N lines of <file> in N s");
+  the Admin page names it in a small caption at the top; a narrow first column in the list holds a ▸ button (▾ while
+  open) on the same state as the description's click, and the caption "Click a line to open it." stands above the
+  columns. Native only, no CSS change. ui/view.py, ui/main_page.py, ui/admin.py, ui/table.py, the tests, the spec,
+  plan and README.md
 
 ---
 
 ## Dependencies & Execution Order
 
 - T004 comes before any code (T010 onwards). T005 came before T020 and T028. T038 closes Step 3; T039 follows the
-  author's check of the UI, T040 the author's polish, T041 the author's fixes and T042 the layout CSS.
+  author's check of the UI, T040 the author's polish, T041 the author's fixes, T042 the layout CSS and T043 the
+  status line and the row toggle.
 - Within each step, the tests come before the code.
 - Step 1 comes before Step 2, and Step 2 before Step 3. Each step ends with its own commit. Nothing is merged.

@@ -80,6 +80,9 @@ def test_layout(kb, recorder):
     at = admin_app(store, kb)
     assert "### CargoLint · Admin" in [m.value for m in at.markdown]
     assert "For the operator and course evaluators. The clerk's work happens on the shipment page." in texts(at)
+    model = f"Model: {get_settings().chat_model} via OpenRouter"      # a small caption on every section (the author)
+    assert model in [c.value for c in at.caption]
+    assert model in [c.value for c in admin_app(store, kb, "Cost").caption]
     assert [n.proto.label for n in at.get("page_link")] == ["← Back to shipment"]
     assert len(at.sidebar.children) == 0                              # feature 012 (D17): no sidebar
     switch = at.segmented_control(key="admin_section")

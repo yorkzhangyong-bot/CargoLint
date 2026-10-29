@@ -11,7 +11,7 @@ from typing import Any
 import streamlit as st
 
 from agent.agent import apply_taric_origin
-from agent.config import MAX_DESC_CHARS, get_settings
+from agent.config import MAX_DESC_CHARS
 from agent.schemas import ORIGIN_PATTERN
 from ui import actions, expand, runner, shipper_email, table, theme, upload, view
 
@@ -108,15 +108,14 @@ def _checking() -> bool:
 
 
 def _status(store: Any, s: view.Summary, messages: list[tuple[str, str]]) -> None:
-    """The running check, else the lines checked, their file, time and model; then the queue and the job messages."""
-    model = get_settings().chat_model
+    """The running check, else the lines checked, their file and time; then the queue and the job messages."""
     if _checking():
         job = runner.current_job()
         name = (st.session_state.get("uploaded_file") or {}).get("name") if job.file_ref else None
-        text = view.status_line(s, model, checking=len(job.new_line_nos) if job.new_line_nos else s.lines,
+        text = view.status_line(s, checking=len(job.new_line_nos) if job.new_line_nos else s.lines,
                                 elapsed=job.elapsed, file_name=name)
     else:
-        text = view.status_line(s, model, file_name=_file_name(store))
+        text = view.status_line(s, file_name=_file_name(store))
     if text:
         st.caption(view.md_escape(text))
     for entry in runner.queue():

@@ -242,6 +242,23 @@ def test_opening_and_closing_a_line(kb, recorder):
     assert at.session_state["selected_line_no"] is None and not line_rows(at)
 
 
+def test_the_toggle_opens_and_closes_a_line(kb, recorder):           # the author: open rows are obvious
+    store, nos = h.store_with("review", "ready", kb=kb)
+    n, m = nos["review"], nos["ready"]
+    at = h.app(store, kb).run()
+    page = texts(at)
+    assert page.index("Click a line to open it.") > page.index(LIST_HEAD.format(1, 1))    # above the table
+    assert [at.button(key=f"toggle_{k}").label for k in (n, m)] == ["▸", "▸"]
+    at.button(key=f"toggle_{n}").click().run()                       # the description's state: one line open
+    assert at.session_state["selected_line_no"] == n and len(line_rows(at)) == 1
+    assert [at.button(key=f"toggle_{k}").label for k in (n, m)] == ["▾", "▸"]
+    at.button(key=f"open_{m}").click().run()                         # the description opens another line
+    assert [at.button(key=f"toggle_{k}").label for k in (n, m)] == ["▸", "▾"]
+    at.button(key=f"toggle_{m}").click().run()                       # and its toggle closes it
+    assert at.session_state["selected_line_no"] is None and not line_rows(at)
+    assert [at.button(key=f"toggle_{k}").label for k in (n, m)] == ["▸", "▸"]
+
+
 # --------------------------------------------------------------------------- US1: live check, status line and counts (FR-007, FR-008)
 def running_check(**kw) -> Job:
     job = Job(kind="check", message="Check", is_check=True, **kw)
@@ -262,6 +279,7 @@ def test_a_running_check_shows_grey_rows_and_the_checking_status(kb, recorder):
         assert (r.badge, r.help, r.open) == (":gray-badge[**Checking…**]", "Running stop-word check…", []), n
     assert any(re.fullmatch(r"Checking 3 lines… \d+ s", t) for t in texts(at))         # the status line (FR-007)
     assert not [b for b in at.button if b.key == "accept_all"]
+    assert not [b for b in at.button if b.key and b.key.startswith("toggle_")]          # a grey line does not open
 
 
 def test_reading_a_file_shows_its_name_escaped(kb, recorder):
@@ -318,7 +336,7 @@ def test_the_compact_layout(kb, recorder, widths, layout):           # the autho
         assert boxes[key]["gap"] is None and boxes[key].get("height", "content") == "content", key
     assert ([2, 2, 2, 1.5, 1.5], "small", "center") in layout["columns"]      # the cards and the buttons, centred
     assert widths["accept_all"] == widths["export_csv"] == "content"           # normal width, not full width
-    rows = [c for c in layout["columns"] if c[:2] == ([0.4, 1.2, 3, 3, 1.4, 0.8], "xsmall")]
+    rows = [c for c in layout["columns"] if c[:2] == ([0.35, 0.4, 1.2, 3, 3, 1.4, 0.8], "xsmall")]   # toggle first
     assert len(rows) == 1 + len(store.lines)                                   # the list's head and each line's row
     assert boxes["lines"]["gap"] == 1                                          # rows 46 px apart
 
@@ -328,9 +346,10 @@ def test_the_status_line_after_a_check(recorder):
     store = h.sample_store(kb)
     at = h.app(store, kb).run()
     statuses = {l.line_no: view.line_status(store, l) for l in store.lines}
-    line = view.status_line(view.summary(store, statuses), get_settings().chat_model, file_name=store.shipment.source.name)
-    assert re.fullmatch(r"Checked 12 lines of sample_packing_list\.xlsx in \d+ s · model: \S+", line)
+    line = view.status_line(view.summary(store, statuses), file_name=store.shipment.source.name)
+    assert re.fullmatch(r"Checked 12 lines of sample_packing_list\.xlsx in \d+ s", line)
     assert line in texts(at)
+    assert not any(get_settings().chat_model in t for t in texts(at))       # the model shows on the Admin page only
 
 
 # --------------------------------------------------------------------------- US1, US3: starting checks

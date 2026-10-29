@@ -129,15 +129,16 @@ operator and the course evaluators.
     for the full-width "Check all lines"; with a checked shipment open, it asks before replacing it.
   - "Check a single line": one description, in English or Chinese, and "Check this line" (Enter works too). The line
     joins the open shipment, and its row opens when its check ends.
-- **Status line**: "Checked 12 lines of sample_packing_list.xlsx in 41 s · model: google/gemini-2.5-flash", or
+- **Status line**: "Checked 12 lines of sample_packing_list.xlsx in 41 s", or
   "Checking 12 lines… 8 s" while the agent turn runs in a worker thread and the list fills in every second. Queued
   lines and job messages follow it.
 - **Counts**: three cards, "Ready to accept" (green), "Needs review" (orange) and "Ask shipper" (red), then "Accept
   all K ready" and "Download CSV", the app's one download. It adds `clerk_changed`, true where the clerk chose an
   HS-6 other than the model's top candidate, picked a CN-8 or TARIC-10 other than the one the model offered, or
   edited the description.
-- **The list**, sorted ask shipper → review → ready → accepted, 50 lines a page: # · Status · Description (as filed)
-  · Need / description · HS code · Conf.
+- **The list**, sorted ask shipper → review → ready → accepted, 50 lines a page, under the caption "Click a line
+  to open it.": a ▸ button (▾ while the line is open) · # · Status · Description (as filed) · Need / description
+  · HS code · Conf.
   - The status is a coloured badge, and its tooltip names the decision it waits for ("Pick: 10 or 90", "Ask: what
     exactly is “spare parts”?").
   - A red line shows what it needs ("needs material, product name and use"); the others show their current
@@ -165,8 +166,8 @@ operator and the course evaluators.
   to copy and send by hand. Nothing is sent, and no model is called. The shipper's answer goes into the line's
   description field in its open row (block 1).
 
-**The Admin page**, at its own address `/admin` (the main page does not link to it), with its sections in a switch
-at the top:
+**The Admin page**, at its own address `/admin` (the main page does not link to it), with a small caption naming the
+model and its sections in a switch at the top:
 - **Rules**: the auto-accept threshold (60–99, default 85), used at either layer only when no eligible ruling votes,
   and hybrid search. Both survive a page switch, and every
   new shipment starts with them.

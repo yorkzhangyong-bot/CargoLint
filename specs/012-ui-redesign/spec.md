@@ -156,6 +156,14 @@ prominent")". The brief, given on 2026-10-29, had five parts:
   vague description, a failed check, an unreadable line), the caption shows only the original; otherwise it keeps
   "Stop-word check: <result>". An empty original reads "(no readable text)", as in its row.
 
+### Session 2026-10-29 (the author's check: status line and open rows)
+
+- **Status line**: "Checked N lines of <file name> in T s", without the model. The model's name is a small caption at
+  the top of the Admin page, "Model: <chat model> via OpenRouter", besides Admin › Data.
+- **Open rows**: a narrow first column holds a ▸ button (▾ while the line is open) that toggles the same state as a
+  click on the description; a line still being checked has none. The caption "Click a line to open it." stands under
+  the list's heading, above its columns.
+
 ## Brief and final picture
 
 Where they differ, this feature follows the final picture.
@@ -204,7 +212,7 @@ badges, the primary full-width check button, and no sidebar.
 **Acceptance Scenarios**:
 
 1. **Given** an uploaded file, **When** the clerk presses "Check all lines", **Then** the check runs as today and
-   the status line shows "Checking N lines… T s", then "Checked N lines in T s · model: <model>".
+   the status line shows "Checking N lines… T s", then "Checked N lines in T s".
 2. **Given** a checked shipment, **When** the page renders, **Then**:
    - the cards show the Ready-to-accept, Needs-review and Ask-shipper counts;
    - the rows run Ask shipper, then Review, then Ready, then Accepted;
@@ -340,7 +348,8 @@ check of the UI).
   primary "Check this line" that uses the existing typed-line path (D14). When the line's check ends, its row is
   open.
 - **FR-007**: A status line under the check button MUST show:
-  - "Checked N lines of <file name> in T s · model: <chat model>", without "of <file name>" when no file was read;
+  - "Checked N lines of <file name> in T s", without "of <file name>" when no file was read; the model's name shows
+    on the Admin page only, as a small caption;
   - while a job runs, "Checking N lines… T s";
   - the queued re-checks and the job messages (D10).
 - **FR-008**: The counts row MUST show:
@@ -355,10 +364,12 @@ check of the UI).
   between them and no fixed height, so they never scroll; the cards and both buttons share one row (column ratios 2,
   2, 2, 1.5 and 1.5), the buttons at their normal width and centred against the cards (the author's polish and
   fixes).
-- **FR-009**: The list MUST carry the heading "Lines (sorted: ask shipper → review → ready)" and "Page x of y". It
-  shows 50 lines per page (D11), ordered Ask shipper, Review, Ready, Accepted, then Checking, and in file order within
-  each group.
+- **FR-009**: The list MUST carry the heading "Lines (sorted: ask shipper → review → ready)" and "Page x of y", and
+  above its columns the caption "Click a line to open it.". It shows 50 lines per page (D11), ordered Ask shipper,
+  Review, Ready, Accepted, then Checking, and in file order within each group.
 - **FR-010**: Each list row MUST be built with `st.columns`, in this order:
+  - **▸ / ▾**: a narrow button that opens the line, "▾" while it is open and closes it, on the same state as a
+    click on the description; none on a line still being checked (after the author's check);
   - **#**: the line number;
   - **Status**: an `st.badge`, green "Ready" or "Accepted", orange "Review", red "Ask shipper", grey "Checking…", with
     the detailed status as its tooltip;

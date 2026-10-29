@@ -110,6 +110,7 @@ def render(store: Any, kb: Any, main_page: Any = None) -> None:
     if main_page is not None:
         head[1].page_link(main_page, label="← Back to shipment")
     st.caption("For the operator and course evaluators. The clerk's work happens on the shipment page.")
+    st.caption(f"Model: {get_settings().chat_model} via OpenRouter")   # here only, not on the main page
     section = st.segmented_control("Section", SECTIONS, key="admin_section", default="Rules", required=True,
                                    persist_state="session", label_visibility="collapsed")
     if section == "Rules":

@@ -12,9 +12,10 @@ import streamlit as st
 from ui import expand, view
 
 PAGE_SIZE = 50
-COLS = [0.4, 1.2, 3, 3, 1.4, 0.8]
+COLS = [0.35, 0.4, 1.2, 3, 3, 1.4, 0.8]   # the ▸/▾ toggle first, then the columns of the author's polish
 COL_GAP = "xsmall"               # small gaps between the columns (the author's polish)
-HEADERS = ("#", "Status", "Description", "Need / description", "HS code", "Conf.")
+HEADERS = ("", "#", "Status", "Description", "Need / description", "HS code", "Conf.")
+OPEN_HINT = "Click a line to open it."
 SHOW = "show_open_line"          # set when a line opens by itself: the list shows that line's page once
 ROW_GAP = 1                      # px: 45 px rows 46 px apart, as in the final picture
 
@@ -34,23 +35,27 @@ def _folded(line_no: int) -> None:
             st.session_state["selected_line_no"] = None
 
 
-def _row(store: Any, line: Any, status: view.LineStatus, selected: str | None) -> None:
+def _row(store: Any, line: Any, status: view.LineStatus, selected: str | None, is_open: bool) -> None:
+    """One row. A line that can open has a ▸ toggle (▾ while open) before its number, on the same state as a click
+    on its description; a line still being checked has neither."""
     n = line.line_no
     cells = view.row_cells(store, line, status, selected)
     with st.container(key=f"line_{n}"):
         c = st.columns(COLS, vertical_alignment="center", gap=COL_GAP)
-        c[0].markdown(f"{n}")
-        c[1].badge(f"**{cells.badge}**", color=cells.colour, help=view.md_escape(status.text))
+        c[1].markdown(f"{n}")
+        c[2].badge(f"**{cells.badge}**", color=cells.colour, help=view.md_escape(status.text))
         text = view.md_escape(cells.filed) or "_(no readable text)_"
         if status.colour == "grey":
-            c[2].markdown(text)
+            c[3].markdown(text)
         else:
-            c[2].button(text, key=f"open_{n}", type="tertiary", on_click=_toggle, args=(n,), help="Open the line")
-        c[3].caption(view.md_escape(cells.need))
-        c[4].markdown(f"`{cells.code}`" if cells.code != "—" else "—")
+            c[0].button("▾" if is_open else "▸", key=f"toggle_{n}", on_click=_toggle, args=(n,),
+                        help="Close the line" if is_open else "Open the line")
+            c[3].button(text, key=f"open_{n}", type="tertiary", on_click=_toggle, args=(n,), help="Open the line")
+        c[4].caption(view.md_escape(cells.need))
+        c[5].markdown(f"`{cells.code}`" if cells.code != "—" else "—")
         if cells.note:
-            c[4].caption(cells.note)
-        c[5].markdown(cells.conf)
+            c[5].caption(cells.note)
+        c[6].markdown(cells.conf)
 
 
 def render(store: Any, kb: Any, statuses: dict[int, view.LineStatus]) -> None:
@@ -63,13 +68,15 @@ def render(store: Any, kb: Any, statuses: dict[int, view.LineStatus]) -> None:
             st.session_state["table_page"] = at // PAGE_SIZE + 1
     page = min(max(int(st.session_state.get("table_page") or 1), 1), pages)
     st.markdown(f"**Lines (sorted: ask shipper → review → ready)** · Page {page} of {pages}")
+    st.caption(OPEN_HINT)
     for col, name in zip(st.columns(COLS, vertical_alignment="bottom", gap=COL_GAP), HEADERS):
-        col.caption(f"**{name}**")
+        if name:
+            col.caption(f"**{name}**")
     with st.container(key="lines", gap=ROW_GAP):
         for line in lines[(page - 1) * PAGE_SIZE: page * PAGE_SIZE]:
             n, status = line.line_no, statuses[line.line_no]
             is_open = selected == n and status.colour != "grey"
-            _row(store, line, status, expand.selected_code(line) if is_open else None)
+            _row(store, line, status, expand.selected_code(line) if is_open else None, is_open)
             if is_open:
                 label = f"Line {n} · {view.md_escape(view.cut(line.current.display_text, 80))}"
                 with st.expander(label, expanded=True, key=f"row_{n}", on_change=_folded, args=(n,)):

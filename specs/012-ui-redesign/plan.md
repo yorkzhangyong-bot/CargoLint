@@ -130,8 +130,9 @@ README.md                # Step 3: "What the clerk sees"
    - "Check all lines" starts the check through the existing `upload.begin` and `runner.start_check`.
 3. **Single line.** A text field and "Check this line" call the existing `runner.check_typed_line`. When the line's
    job ends, `selected_line_no` is set to it, so its row opens.
-4. **Status line.** A new `view.status_line` builds "Checked N lines of <file name> in T s · model: <model>" from
-   `view.summary`, the shipment's file and the settings. The checking state, the queue and the job messages come from today's runner functions.
+4. **Status line.** A new `view.status_line` builds "Checked N lines of <file name> in T s" from `view.summary`
+   and the shipment's file; the model's name is a caption on the Admin page (after the author's check). The checking
+   state, the queue and the job messages come from today's runner functions.
 5. **Origin box.** `st.container(border=True)` on the right of the title holds an `st.selectbox` over a static list of
    ISO two-letter codes and TARIC's six country codes outside ISO (XC, XI, XK, XL, XS, XU) in `ui/view.py`, which
    filters as the clerk types; the default is CN. Its callback is today's
@@ -149,6 +150,8 @@ README.md                # Step 3: "What the clerk sees"
      lines keep file order.
    - 50 lines per page.
    - "Page x of y" uses today's page switch.
+   - After the author's check: the caption "Click a line to open it." above the columns, and a narrow first column
+     with a ▸ button (▾ while open) on the same state as the description's click.
 8. **Row cells.** A new `view.row_cells(store, line, status)` returns:
    - **the badge**: label, colour and tooltip (today's status text);
    - **the description**: as filed, the first version's text;
@@ -213,7 +216,8 @@ README.md                # Step 3: "What the clerk sees"
     Accepting a Ready line as it is, confirming its codes or asking the shipper is false. `view.export_csv` adds it to
     the store's export rows in `ui/`; `agent/store.py` does not change.
 17. **Admin page.** `st.segmented_control("Section", SECTIONS, key="admin_section", default="Rules", required=True)`
-    at the top of the page, keeping today's session persistence, instead of `st.sidebar.radio`.
+    at the top of the page, keeping today's session persistence, instead of `st.sidebar.radio`. After the author's
+    check, a caption under the intro names the model: "Model: <chat model> via OpenRouter".
 18. **No Advanced link** (after the author's check of the UI). The main page links nowhere; the Admin page keeps its
     own address, `/admin`, and its "← Back to shipment".
 19. **Theme.** `baseFontSize` goes from 14 to 18. `primaryColor` stays `#1D4FB8`, the canvas accent. The

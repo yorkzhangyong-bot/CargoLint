@@ -623,18 +623,17 @@ def count_cards(s: Summary) -> list[tuple[str, str, int]]:
 
 
 # --------------------------------------------------------------------------- feature 012: the status line and the origins
-def status_line(s: Summary, model: str, *, checking: int | None = None, elapsed: float = 0.0,
-                file_name: str | None = None) -> str:
+def status_line(s: Summary, *, checking: int | None = None, elapsed: float = 0.0, file_name: str | None = None) -> str:
     """The line under the check buttons (feature 012, FR-007). While a check runs, `checking` is its line count: its
-    lines and time, or the file's name before its lines are read. Otherwise the lines checked, the file they came from,
-    their time and the model; "" before the first line."""
+    lines and time, or the file's name before its lines are read. Otherwise the lines checked, the file they came from
+    and their time; "" before the first line. The model shows on the Admin page only (the author's check)."""
     if checking is not None:
         what = _plural(checking, "line") if checking else (file_name or "the file")
         return f"Checking {what}… {elapsed:.0f} s"
     if not s.lines:
         return ""
     source = f" of {file_name}" if file_name else ""
-    return f"Checked {_plural(s.lines, 'line')}{source} in {s.seconds:.0f} s · model: {model}"
+    return f"Checked {_plural(s.lines, 'line')}{source} in {s.seconds:.0f} s"
 
 
 # The Origin box's choices (feature 012, FR-003): the ISO 3166-1 alpha-2 codes and TARIC's six country codes outside
