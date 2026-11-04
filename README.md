@@ -584,3 +584,5 @@ synthetic demo data.
 
 The TARIC snapshot (`data/taric.jsonl`, inside the demo archive) is European Commission tariff data obtained through
 Swedish Customs' file distribution service.
+
+Built as the capstone project of the Turing College AI Engineering programme.
