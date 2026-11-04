@@ -1,5 +1,9 @@
 # CargoLint
 
+![CargoLint checking a packing list: one row per line, details on open](docs/design/screenshot-012.png)
+
+*CargoLint checking a packing list: one row per line, details on open*
+
 A linter for packing lists. Before a Hamburg freight forwarder files an ICS2 house declaration (ENS)
 for China→EU sea freight, CargoLint flags cargo descriptions that EU customs will reject, suggests the
 top-3 HS-6 subheadings with confidence, reasoning and a BTI precedent, and routes every line to
