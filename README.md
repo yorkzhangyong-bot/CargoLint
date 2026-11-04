@@ -12,9 +12,7 @@ picks a code in the open line for the lines to review, drafts the email to the s
 line with the shipper's answer and re-checks it, accepts the ready lines and downloads the CSV. For a decided HS-6
 it also chooses the CN-8 and completes the TARIC-10 by fixed rules from a local TARIC snapshot.
 
-Built for Turing College · AI Engineering · Sprint 2 ("Building Applications with AI": LangChain,
-RAG, tool calling, Streamlit). Author: Yong Zhang. Spec-driven: see `specs/001-packing-list-check/`
-and `.specify/memory/constitution.md`.
+Author: Yong Zhang. Spec-driven: see `specs/001-packing-list-check/` and `.specify/memory/constitution.md`.
 
 ## Quick start
 
@@ -584,5 +582,3 @@ synthetic demo data.
 
 The TARIC snapshot (`data/taric.jsonl`, inside the demo archive) is European Commission tariff data obtained through
 Swedish Customs' file distribution service.
-
-Built as the capstone project of the Turing College AI Engineering programme.
