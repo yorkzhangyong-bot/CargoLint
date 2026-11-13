@@ -53,3 +53,8 @@
   re-marks the latest release when needed; the TARIC batch folder is `rag.loader.TARIC_RAW_DIR` read at call time;
   the EBTI store size is the `CARGOLINT_EBTI_RULINGS` setting (5,000 by default; `all` for every valid ruling), with
   SC-002 covering both sizes and the size-agnostic SC-003. All items still pass.
+- Re-validated after `/speckit-analyze` (2026-11-13, one HIGH and four MEDIUM findings, no constitution conflict): the
+  release service gains the latest-release query and the listing's publish times, which FR-010's re-mark rule needs;
+  a nothing-new run whose retention or re-marking fails exits 3; a pin must have the form `<kind>-YYYY-MM-DD` or the
+  settings are refused at start; `--no-publish` still needs `gh` for a previous store that is a release; after a
+  stale pointer the listing gives at most two untried releases. All items still pass.

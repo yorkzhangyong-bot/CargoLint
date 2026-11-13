@@ -26,6 +26,7 @@ from agent.schemas import Usage
 from rag import bti as bti_mod
 from rag.nomenclature import NomenclatureIndex, build_chunks, parse_skos, write_jsonl
 from rag.pgp import GpgNotFound, SignatureError, check_key_copy, find_gpg
+from rag.refresh import RELEASE_FILE_NAME
 from rag.retriever import BM25Index, ChromaVectorSearch, HybridRetriever, load_index_meta, verify_index_meta, write_index_meta
 from rag.rules import RuleSet
 from rag.taric import TaricFileError, TaricStore, open_taric_store, read_snapshot_header
@@ -35,6 +36,7 @@ RAW_DIR = DATA_DIR / "raw"
 NOMENCLATURE_JSONL = DATA_DIR / "nomenclature_2026.jsonl"
 BTI_SUBSET = DATA_DIR / "bti_subset.jsonl"
 BTI_DEMO = DATA_DIR / "bti_demo.jsonl"
+SUBSET_META = DATA_DIR / "bti_subset.meta.json"   # feature 013: the extract date of the subset (FR-018)
 SOURCES_MD = DATA_DIR / "SOURCES.md"
 SOURCES_TITLE = "# Data sources and provenance"
 SOURCES_TABLE = ("| Dataset | Version | Retrieved | Licence | URL |", "|---|---|---|---|---|")
@@ -155,7 +157,33 @@ def build_rules(force: bool = False) -> RuleSet:
     return rs
 
 
-def build_bti(demo: bool, chapters: set[str], force: bool = False) -> bti_mod.BTIStore:
+def ebti_source_version(extract_date: str, chapters: set[str] | None = None) -> str:
+    """The rulings' source version as the release metadata and index_meta record it (feature 013, data-model §2)."""
+    return f"full extract of {extract_date}, chapters {bti_mod.chapters_spec(chapters or set(bti_mod.TARGET_CHAPTERS))}"
+
+
+def _write_subset_meta(extract_date: str | None, chapters: set[str]) -> None:
+    """The sidecar of data/bti_subset.jsonl: the extract the subset was cut from (feature 013, FR-018)."""
+    if extract_date is None:
+        SUBSET_META.unlink(missing_ok=True)
+        return
+    SUBSET_META.write_text(json.dumps({"extract_date": extract_date, "source_version": ebti_source_version(extract_date, chapters),
+                                       "cut_at": datetime.now(timezone.utc).isoformat()}, indent=2) + "\n",
+                           encoding="utf-8", newline="\n")
+
+
+def _read_subset_meta() -> str | None:
+    try:
+        return json.loads(SUBSET_META.read_text(encoding="utf-8")).get("extract_date") or None
+    except (OSError, ValueError, AttributeError):
+        return None
+
+
+def build_bti(demo: bool, chapters: set[str], force: bool = False, store_dir: Path = STORE_DIR) -> tuple[bti_mod.BTIStore, str | None]:
+    """The ruling document store, written as bti_docs.jsonl into `store_dir`, and the date of the extract the rulings
+    came from: read from the zip when the subset is cut and kept beside it, read back when the subset is reused; None
+    for --demo and for a subset cut before feature 013 recorded it."""
+    extract_date: str | None = None
     if demo:
         if not BTI_DEMO.exists():
             log(f"WARNING: {BTI_DEMO.name} missing — run `python -m rag.bti --make-demo` after downloading the extract; "
@@ -167,31 +195,50 @@ def build_bti(demo: bool, chapters: set[str], force: bool = False) -> bti_mod.BT
             zip_path = download(src["url"], RAW_DIR / src["file"])
             records = list(bti_mod.iter_extract(zip_path, chapters, date.today()))
             bti_mod.write_jsonl(records, BTI_SUBSET)
-            log(f"bti: {len(records)} valid rulings for chapters {sorted(chapters)} → {BTI_SUBSET.name}")
+            found = bti_mod.extract_date(zip_path)
+            extract_date = found.isoformat() if found else None
+            _write_subset_meta(extract_date, chapters)
+            log(f"bti: {len(records)} valid rulings for chapters {sorted(chapters)} from the extract of "
+                f"{extract_date or 'an unknown date'} → {BTI_SUBSET.name}")
+        else:
+            extract_date = _read_subset_meta()
         store = bti_mod.BTIStore.from_jsonl(BTI_SUBSET)
-    STORE_DIR.mkdir(parents=True, exist_ok=True)
-    bti_mod.write_jsonl(store.records, STORE_DIR / "bti_docs.jsonl")
+    store_dir = Path(store_dir)
+    store_dir.mkdir(parents=True, exist_ok=True)
+    bti_mod.write_jsonl(store.records, store_dir / "bti_docs.jsonl")
     log(f"bti: {len(store)} rulings in the document store")
-    return store
+    return store, extract_date
+
+
+def _forget_release(release_file: Path) -> None:
+    """A rebuilt part is no fetched release any more: its release file (feature 013, FR-013) goes, so Admin > Data
+    never names a release that is not in use."""
+    if release_file.exists():
+        release_file.unlink()
+        log(f"removed {release_file.name}: the data was rebuilt locally")
 
 
 def build_indexes(index: NomenclatureIndex, bti_store: bti_mod.BTIStore, settings: Settings, force: bool = False,
-                  embed: bool = True) -> dict[str, Any]:
+                  embed: bool = True, store_dir: Path = STORE_DIR, embeddings: Any = None) -> dict[str, Any]:
+    """The BM25 file, the two Chroma collections and index_meta.json in `store_dir` (feature 013: a refresh builds
+    in a work folder and injects its embeddings; the OpenRouter embeddings are built only when none is given)."""
     from rag.embeddings import OpenRouterEmbeddings
 
-    STORE_DIR.mkdir(parents=True, exist_ok=True)
+    store_dir = Path(store_dir)
+    store_dir.mkdir(parents=True, exist_ok=True)
     usage = Usage()
     bm25 = BM25Index([(c.id, c.text) for c in index.chunks])
-    bm25.save(STORE_DIR / "bm25.pkl")
+    bm25.save(store_dir / "bm25.pkl")
     log(f"bm25: {len(index.chunks)} chunks → bm25.pkl")
     meta: dict[str, Any] = {"embedding_model": settings.embed_model, "dimension": None, "built_at": datetime.now(timezone.utc).isoformat(),
                             "nomenclature_chunks": len(index.chunks), "bti_rulings": len(bti_store), "edition_year": index.edition_year}
     if not embed:
-        write_index_meta(STORE_DIR, meta)
+        write_index_meta(store_dir, meta)
+        _forget_release(store_dir / RELEASE_FILE_NAME["ebti"])
         return meta
-    emb = OpenRouterEmbeddings(settings=settings, usage_sink=usage.add)
-    chroma_dir = STORE_DIR / "chroma"
-    bti_dir = STORE_DIR / "chroma-bti"   # the rulings index is large and rebuilt on its own; the app keeps reading store/chroma meanwhile
+    emb = embeddings if embeddings is not None else OpenRouterEmbeddings(settings=settings, usage_sink=usage.add)
+    chroma_dir = store_dir / "chroma"
+    bti_dir = store_dir / "chroma-bti"   # the rulings index is large and rebuilt on its own; the app keeps reading store/chroma meanwhile
     if force:
         for d in (chroma_dir, bti_dir):
             if d.exists():
@@ -214,11 +261,12 @@ def build_indexes(index: NomenclatureIndex, bti_store: bti_mod.BTIStore, setting
             t0 = time.time()
             n = bt.add(bti_docs)
             log(f"chroma bti: embedded {n} rulings in {time.time() - t0:.0f}s")
-    meta["dimension"] = emb.dimension or meta["dimension"]
+    meta["dimension"] = getattr(emb, "dimension", None) or meta["dimension"]   # FakeEmbeddings has none: probed below
     if meta["dimension"] is None:
         meta["dimension"] = len(emb.embed_query("dimension probe"))
     meta["embedding_usage"] = usage.model_dump()
-    write_index_meta(STORE_DIR, meta)
+    write_index_meta(store_dir, meta)
+    _forget_release(store_dir / RELEASE_FILE_NAME["ebti"])
     log(f"index_meta: model {meta['embedding_model']}, dim {meta['dimension']}, cost ${usage.cost_usd:.3f}")
     return meta
 
@@ -326,6 +374,7 @@ def load_taric(folder: Path, force: bool = False) -> int:
         register_tmp.unlink(missing_ok=True)
         raise
     os.replace(register_tmp, SOURCES_MD)
+    _forget_release(Path(TARIC_SNAPSHOT).with_name(RELEASE_FILE_NAME["taric"]))
     h = snapshot.header
     declarable = sum(c.declarable for c in snapshot.codes)
     print(f"TARIC snapshot {h.snapshot_date} · batch {h.batch_id} · export {h.export_id}")
@@ -341,10 +390,26 @@ def load_taric(folder: Path, force: bool = False) -> int:
 
 
 # --------------------------------------------------------------------------- runtime opener
+def read_release_files(root: Path | None = None) -> dict[str, dict | None]:
+    """The metadata of the releases the app fetched (feature 013, FR-013): kind → the release's metadata plus
+    `fetched_at`, None for a kind without a file (a local build, or a part not fetched)."""
+    from rag.refresh import RELEASE_FILE
+
+    out: dict[str, dict | None] = {}
+    for kind, rel in RELEASE_FILE.items():
+        try:
+            data = json.loads(((root or ROOT) / rel).read_text(encoding="utf-8"))
+            out[kind] = data if isinstance(data, dict) else None
+        except (OSError, ValueError):
+            out[kind] = None
+    return out
+
+
 class KnowledgeBase:
     def __init__(self, index: NomenclatureIndex, retriever: HybridRetriever, bti: bti_mod.BTIStore, rules: RuleSet,
                  meta: dict[str, Any], embeddings: Any, shippers: list | None = None, bti_vectors: Any = None,
-                 taric: TaricStore | None = None) -> None:
+                 taric: TaricStore | None = None, releases: dict[str, dict | None] | None = None,
+                 fetch_failures: dict[str, str] | None = None) -> None:
         self.bti_vectors = bti_vectors  # Chroma collection of ruling texts for precedent-driven retrieval; None when empty
         self.index = index
         self.retriever = retriever
@@ -354,11 +419,25 @@ class KnowledgeBase:
         self.embeddings = embeddings
         self.shippers = shippers if shippers is not None else []
         self.taric = taric              # TARIC snapshot for digits 9-10 and measures; None when not loaded (FR-024)
+        self.releases = releases if releases is not None else {"ebti": None, "taric": None}   # feature 013: the release
+                                                                                             # files (data-model §4)
+        self.fetch_failures = dict(fetch_failures or {})   # feature 013: kind → why its release could not be fetched
 
     @property
     def updated(self) -> str:
         built = self.meta.get("built_at") or ""
         return built[:10]
+
+    @property
+    def rulings_date(self) -> tuple[str | None, str]:
+        """Feature 013 (data-model §3): the rulings' extract date, else the indexes' build date, else nothing:
+        (date, "extract" | "built" | "unknown")."""
+        extract = self.meta.get("ebti_snapshot_date")
+        if extract:
+            return str(extract), "extract"
+        if self.updated:
+            return self.updated, "built"
+        return None, "unknown"
 
 
 def open_knowledge_base(settings: Settings | None = None, usage_sink: Any = None) -> KnowledgeBase:
@@ -381,7 +460,7 @@ def open_knowledge_base(settings: Settings | None = None, usage_sink: Any = None
     from rag.rules import load_shippers
 
     return KnowledgeBase(index, retriever, bti_store, rules, meta, emb, shippers=load_shippers(), bti_vectors=bti_vectors,
-                         taric=open_taric_store(TARIC_SNAPSHOT))
+                         taric=open_taric_store(TARIC_SNAPSHOT), releases=read_release_files(ROOT))
 
 
 # --------------------------------------------------------------------------- CLI
@@ -428,8 +507,12 @@ def main(argv: list[str] | None = None) -> int:
         index = NomenclatureIndex([c for c in index.chunks if c.metadata.get("chapter") in keep])
         log(f"nomenclature restricted to chapters {sorted(keep)}: {len(index)} chunks")
     rules = build_rules(force=args.force)
-    bti_store = build_bti(args.demo, parse_chapters(args.bti_chapters or ",".join(bti_mod.TARGET_CHAPTERS)), force=args.force)
+    chapters = parse_chapters(args.bti_chapters or ",".join(bti_mod.TARGET_CHAPTERS))
+    bti_store, extract = build_bti(args.demo, chapters, force=args.force)
     meta = build_indexes(index, bti_store, settings, force=args.force, embed=not args.no_embed)
+    if extract:                                       # feature 013 (FR-018): the rulings' snapshot date and source version
+        meta.update(ebti_snapshot_date=extract, ebti_source_version=ebti_source_version(extract, chapters))
+        write_index_meta(STORE_DIR, meta)
     write_sources_md(meta, rules, args.demo)
     log("done")
     return 0

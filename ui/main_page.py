@@ -68,6 +68,9 @@ def _header(store: Any, kb: Any) -> None:
         with st.container(gap=None):
             st.caption(ORIGIN_CAPTION)
             st.caption(view.snapshot_caption(kb))
+            warning = view.freshness_warning(kb)   # feature 013: a part older than its limit, counted on the day it renders
+            if warning:
+                st.warning(warning)
 
 
 # --------------------------------------------------------------------------- input tabs (FR-004 to FR-006)

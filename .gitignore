@@ -20,6 +20,8 @@ dist/
 data/raw/
 data/bti_subset.jsonl
 data/taric.jsonl
+data/taric_release.json
+data/bti_subset.meta.json
 store/
 
 # Logs and OS / editor files
