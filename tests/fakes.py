@@ -144,3 +144,110 @@ def assert_no_unconfirmed_writes(store) -> None:
             assert t.rule.value == "auto_completed" and not t.trade_defence, \
                 f"line {line.line_no}: TARIC-10 written by rule although a confirm type applies"
             assert cn8_written, f"line {line.line_no}: TARIC-10 written by rule while its CN-8 is not written"
+
+
+# --------------------------------------------------------------------------- feature 013: the release service in memory
+import fnmatch  # noqa: E402
+import shutil  # noqa: E402
+from datetime import datetime, timedelta, timezone  # noqa: E402
+from pathlib import Path as _Path  # noqa: E402
+
+
+class FakeReleaseService:
+    """Stands in for `rag.refresh.ReleaseService` (contracts/releases.md): the releases are held in memory, name ->
+    asset names, draft flag, the files behind the assets and the publish time; one release may be marked latest; every
+    call is recorded in order with its arguments; `check` can be told to fail as a missing or signed-out `gh` would,
+    and any other call can be told to fail at its next turn as a `gh` error would. `create` does not move the latest
+    mark (GitHub would, by default): a script has to mark its release latest itself, which the calls show. Publish
+    times follow the order of `add` and `create`, one hour apart."""
+
+    def __init__(self, releases: dict[str, dict] | None = None, latest: str | None = None) -> None:
+        self.releases: dict[str, dict] = {}
+        self.latest_name: str | None = None
+        self.calls: list[tuple] = []
+        self.failures: dict[str, str] = {}
+        self._clock = datetime(2026, 10, 1, tzinfo=timezone.utc)
+        for name, spec in (releases or {}).items():
+            self.add(name, **spec)
+        self.latest_name = latest
+
+    def _stamp(self) -> str:
+        self._clock += timedelta(hours=1)
+        return self._clock.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    def add(self, name: str, assets=(), draft: bool = False, files: dict | None = None,
+            published_at: str | None = None) -> dict:
+        """A release as the fake lists it; `files` maps an asset name to the file served for it."""
+        stamp = self._stamp()
+        self.releases[name] = {"assets": list(assets), "draft": draft, "files": dict(files or {}),
+                               "published_at": None if draft else (published_at or stamp)}
+        return self.releases[name]
+
+    def fail_at(self, call: str, message: str = "gh: HTTP 500 (simulated)") -> None:
+        """The next call of that name fails as a `gh` error (for `check`: as a missing or signed-out gh)."""
+        self.failures[call] = message
+
+    @property
+    def names(self) -> list[str]:
+        return list(self.releases)
+
+    def calls_of(self, name: str) -> list[tuple]:
+        return [c for c in self.calls if c[0] == name]
+
+    def _record(self, call: str, *args) -> None:
+        from rag.refresh import GhError, RefreshError
+
+        self.calls.append((call, *args))
+        message = self.failures.pop(call, None)
+        if message is not None:
+            if call == "check":
+                raise RefreshError(f"the release service is not available: {message}", exit_code=2)
+            raise GhError(message)
+
+    def check(self) -> None:
+        self._record("check")
+
+    def list(self) -> list[dict]:
+        self._record("list")
+        return [{"name": name, "draft": r["draft"], "published_at": r["published_at"], "assets": list(r["assets"])}
+                for name, r in self.releases.items()]
+
+    def latest(self) -> str | None:
+        self._record("latest")
+        return self.latest_name
+
+    def create(self, tag: str, title: str, notes: str, files) -> None:
+        paths = [_Path(f) for f in files]
+        self._record("create", tag, title, notes, [p.name for p in paths])
+        self.releases[tag] = {"assets": [p.name for p in paths], "draft": False, "files": {p.name: p for p in paths},
+                              "published_at": self._stamp()}
+
+    def mark_latest(self, tag: str) -> None:
+        from rag.refresh import GhError
+
+        self._record("mark_latest", tag)
+        if tag not in self.releases:
+            raise GhError(f"release not found: {tag} (HTTP 404)")
+        self.latest_name = tag
+
+    def delete(self, tag: str) -> None:
+        from rag.refresh import GhError
+
+        self._record("delete", tag)
+        if tag not in self.releases:
+            raise GhError(f"release not found: {tag} (HTTP 404)")
+        del self.releases[tag]
+        if self.latest_name == tag:
+            self.latest_name = None
+
+    def download(self, tag: str, pattern: str, dir) -> None:
+        from rag.refresh import GhError
+
+        self._record("download", tag, pattern, str(dir))
+        if tag not in self.releases:
+            raise GhError(f"release not found: {tag} (HTTP 404)")
+        target = _Path(dir)
+        target.mkdir(parents=True, exist_ok=True)
+        for asset, source in self.releases[tag]["files"].items():
+            if fnmatch.fnmatch(asset, pattern):
+                shutil.copy2(source, target / asset)

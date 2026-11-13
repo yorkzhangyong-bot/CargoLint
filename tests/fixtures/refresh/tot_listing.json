@@ -1,0 +1,8 @@
+{
+  "url": "https://distr.tullverket.se/tulltaxan/xml/tot/",
+  "recorded_on": "2026-11-13",
+  "batch": "e14b8e06-f3f6-4ce1-ba9b-1423d07f6b83",
+  "snapshot_date": "2026-11-02",
+  "files": 33,
+  "note": "tot_listing.html is the folder's index as served on recorded_on, fetched once with curl by hand (feature 013, T001). The folder holds one batch at a time; files counts the signed .xml.gz.pgp names on the page, of which the loader reads the six object files."
+}

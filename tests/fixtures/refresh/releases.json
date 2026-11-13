@@ -1,0 +1,59 @@
+[
+  {
+    "tag_name": "taric-2026-11-03",
+    "name": "TARIC snapshot 2026-11-03",
+    "draft": true,
+    "prerelease": false,
+    "created_at": "2026-11-04T05:31:00Z",
+    "published_at": null,
+    "assets": [
+      {"name": "cargolint-taric-2026-11-03.zip", "size": 2100000, "content_type": "application/zip"}
+    ]
+  },
+  {
+    "tag_name": "ebti-2026-10-14",
+    "name": "EBTI rulings 2026-10-14",
+    "draft": false,
+    "prerelease": false,
+    "created_at": "2026-10-28T06:10:00Z",
+    "published_at": "2026-10-28T06:12:00Z",
+    "assets": [
+      {"name": "cargolint-ebti-2026-10-14.zip", "size": 150000000, "content_type": "application/zip"},
+      {"name": "metadata.json", "size": 700, "content_type": "application/json"}
+    ]
+  },
+  {
+    "tag_name": "taric-2026-11-02",
+    "name": "TARIC snapshot 2026-11-02",
+    "draft": false,
+    "prerelease": false,
+    "created_at": "2026-11-03T05:32:00Z",
+    "published_at": "2026-11-03T05:33:00Z",
+    "assets": [
+      {"name": "cargolint-taric-2026-11-02.zip", "size": 2100000, "content_type": "application/zip"},
+      {"name": "metadata.json", "size": 600, "content_type": "application/json"}
+    ]
+  },
+  {
+    "tag_name": "demo-store-v1",
+    "name": "demo-store-v1",
+    "prerelease": false,
+    "created_at": "2026-10-27T10:00:00Z",
+    "published_at": "2026-10-27T10:05:00Z",
+    "assets": [
+      {"name": "cargolint-demo-store-v1.zip", "size": 150089212, "content_type": "application/zip"}
+    ]
+  },
+  {
+    "tag_name": "ebti-2026-11-01",
+    "name": "EBTI rulings 2026-11-01",
+    "draft": false,
+    "prerelease": false,
+    "created_at": "2026-11-01T06:05:00Z",
+    "published_at": "2026-11-01T06:20:00Z",
+    "assets": [
+      {"name": "cargolint-ebti-2026-11-01.zip", "size": 150000000, "content_type": "application/zip"},
+      {"name": "metadata.json", "size": 800, "content_type": "application/json"}
+    ]
+  }
+]

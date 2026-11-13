@@ -32,7 +32,7 @@ end and are not part of these tasks. The tasks were renumbered after review roun
 
 ## Phase 1: Setup
 
-- [ ] T001 Record the fixtures in tests/fixtures/refresh/ by hand, never by a test: `tot_listing.html`, the
+- [X] T001 Record the fixtures in tests/fixtures/refresh/ by hand, never by a test: `tot_listing.html`, the
   `xml/tot/` index of distr.tullverket.se as served on the day this task runs (fetched once with curl; the folder
   holds one batch at a time, so the state of 2026-11-13, batch `e14b8e06-f3f6-4ce1-ba9b-1423d07f6b83`, 261102, 38
   files, can be recorded only until the next batch replaces it, about early December, and a later batch is as good),
@@ -40,7 +40,7 @@ end and are not part of these tasks. The tasks were renumbered after review roun
   `releases.json`, a release listing in GitHub's shape (`tag_name`, `draft`, `assets[].name`) with
   `ebti-2026-11-01`, `ebti-2026-10-14` and `taric-2026-11-02` complete, `demo-store-v1` with its one zip, and a
   draft `taric-2026-11-03` with the archive only (incomplete)
-- [ ] T002 [P] Add `FakeReleaseService` to tests/fakes.py: releases held in memory (name → asset names, draft flag,
+- [X] T002 [P] Add `FakeReleaseService` to tests/fakes.py: releases held in memory (name → asset names, draft flag,
   files, publish time) and the name of the release marked latest; the calls `check`, `list` (the listing shape of
   contracts/releases.md, with `published_at`), `latest` (that name, `None` when none), `create` (stamps the publish
   time), `mark_latest` (moves the mark), `delete` (clears the mark when it deletes the latest release) and
@@ -51,17 +51,17 @@ end and are not part of these tasks. The tasks were renumbered after review roun
 
 ## Phase 2: Foundational (blocks every story)
 
-- [ ] T003 [P] Tests in tests/unit/test_settings.py: `release_repo`, `ebti_release` and `taric_release` read from
+- [X] T003 [P] Tests in tests/unit/test_settings.py: `release_repo`, `ebti_release` and `taric_release` read from
   `CARGOLINT_RELEASE_REPO`, `CARGOLINT_EBTI_RELEASE` and `CARGOLINT_TARIC_RELEASE`, empty by default; `ebti_rulings`
   read from `CARGOLINT_EBTI_RULINGS`, `"5000"` by default, `"all"` and a positive integer accepted, `"0"` and
   `"many"` raising `ValueError`; a pin that does
   not match its kind's name pattern (`ebti-latest`, `taric-2026-13-01`, an EBTI name in the TARIC pin) raises
   `ValueError` in `load_settings`; `TARIC_STALE_DAYS == 40` and `EBTI_STALE_DAYS == 45`
-- [ ] T004 `agent/config.py`: the four settings in `Settings` (the three release ones empty by default, `ebti_rulings`
+- [X] T004 `agent/config.py`: the four settings in `Settings` (the three release ones empty by default, `ebti_rulings`
   `"5000"`), the pin and ruling-count checks in `load_settings`,
   and the constants `TARIC_STALE_DAYS = 40` and `EBTI_STALE_DAYS = 45` with the comment that fixes "older than" as
   age > limit
-- [ ] T005 Tests in tests/unit/test_refresh.py, class `TestReleases`, for the shared pieces of rag/refresh.py:
+- [X] T005 Tests in tests/unit/test_refresh.py, class `TestReleases`, for the shared pieces of rag/refresh.py:
   `parse_release_name` (`ebti-2026-11-01` → kind and date; `demo-store-v1`, `ebti-latest` and `taric-2026-13-01` →
   none); `parse_listing` on tests/fixtures/refresh/releases.json (names, asset names, the draft flag, `published_at`;
   a missing `draft` reads as false, a missing `published_at` as none); `is_complete` (both assets and not a draft); `names_of_kind` newest first by the date in
@@ -84,7 +84,7 @@ end and are not part of these tasks. The tasks were renumbered after review roun
   (`--pattern`, `--dir`); no `upload` call exists; `--repo` passed through to every call and absent otherwise;
   `CARGOLINT_GH` replacing the executable; `check` raising `RefreshError(exit_code=2)` when the recorder reports
   `gh` missing or `auth status` failing
-- [ ] T006 `rag/refresh.py` (standard library and `agent.config` only): `KINDS`, the name pattern, `KEEP_RELEASES`,
+- [X] T006 `rag/refresh.py` (standard library and `agent.config` only): `KINDS`, the name pattern, `KEEP_RELEASES`,
   the tables `ARCHIVE`, `METADATA`, `ALLOWED`, `MARKER` and `RELEASE_FILE` (data-model §1, §4, §5),
   `RefreshError(exit_code)`, `parse_release_name`, `parse_listing`, `is_complete`, `names_of_kind`, `sha256`,
   `pack_entries`, `write_metadata`, `read_metadata`, `current_block`, `_run_gh` (the one function that runs the
@@ -92,14 +92,14 @@ end and are not part of these tasks. The tasks were renumbered after review roun
   contracts/releases.md (no `upload`), `publish` (an incomplete release of the name deleted first, the complete one
   on `force`; create; `mark_latest`; a `gh` failure as `RefreshError(exit_code=3)` naming the step), `prune` and
   `repair_latest` (the re-mark rule of FR-010 from the service's `latest()` and the listing's `published_at`)
-- [ ] T007 Test in tests/unit/test_offline_guard.py: without a fake, `rag.refresh.ReleaseService().check()`,
+- [X] T007 Test in tests/unit/test_offline_guard.py: without a fake, `rag.refresh.ReleaseService().check()`,
   `rag.loader.download(url, dest)` and `urllib.request.urlopen("https://example.invalid/")` raise the guard's
   `RuntimeError` ("offline test") before anything runs or connects, and `urllib.request.urlopen` of a `file:` URL
   still works
-- [ ] T008 tests/conftest.py: `_offline` also replaces `rag.refresh._run_gh`, `rag.loader.download` and
+- [X] T008 tests/conftest.py: `_offline` also replaces `rag.refresh._run_gh`, `rag.loader.download` and
   `urllib.request.urlopen` (every scheme but `file:`) with the refusing function; the refresh modules call these
   through their modules, so the replacement is seen
-- [ ] T009 [P] .gitignore: `data/taric_release.json` and `data/bti_subset.meta.json` under the knowledge-base rules
+- [X] T009 [P] .gitignore: `data/taric_release.json` and `data/bti_subset.meta.json` under the knowledge-base rules
 
 **Checkpoint**: T003, T005 and T007 green; with the four settings at their defaults nothing changes.
 
