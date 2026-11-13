@@ -115,12 +115,12 @@ from the fixtures and the fake release service.
 
 ### Tests for User Story 1
 
-- [ ] T010 [US1] Tests in tests/unit/test_refresh.py, class `TestTotListing`: `parse_listing_html` returns as many
+- [X] T010 [US1] Tests in tests/unit/test_refresh.py, class `TestTotListing`: `parse_listing_html` returns as many
   names as `tot_listing.json` says for the recorded listing, and `current_batch` on them gives the sidecar's batch
   id and snapshot date and the six object files; on generated name lists: two batches where the newer has all six
   objects picks the newer; two batches where the newer lacks an object picks the older complete one; no complete
   batch, or no object file at all, is refused with `RefreshError(exit_code=1)`
-- [ ] T011 [US1] Tests in tests/integration/test_refresh_taric.py (skipped without `gpg`, as
+- [X] T011 [US1] Tests in tests/integration/test_refresh_taric.py (skipped without `gpg`, as
   tests/integration/test_taric_loader.py), with the loader's TARIC paths and key monkeypatched into a temporary
   folder as that file's `taric` fixture does (and the repository's `rag.loader.TARIC_RAW_DIR` and `data/taric.jsonl`
   asserted unchanged before and after, as T016 does for `store/bti_docs.jsonl`), `rag.refresh_taric.TOT_URL` pointed
@@ -154,7 +154,7 @@ from the fixtures and the fake release service.
 
 ### Implementation for User Story 1
 
-- [ ] T012 [US1] `rag/refresh_taric.py`: `TOT_URL`, `read_listing(url)` with `urllib.request.urlopen` through the
+- [X] T012 [US1] `rag/refresh_taric.py`: `TOT_URL`, `read_listing(url)` with `urllib.request.urlopen` through the
   module (unreadable → `RefreshError(exit_code=1)`), `parse_listing_html(html)`, `current_batch(names)` using the
   `_FILE` pattern of rag/taric_extract.py (the newest complete batch), `download_batch(url, files, folder)` with
   `rag.loader.download` looked up on the module into `<rag.loader.TARIC_RAW_DIR>/<date>/` (the constant read at
@@ -164,7 +164,7 @@ from the fixtures and the fake release service.
   through, `pack_entries`, the listing re-read immediately before the metadata is written, the metadata with
   `current`, `publish` (`force` deletes and recreates), `prune`, exit 3 for a service failure after the build, the
   summary; messages start with `TARIC refresh`
-- [ ] T013 [US1] `scripts/refresh_taric.py`: the entry point (the repository root on `sys.path`,
+- [X] T013 [US1] `scripts/refresh_taric.py`: the entry point (the repository root on `sys.path`,
   `sys.exit(rag.refresh_taric.main())`)
 
 **Checkpoint**: User Story 1 works on its own; the first real run is the author's step.
