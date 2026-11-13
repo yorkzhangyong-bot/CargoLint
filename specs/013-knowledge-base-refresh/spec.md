@@ -11,7 +11,8 @@ uses are frozen in the GitHub release demo-store-v1, built once by hand; a clerk
 knowledge base can be refreshed on two schedules, and the clerk always sees how current each part is. Scope: (1)
 `scripts/refresh_taric.py` downloads the current TARIC data from the official EU source, rebuilds the TARIC tables only,
 no embedding, and publishes a release `taric-YYYY-MM-DD`; designed to run daily. (2) `scripts/refresh_ebti.py` downloads
-current EBTI rulings, rebuilds the vector store exactly as demo-store-v1 was built, and publishes a release
+current EBTI rulings, rebuilds the vector store in demo-store-v1's layout (5,000 rulings by default, or every valid
+ruling with the `all` setting), and publishes a release
 `ebti-YYYY-MM-DD`; designed to run monthly. (3) Each release carries a metadata file with snapshot date and source
 version. The app reads both release names from settings instead of the hard-coded demo-store-v1, and falls back to the
 previous release if a download fails. (4) The Origin box shows both snapshot dates; a yellow warning appears when TARIC
@@ -57,9 +58,10 @@ data behind each part.
   of each kind (`taric-*`, `ebti-*`) at start-up. An optional setting pins a release name for a rollback. Two
   releases of each kind are kept.
 - Q: Does the EBTI store stay at about 5,000 rulings, or grow with every new ruling published since the previous
-  store (about 2,000 a month)? → A: Bounded at about 5,000 rulings: new rulings take only the places freed by expired,
-  withdrawn and dropped ones. This follows the requirement to rebuild exactly as demo-store-v1 and not to break the
-  cloud demo.
+  store (about 2,000 a month)? → A: The size is a setting: `CARGOLINT_EBTI_RULINGS` (or `--rulings`) defaults to 5000
+  for the demo store and may be `all` for a production store, which keeps every valid ruling. A number keeps new
+  rulings to the places freed by expired, withdrawn and dropped ones; the demo stays at about 5,000 so its cloud
+  memory and refresh time do not change.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -111,10 +113,10 @@ fake service shows the older releases of the kind deleted.
 
 The maintainer runs one command. It downloads the current EBTI full extract afresh into the work area under `build/`
 (never the loader's copy under `data/raw/`) and the previous EBTI store (the newest complete EBTI release;
-`demo-store-v1` on the first run), keeps the valid rulings of the twelve indexed chapters, and chooses
-about 5,000 of them by the demo store's rule, with the previous store's rulings placed first so that they stay while
-they are valid. A ruling kept from the previous store reuses its vector; a ruling that is new, or whose text changed,
-is embedded; a kept ruling whose code or validity changed keeps its vector but is served with the new values;
+`demo-store-v1` on the first run), keeps the valid rulings of the twelve indexed chapters, and chooses them by the
+demo store's rule up to the configured bound (5,000 by default; `all` keeps every valid ruling), with the previous
+store's rulings placed first so that they stay while they are valid. A ruling kept from the previous store reuses its
+vector; a ruling that is new, or whose text changed, is embedded; a kept ruling whose code or validity changed keeps its vector but is served with the new values;
 expired and withdrawn rulings leave. The nomenclature index and its BM25 file are taken over from the previous store.
 The result, in the layout of demo-store-v1, is built in a work folder, packed as one archive of `store/…` and
 published as `ebti-<extract date>` with a metadata file, marked as the repository's latest release. A full re-embed,
@@ -150,7 +152,7 @@ that record what they embed, and the fake release service. The work folder holds
    new extract (a kept ruling whose code changed is found under the new code); the changed and the newly chosen
    rulings are the only ones embedded; the expired and withdrawn ones are absent; and the choice is the demo store's:
    rulings with text, up to half under the preferred codes, the rest spread over the chapters, the previous store's
-   rulings first.
+   rulings first. With `all`, every valid ruling with text enters the store instead of the bounded choice.
 4. **Given** a previous store built with another embedding model, **When** the command runs without `--full-embed`,
    **Then** it refuses before any embedding call and names the flag. **With** `--full-embed`, every nomenclature
    chunk and every chosen ruling is embedded afresh and nothing is copied from the previous store.
@@ -393,12 +395,15 @@ switch.
   deleted and published afresh. `--force` rebuilds the extract's date regardless: an existing complete release of
   that date is deleted and created afresh from the new build.
 - **FR-007**: It MUST keep the rulings of the twelve indexed chapters that are valid on the run date, with holder names
-  and addresses dropped, as the loader does, and choose about 5,000 of them (`--rulings`, default 5000) with the demo
-  store's rule (feature 011, FR-002): rulings with text only, up to half under the preferred codes one code in turn,
-  the rest spread over the chapters. Within each code the previous store's rulings come first, so a kept ruling leaves
-  only when it is no longer in the extract or its code's share falls. The store is bounded: it never holds more than
-  the requested number, and new rulings take only the places freed by expired, withdrawn and dropped ones. The same
-  extract and previous store always give the same choice.
+  and addresses dropped, as the loader does. The store's size MUST be configurable through `CARGOLINT_EBTI_RULINGS`
+  (read at start; `--rulings` overrides it): a positive integer, or the literal `all`. The default is `5000` for the
+  demo store. With a number it MUST choose that many with the demo store's rule (feature 011, FR-002): rulings with
+  text only, up to half under the preferred codes one code in turn, the rest spread over the chapters; within each code
+  the previous store's rulings come first, so a kept ruling leaves only when it is no longer in the extract or its
+  code's share falls; the store never holds more than the requested number, and new rulings take only the places freed
+  by expired, withdrawn and dropped ones. With `all` it MUST keep every valid ruling with text, for a production store.
+  A value that is neither a positive integer nor `all` is a setup error (exit 2). The same extract and previous store
+  always give the same choice.
 - **FR-008**: It MUST take the previous store from the newest complete EBTI release, or from the release or local
   folder named by `--previous` (`demo-store-v1` on the first run), refusing a previous store that lacks a file of the
   layout before any embedding call, and build the store in a work folder (`--out`, default `build/ebti-<date>/`, which
@@ -410,9 +415,10 @@ switch.
   `index_meta.json` with the loader's fields, of which `embedding_model`, `dimension`, `nomenclature_chunks` and
   `edition_year` are carried over from the previous store (they describe the copied nomenclature index) and
   `built_at`, `bti_rulings` and `embedding_usage` are recomputed for this build (the previous store's `demo_store`
-  and `refresh` blocks are dropped), plus the rulings' snapshot date, the source version, the rulings requested, the
-  count the extract held, and the counts of rulings reused, embedded and dropped. It MUST refuse to reuse a previous
-  store built with another embedding model, or whose nomenclature index does not match the committed nomenclature,
+  and `refresh` blocks are dropped), plus the rulings' snapshot date, the source version, the rulings requested (the
+  number or `all`), the count the extract held, and the counts of rulings reused, embedded and dropped. It MUST
+  refuse to reuse a previous store built with another embedding model, or whose nomenclature index does not match the
+  committed nomenclature,
   naming `--full-embed`. With `--full-embed` it MUST embed every nomenclature chunk and every chosen ruling afresh and
   copy nothing. The repository's `store/`, `data/bti_subset.jsonl` and `data/raw/` MUST NOT be touched.
 - **FR-009**: It MUST pack the work folder's `store/…` (and nothing else) as `cargolint-ebti-<date>.zip`, write the
@@ -447,9 +453,10 @@ switch.
 **Settings and the fetch at a cold start**
 
 - **FR-014**: The settings MUST read from the environment `CARGOLINT_RELEASE_REPO` (the repository that publishes the
-  releases, `owner/name`; empty by default: nothing is fetched from releases) and the optional pins
+  releases, `owner/name`; empty by default: nothing is fetched from releases), the optional pins
   `CARGOLINT_EBTI_RELEASE` and `CARGOLINT_TARIC_RELEASE` (a release name each; empty by default: the newest of the
-  kind).
+  kind), and `CARGOLINT_EBTI_RULINGS` (a positive integer or `all`; `5000` by default) for the EBTI store size of
+  FR-007.
 - **FR-015**: Once per server process, before it opens the knowledge base and only when the repository setting is set,
   for each kind whose files are missing (`store/index_meta.json` for the EBTI kind, `data/taric.jsonl` for the TARIC
   kind), the app MUST resolve the kind's candidates, in this order: the pinned release alone when a pin is set; else
@@ -507,13 +514,13 @@ switch.
   release.
 - **FR-024**: The README MUST gain a "Knowledge base refresh" section: the two commands and their options (`--force`,
   `--no-publish`, `--previous`, `--full-embed`, `--rulings`, `--out`, `--extract`, `--repo`, and `CARGOLINT_GH`), the
-  releases, their completeness and retention, the metadata file and the latest-release pointer, the three settings
+  releases, their completeness and retention, the metadata file and the latest-release pointer, the four settings
   and how to switch the demo from the feature-011 settings once both kinds are published, that a pin lasts only while
   retention keeps its release, the exit codes, the warning limits, how the workflow is switched on, that the scripts
   are run by hand only while the schedule is off or after checking the Actions tab (two runs must not publish at
   once), and that GitHub disables the schedules after 60 days without repository activity (re-enabled from the
   Actions tab). `.env.example` MUST list the
-  three settings. The "Demo deployment" section follows.
+  four settings. The "Demo deployment" section follows.
 - **FR-025**: Every test MUST run offline on recorded fixtures: a saved directory listing, the signed fixture batch,
   a tiny extract, a tiny previous store, fake embeddings, a fake release service, a release listing and `file:`
   releases. The suite's offline guard (`tests/conftest.py`) MUST refuse, in every test not marked live, besides the
@@ -546,18 +553,23 @@ switch.
 
 - **SC-001**: A TARIC refresh that finds a new batch completes in under 10 minutes on a laptop, measured by the author
   on the first real run (today's batch: 34 MB of signed files; the load itself takes about 30 s).
-- **SC-002**: An EBTI refresh completes in under 30 minutes on a laptop, measured by the author on the first real run
-  (the 397 MB extract and the 150 MB previous store are downloaded; only the new and changed rulings are embedded, a
-  few hundred a month, where the full build embedded 79,500 texts in about 90 minutes).
+- **SC-002**: An EBTI refresh with the default 5,000-ruling bound completes in under 30 minutes on a laptop, measured
+  by the author on the first real run (the 397 MB extract and the 150 MB previous store are downloaded; only the new
+  and changed rulings are embedded, a few hundred a month, where the full build embedded 79,500 texts in about 90
+  minutes). A production refresh with `all` embeds every valid ruling on its first run (about 74,000 texts in the
+  twelve chapters, comparable to the full build) and, once that store exists, later runs embed only the new and
+  changed rulings and complete within the same 30 minutes.
 - **SC-003**: The end-to-end evaluation (`tests/eval/e2e_eval.py`, 120 lines), run against the refreshed EBTI store
   and against demo-store-v1 in one session with the same settings, three runs each (`--repeat 3`, the project's
   method) and the rulings' validity judged on the run day (`--as-of`, a new option of the evaluation: on the set's
   build date, 2026-10-23, a ruling issued later could never vote, so a refreshed store could only lose), gives a
-  majority-right count for the refreshed store within 2 of the 120 lines of demo-store-v1's. The author runs both.
+  majority-right count for the refreshed store no more than 2 lines below demo-store-v1's (a better result passes).
+  The author runs both.
 - **SC-004**: Both dates appear in the Origin box and in Admin › Data, and the warning appears exactly when a part is
   older than its limit. Offline UI tests cover each state of User Story 4.
-- **SC-005**: With the three new settings unset, local behaviour is unchanged and the current demo's secrets keep
-  working: the offline suite passes, and the demo opens as before on its first deployment after the merge.
+- **SC-005**: With the three release settings and `CARGOLINT_EBTI_RULINGS` unset, local behaviour is unchanged and
+  the current demo's secrets keep working: the offline suite passes, and the demo opens as before on its first
+  deployment after the merge. The demo keeps the 5,000-ruling bound.
 - **SC-006**: A wrong or missing checksum, an unexpected path, or an unreachable archive unpacks nothing, and the
   fallback to the next newest release works. Offline tests cover this.
 - **SC-007**: After a refresh, at most two releases of that kind exist (exactly two from the second refresh on),
@@ -568,8 +580,9 @@ switch.
 
 ## Assumptions
 
-- The choice of rulings stays the demo store's: the twelve chapters, the eval set's and the sample files' codes first.
-  About 2,000 new valid rulings a month arrive in the twelve chapters, of which only the chosen ones enter the store.
+- The choice of rulings stays the demo store's within the configured bound: the twelve chapters, the eval set's and the
+  sample files' codes first. The default is 5,000 for the demo; `all` keeps every valid ruling for a production store.
+  About 2,000 new valid rulings a month arrive in the twelve chapters; with a number only the chosen ones enter.
 - The previous store on the first run is `demo-store-v1`, named with `--previous`; later runs start from the newest
   EBTI release.
 - The release service is GitHub releases of this repository, used through the `gh` command line tool: signed in on

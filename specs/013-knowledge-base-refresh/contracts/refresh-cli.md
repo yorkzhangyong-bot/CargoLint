@@ -66,9 +66,12 @@ and name the step and the reason; nothing is published.
 ## `python scripts/refresh_ebti.py`
 
 ```text
-python scripts/refresh_ebti.py [--rulings N] [--out DIR] [--previous RELEASE|DIR] [--full-embed]
+python scripts/refresh_ebti.py [--rulings N|all] [--out DIR] [--previous RELEASE|DIR] [--full-embed]
                                [--extract ZIP] [--force] [--no-publish] [--repo OWNER/NAME]
 ```
+
+The store size comes from `CARGOLINT_EBTI_RULINGS` (default 5000; `all` keeps every valid ruling); `--rulings`
+overrides it for one run.
 
 ### Preconditions
 
@@ -102,8 +105,9 @@ python scripts/refresh_ebti.py [--rulings N] [--out DIR] [--previous RELEASE|DIR
    exit 2 naming `--previous demo-store-v1` and `--full-embed`. A store that lacks a file of the layout → exit 2.
 8. Unless `--full-embed`: refuse a previous store whose `embedding_model` is not the settings' or whose
    `nomenclature_chunks` or `edition_year` differ from the committed nomenclature (exit 2, naming `--full-embed`).
-9. Choose about N rulings with the demo store's rule, the previous store's references kept first
-   (`rag.demo_store.select_rulings(records, preferred, N, keep=…)`).
+9. Choose N rulings with the demo store's rule, the previous store's references kept first
+   (`rag.demo_store.select_rulings(records, preferred, N, keep=…)`); with `all`, keep every valid ruling with text
+   instead, with no bound.
 10. Build `<out>/store/`:
     - reuse: copy `chroma/` and `bm25.pkl`; copy the vectors of the chosen rulings whose text equals the previous
       record's (`copy_vectors(..., metadatas=…)`, the metadata written from the new record so a changed code or
@@ -146,7 +150,7 @@ EBTI refresh: ebti-2026-11-13 is already published and complete; nothing new. Us
 |---|---|
 | 0 | published, or nothing new |
 | 1 | the source was refused: listing unreadable, no complete batch, signature, parse, an extract without a date |
-| 2 | setup or usage: options, `gpg` or the key copy, `gh` missing or not signed in, `OPENROUTER_API_KEY` missing, no previous store, a previous store that is incomplete or of another model or nomenclature without `--full-embed`, `--out` not empty (the default work folder without `--force`, a given folder always), checked only once there is something to build |
+| 2 | setup or usage: options, an invalid ruling count (neither a positive integer nor `all`), `gpg` or the key copy, `gh` missing or not signed in, `OPENROUTER_API_KEY` missing, no previous store, a previous store that is incomplete or of another model or nomenclature without `--full-embed`, `--out` not empty (the default work folder without `--force`, a given folder always), checked only once there is something to build |
 | 3 | the release service failed after the build: a create, the marking as latest, a deletion or the pruning; the message names the step and the release and says what was done before (an incomplete remnant deleted, a release created but not marked latest or pruned); the next run of the kind repairs it, pruning and re-marking the latest release even when the source has nothing new |
 
 ### Guarantees

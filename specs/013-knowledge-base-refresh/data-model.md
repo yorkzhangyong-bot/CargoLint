@@ -58,6 +58,9 @@ New:
 | `ebti_source_version` | string or absent | the same, as in the metadata file |
 | `refresh` | object or absent | `rag.refresh_ebti` only: `rulings_requested`, `extract_rulings`, `reused`, `embedded`, `dropped`, `vectors_from`, `full_embed` (bool) |
 
+`rulings_requested` is the configured number, or the string `all` when the store keeps every valid ruling; the
+`CARGOLINT_EBTI_RULINGS` setting (default 5000) is overridden by `--rulings`.
+
 `KnowledgeBase.rulings_date` → `(ebti_snapshot_date, "extract")` when present, else `(built_at[:10], "built")`,
 else `(None, "unknown")`.
 
@@ -88,13 +91,14 @@ shows each entry with `st.error` and goes on.
 
 The app refuses an archive with any other entry before unpacking anything.
 
-## 6. Settings (`agent/config.py`; FR-014)
+## 6. Settings (`agent/config.py`; FR-007, FR-014)
 
 | Setting | Environment variable | Default | Meaning |
 |---|---|---|---|
 | `release_repo` | `CARGOLINT_RELEASE_REPO` | `""` | `owner/name` of the repository that publishes the releases; empty: no release fetch |
 | `ebti_release` | `CARGOLINT_EBTI_RELEASE` | `""` | a pinned EBTI release name; empty: the newest |
 | `taric_release` | `CARGOLINT_TARIC_RELEASE` | `""` | a pinned TARIC release name; empty: the newest |
+| `ebti_rulings` | `CARGOLINT_EBTI_RULINGS` | `"5000"` | the EBTI store size: a positive integer, or `all`; `--rulings` overrides it |
 
 Precedence in `load_kb()`: `release_repo` set → `fetch_releases` (the feature-011 settings ignored, with a log note
 when they are set too); else `demo_store_url` set → `fetch_demo_store` (feature 011, unchanged); else nothing. A pin
@@ -114,7 +118,7 @@ back once to the newest of its kind, with a log line; a pin lasts only while ret
 | `API` | `rag/refresh.py` | `https://api.github.com/repos/{repo}/releases?per_page=50` | the listing, the second route; tests point it at a `file:` URL |
 | `DOWNLOAD` | `rag/refresh.py` | `https://github.com/{repo}/releases/download/{tag}/{asset}` | assets; tests point it at a `file:` template |
 | `TOT_URL` | `rag/refresh_taric.py` | `https://distr.tullverket.se/tulltaxan/xml/tot/` | the listing |
-| `DEFAULT_RULINGS` | `rag/refresh_ebti.py` | 5000 | the bound |
+| `DEFAULT_RULINGS` | `rag/refresh_ebti.py` | 5000 | the default bound; `all` keeps every valid ruling |
 | `EXTRACT_ZIP` | `rag/refresh_ebti.py` | `build/DDS2-EBTI_Full.zip` | the refresh's own download, removed with its `.part` before each download |
 | `SUBSET_META` | `rag/loader.py` | `data/bti_subset.meta.json` | the extract date of the loader's subset (§3) |
 

@@ -37,8 +37,9 @@
   detail.
 - Re-validated after `/speckit-clarify` (session 2026-11-13, four questions): the TARIC limit is 40 days on the
   snapshot date; the EBTI refresh reuses the previous store's vectors and embeds only new or changed rulings, with a
-  manual full re-embed flag; the app resolves the newest release of each kind, with an optional pin; the store stays
-  bounded at about 5,000 rulings. All items still pass.
+  manual full re-embed flag; the app resolves the newest release of each kind, with an optional pin; the store's size
+  is the `CARGOLINT_EBTI_RULINGS` setting, 5,000 by default for the demo and `all` for every valid ruling in a
+  production store. All items still pass.
 - Re-validated after review round 1 (2026-11-13, 16 findings): the four clarifications stand; the spec now defines
   a complete release, the latest-release pointer the app reads instead of the rate-limited listing, the pin's
   fallback, a TARIC fetch failure that does not stop the app, the newest complete batch, `--force` and the work
@@ -48,3 +49,7 @@
   the app falls back to the listing when every pointer-named release fails; `--full-embed` reaches the fakes; the
   work folder is checked after "nothing new"; exit 3 for a service failure after the build; `--force` deletes and
   recreates instead of patching assets. All items still pass.
+- Re-validated after review round 3 and the owner's store-size change (2026-11-13): a nothing-new run still prunes and
+  re-marks the latest release when needed; the TARIC batch folder is `rag.loader.TARIC_RAW_DIR` read at call time;
+  the EBTI store size is the `CARGOLINT_EBTI_RULINGS` setting (5,000 by default; `all` for every valid ruling), with
+  SC-002 covering both sizes and the size-agnostic SC-003. All items still pass.

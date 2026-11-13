@@ -50,10 +50,13 @@ end and are not part of these tasks. The tasks were renumbered after review roun
 ## Phase 2: Foundational (blocks every story)
 
 - [ ] T003 [P] Tests in tests/unit/test_settings.py: `release_repo`, `ebti_release` and `taric_release` read from
-  `CARGOLINT_RELEASE_REPO`, `CARGOLINT_EBTI_RELEASE` and `CARGOLINT_TARIC_RELEASE`, empty by default; a pin that does
+  `CARGOLINT_RELEASE_REPO`, `CARGOLINT_EBTI_RELEASE` and `CARGOLINT_TARIC_RELEASE`, empty by default; `ebti_rulings`
+  read from `CARGOLINT_EBTI_RULINGS`, `"5000"` by default, `"all"` and a positive integer accepted, `"0"` and
+  `"many"` raising `ValueError`; a pin that does
   not match its kind's name pattern (`ebti-latest`, `taric-2026-13-01`, an EBTI name in the TARIC pin) raises
   `ValueError` in `load_settings`; `TARIC_STALE_DAYS == 40` and `EBTI_STALE_DAYS == 45`
-- [ ] T004 `agent/config.py`: the three settings in `Settings`, empty by default, the pin check in `load_settings`,
+- [ ] T004 `agent/config.py`: the four settings in `Settings` (the three release ones empty by default, `ebti_rulings`
+  `"5000"`), the pin and ruling-count checks in `load_settings`,
   and the constants `TARIC_STALE_DAYS = 40` and `EBTI_STALE_DAYS = 45` with the comment that fixes "older than" as
   age > limit
 - [ ] T005 Tests in tests/unit/test_refresh.py, class `TestReleases`, for the shared pieces of rag/refresh.py:
@@ -91,7 +94,7 @@ end and are not part of these tasks. The tasks were renumbered after review roun
   through their modules, so the replacement is seen
 - [ ] T009 [P] .gitignore: `data/taric_release.json` and `data/bti_subset.meta.json` under the knowledge-base rules
 
-**Checkpoint**: T003, T005 and T007 green; with the three settings unset nothing changes.
+**Checkpoint**: T003, T005 and T007 green; with the four settings at their defaults nothing changes.
 
 ---
 
@@ -172,7 +175,8 @@ and the fake release service.
 ### Tests for User Story 2
 
 - [ ] T014 [P] [US2] Tests in tests/unit/test_demo_store.py, class `TestSelection`: `select_rulings(..., keep=…)`
-  puts the kept rulings first within each code; the bound `n` holds with `keep` larger than a code's share; a kept
+  puts the kept rulings first within each code; the bound `n` holds with `keep` larger than a code's share; `all`
+  keeps every valid ruling with text; a kept
   reference absent from the records is not chosen; a kept ruling leaves when its code's share falls; the same
   records, keep set and seed give the same choice; the existing tests pass unchanged with `keep=None`. Class
   `TestCopyVectors`: `copy_vectors(..., metadatas=…)` writes the given metadata (a changed `code`) with the copied
@@ -248,7 +252,9 @@ and the fake release service.
   `--demo`) and `main` writes `ebti_snapshot_date` and `ebti_source_version` into the index metadata when known;
   `read_release_files(root)`; `KnowledgeBase.rulings_date` (data-model §3), `KnowledgeBase.releases` read by
   `open_knowledge_base`, and `KnowledgeBase.fetch_failures` (empty by default)
-- [ ] T020 [US2] `rag/refresh_ebti.py`: `EXTRACT_URL`, `EXTRACT_ZIP`, `DEFAULT_RULINGS`, `download_extract` (the
+- [ ] T020 [US2] `rag/refresh_ebti.py`: `EXTRACT_URL`, `EXTRACT_ZIP`, `DEFAULT_RULINGS`, the ruling count from
+  `load_settings().ebti_rulings` overridden by `--rulings` (a positive integer or `all`; invalid → exit 2),
+  `download_extract` (the
   file and its `.part` removed first, `rag.loader.download` looked up on the module), `extract_date`,
   `previous_store(spec, service, work)`, `check_previous` (the layout, the model, the nomenclature), `partition`,
   `build_store` (reuse: copy `chroma/` and `bm25.pkl`, `rag.demo_store.copy_vectors(..., metadatas=…)` for the
@@ -258,7 +264,8 @@ and the fake release service.
   `main` was given), the work-folder rule (checked after the "nothing new" check; `--force` empties the default
   folder only), the listing re-read immediately before the metadata is written, and `main(argv, embeddings=None,
   service=None)` following contracts/refresh-cli.md with its exit codes (3 for a service failure after the build)
-  and summary; messages start with `EBTI refresh`
+  and summary; with `all`, every valid ruling with text is chosen and `rulings_requested` is `"all"`; messages start
+  with `EBTI refresh`
 - [ ] T021 [US2] `scripts/refresh_ebti.py`: the entry point
 
 **Checkpoint**: User Stories 1 and 2 publish the two kinds; the first real EBTI run from `demo-store-v1` is the
@@ -391,13 +398,13 @@ shows the dates, the source versions and the releases in use.
 
 - [ ] T032 [P] README.md: the "Knowledge base refresh" section (spec FR-024: the two commands and their options
   including `--repo` and `CARGOLINT_GH`, the releases, completeness, retention, the metadata file and the
-  latest-release pointer, the exit codes including 3, the three settings, the switch from the feature-011 secrets
+  latest-release pointer, the exit codes including 3, the four settings, the switch from the feature-011 secrets
   once both kinds are published, a pin lasting only while retention keeps its release, the warning limits, the
   workflow switch, the rule that the scripts are run by hand only while the schedule is off or after checking the
   Actions tab, and the 60-day auto-disable) and the "Demo deployment" section updated to the repository setting;
   `scripts/` and `refresh*` in the repository layout
-- [ ] T033 [P] .env.example: `CARGOLINT_RELEASE_REPO`, `CARGOLINT_EBTI_RELEASE`, `CARGOLINT_TARIC_RELEASE` with
-  one-line comments (spec FR-024)
+- [ ] T033 [P] .env.example: `CARGOLINT_RELEASE_REPO`, `CARGOLINT_EBTI_RELEASE`, `CARGOLINT_TARIC_RELEASE` and
+  `CARGOLINT_EBTI_RULINGS` with one-line comments (spec FR-024)
 - [ ] T034 [P] tests/eval/e2e_eval.py: `--as-of YYYY-MM-DD`, the rulings' validity date (default: the set's
   `built_on`), recorded in the history entry and the report; a test in tests/unit/test_e2e_eval.py that the default
   is the set's build date and that a given date is used and recorded (spec SC-003, research R-14)

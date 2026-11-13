@@ -27,7 +27,8 @@ twelve chapters and validity on the run date: 73,899 rulings on 2026-10-14. With
 new valid rulings arrive in these chapters each month.
 
 **Decision**: the extract's snapshot date is the date of the newest `.csv` entry's timestamp; an extract without one
-is refused. The store stays bounded at about 5,000 rulings (clarification Q4).
+is refused. The store's size is the `CARGOLINT_EBTI_RULINGS` setting (clarification Q4): 5000 by default for the demo
+store, or `all` for every valid ruling in a production store; the setting does not change the snapshot-date rule.
 
 **Alternatives considered**: the HTTP `Last-Modified` header (not guaranteed, and not available for a file given with
 `--extract`); the download day (wrong after a reused download).
@@ -43,11 +44,13 @@ collection, `index_meta.json` with a `demo_store` block, plus `data/taric.jsonl`
 **Decision** (clarification Q2): the refresh keeps the layout and the choice rule, but takes its vectors from the
 previous store: unchanged rulings are copied, new and changed rulings are embedded, the nomenclature index is copied.
 `--full-embed` rebuilds everything with the loader's own `build_indexes` against the work folder, for a change of
-embedding model. The script refuses to reuse a store built with another model or another nomenclature.
+embedding model. The script refuses to reuse a store built with another model or another nomenclature. The size is the
+setting of R-02: the default 5,000 keeps the 30-minute target; `all` embeds the full build once (about 90 minutes)
+for a production store, then later runs reuse its vectors.
 
-**Alternatives considered**: the full build then the cut (90 minutes, $0.27, 1.8 GB; misses the 30-minute target);
-embedding all chosen rulings afresh each month (about 10,600 texts, about 15 minutes, $0.04; simpler, but the user
-asked for reuse).
+**Alternatives considered**: the full build then the cut (90 minutes, $0.27, 1.8 GB; the first `all` run does this
+once, while the demo's default bound never does); embedding all chosen rulings afresh each month (about 10,600 texts,
+about 15 minutes, $0.04; simpler, but the user asked for reuse).
 
 ## R-04 Keeping the previous store's rulings
 

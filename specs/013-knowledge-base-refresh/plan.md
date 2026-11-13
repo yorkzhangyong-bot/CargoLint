@@ -21,10 +21,11 @@ Three new modules under `rag/` carry the logic, and two thin scripts under `scri
   six files into a folder of their own, run the existing TARIC load (`rag.loader.load_taric`), pack `data/taric.jsonl`,
   publish `taric-<date>`, prune. No embedding.
 - **`rag/refresh_ebti.py`**: download the EBTI full extract into `build/`, read its date, take the previous store (the
-  newest complete EBTI release, `demo-store-v1`, or a folder), choose about 5,000 rulings with the demo store's rule
-  keeping the previous store's rulings first, copy the vectors of unchanged rulings with their metadata rewritten from
-  the new extract, embed only new and changed ones, copy the nomenclature index, write the store into a work folder,
-  pack `store/…`, publish `ebti-<date>`, prune. `--full-embed` embeds everything afresh.
+  newest complete EBTI release, `demo-store-v1`, or a folder), choose the configured number of rulings (default
+  5,000; `all` keeps every valid ruling) with the demo store's rule when a number is used, keeping the previous
+  store's rulings first, copy the vectors of unchanged rulings with their metadata rewritten from the new extract,
+  embed only new and changed ones, copy the nomenclature index, write the store into a work folder, pack `store/…`,
+  publish `ebti-<date>`, prune. `--full-embed` embeds everything afresh.
 
 `app.py` calls the new fetch inside `load_kb()` when `CARGOLINT_RELEASE_REPO` is set, and the feature-011 fetch
 otherwise, so the current demo keeps working. A TARIC release that cannot be fetched leaves the app running without
@@ -79,7 +80,7 @@ release's metadata, a download address, no API) and a 2 MB TARIC download to tod
   `--taric` writes today;
 - the checksum is verified before anything is unpacked; the marker file comes last;
 - the app's normal path reads no GitHub API: the pointer and the assets come from the public download addresses;
-- nothing changes when the three new settings are unset; the feature-011 settings keep working;
+- nothing changes when the four new settings are unset; the feature-011 settings keep working;
 - a test that misses a fake fails in the offline guard before `gh`, a download or a non-`file:` URL is reached; the
   guard does not cover file writes, so no test calls a loader or refresh function against the repository's paths:
   `build_bti` and `build_indexes` take a `store_dir`, and the tests pass a temporary one and monkeypatch
@@ -90,7 +91,7 @@ release's metadata, a download address, no API) and a 2 MB TARIC download to tod
 
 **Scale/Scope**: three new modules in `rag/`, two scripts, two small changes in `rag/demo_store.py` (`keep` in
 `select_rulings`, metadata in `copy_vectors`), a few in `rag/loader.py` (the extract date and the subset's sidecar, a
-`store_dir` parameter, the release files and `rulings_date` on `KnowledgeBase`), three settings and two constants in
+`store_dir` parameter, the release files and `rulings_date` on `KnowledgeBase`), four settings and two constants in
 `agent/config.py`, about 20 lines in `app.py`, three functions in `ui/view.py`, a few lines in `ui/main_page.py` and
 `ui/admin.py`, one workflow file, a few lines in `tests/conftest.py`, one option in `tests/eval/e2e_eval.py`, two
 lines in `.gitignore`, five new test files and additions to seven, three fixture files, the README and
@@ -104,7 +105,7 @@ lines in `.gitignore`, five new test files and additions to seven, three fixture
 |---|---|---|
 | I. Guardrails live in code | No route, threshold, lock or validation changes. The checksum, path and marker checks of the fetch, the staleness rule and its two limits, and the retention rule are code with named constants (`TARIC_STALE_DAYS`, `EBTI_STALE_DAYS`, `KEEP_RELEASES`); behaviour at exactly a limit is fixed in the spec (no warning) and tested. Every date and release name the UI shows is read from the knowledge base object, which reads it from the data files, never from prose. | Pass |
 | II. Untrusted input | The releases are the maintainer's own, published by the maintainer's scripts into the project's repository and read over HTTPS; the archive is verified against the release's metadata before unpacking, only the kind's paths are unpacked, and `..` is refused. The GitHub token exists only in Actions, is not kept in the checkout (`persist-credentials: false`) and is never read by the app, which reads the pointer and the assets from public download addresses; the OpenRouter key stays an environment variable; nothing of either is logged. The scripts read the EU sources as the loader already does (signed TARIC files verified against the pinned key; the EBTI CSV read as data). | Pass |
-| III. Grounded, cited | Rulings keep their texts, references, countries and validity; a changed text is embedded again, never served with an old vector. The ruling count stays about 5,000, as for the demo. | Pass |
+| III. Grounded, cited | Rulings keep their texts, references, countries and validity; a changed text is embedded again, never served with an old vector. The ruling count is the configured bound (about 5,000 by default, or every valid ruling with `all`), and the demo stays at about 5,000. | Pass |
 | IV. Hybrid retrieval | The nomenclature index and BM25 file are copied unchanged from the previous store (or rebuilt with `--full-embed`); the ruling index keeps the same layout. The loader stays scripted and chapter-driven. Admin › Data now states the extract date and source version of the rulings and the TARIC batch, which is what "when it was last updated" means. | Pass |
 | V. Typed tools | No tool changes. | Pass |
 | VI. Native UI that shows its work | `st.caption` and `st.warning` in the Origin box, `st.markdown` lines in Admin › Data; no CSS, no HTML. The UI Design Contract's Origin box and Data section gain content and lose nothing, so no amendment is needed. | Pass |
@@ -171,7 +172,7 @@ tests/
 │   └── releases.json            # new: a release listing in GitHub's JSON shape, five entries including a draft
 ├── unit/
 │   ├── test_offline_guard.py    # the extended guard: the runner, the download and a non-file: URL are refused
-│   ├── test_settings.py         # new: the three settings, a pin of the wrong shape, the two constants
+│   ├── test_settings.py         # new: the four settings, a pin of the wrong shape, an invalid ruling count, the two constants
 │   ├── test_refresh.py          # new: names, completeness, retention, metadata with current, pack_entries, the
 │   │                            #      service's argv, the listing parser, extract_date, partition, the workflow
 │   ├── test_release_fetch.py    # new: the app's fetch: pointer, listing, pin, fallbacks, checksum, paths, markers
@@ -190,7 +191,7 @@ tests/
                                  #      the legacy path still runs
 tests/eval/e2e_eval.py           # --as-of: the validity date of the rulings (default: the set's build date)
 README.md                        # "Knowledge base refresh"; "Demo deployment" follows
-.env.example                     # the three settings
+.env.example                     # the four settings
 ```
 
 **Structure Decision**: the user's brief names the two scripts under `scripts/`, so they exist there, but as entry
@@ -257,7 +258,9 @@ tasks build.
    last two; all before any embedding call.
 8. **The choice.** `select_rulings(records, preferred, n, keep=previous_references)`: within each code the kept
    rulings come first, then the others in the seeded shuffle; everything else is feature 011's rule, so the store is
-   bounded at `n` and a kept ruling leaves only when it is gone from the extract or its code's share falls.
+   bounded at `n` and a kept ruling leaves only when it is gone from the extract or its code's share falls. `n` is the
+   `CARGOLINT_EBTI_RULINGS` setting (default 5000), overridden by `--rulings`; the literal `all` bypasses the bound and
+   keeps every valid ruling with text.
 9. **Reuse and embedding.** `partition(chosen, previous_docs)` splits the chosen rulings into those whose text
    (description and reasoning) equals the previous store's record, whose vectors are copied with
    `rag.demo_store.copy_vectors(..., metadatas=…)`, the metadata (code, cn_code, chapter, member state, language,
@@ -332,8 +335,8 @@ tasks build.
 
 **A. Tests first (offline)**
 - **A0** `tests/unit/test_offline_guard.py` and `tests/unit/test_settings.py`: the extended guard (the `gh` runner,
-  the download, a non-`file:` URL refused, `file:` allowed); the three settings, a pin of the wrong shape, the
-  constants.
+  the download, a non-`file:` URL refused, `file:` allowed); the four settings, a pin of the wrong shape, an invalid
+  ruling count, the constants.
 - **A1** `tests/unit/test_refresh.py`: names and kinds; completeness; retention keeps the two newest complete, deletes
   incomplete ones and ignores other names; the metadata file's fields and `current` from a fresh listing;
   `pack_entries`; `publish` with `force` deleting then creating; a `gh` failure in `publish` or `prune` as
@@ -342,7 +345,7 @@ tasks build.
   newest batch is incomplete beside a complete one, and on one with no complete batch; `extract_date`; `partition`
   and the rewritten metadata of a reused ruling; the workflow file through `yaml.safe_load`.
 - **A2** `tests/unit/test_demo_store.py`: `select_rulings` with `keep`: kept rulings stay while valid, the bound
-  holds, the choice is deterministic; `copy_vectors` with `metadatas`.
+  holds, `all` keeps every valid ruling, the choice is deterministic; `copy_vectors` with `metadatas`.
 - **A3** `tests/unit/test_release_fetch.py`: nothing fetched when the markers exist or the repository setting is
   empty; the pointer first and no listing; the listing when the pointer is unreadable or has no names for the kind;
   the newest complete of each kind; a pin without pointer or listing; the fallback to the next newest; a failed pin
@@ -364,7 +367,8 @@ tasks build.
   `FakeEmbeddings`: the store's files, the carried-over and recomputed fields and counts, only new and changed rulings
   embedded, a reused ruling's new metadata, the fresh download (the file and its `.part` removed first), nothing new
   (also with the work folder left behind), the model check, an incomplete previous store, `--full-embed` on the
-  fakes, the work folder with and without `--force`, `--force` deleting and recreating, a service failure as exit 3,
+  fakes, the ruling setting and `--rulings all`, the work folder with and without `--force`, `--force` deleting and
+  recreating, a service failure as exit 3,
   retention, the repository's `store/`, `data/bti_subset.jsonl` and `data/raw/` untouched.
 - **A7** `tests/ui/*`: the Origin box's dates and warning; Admin › Data; a failed EBTI fetch stops the app; a failed
   TARIC fetch opens it without TARIC with the error on the page; the legacy path.
