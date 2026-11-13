@@ -12,11 +12,15 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import shutil
 import subprocess
+import tempfile
+import urllib.request
 import zipfile
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -336,3 +340,206 @@ def repair_latest(service: Any, kind: str, listing: list[dict] | None = None) ->
     except GhError as exc:
         raise _failure("repair latest", newest, exc, []) from exc
     return newest
+
+
+# --------------------------------------------------------------------------- the app's fetch at a cold start
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class FetchResult:
+    unpacked: dict[str, str] = field(default_factory=dict)     # kind → the release unpacked
+    failed: dict[str, str] = field(default_factory=dict)       # kind → every candidate and its reason
+
+
+def releases_needed(settings: Any, root: Path | None = None) -> list[str]:
+    """The kinds whose marker is missing, in fetch order; [] when the repository setting is empty or nothing is missing
+    (then nothing is read, not even the pointer)."""
+    if not getattr(settings, "release_repo", ""):
+        return []
+    base = root or ROOT
+    return [kind for kind in KINDS if not (base / MARKER[kind]).exists()]
+
+
+def _open(url: str, timeout: int) -> bytes:
+    with urllib.request.urlopen(url, timeout=timeout) as response:
+        return response.read()
+
+
+def _read_pointer(repo: str) -> dict[str, Any]:
+    """The latest release's metadata.json from GitHub's fixed download address: no API, no token (research R-06)."""
+    return read_metadata(_open(LATEST.format(repo=repo, asset=METADATA), POINTER_TIMEOUT))
+
+
+def _read_listing(repo: str) -> list[dict]:
+    """The repository's release list through the API: the second route."""
+    return parse_listing(json.loads(_open(API.format(repo=repo), POINTER_TIMEOUT)))
+
+
+class _Routes:
+    """The two routes to the release names, each read at most once per fetch (once per process, as the app fetches
+    once); an unreadable route is noted, not fatal in itself."""
+
+    def __init__(self, repo: str) -> None:
+        self.repo = repo
+        self._pointer: dict[str, Any] | None = None
+        self._listing: list[dict] | None = None
+        self.read = {"pointer": False, "listing": False}
+        self.notes: dict[str, str] = {}
+
+    def pointer(self) -> dict[str, Any] | None:
+        if not self.read["pointer"]:
+            self.read["pointer"] = True
+            try:
+                self._pointer = _read_pointer(self.repo)
+            except (OSError, ValueError, RefreshError) as exc:
+                self.notes["pointer"] = f"the latest release's metadata could not be read ({exc})"
+                logger.info("knowledge base releases: %s", self.notes["pointer"])
+        return self._pointer
+
+    def listing(self) -> list[dict] | None:
+        if not self.read["listing"]:
+            self.read["listing"] = True
+            try:
+                self._listing = _read_listing(self.repo)
+            except (OSError, ValueError) as exc:
+                self.notes["listing"] = f"the listing could not be read ({exc})"
+                logger.info("knowledge base releases: %s", self.notes["listing"])
+        return self._listing
+
+    def route_text(self, kind: str) -> str:
+        parts = [self.notes.get("pointer") or f"the latest release's metadata names no {kind} release",
+                 self.notes.get("listing") or f"the listing names no complete {kind} release"]
+        return "no release found: " + "; ".join(parts)
+
+
+def _unpinned(kind: str, routes: _Routes, tried: list[str]) -> Iterator[str]:
+    """The candidates resolved as without a pin, newest first: the pointer's names for the kind (at most two), then,
+    once those are exhausted or when the pointer is unusable, the listing's complete releases not yet tried (at most
+    two). The listing is read only when a candidate is asked for beyond the pointer's."""
+    pointer = routes.pointer()
+    named = []
+    if pointer is not None:
+        for name in (pointer.get("current") or {}).get(kind) or []:
+            parsed = parse_release_name(name) if isinstance(name, str) else None
+            if parsed is not None and parsed[0] == kind:
+                named.append(name)
+    for name in named[:KEEP_RELEASES]:
+        if name not in tried:
+            yield name
+    listing = routes.listing()
+    if listing is not None:
+        untried = [n for n in names_of_kind(listing, kind, complete_only=True) if n not in tried and n not in named]
+        yield from untried[:KEEP_RELEASES]
+
+
+def _unpack(z: zipfile.ZipFile, names: list[str], kind: str, base: Path) -> None:
+    """The entries into `base`, the marker last: store/index_meta.json for the EBTI kind; data/taric.jsonl through a
+    temporary name and a rename for the TARIC kind."""
+    if kind == "taric":
+        target = base / MARKER["taric"]
+        target.parent.mkdir(parents=True, exist_ok=True)
+        tmp = target.with_name(target.name + ".tmp")
+        with z.open(MARKER["taric"]) as src, tmp.open("wb") as dst:
+            shutil.copyfileobj(src, dst, 1 << 20)
+        os.replace(tmp, target)
+        return
+    for name in sorted(names, key=lambda n: n == MARKER[kind]):
+        z.extract(name, base)
+
+
+def fetch_release(repo: str, kind: str, name: str, root: Path | None = None) -> dict[str, Any]:
+    """One release: its metadata, the archive to a temporary file, the SHA-256 against the metadata, the entries
+    against the kind's allowed paths, the unpack with the marker last, then the release file beside the data
+    (data-model §4). RefreshError with the reason at any step; nothing is unpacked before the checks pass."""
+    base = root or ROOT
+    parsed = parse_release_name(name)
+    if parsed is None or parsed[0] != kind:
+        raise RefreshError(f"{name} is not a {kind} release name")
+    try:
+        fields = read_metadata(_open(DOWNLOAD.format(repo=repo, tag=name, asset=METADATA), POINTER_TIMEOUT))
+    except OSError as exc:
+        raise RefreshError(f"the metadata could not be downloaded: {exc}") from exc
+    if fields["kind"] != kind or fields["release"] != name:
+        raise RefreshError(f"the metadata is for {fields['kind']} {fields['release']}, not {kind} {name}")
+    expected = str(fields["sha256"]).strip().lower()
+    with tempfile.TemporaryDirectory(prefix="cargolint-release-") as tmp:
+        archive = Path(tmp) / "release.zip"
+        try:
+            with urllib.request.urlopen(DOWNLOAD.format(repo=repo, tag=name, asset=fields["archive"]),
+                                        timeout=ARCHIVE_TIMEOUT) as response, archive.open("wb") as f:
+                shutil.copyfileobj(response, f, 1 << 20)
+        except OSError as exc:
+            raise RefreshError(f"the archive could not be downloaded: {exc}") from exc
+        digest = sha256(archive)
+        if digest != expected:
+            raise RefreshError(f"the archive's SHA-256 is {digest}, not {expected} as its metadata says")
+        try:
+            with zipfile.ZipFile(archive) as z:
+                names = z.namelist()
+                unexpected = [n for n in names if ".." in n.split("/") or not ALLOWED[kind](n)]
+                if unexpected:
+                    raise RefreshError(f"the archive holds unexpected paths: {', '.join(unexpected[:3])}")
+                if MARKER[kind] not in names:
+                    raise RefreshError(f"the archive holds no {MARKER[kind]}")
+                _unpack(z, names, kind, base)
+        except (OSError, zipfile.BadZipFile) as exc:
+            raise RefreshError(f"the archive could not be unpacked: {exc}") from exc
+    release_file = base / RELEASE_FILE[kind]
+    release_file.parent.mkdir(parents=True, exist_ok=True)
+    release_file.write_text(json.dumps({**fields, "fetched_at": now_iso()}, indent=2) + "\n", encoding="utf-8")
+    return fields
+
+
+def _try(repo: str, kind: str, name: str, base: Path) -> str | None:
+    """None when the release was fetched, else the reason."""
+    try:
+        fetch_release(repo, kind, name, base)
+    except RefreshError as exc:
+        return str(exc)
+    return None
+
+
+def fetch_releases(settings: Any, root: Path | None = None) -> FetchResult:
+    """The app's fetch (contracts/releases.md): for each kind whose marker is missing, the pinned release alone, else
+    the pointer's candidates, else the listing's; each candidate verified and unpacked in turn; a failed pin falls back
+    once to the newest resolved as without a pin, with a log line. Raises RefreshError only when the EBTI kind
+    fails; a failed TARIC kind is returned in `failed` and the app opens without TARIC."""
+    base = root or ROOT
+    result = FetchResult()
+    needed = releases_needed(settings, base)
+    if not needed:
+        return result
+    repo = settings.release_repo
+    routes = _Routes(repo)
+    for kind in needed:
+        reasons: list[str] = []
+        tried: list[str] = []
+        pin = (getattr(settings, f"{kind}_release", "") or "").strip()
+        if pin:
+            tried.append(pin)
+            reason = _try(repo, kind, pin, base)
+            if reason is None:
+                result.unpacked[kind] = pin
+                continue
+            reasons.append(f"{pin}: {reason}")
+            logger.warning("pin %s not honoured: %s", pin, reason)
+            candidates: Iterator[str] = iter(list(_unpinned(kind, routes, tried))[:1])   # the fallback, once
+        else:
+            candidates = _unpinned(kind, routes, tried)
+        for name in candidates:
+            tried.append(name)
+            reason = _try(repo, kind, name, base)
+            if reason is None:
+                result.unpacked[kind] = name
+                break
+            reasons.append(f"{name}: {reason}")
+        else:
+            text = "; ".join(reasons) if reasons else routes.route_text(kind)
+            if reasons and not pin and routes.notes.get("listing"):
+                text += "; " + routes.notes["listing"]
+            if kind == "ebti":
+                raise RefreshError(f"{kind}: {text}")
+            result.failed[kind] = text
+            logger.warning("knowledge base release %s not fetched: %s", kind, text)
+    return result

@@ -295,7 +295,7 @@ AppTest for the app's start.
 
 ### Tests for User Story 3
 
-- [ ] T022 [P] [US3] Tests in tests/unit/test_release_fetch.py with `rag.refresh.LATEST`, `rag.refresh.API` and
+- [X] T022 [P] [US3] Tests in tests/unit/test_release_fetch.py with `rag.refresh.LATEST`, `rag.refresh.API` and
   `rag.refresh.DOWNLOAD` monkeypatched to `file:` templates over a temporary folder holding, per release,
   `metadata.json` and the archive, a latest-release `metadata.json` with a `current` block, and a listing in the
   shape of tests/fixtures/refresh/releases.json:
@@ -323,7 +323,7 @@ AppTest for the app's start.
   - `store/release.json` and `data/taric_release.json` hold the metadata plus `fetched_at`;
   - the pointer and the listing are each read at most once for two missing kinds;
   - tests/unit/test_demo_store.py's fetch tests pass unchanged
-- [ ] T023 [P] [US3] Tests in tests/ui/test_app_navigation.py: with `release_repo` set, a pointer whose only EBTI
+- [X] T023 [P] [US3] Tests in tests/ui/test_app_navigation.py: with `release_repo` set, a pointer whose only EBTI
   release fails its checksum stops the app with one error starting "Knowledge base release: ebti:" and opens no
   knowledge base; with the EBTI release good and every TARIC candidate failing, the app opens, `at.error` holds one
   message starting "Knowledge base release: taric:" and the Origin box reads "TARIC not loaded"; with `release_repo`
@@ -332,13 +332,13 @@ AppTest for the app's start.
 
 ### Implementation for User Story 3
 
-- [ ] T024 [US3] `rag/refresh.py`: `LATEST`, `API`, `DOWNLOAD`, `FetchResult`, `releases_needed`, `_read_pointer`,
+- [X] T024 [US3] `rag/refresh.py`: `LATEST`, `API`, `DOWNLOAD`, `FetchResult`, `releases_needed`, `_read_pointer`,
   `_read_listing` (each once per process, `urllib.request.urlopen` through the module), `fetch_release(repo, kind,
   name, root)` (metadata, archive to a temporary file, SHA-256, entries, unpack with the marker last, the release
   file) and `fetch_releases(settings, root)` (the candidates in the order of contracts/releases.md, the fallback,
   the listing after every pointer-named candidate failed, the pin's fallback with its log line, the collected
   failures naming the routes, `RefreshError` for the EBTI kind only)
-- [ ] T025 [US3] `app.py`: in `load_kb()`, `fetch_releases` with a spinner when `settings.release_repo` is set (a
+- [X] T025 [US3] `app.py`: in `load_kb()`, `fetch_releases` with a spinner when `settings.release_repo` is set (a
   log note when the feature-011 settings are set too), else the feature-011 fetch as today; `RefreshError` →
   `st.error(f"Knowledge base release: {exc}")` and stop; a failed TARIC kind kept in `kb.fetch_failures`; in
   `main()`, one `st.error("Knowledge base release: taric: …")` per entry above the page, the app going on
