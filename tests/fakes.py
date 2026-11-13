@@ -165,7 +165,7 @@ class FakeReleaseService:
         self.releases: dict[str, dict] = {}
         self.latest_name: str | None = None
         self.calls: list[tuple] = []
-        self.failures: dict[str, str] = {}
+        self.failures: dict[str, tuple[int, str]] = {}
         self._clock = datetime(2026, 10, 1, tzinfo=timezone.utc)
         for name, spec in (releases or {}).items():
             self.add(name, **spec)
@@ -183,9 +183,10 @@ class FakeReleaseService:
                                "published_at": None if draft else (published_at or stamp)}
         return self.releases[name]
 
-    def fail_at(self, call: str, message: str = "gh: HTTP 500 (simulated)") -> None:
-        """The next call of that name fails as a `gh` error (for `check`: as a missing or signed-out gh)."""
-        self.failures[call] = message
+    def fail_at(self, call: str, message: str = "gh: HTTP 500 (simulated)", at: int = 1) -> None:
+        """The `at`-th call of that name from now fails as a `gh` error (for `check`: as a missing or signed-out gh);
+        the calls before it succeed."""
+        self.failures[call] = (at, message)
 
     @property
     def names(self) -> list[str]:
@@ -198,8 +199,13 @@ class FakeReleaseService:
         from rag.refresh import GhError, RefreshError
 
         self.calls.append((call, *args))
-        message = self.failures.pop(call, None)
-        if message is not None:
+        pending = self.failures.get(call)
+        if pending is not None:
+            left, message = pending
+            if left > 1:
+                self.failures[call] = (left - 1, message)
+                return
+            del self.failures[call]
             if call == "check":
                 raise RefreshError(f"the release service is not available: {message}", exit_code=2)
             raise GhError(message)

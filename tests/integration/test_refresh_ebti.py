@@ -444,7 +444,8 @@ class TestOptions:
         assert run(world, "--rulings", "4") == 0
         docs = [json.loads(line) for line in (world.out / "store" / "bti_docs.jsonl").read_text(encoding="utf-8").splitlines()]
         refs = [d["reference"] for d in docs]
-        assert len(refs) == 4 and {"DE-P1", "DE-P2", "DE-P3", "FR-P6"} >= set(refs) - {"ES-N3", "IT-N2", "NL-N1"}
+        assert refs == ["DE-P1", "DE-P2", "FR-P6", "IT-N2"]            # the kept rulings first within each code; without
+                                                                        # keep the same choice is ES-N3, FR-P6, IT-N2, NL-N1
         meta = json.loads((world.out / "store" / "index_meta.json").read_text(encoding="utf-8"))
         assert meta["refresh"]["rulings_requested"] == 4 and meta["bti_rulings"] == 4
 
@@ -473,3 +474,26 @@ class TestOptions:
 
     def test_bad_options_exit_2(self, world):
         assert run(world, "--bogus") == 2 and world.service.calls == []
+
+
+# --------------------------------------------------------------------------- review fix F1
+class TestServiceFailuresAfterTheBuild:
+    def test_a_listing_failure_for_the_prune_after_the_publish_is_exit_3_naming_the_prune(self, world, capsys):
+        world.service = FakeReleaseService({"ebti-2026-09-01": complete("ebti", "2026-09-01"),
+                                            "ebti-2026-08-01": complete("ebti", "2026-08-01")})
+        world.service.fail_at("list", "gh: HTTP 502 (simulated)", at=3)       # the check, the re-read, then the prune's
+        assert run(world) == 3
+        err = capsys.readouterr().err
+        assert err.startswith(f"EBTI refresh failed: the release service failed at the prune of {NAME}: gh: HTTP 502")
+        assert err.rstrip().endswith(f"before that it created {NAME}, marked it latest")
+        service = world.service
+        assert service.releases[NAME]["assets"] == [ARCHIVE, "metadata.json"] and service.latest_name == NAME
+        assert service.calls_of("delete") == [] and "ebti-2026-08-01" in service.names
+
+    def test_a_listing_failure_before_the_metadata_is_exit_3_after_the_build(self, world, capsys):
+        world.service.fail_at("list", "gh: HTTP 502 (simulated)", at=2)
+        assert run(world) == 3
+        err = capsys.readouterr().err
+        assert err.startswith(f"EBTI refresh failed: the release service failed at the listing before the metadata of {NAME}")
+        assert err.rstrip().endswith("before that it did nothing") and world.service.names == []
+        assert (world.out / ARCHIVE).exists() and len(world.emb.seen) == 4                    # the build ran

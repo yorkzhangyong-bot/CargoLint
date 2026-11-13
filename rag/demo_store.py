@@ -168,13 +168,13 @@ def add_vectors(target_dir: Path, docs: list[tuple[str, str, dict]], embeddings:
     through this module only. Returns the number added."""
     if not docs:
         return 0
-    vectors = embeddings.embed_documents([text for _, text, _ in docs])
     with _chroma(target_dir) as client:
         target = client.get_or_create_collection(BTI_COLLECTION, embedding_function=None, metadata={"hnsw:space": "cosine"})
         step = min(BATCH, client.get_max_batch_size())
-        for i in range(0, len(docs), step):
+        for i in range(0, len(docs), step):          # one batch embedded and written at a time: bounded memory
             batch = docs[i:i + step]
-            target.add(ids=[d[0] for d in batch], embeddings=vectors[i:i + step], documents=[d[1] for d in batch],
+            vectors = embeddings.embed_documents([d[1] for d in batch])
+            target.add(ids=[d[0] for d in batch], embeddings=vectors, documents=[d[1] for d in batch],
                        metadatas=[{**d[2], "id": d[0]} for d in batch])
     return len(docs)
 

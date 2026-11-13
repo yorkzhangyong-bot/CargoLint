@@ -309,3 +309,36 @@ class TestCopyVectors:
         assert docs == {"bti:3926.90-0": "goods 3926.90-0", "bti:3924.10-1": "goods 3924.10-1"}
         for ruling_id, vector in zip(got["ids"], got["embeddings"]):
             assert list(vector) == pytest.approx(full_build["vectors"][ruling_id])
+
+
+class TestAddVectors:
+    def test_one_batch_is_embedded_and_written_at_a_time(self, tmp_path):
+        """Review fix F2: a first `all` run embeds tens of thousands of rulings; the vectors of one batch at most are
+        held in memory."""
+        from rag.demo_store import BATCH, add_vectors
+        from rag.embeddings import FakeEmbeddings
+
+        class Counting(FakeEmbeddings):
+            def __init__(self) -> None:
+                super().__init__(dim=DIM)
+                self.sizes: list[int] = []
+
+            def embed_documents(self, texts):
+                self.sizes.append(len(texts))
+                return super().embed_documents(texts)
+
+        docs = [(f"bti:R{i}", f"goods {i}", {"code": "3926.90", "chapter": "39"}) for i in range(2 * BATCH + 203)]
+        emb = Counting()
+        assert add_vectors(tmp_path / "chroma-bti", docs, emb) == len(docs)
+        assert emb.sizes == [BATCH, BATCH, 203] and max(emb.sizes) <= BATCH
+        with _client(tmp_path / "chroma-bti") as client:
+            collection = client.get_collection("bti", embedding_function=None)
+            space = (collection.metadata or {}).get("hnsw:space")
+            assert collection.count() == len(docs)
+            got = collection.get(ids=["bti:R0", "bti:R1202"], include=["embeddings", "documents", "metadatas"])
+        assert space == "cosine"
+        by = {i: (list(v), d, m) for i, v, d, m in zip(got["ids"], got["embeddings"], got["documents"], got["metadatas"])}
+        assert by["bti:R0"][1:] == ("goods 0", {"code": "3926.90", "chapter": "39", "id": "bti:R0"})
+        assert by["bti:R0"][0] == pytest.approx(emb.embed_query("goods 0"))
+        assert by["bti:R1202"][0] == pytest.approx(emb.embed_query("goods 1202"))
+        assert add_vectors(tmp_path / "chroma-bti", [], emb) == 0 and emb.sizes == [BATCH, BATCH, 203]

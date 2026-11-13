@@ -31,7 +31,8 @@ from rag.taric_extract import _FILE
 KIND = "taric"
 TOT_URL = "https://distr.tullverket.se/tulltaxan/xml/tot/"     # the full extracts, one batch at a time (research R-01)
 SOURCE_URL = "https://distr.tullverket.se/tulltaxan/"           # the metadata's `source`
-_HREF = re.compile(r'href="([^"?/]+\.xml\.gz\.pgp)"')
+_HREF = re.compile(r'href="([^"?/\\]+\.xml\.gz\.pgp)"')   # plain file names: no path separators of either kind
+_BATCH_ID = re.compile(r"[0-9A-Fa-f-]+")                      # the distribution's batch ids: hex digits and dashes
 LABELS = {1: "TARIC refresh refused", 2: "TARIC refresh not started", 3: "TARIC refresh failed"}
 
 
@@ -63,7 +64,7 @@ def current_batch(names: list[str]) -> Batch:
     groups: dict[tuple[str, str], dict[str, str]] = defaultdict(dict)
     for name in names:
         m = _FILE.match(name)
-        if m:
+        if m and _BATCH_ID.fullmatch(m["batch"]):          # a name with path parts in its batch is no object file
             groups[(m["yymmdd"], m["batch"])][m["object"]] = name
     if not groups:
         raise RefreshError("the tot listing names no TARIC object file", exit_code=1)
@@ -82,6 +83,9 @@ def current_batch(names: list[str]) -> Batch:
 def download_batch(url: str, files: tuple[str, ...], folder: Path) -> Path:
     """The six files into `folder` through the loader's download (resumable: the files are immutable and named by their
     batch), looked up on the module at call time."""
+    for name in files:                                   # never a path: the file lands in the batch folder only
+        if Path(name).name != name or "/" in name or "\\" in name or name in (".", ".."):
+            raise RefreshError(f"unsafe file name in the listing: {name!r}", exit_code=1)
     folder.mkdir(parents=True, exist_ok=True)
     base = url.rstrip("/") + "/"
     for name in files:
@@ -158,13 +162,17 @@ def _run(args: argparse.Namespace, service: Any, t0: float) -> int:
         header = read_snapshot_header(loader_mod.TARIC_SNAPSHOT)
     except TaricFileError as exc:
         raise RefreshError(f"{_shown(Path(loader_mod.TARIC_SNAPSHOT))} cannot be read after the load: {exc}") from exc
-    if not header or header.get("snapshot_date") != batch.snapshot_date.isoformat():
-        raise RefreshError(f"{_shown(Path(loader_mod.TARIC_SNAPSHOT))} does not hold the snapshot of {batch.snapshot_date} after the load")
+    if not header or header.get("snapshot_date") != batch.snapshot_date.isoformat() or header.get("batch_id") != batch.batch_id:
+        raise RefreshError(f"{_shown(Path(loader_mod.TARIC_SNAPSHOT))} does not hold batch {batch.batch_id} of "
+                           f"{batch.snapshot_date} after the load")
     archive = folder / refresh.archive_name(KIND, batch.snapshot_date)
     digest, size = pack_entries(archive, [(Path(loader_mod.TARIC_SNAPSHOT), "data/taric.jsonl")])
     refresh.log(f"wrote {_shown(archive)} ({size / 1e6:.1f} MB), sha256 {digest}")
     if service is not None:
-        listing = _listing(service)                   # re-read right before the metadata is written (FR-012)
+        try:
+            listing = service.list()                  # re-read right before the metadata is written (FR-012)
+        except GhError as exc:                        # after the build: exit 3, naming the step (FR-005)
+            raise refresh.service_failure("listing before the metadata", name, exc, []) from exc
     current = current_block(listing, KIND, name) if service is not None else {"ebti": [], KIND: [name]}
     metadata = folder / refresh.METADATA
     write_metadata(metadata, {
@@ -177,7 +185,10 @@ def _run(args: argparse.Namespace, service: Any, t0: float) -> int:
     publish(service, KIND, batch.snapshot_date, archive, metadata, force=args.force, listing=listing,
             notes=_notes(batch, header, size))
     refresh.log(f"published {name} (2 assets), marked latest")
-    after = _listing(service)
+    try:
+        after = service.list()
+    except GhError as exc:                            # the prune's listing: exit 3, the release stays published
+        raise refresh.service_failure("prune", name, exc, [f"created {name}", "marked it latest"]) from exc
     deleted = prune(service, KIND, listing=after)
     kept = [n for n in refresh.names_of_kind(after, KIND, complete_only=True) if n not in deleted]
     refresh.log(f"kept {', '.join(kept)}; deleted {', '.join(deleted) if deleted else 'nothing'}")

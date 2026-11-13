@@ -203,7 +203,9 @@ def test_feature_013_the_validity_date_defaults_to_the_sets_build_date_and_is_re
     assert ev.validity_date("2026-11-13", data) == date(2026, 11, 13)
     with pytest.raises(ValueError, match="--as-of"):
         ev.validity_date("today", data)
-    assert ev.validity_text({"as_of": "2026-11-13"}) == "Rulings valid on 2026-11-13 (--as-of)."
-    assert ev.validity_text({}) == "Rulings valid on the set's build date."            # every earlier entry
+    assert ev.validity_text({"as_of": "2026-11-13"}, "2026-10-23") == "Rulings valid on 2026-11-13 (--as-of)."
+    assert ev.validity_text({"as_of": "2026-10-23"}, "2026-10-23") == "Rulings valid on the set's build date (2026-10-23)."
+    assert ev.validity_text({}, "2026-10-23") == "Rulings valid on the set's build date (2026-10-23)."   # earlier entries
+    assert ev.validity_text({}) == "Rulings valid on the set's build date."
     with pytest.raises(SystemExit):                                                   # a bad date is a usage error
         ev.main(["--as-of", "yesterday", "--dry-run"])

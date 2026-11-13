@@ -399,16 +399,20 @@ def validity_date(value: str | None, data: dict) -> date:
         raise ValueError(f"--as-of must be a date, YYYY-MM-DD, not {value!r}") from exc
 
 
-def validity_text(h: dict) -> str:
-    """The report line that says which day an iteration judged the rulings' validity on."""
-    return f"Rulings valid on {h['as_of']} (--as-of)." if h.get("as_of") else "Rulings valid on the set's build date."
+def validity_text(h: dict, built_on: str | None = None) -> str:
+    """The report line that says which day an iteration judged the rulings' validity on: `--as-of` only when the
+    recorded day differs from the set's build date (every run records `as_of`)."""
+    as_of = h.get("as_of")
+    if as_of and as_of != built_on:
+        return f"Rulings valid on {as_of} (--as-of)."
+    return f"Rulings valid on the set's build date{f' ({built_on})' if built_on else ''}."
 
 
-def _entry_sections(h: dict) -> list[str]:
+def _entry_sections(h: dict, built_on: str | None = None) -> list[str]:
     n = h["n"]
     run = f", {h['lang']}, query expansion {h['expansion']}" if "lang" in h else ""   # feature 009
     out = ["", f"## Iteration {h['iteration']} ({h.get('tag', '-')}, {h['model']}{run}, {h['run_on']})", "",
-           validity_text(h), ""]
+           validity_text(h, built_on), ""]
     if h.get("replay_of"):
         r = h["replay_of"]
         out += [f"Replay of iteration {r['iteration']} ({r.get('tag') or '-'}) at OVERRIDE_MIN {h['override_min']}, from "
@@ -508,7 +512,7 @@ def render_report(history: list[dict], data: dict) -> str:
                    f"{_runs(r['review'] for r in h['routes_runs'])} | {_runs(r['ask_shipper'] for r in h['routes_runs'])} | "
                    f"${h['cost_usd']:.4f} (€{h['cost_eur']:.4f}), {h['elapsed_s']:.0f} s |")
     for h in history:
-        out += _entry_sections(h)
+        out += _entry_sections(h, data["built_on"])
     out += ["", "Line-by-line results of the latest run: `tests/eval/e2e_eval.json`; each run also keeps its own, "
             "`tests/eval/e2e_eval_<tag>.json`.", ""]
     return "\n".join(out)

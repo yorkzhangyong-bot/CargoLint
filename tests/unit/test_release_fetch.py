@@ -203,16 +203,27 @@ class TestRoutes:
         assert result.unpacked == {"ebti": "ebti-2026-10-14"} and result.failed == {}
         assert (site.root / "store" / "index_meta.json").read_bytes().endswith(b"fallback")
 
-    def test_a_failed_pin_falls_back_once_to_the_newest_with_a_log_line(self, site, caplog):
+    def test_a_failed_pin_falls_back_once_to_the_newest_with_a_log_line(self, site, caplog, monkeypatch):
         marker(site, "taric")
         release(site, "ebti-2026-11-01", stamp=b"newest")
         release(site, "ebti-2026-10-14", stamp=b"older")
         pointer(site, {"ebti": ["ebti-2026-11-01", "ebti-2026-10-14"]})
+        seen = reads(monkeypatch)
         with caplog.at_level(logging.INFO, logger="rag.refresh"):
             result = fetch_releases(settings_for(ebti_release="ebti-2026-09-01"), site.root)   # deleted by retention
         assert result.unpacked == {"ebti": "ebti-2026-11-01"}
         assert any("pin ebti-2026-09-01 not honoured" in r.getMessage() for r in caplog.records)
         assert (site.root / "store" / "index_meta.json").read_bytes().endswith(b"newest")
+        assert not any(u.endswith("releases.json") for u in seen)        # F4: the pointer named it, no listing read
+
+    def test_a_failed_pin_with_both_routes_unreadable_names_the_routes(self, site):
+        marker(site, "taric")
+        with pytest.raises(RefreshError) as info:
+            fetch_releases(settings_for(ebti_release="ebti-2026-09-01"), site.root)
+        text = str(info.value)
+        assert text.startswith("ebti: ebti-2026-09-01: the metadata could not be downloaded")
+        assert "no release found: the latest release's metadata could not be read" in text
+        assert "the listing could not be read" in text
 
     def test_a_failed_pin_and_a_failed_newest_stop_the_ebti_kind(self, site):
         marker(site, "taric")
@@ -350,3 +361,77 @@ class TestUnpack:
         with pytest.raises(RefreshError, match="not a taric release name"):
             fetch_release("owner/name", "taric", "ebti-2026-11-01", site.root)
         assert not any(site.root.iterdir())
+
+
+class TestRobustness:
+    """Review fix F3: whatever a route or a candidate throws, the fallback goes on and a TARIC-only fetch never crashes."""
+
+    def test_an_incomplete_read_of_the_pointer_falls_back_to_the_listing(self, site, monkeypatch):
+        import http.client
+
+        marker(site, "taric")
+        release(site, "ebti-2026-11-01", stamp=b"listed")
+        listing(site, ["ebti-2026-11-01"])
+        real = refresh._open
+
+        def flaky(url, timeout):
+            if url.endswith("latest/metadata.json"):
+                raise http.client.IncompleteRead(b"partial")
+            return real(url, timeout)
+
+        monkeypatch.setattr(refresh, "_open", flaky)
+        result = fetch_releases(settings_for(), site.root)
+        assert result.unpacked == {"ebti": "ebti-2026-11-01"} and result.failed == {}
+
+    def test_an_incomplete_read_on_a_taric_only_fetch_is_reported_not_raised(self, site, monkeypatch):
+        import http.client
+
+        marker(site, "ebti")
+
+        def broken(url, timeout):
+            raise http.client.IncompleteRead(b"")
+
+        monkeypatch.setattr(refresh, "_open", broken)
+        result = fetch_releases(settings_for(), site.root)
+        assert result.unpacked == {} and result.failed["taric"].startswith("no release found")
+        assert "IncompleteRead" in result.failed["taric"]
+
+    @pytest.mark.parametrize("current", [["ebti-2026-11-01"], {"ebti": "ebti-2026-11-01"}, {"ebti": [7, None]}, "x"])
+    def test_a_malformed_current_block_falls_back_to_the_listing(self, site, current):
+        marker(site, "taric")
+        release(site, "ebti-2026-11-01", stamp=b"listed")
+        listing(site, ["ebti-2026-11-01"])
+        pointer(site, current)
+        result = fetch_releases(settings_for(), site.root)
+        assert result.unpacked == {"ebti": "ebti-2026-11-01"} and result.failed == {}
+
+    def test_an_unexpected_error_in_one_candidate_falls_back_to_the_next(self, site, monkeypatch):
+        marker(site, "taric")
+        release(site, "ebti-2026-11-01")
+        release(site, "ebti-2026-10-14", stamp=b"fallback")
+        pointer(site, {"ebti": ["ebti-2026-11-01", "ebti-2026-10-14"]})
+        real = refresh.sha256
+        calls: list[int] = []
+
+        def boom(path):
+            calls.append(1)
+            if len(calls) == 1:
+                raise RuntimeError("boom")
+            return real(path)
+
+        monkeypatch.setattr(refresh, "sha256", boom)
+        result = fetch_releases(settings_for(), site.root)
+        assert result.unpacked == {"ebti": "ebti-2026-10-14"}
+        assert (site.root / "store" / "index_meta.json").read_bytes().endswith(b"fallback")
+
+    def test_metadata_naming_another_archive_is_refused(self, site):
+        marker(site, "taric")
+        fields = release(site, "ebti-2026-11-01")
+        (site.base / "ebti-2026-11-01" / "metadata.json").write_text(
+            json.dumps({**fields, "archive": "cargolint-ebti-2026-10-14.zip"}), encoding="utf-8")
+        release(site, "ebti-2026-10-14", stamp=b"fallback")
+        pointer(site, {"ebti": ["ebti-2026-11-01", "ebti-2026-10-14"]})
+        result = fetch_releases(settings_for(), site.root)
+        assert result.unpacked == {"ebti": "ebti-2026-10-14"}
+        with pytest.raises(RefreshError, match="names the archive cargolint-ebti-2026-10-14.zip"):
+            fetch_release("owner/name", "ebti", "ebti-2026-11-01", site.root)

@@ -262,3 +262,33 @@ class TestRefusals:
 
     def test_bad_options_exit_2(self, taric):
         assert run(taric, "--bogus") == 2 and taric.service.calls == []
+
+
+# --------------------------------------------------------------------------- review fixes F1 and F6
+@needs_gpg
+class TestServiceFailuresAfterTheBuild:
+    def test_a_listing_failure_for_the_prune_after_the_publish_is_exit_3_naming_the_prune(self, taric, capsys):
+        taric.service = FakeReleaseService({"taric-2026-09-01": complete("taric", "2026-09-01"),
+                                            "taric-2026-08-01": complete("taric", "2026-08-01")})
+        taric.service.fail_at("list", "gh: HTTP 502 (simulated)", at=3)       # the check, the re-read, then the prune's
+        assert run(taric) == 3
+        err = capsys.readouterr().err
+        assert err.startswith(f"TARIC refresh failed: the release service failed at the prune of {NAME}: gh: HTTP 502")
+        assert err.rstrip().endswith(f"before that it created {NAME}, marked it latest")
+        service = taric.service
+        assert service.releases[NAME]["assets"] == [ARCHIVE, "metadata.json"] and service.latest_name == NAME
+        assert service.calls_of("delete") == [] and "taric-2026-08-01" in service.names        # the prune did not run
+
+    def test_a_listing_failure_before_the_metadata_is_exit_3_after_the_build(self, taric, capsys):
+        taric.service.fail_at("list", "gh: HTTP 502 (simulated)", at=2)       # the re-read right before the metadata
+        assert run(taric) == 3
+        err = capsys.readouterr().err
+        assert err.startswith(f"TARIC refresh failed: the release service failed at the listing before the metadata of {NAME}")
+        assert err.rstrip().endswith("before that it did nothing") and taric.service.names == []
+        assert taric.snapshot.exists() and len(taric.downloads) == 6                           # the build ran
+
+    def test_a_rebuilt_snapshot_removes_the_stale_taric_release_file(self, taric):
+        stale = taric.snapshot.with_name("taric_release.json")
+        stale.write_text('{"release": "taric-2026-09-01"}', encoding="utf-8")
+        assert run(taric, "--no-publish") == 0
+        assert taric.snapshot.exists() and not stale.exists()

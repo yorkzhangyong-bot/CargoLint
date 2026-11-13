@@ -192,3 +192,17 @@ class TestKnowledgeBaseDates:
     def test_releases_and_fetch_failures_are_empty_by_default(self):
         kb = loader_mod.KnowledgeBase(None, None, None, None, {}, None)
         assert kb.releases == {"ebti": None, "taric": None} and kb.fetch_failures == {}
+
+
+class TestRebuiltParts:
+    def test_build_indexes_forgets_a_fetched_release(self, tmp_path, small_index):
+        """Review fix F6: a store rebuilt locally is no fetched release any more."""
+        from agent.config import load_settings
+        from rag.bti import BTIStore
+
+        store = tmp_path / "store"
+        store.mkdir()
+        (store / "release.json").write_text('{"release": "ebti-2026-11-01"}', encoding="utf-8")
+        meta = loader_mod.build_indexes(small_index, BTIStore([]), load_settings({}), embed=False, store_dir=store)
+        assert meta["nomenclature_chunks"] == len(small_index.chunks) and (store / "index_meta.json").exists()
+        assert not (store / "release.json").exists()

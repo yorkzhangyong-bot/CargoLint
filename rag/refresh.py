@@ -11,6 +11,7 @@ call runs through `_run_gh`, which the suite's offline guard replaces.
 from __future__ import annotations
 
 import hashlib
+import http.client
 import json
 import logging
 import os
@@ -34,7 +35,8 @@ METADATA = "metadata.json"
 ARCHIVE = {"ebti": "cargolint-ebti-{date}.zip", "taric": "cargolint-taric-{date}.zip"}
 TITLE = {"ebti": "EBTI rulings {date}", "taric": "TARIC snapshot {date}"}
 MARKER = {"ebti": "store/index_meta.json", "taric": "data/taric.jsonl"}      # unpacked last; present means complete
-RELEASE_FILE = {"ebti": "store/release.json", "taric": "data/taric_release.json"}   # the metadata kept beside the data
+RELEASE_FILE_NAME = {"ebti": "release.json", "taric": "taric_release.json"}          # the metadata kept beside the data
+RELEASE_FILE = {"ebti": f"store/{RELEASE_FILE_NAME['ebti']}", "taric": f"data/{RELEASE_FILE_NAME['taric']}"}
 ALLOWED = {"ebti": lambda name: name.startswith("store/") and len(name) > len("store/"),
            "taric": lambda name: name == "data/taric.jsonl"}                 # data-model §5
 LATEST = "https://github.com/{repo}/releases/latest/download/{asset}"       # the pointer: no API, no token
@@ -43,6 +45,7 @@ DOWNLOAD = "https://github.com/{repo}/releases/download/{tag}/{asset}"
 REQUIRED_FIELDS = ("kind", "release", "archive", "sha256")
 POINTER_TIMEOUT = 30
 ARCHIVE_TIMEOUT = 600
+_FETCH_ERRORS = (OSError, http.client.HTTPException, ValueError)   # a route or download that fails to read
 
 
 class RefreshError(Exception):
@@ -267,7 +270,7 @@ class ReleaseService:
 
 
 # --------------------------------------------------------------------------- publishing, retention, the latest release
-def _failure(step: str, name: str, exc: Exception, done: list[str]) -> RefreshError:
+def service_failure(step: str, name: str, exc: Exception, done: list[str]) -> RefreshError:
     before = f"before that it {', '.join(done)}" if done else "before that it did nothing"
     return RefreshError(f"the release service failed at the {step} of {name}: {exc}; {before}", exit_code=3)
 
@@ -295,7 +298,7 @@ def publish(service: Any, kind: str, snapshot_date: date, archive: Path | str, m
         step = "mark latest"
         service.mark_latest(name)
     except GhError as exc:
-        raise _failure(step, name, exc, done) from exc
+        raise service_failure(step, name, exc, done) from exc
     return name
 
 
@@ -311,7 +314,7 @@ def prune(service: Any, kind: str, keep: int = KEEP_RELEASES, listing: list[dict
         try:
             service.delete(name)
         except GhError as exc:
-            raise _failure("prune", name, exc, [f"deleted {d}" for d in deleted]) from exc
+            raise service_failure("prune", name, exc, [f"deleted {d}" for d in deleted]) from exc
         deleted.append(name)
     return deleted
 
@@ -338,7 +341,7 @@ def repair_latest(service: Any, kind: str, listing: list[dict] | None = None) ->
             return None
         service.mark_latest(newest)
     except GhError as exc:
-        raise _failure("repair latest", newest, exc, []) from exc
+        raise service_failure("repair latest", newest, exc, []) from exc
     return newest
 
 
@@ -392,7 +395,7 @@ class _Routes:
             self.read["pointer"] = True
             try:
                 self._pointer = _read_pointer(self.repo)
-            except (OSError, ValueError, RefreshError) as exc:
+            except (*_FETCH_ERRORS, RefreshError) as exc:
                 self.notes["pointer"] = f"the latest release's metadata could not be read ({exc})"
                 logger.info("knowledge base releases: %s", self.notes["pointer"])
         return self._pointer
@@ -402,7 +405,7 @@ class _Routes:
             self.read["listing"] = True
             try:
                 self._listing = _read_listing(self.repo)
-            except (OSError, ValueError) as exc:
+            except _FETCH_ERRORS as exc:
                 self.notes["listing"] = f"the listing could not be read ({exc})"
                 logger.info("knowledge base releases: %s", self.notes["listing"])
         return self._listing
@@ -419,11 +422,12 @@ def _unpinned(kind: str, routes: _Routes, tried: list[str]) -> Iterator[str]:
     two). The listing is read only when a candidate is asked for beyond the pointer's."""
     pointer = routes.pointer()
     named = []
-    if pointer is not None:
-        for name in (pointer.get("current") or {}).get(kind) or []:
-            parsed = parse_release_name(name) if isinstance(name, str) else None
-            if parsed is not None and parsed[0] == kind:
-                named.append(name)
+    current = pointer.get("current") if pointer is not None else None
+    listed_names = current.get(kind) if isinstance(current, dict) else None     # a malformed block names nothing
+    for name in listed_names if isinstance(listed_names, list) else []:
+        parsed = parse_release_name(name) if isinstance(name, str) else None
+        if parsed is not None and parsed[0] == kind:
+            named.append(name)
     for name in named[:KEEP_RELEASES]:
         if name not in tried:
             yield name
@@ -458,10 +462,12 @@ def fetch_release(repo: str, kind: str, name: str, root: Path | None = None) -> 
         raise RefreshError(f"{name} is not a {kind} release name")
     try:
         fields = read_metadata(_open(DOWNLOAD.format(repo=repo, tag=name, asset=METADATA), POINTER_TIMEOUT))
-    except OSError as exc:
+    except (OSError, http.client.HTTPException) as exc:
         raise RefreshError(f"the metadata could not be downloaded: {exc}") from exc
     if fields["kind"] != kind or fields["release"] != name:
         raise RefreshError(f"the metadata is for {fields['kind']} {fields['release']}, not {kind} {name}")
+    if fields["archive"] != archive_name(kind, parsed[1]):
+        raise RefreshError(f"the metadata names the archive {fields['archive']}, not {archive_name(kind, parsed[1])}")
     expected = str(fields["sha256"]).strip().lower()
     with tempfile.TemporaryDirectory(prefix="cargolint-release-") as tmp:
         archive = Path(tmp) / "release.zip"
@@ -469,7 +475,7 @@ def fetch_release(repo: str, kind: str, name: str, root: Path | None = None) -> 
             with urllib.request.urlopen(DOWNLOAD.format(repo=repo, tag=name, asset=fields["archive"]),
                                         timeout=ARCHIVE_TIMEOUT) as response, archive.open("wb") as f:
                 shutil.copyfileobj(response, f, 1 << 20)
-        except OSError as exc:
+        except (OSError, http.client.HTTPException) as exc:
             raise RefreshError(f"the archive could not be downloaded: {exc}") from exc
         digest = sha256(archive)
         if digest != expected:
@@ -492,11 +498,14 @@ def fetch_release(repo: str, kind: str, name: str, root: Path | None = None) -> 
 
 
 def _try(repo: str, kind: str, name: str, base: Path) -> str | None:
-    """None when the release was fetched, else the reason."""
+    """None when the release was fetched, else the reason. Whatever one candidate throws, the fallback goes on."""
     try:
         fetch_release(repo, kind, name, base)
     except RefreshError as exc:
         return str(exc)
+    except Exception as exc:  # noqa: BLE001 - a cold start must fall back, never crash on one candidate (FR-016)
+        logger.warning("knowledge base release %s: unexpected %s: %s", name, type(exc).__name__, exc)
+        return f"unexpected {type(exc).__name__}: {exc}"
     return None
 
 
@@ -524,10 +533,13 @@ def fetch_releases(settings: Any, root: Path | None = None) -> FetchResult:
                 continue
             reasons.append(f"{pin}: {reason}")
             logger.warning("pin %s not honoured: %s", pin, reason)
-            candidates: Iterator[str] = iter(list(_unpinned(kind, routes, tried))[:1])   # the fallback, once
+            first = next(_unpinned(kind, routes, tried), None)   # the fallback, once; the listing only when the
+            candidates: Iterator[str] = iter([first] if first else [])   # pointer names nothing (not drained)
         else:
             candidates = _unpinned(kind, routes, tried)
+        resolved = False
         for name in candidates:
+            resolved = True
             tried.append(name)
             reason = _try(repo, kind, name, base)
             if reason is None:
@@ -535,9 +547,11 @@ def fetch_releases(settings: Any, root: Path | None = None) -> FetchResult:
                 break
             reasons.append(f"{name}: {reason}")
         else:
-            text = "; ".join(reasons) if reasons else routes.route_text(kind)
-            if reasons and not pin and routes.notes.get("listing"):
-                text += "; " + routes.notes["listing"]
+            if not resolved:
+                reasons.append(routes.route_text(kind))             # neither route gave a candidate: say why
+            elif routes.notes.get("listing"):
+                reasons.append(routes.notes["listing"])
+            text = "; ".join(reasons)
             if kind == "ebti":
                 raise RefreshError(f"{kind}: {text}")
             result.failed[kind] = text

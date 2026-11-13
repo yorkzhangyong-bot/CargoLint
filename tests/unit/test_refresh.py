@@ -387,6 +387,23 @@ class TestTotListing:
                 '<a href="notes.txt">n</a>')
         assert parse_listing_html(html) == ["Measure_a_261001.xml.gz.pgp"]
 
+    def test_hostile_file_names_never_become_paths(self, tmp_path):
+        """Review fix F5: a name with path parts from the listing is no object file and is never written anywhere."""
+        from rag.refresh_taric import current_batch, download_batch, parse_listing_html
+
+        hostile = "GoodsNomenclature_..\\..\\evil_261001.xml.gz.pgp"
+        html = f'<a href="{hostile}">x</a> <a href="Measure_../evil_261001.xml.gz.pgp">y</a>'
+        assert parse_listing_html(html) == []                                  # path separators of either kind
+        with pytest.raises(RefreshError, match="names no TARIC object file"):   # and never an object file ...
+            current_batch([hostile])
+        with pytest.raises(RefreshError, match="5 of 6 object files"):          # ... so it completes no batch
+            current_batch([hostile] + tot_names(BATCH_A, "261001", OBJECTS[1:]))
+        for name in (hostile, "../x_261001.xml.gz.pgp", "sub/x.xml.gz.pgp"):
+            with pytest.raises(RefreshError, match="unsafe file name") as info:
+                download_batch("file:///listing/", (name,), tmp_path / "batch")
+            assert info.value.exit_code == 1
+        assert not (tmp_path / "batch").exists()
+
 
 # --------------------------------------------------------------------------- User Story 2: the EBTI pieces (T015)
 def ruling(ref: str, code: str = "8452.90", description: str = "goods", reasoning: str = "GIR 1") -> dict:

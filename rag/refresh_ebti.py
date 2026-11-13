@@ -102,10 +102,10 @@ def check_previous(store_dir: Path, settings: Settings, index: NomenclatureIndex
         raise RefreshError(f"the previous store was built with the embedding model {model!r}, not {settings.embed_model!r}, "
                            "so its vectors cannot be reused: embed everything afresh with --full-embed", exit_code=2)
     chunks, year = meta.get("nomenclature_chunks"), meta.get("edition_year")
-    if chunks != len(index) or year != index.edition_year:
+    if chunks != len(index.chunks) or year != index.edition_year:      # chunks, as build_indexes counts them
         raise RefreshError(f"the previous store's nomenclature index ({chunks} chunks, edition {year}) does not match the "
-                           f"committed nomenclature ({len(index)} chunks, edition {index.edition_year}): rebuild it with "
-                           "--full-embed", exit_code=2)
+                           f"committed nomenclature ({len(index.chunks)} chunks, edition {index.edition_year}): rebuild it "
+                           "with --full-embed", exit_code=2)
     return meta
 
 
@@ -323,7 +323,10 @@ def _run(args: argparse.Namespace, embeddings: Any, service: Any, t0: float) -> 
     refresh.log(f"wrote {_shown(archive)} ({size / 1e6:.1f} MB), sha256 {digest}")
     publishing = service is not None and not args.no_publish
     if publishing:
-        listing = _listing(service)                   # re-read right before the metadata is written (FR-012)
+        try:
+            listing = service.list()                  # re-read right before the metadata is written (FR-012)
+        except GhError as exc:                        # after the build: exit 3, naming the step (FR-005)
+            raise refresh.service_failure("listing before the metadata", name, exc, []) from exc
     current = current_block(listing, KIND, name) if publishing else {KIND: [name], "taric": []}
     metadata = out / refresh.METADATA
     write_metadata(metadata, {
@@ -336,7 +339,10 @@ def _run(args: argparse.Namespace, embeddings: Any, service: Any, t0: float) -> 
         return 0
     publish(service, KIND, snapshot, archive, metadata, force=args.force, listing=listing, notes=_notes(name, counts, size))
     refresh.log(f"published {name} (2 assets), marked latest")
-    after = _listing(service)
+    try:
+        after = service.list()
+    except GhError as exc:                            # the prune's listing: exit 3, the release stays published
+        raise refresh.service_failure("prune", name, exc, [f"created {name}", "marked it latest"]) from exc
     deleted = prune(service, KIND, listing=after)
     kept_names = [n for n in refresh.names_of_kind(after, KIND, complete_only=True) if n not in deleted]
     refresh.log(f"kept {', '.join(kept_names)}; deleted {', '.join(deleted) if deleted else 'nothing'}")

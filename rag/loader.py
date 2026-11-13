@@ -26,6 +26,7 @@ from agent.schemas import Usage
 from rag import bti as bti_mod
 from rag.nomenclature import NomenclatureIndex, build_chunks, parse_skos, write_jsonl
 from rag.pgp import GpgNotFound, SignatureError, check_key_copy, find_gpg
+from rag.refresh import RELEASE_FILE_NAME
 from rag.retriever import BM25Index, ChromaVectorSearch, HybridRetriever, load_index_meta, verify_index_meta, write_index_meta
 from rag.rules import RuleSet
 from rag.taric import TaricFileError, TaricStore, open_taric_store, read_snapshot_header
@@ -209,6 +210,14 @@ def build_bti(demo: bool, chapters: set[str], force: bool = False, store_dir: Pa
     return store, extract_date
 
 
+def _forget_release(release_file: Path) -> None:
+    """A rebuilt part is no fetched release any more: its release file (feature 013, FR-013) goes, so Admin > Data
+    never names a release that is not in use."""
+    if release_file.exists():
+        release_file.unlink()
+        log(f"removed {release_file.name}: the data was rebuilt locally")
+
+
 def build_indexes(index: NomenclatureIndex, bti_store: bti_mod.BTIStore, settings: Settings, force: bool = False,
                   embed: bool = True, store_dir: Path = STORE_DIR, embeddings: Any = None) -> dict[str, Any]:
     """The BM25 file, the two Chroma collections and index_meta.json in `store_dir` (feature 013: a refresh builds
@@ -225,6 +234,7 @@ def build_indexes(index: NomenclatureIndex, bti_store: bti_mod.BTIStore, setting
                             "nomenclature_chunks": len(index.chunks), "bti_rulings": len(bti_store), "edition_year": index.edition_year}
     if not embed:
         write_index_meta(store_dir, meta)
+        _forget_release(store_dir / RELEASE_FILE_NAME["ebti"])
         return meta
     emb = embeddings if embeddings is not None else OpenRouterEmbeddings(settings=settings, usage_sink=usage.add)
     chroma_dir = store_dir / "chroma"
@@ -256,6 +266,7 @@ def build_indexes(index: NomenclatureIndex, bti_store: bti_mod.BTIStore, setting
         meta["dimension"] = len(emb.embed_query("dimension probe"))
     meta["embedding_usage"] = usage.model_dump()
     write_index_meta(store_dir, meta)
+    _forget_release(store_dir / RELEASE_FILE_NAME["ebti"])
     log(f"index_meta: model {meta['embedding_model']}, dim {meta['dimension']}, cost ${usage.cost_usd:.3f}")
     return meta
 
@@ -363,6 +374,7 @@ def load_taric(folder: Path, force: bool = False) -> int:
         register_tmp.unlink(missing_ok=True)
         raise
     os.replace(register_tmp, SOURCES_MD)
+    _forget_release(Path(TARIC_SNAPSHOT).with_name(RELEASE_FILE_NAME["taric"]))
     h = snapshot.header
     declarable = sum(c.declarable for c in snapshot.codes)
     print(f"TARIC snapshot {h.snapshot_date} · batch {h.batch_id} · export {h.export_id}")
