@@ -457,3 +457,38 @@ class TestEbtiPieces:
         with pytest.raises(RefreshError, match="lacks bm25.pkl") as info:
             check_previous(store, settings, small_index)
         assert info.value.exit_code == 2
+
+
+# --------------------------------------------------------------------------- User Story 5: the workflow file (T030)
+class TestWorkflow:
+    def test_the_refresh_workflow_holds_the_two_schedules_the_switch_and_the_order(self):
+        import yaml
+
+        path = Path(__file__).resolve().parents[2] / ".github" / "workflows" / "refresh.yml"
+        text = path.read_text(encoding="utf-8")
+        head = "\n".join(text.splitlines()[:6])
+        assert text.startswith("#") and "60 days without repository activity" in head and "Actions tab" in head
+        wf = yaml.safe_load(text)
+        on = wf.get(True) or wf.get("on")                                   # YAML 1.1 reads the `on` key as True
+        assert [c["cron"] for c in on["schedule"]] == ["30 5 * * *", "0 6 1 * *"]
+        kind = on["workflow_dispatch"]["inputs"]["kind"]
+        assert kind["type"] == "choice" and kind["options"] == ["taric", "ebti", "both"]
+        assert wf["permissions"] == {"contents": "write"} and wf["concurrency"] == "refresh"
+        jobs = wf["jobs"]
+        assert list(jobs) == ["taric", "ebti"]
+        for name, cron in (("taric", "30 5 * * *"), ("ebti", "0 6 1 * *")):
+            job = jobs[name]
+            condition = job["if"]
+            assert "vars.CARGOLINT_REFRESH == 'on'" in condition and f"github.event.schedule == '{cron}'" in condition
+            assert f"inputs.kind == '{name}'" in condition and "inputs.kind == 'both'" in condition
+            assert job["timeout-minutes"] >= 20 and job["runs-on"] == "ubuntu-latest"
+            checkout = next(s for s in job["steps"] if str(s.get("uses", "")).startswith("actions/checkout"))
+            assert checkout["with"]["persist-credentials"] is False
+            script = next(s for s in job["steps"] if f"scripts/refresh_{name}.py" in str(s.get("run", "")))
+            assert script["env"]["GH_TOKEN"] == "${{ github.token }}"
+            assert ("OPENROUTER_API_KEY" in script["env"]) == (name == "ebti")
+            assert any("pip install -e ." in str(s.get("run", "")) for s in job["steps"])
+        assert jobs["ebti"]["needs"] == "taric"
+        assert jobs["ebti"]["if"].replace("${{", "").strip().startswith("!cancelled()")
+        assert jobs["ebti"]["timeout-minutes"] == 60 and jobs["taric"]["timeout-minutes"] == 20
+        assert jobs["ebti"]["steps"][-1]["env"]["OPENROUTER_API_KEY"] == "${{ secrets.OPENROUTER_API_KEY }}"

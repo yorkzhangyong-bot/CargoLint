@@ -386,7 +386,7 @@ shows the dates, the source versions and the releases in use.
 
 ### Tests for User Story 5
 
-- [ ] T030 [US5] Tests in tests/unit/test_refresh.py, class `TestWorkflow`, on `yaml.safe_load` of
+- [X] T030 [US5] Tests in tests/unit/test_refresh.py, class `TestWorkflow`, on `yaml.safe_load` of
   .github/workflows/refresh.yml (PyYAML is installed with chromadb; the `on` key loads as the boolean `True`): the
   two crons (`30 5 * * *`, `0 6 1 * *`), `workflow_dispatch` with the `kind` choice (`taric`, `ebti`, `both`), the
   jobs `taric` and `ebti`, `vars.CARGOLINT_REFRESH == 'on'` and `github.event.schedule` inside each job's `if`,
@@ -397,7 +397,7 @@ shows the dates, the source versions and the releases in use.
 
 ### Implementation for User Story 5
 
-- [ ] T031 [US5] `.github/workflows/refresh.yml` per contracts/refresh-cli.md: the comment on the 60-day
+- [X] T031 [US5] `.github/workflows/refresh.yml` per contracts/refresh-cli.md: the comment on the 60-day
   auto-disable, the schedules, the manual trigger, the switch on both scheduled jobs, the per-cron gate, `needs:
   taric` with `!cancelled()` on the `ebti` job, checkout with `persist-credentials: false`, Python 3.13, `pip install
   -e .`, the two scripts with `GH_TOKEN` and, for `ebti`, the `OPENROUTER_API_KEY` secret
