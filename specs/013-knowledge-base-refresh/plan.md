@@ -274,9 +274,11 @@ tasks build.
    (description and reasoning) equals the previous store's record, whose vectors are copied with
    `rag.demo_store.copy_vectors(..., metadatas=…)`, the metadata (code, cn_code, chapter, member state, language,
    validity, as `BTIStore.chunk_texts` builds it) written from the new extract's record rather than copied, since
-   `tools/classify_cn8.py` filters the collection on `code`; and the rest, embedded with
-   `ChromaVectorSearch(out/"chroma-bti", emb, "bti").add`. `chroma/` and `bm25.pkl` are copied from the previous
-   store. With `--full-embed`, `rag.loader.build_indexes` runs against the work folder (`store_dir` parameter) with
+   `tools/classify_cn8.py` filters the collection on `code`; and the rest, embedded and added with
+   `rag.demo_store.add_vectors` (implementation note: chromadb allows one client setting per path in a process, so the
+   collection `copy_vectors` wrote cannot be reopened through langchain's `ChromaVectorSearch` in the same run; both
+   writers therefore live in `rag/demo_store.py` with one client setting). `chroma/` and `bm25.pkl` are copied from
+   the previous store. With `--full-embed`, `rag.loader.build_indexes` runs against the work folder (`store_dir` parameter) with
    the chosen rulings and the embeddings `main` was given (`embeddings` parameter; it builds `OpenRouterEmbeddings`
    itself only when none is given, and reads the dimension with `getattr(emb, "dimension", None)` before the probe,
    since `FakeEmbeddings` has no `dimension`) and copies nothing. The work folder: `--out` must be new or empty,

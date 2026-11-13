@@ -268,8 +268,8 @@ and the fake release service.
   `previous_store(spec, service, work)` (a release needs `gh`, also with `--no-publish`), `check_previous` (the
   layout, the model, the nomenclature), `partition`,
   `build_store` (reuse: copy `chroma/` and `bm25.pkl`, `rag.demo_store.copy_vectors(..., metadatas=…)` for the
-  reused rulings with metadata from `BTIStore.chunk_texts` of the new records, `ChromaVectorSearch(out /
-  "chroma-bti", emb, "bti").add` for the rest, `bti_docs.jsonl`, the index metadata of data-model §3;
+  reused rulings with metadata from `BTIStore.chunk_texts` of the new records, `rag.demo_store.add_vectors` for the rest (plan design 9: one
+  Chroma client setting per path), `bti_docs.jsonl`, the index metadata of data-model §3;
   `--full-embed`: `rag.loader.build_indexes(..., store_dir=out / "store", embeddings=emb)` with the embeddings
   `main` was given), the work-folder rule (checked after the "nothing new" check; `--force` empties the default
   folder only), the listing re-read immediately before the metadata is written, and `main(argv, embeddings=None,
@@ -418,8 +418,8 @@ shows the dates, the source versions and the releases in use.
 - [X] T034 [P] tests/eval/e2e_eval.py: `--as-of YYYY-MM-DD`, the rulings' validity date (default: the set's
   `built_on`), recorded in the history entry and the report; a test in tests/unit/test_e2e_eval.py that the default
   is the set's build date and that a given date is used and recorded (spec SC-003, research R-14)
-- [ ] T035 `pytest -q`, offline, green; every touched file checked for LF (`git ls-files --eol`)
-- [ ] T036 Hand over quickstart.md's "author's real runs" list: the first TARIC and EBTI runs (SC-001, SC-002), the
+- [X] T035 `pytest -q`, offline, green; every touched file checked for LF (`git ls-files --eol`)
+- [X] T036 Hand over quickstart.md's "author's real runs" list: the first TARIC and EBTI runs (SC-001, SC-002), the
   eval comparison with `--as-of` and `--repeat 3` (SC-003), the demo switch once both kinds exist (SC-005), the
   release check (SC-007). Not run in this feature.
 

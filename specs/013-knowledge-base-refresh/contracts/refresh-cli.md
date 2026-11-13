@@ -26,8 +26,9 @@ python scripts/refresh_taric.py [--force] [--no-publish] [--repo OWNER/NAME]
    exists, print the "nothing new" line, apply retention and, when the repository's latest release is older than the
    newest complete TARIC release (by publish time) or is incomplete, re-mark it as latest (the service's
    latest-release query names the latest release, the listing gives the publish times), then exit 0 (an incomplete
-   `taric-<date>` does not count: it is deleted in step 8 and published afresh). With `--no-publish` the check reads
-   the releases only when `gh` is available, else it is skipped, and it neither prunes nor re-marks.
+   `taric-<date>` does not count: it is deleted in step 8 and published afresh). With `--no-publish` the check is
+   skipped: the command builds and packs regardless (spec FR-005: without the release service), and it neither
+   prunes nor re-marks.
 5. Download the six files into `<rag.loader.TARIC_RAW_DIR>/<date>/` (the loader constant read at call time; normally
    `data/raw/taric/`; resume as the loader does: the files are immutable and named by their batch).
 6. Run the TARIC load on that folder (`rag.loader.load_taric(folder, force)`): its exit codes pass through
@@ -94,7 +95,8 @@ overrides it for one run.
 4. Unless `--force`: when a complete `ebti-<date>` or a complete EBTI release with a newer date exists, print the
    "nothing new" line, apply retention and, when the repository's latest release is older than the newest complete
    EBTI release (by publish time) or is incomplete, re-mark it as latest, then exit 0, whatever the state of the work
-   folder. Nothing else has been read or embedded; with `--no-publish` it neither prunes nor re-marks. An incomplete
+   folder. Nothing else has been read or embedded; with `--no-publish` the check is skipped and the command neither
+   prunes nor re-marks. An incomplete
    `ebti-<date>` does not count: it is deleted in step 12 and published afresh.
 5. Resolve `--out` (default `build/ebti-<date>/`): it must be new or empty. With `--force` the default work folder is
    emptied first (a retry after a failed embedding or upload); a folder given with `--out` never is: exit 2 naming
