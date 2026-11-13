@@ -91,8 +91,9 @@ def _ruling(reference: str, code: str, description: str) -> dict:
                           "NAME_AND_ADDRESS": "x", "DESCRIPTION_OF_GOODS": description, "KEYWORDS": ""})
 
 
-def make_kb(taric: str | None = "small") -> Any:
-    """A KnowledgeBase like the `kb` fixture of tests/integration/test_agent_check_flow.py."""
+def make_kb(taric: str | None = "small", meta: dict | None = None, releases: dict | None = None) -> Any:
+    """A KnowledgeBase like the `kb` fixture of tests/integration/test_agent_check_flow.py; `meta` adds to or replaces
+    the index metadata (feature 013: `ebti_snapshot_date`, `ebti_source_version`), `releases` the release files."""
     from rag.bti import BTIStore
     from rag.embeddings import FakeEmbeddings
     from rag.loader import KnowledgeBase
@@ -109,8 +110,8 @@ def make_kb(taric: str | None = "small") -> Any:
                     _ruling("NL-BIKE-0002", "8714911000", "aluminium bicycle frames")])
     store = TaricStore.from_jsonl(TARIC_FIXTURES[taric]) if taric else None
     return KnowledgeBase(index, retriever, bti, RuleSet.load(FIXTURES / "rules"),
-                         {"embedding_model": "fake", "built_at": "2026-10-15T00:00:00"}, emb, shippers=load_shippers(),
-                         taric=store)
+                         {"embedding_model": "fake", "built_at": "2026-10-15T00:00:00", **(meta or {})}, emb,
+                         shippers=load_shippers(), taric=store, releases=releases)
 
 
 # --------------------------------------------------------------------------- stores in every line state

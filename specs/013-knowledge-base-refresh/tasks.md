@@ -357,13 +357,13 @@ shows the dates, the source versions and the releases in use.
 
 ### Tests for User Story 4
 
-- [ ] T026 [P] [US4] Tests in tests/unit/test_view.py on small fakes: `snapshot_caption` with both dates, with
+- [X] T026 [P] [US4] Tests in tests/unit/test_view.py on small fakes: `snapshot_caption` with both dates, with
   "TARIC not loaded", with "EBTI rulings built <date>" and with "date unknown"; `freshness_warning(kb, today)` is
   None at 40 and 45 days, the TARIC text at 41, the EBTI text at 46, both texts in one warning when both are old,
   the "age unknown" texts for no date at all and for an unparsable or future date (shown as recorded;
   contracts/ui.md), no TARIC part when TARIC is not loaded; `rulings_statement`, `taric_statement` with the batch id,
   `release_statement` with one, two and no release files (contracts/ui.md)
-- [ ] T027 [P] [US4] tests/ui/harness.py: `make_kb(taric=…, meta=None, releases=None)` so a test can set the
+- [X] T027 [P] [US4] tests/ui/harness.py: `make_kb(taric=…, meta=None, releases=None)` so a test can set the
   dates and the release files; tests/ui/test_main_page.py: the caption with both dates in the Origin box, an
   `at.warning` with the expected text when a part is old (today injected through `view.freshness_warning`), none
   when both are fresh, the existing frame test updated to the new caption; tests/ui/test_admin_page.py: the Data
@@ -371,10 +371,10 @@ shows the dates, the source versions and the releases in use.
 
 ### Implementation for User Story 4
 
-- [ ] T028 [US4] `ui/view.py`: `snapshot_caption`, `freshness_warning(kb, today=None)` with the two constants of
+- [X] T028 [US4] `ui/view.py`: `snapshot_caption`, `freshness_warning(kb, today=None)` with the two constants of
   agent/config.py, `rulings_statement`, `release_statement`, the batch id in `taric_statement`, the extract date in
   `kb_statement`'s `updated` when present
-- [ ] T029 [US4] `ui/main_page.py::_header`: `st.warning` under the two captions inside the Origin box's vertical
+- [X] T029 [US4] `ui/main_page.py::_header`: `st.warning` under the two captions inside the Origin box's vertical
   sub-container when `freshness_warning` returns a text; `ui/admin.py::_data`: the statements of contracts/ui.md,
   the "Refresh (later)" button unchanged
 
