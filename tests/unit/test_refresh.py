@@ -386,3 +386,74 @@ class TestTotListing:
                 '<a href="Measure_a_261001.xml.gz.pgp">x</a> <a href="Measure_a_261001.xml.gz.pgp">x</a> '
                 '<a href="notes.txt">n</a>')
         assert parse_listing_html(html) == ["Measure_a_261001.xml.gz.pgp"]
+
+
+# --------------------------------------------------------------------------- User Story 2: the EBTI pieces (T015)
+def ruling(ref: str, code: str = "8452.90", description: str = "goods", reasoning: str = "GIR 1") -> dict:
+    return {"reference": ref, "member_state": "DE", "code": code, "cn_code": code.replace(".", "") + "0000",
+            "chapter": code[:2], "description": description, "reasoning": reasoning, "language": "EN",
+            "valid_from": "2024-01-10", "valid_to": "2027-01-09"}
+
+
+class TestEbtiPieces:
+    def test_extract_date_is_the_newest_csv_entrys_timestamp(self, tmp_path):
+        import zipfile
+
+        from rag.refresh_ebti import extract_date
+
+        path = tmp_path / "extract.zip"
+        with zipfile.ZipFile(path, "w") as z:
+            z.writestr(zipfile.ZipInfo("EBTI_2024.csv", date_time=(2026, 11, 12, 4, 44, 0)), b"a")
+            z.writestr(zipfile.ZipInfo("EBTI_2025.csv", date_time=(2026, 11, 13, 4, 40, 0)), b"b")
+            z.writestr(zipfile.ZipInfo("readme.txt", date_time=(2027, 1, 1, 0, 0, 0)), b"not a csv: ignored")
+        assert extract_date(path) == date(2026, 11, 13)
+        with zipfile.ZipFile(tmp_path / "none.zip", "w") as z:
+            z.writestr("readme.txt", b"c")
+        with pytest.raises(RefreshError, match="no csv entry") as info:
+            extract_date(tmp_path / "none.zip")
+        assert info.value.exit_code == 1
+        (tmp_path / "bad.zip").write_bytes(b"not a zip")
+        with pytest.raises(RefreshError, match="cannot be read") as info:
+            extract_date(tmp_path / "bad.zip")
+        assert info.value.exit_code == 1
+
+    def test_partition_reuses_unchanged_texts_with_the_new_metadata_and_counts_the_dropped(self):
+        from rag.refresh_ebti import partition
+
+        previous = {"A": ruling("A"), "B": ruling("B"), "C": ruling("C"), "E": ruling("E")}
+        chosen = [ruling("A", code="8452.30"), ruling("B", description="other goods"), ruling("D"),
+                  ruling("E", reasoning="GIR 1 and 6")]
+        part = partition(chosen, previous)
+        assert [(i, text, m["code"], m["cn_code"], m["id"]) for i, text, m in part.reuse] == [
+            ("bti:A", "goods\nGIR 1", "8452.30", "8452300000", "bti:A")]               # kept, under the new code
+        assert [i for i, _, _ in part.embed] == ["bti:B", "bti:D", "bti:E"]           # changed, new, changed
+        assert part.dropped == 1 and "id" not in part.embed[0][2]                     # C is gone
+
+    def test_check_previous(self, tmp_path, small_index):
+        import dataclasses
+
+        from agent.config import load_settings
+        from rag.refresh_ebti import check_previous
+        from rag.retriever import write_index_meta
+
+        settings = dataclasses.replace(load_settings({}), embed_model="fake-hash-8")
+        store = tmp_path / "store"
+        for name in ("bm25.pkl", "bti_docs.jsonl"):
+            (store / name).parent.mkdir(parents=True, exist_ok=True)
+            (store / name).write_bytes(b"x")
+        for folder in ("chroma", "chroma-bti"):
+            (store / folder).mkdir()
+        good = {"embedding_model": "fake-hash-8", "dimension": 8, "nomenclature_chunks": len(small_index), "edition_year": 2026}
+        write_index_meta(store, good)
+        assert check_previous(store, settings, small_index) == good
+        for change, text in ((("embedding_model", "other/model"), "--full-embed"), (("nomenclature_chunks", 5600), "--full-embed"),
+                             (("edition_year", 2025), "--full-embed")):
+            write_index_meta(store, {**good, change[0]: change[1]})
+            with pytest.raises(RefreshError, match=text) as info:
+                check_previous(store, settings, small_index)
+            assert info.value.exit_code == 2
+        write_index_meta(store, good)
+        (store / "bm25.pkl").unlink()
+        with pytest.raises(RefreshError, match="lacks bm25.pkl") as info:
+            check_previous(store, settings, small_index)
+        assert info.value.exit_code == 2

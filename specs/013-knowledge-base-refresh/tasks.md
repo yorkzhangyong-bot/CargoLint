@@ -182,21 +182,21 @@ and the fake release service.
 
 ### Tests for User Story 2
 
-- [ ] T014 [P] [US2] Tests in tests/unit/test_demo_store.py, class `TestSelection`: `select_rulings(..., keep=…)`
+- [X] T014 [P] [US2] Tests in tests/unit/test_demo_store.py, class `TestSelection`: `select_rulings(..., keep=…)`
   puts the kept rulings first within each code; the bound `n` holds with `keep` larger than a code's share; `all`
   keeps every valid ruling with text; a kept
   reference absent from the records is not chosen; a kept ruling leaves when its code's share falls; the same
   records, keep set and seed give the same choice; the existing tests pass unchanged with `keep=None`. Class
   `TestCopyVectors`: `copy_vectors(..., metadatas=…)` writes the given metadata (a changed `code`) with the copied
   vectors and documents, and copies the source's metadata when none is given
-- [ ] T015 [US2] Tests in tests/unit/test_refresh.py, class `TestEbtiPieces`: `extract_date` is the date of the
+- [X] T015 [US2] Tests in tests/unit/test_refresh.py, class `TestEbtiPieces`: `extract_date` is the date of the
   newest `.csv` entry's timestamp, non-csv entries are ignored, a zip without a csv is refused; `partition` sends a
   chosen ruling with the previous record's text to reuse, with its metadata built from the new record (so a changed
   code is in the reuse set with the new code), one with a changed description or reasoning to embed, a new one to
   embed, and counts the previous rulings not chosen as dropped; `check_previous` refuses a store that lacks a file
   of the layout, another `embedding_model`, another `nomenclature_chunks` count or another `edition_year` with a
   message naming `--full-embed` for the last three, and accepts a matching store
-- [ ] T016 [P] [US2] Tests in tests/unit/test_loader.py: `build_bti` on a tiny extract zip (`rag.loader.STORE_DIR`,
+- [X] T016 [P] [US2] Tests in tests/unit/test_loader.py: `build_bti` on a tiny extract zip (`rag.loader.STORE_DIR`,
   `RAW_DIR`, `BTI_SUBSET` and `SUBSET_META` all monkeypatched into a temporary folder and `store_dir=tmp_path /
   "store"` passed as well, since `build_bti` writes `bti_docs.jsonl` into its store folder whatever else is patched
   and the guard does not cover file writes; `rag.loader.download` monkeypatched to copy the zip) returns the store
@@ -207,7 +207,7 @@ and the fake release service.
   release files, `None` for a missing one; `KnowledgeBase.rulings_date` on a constructed knowledge base (as
   tests/ui/harness.make_kb builds one) for an extract date, a build date only, and neither;
   `KnowledgeBase.fetch_failures` is empty by default
-- [ ] T017 [US2] Tests in tests/integration/test_refresh_ebti.py on a tiny extract (one csv of rows in the
+- [X] T017 [US2] Tests in tests/integration/test_refresh_ebti.py on a tiny extract (one csv of rows in the
   loader's column names, as tests/unit/test_loader.py builds them, entry timestamps at the wanted date, written as a
   zip), a tiny previous store (the `full_build` pattern of tests/unit/test_demo_store.py: `chroma/` files,
   `bm25.pkl`, `index_meta.json` with `embedding_model` `fake-hash-8`, a `chroma-bti` collection of 8-dimensional
@@ -250,10 +250,10 @@ and the fake release service.
 
 ### Implementation for User Story 2
 
-- [ ] T018 [US2] `rag/demo_store.py`: `select_rulings(records, preferred_hs6, n, seed=SEED, keep=None)`, the kept
+- [X] T018 [US2] `rag/demo_store.py`: `select_rulings(records, preferred_hs6, n, seed=SEED, keep=None)`, the kept
   references first within each code before the seeded shuffle of the others; `copy_vectors(source_dir, target_dir,
   ids, metadatas=None)`, the given metadata (id → dict) written in place of the source's; everything else unchanged
-- [ ] T019 [US2] `rag/loader.py`: `SUBSET_META`; `build_indexes(..., store_dir=STORE_DIR, embeddings=None)`, which
+- [X] T019 [US2] `rag/loader.py`: `SUBSET_META`; `build_indexes(..., store_dir=STORE_DIR, embeddings=None)`, which
   builds `OpenRouterEmbeddings` only when none is given and reads the dimension with `getattr(emb, "dimension",
   None)` before the probe (`FakeEmbeddings` has none); `build_bti(demo, chapters, force=False, store_dir=STORE_DIR)`
   writes `bti_docs.jsonl` into `store_dir` and returns the store and the extract's date (read from the newest csv entry when it cuts the subset and written with the source
@@ -261,7 +261,7 @@ and the fake release service.
   `--demo`) and `main` writes `ebti_snapshot_date` and `ebti_source_version` into the index metadata when known;
   `read_release_files(root)`; `KnowledgeBase.rulings_date` (data-model §3), `KnowledgeBase.releases` read by
   `open_knowledge_base`, and `KnowledgeBase.fetch_failures` (empty by default)
-- [ ] T020 [US2] `rag/refresh_ebti.py`: `EXTRACT_URL`, `EXTRACT_ZIP`, `DEFAULT_RULINGS`, the ruling count from
+- [X] T020 [US2] `rag/refresh_ebti.py`: `EXTRACT_URL`, `EXTRACT_ZIP`, `DEFAULT_RULINGS`, the ruling count from
   `load_settings().ebti_rulings` overridden by `--rulings` (a positive integer or `all`; invalid → exit 2),
   `download_extract` (the
   file and its `.part` removed first, `rag.loader.download` looked up on the module), `extract_date`,
@@ -276,7 +276,7 @@ and the fake release service.
   service=None)` following contracts/refresh-cli.md with its exit codes (3 for a service failure after the build)
   and summary; with `all`, every valid ruling with text is chosen and `rulings_requested` is `"all"`; messages start
   with `EBTI refresh`
-- [ ] T021 [US2] `scripts/refresh_ebti.py`: the entry point
+- [X] T021 [US2] `scripts/refresh_ebti.py`: the entry point
 
 **Checkpoint**: User Stories 1 and 2 publish the two kinds; the first real EBTI run from `demo-store-v1` is the
 author's step.

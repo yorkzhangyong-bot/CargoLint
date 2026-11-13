@@ -90,22 +90,31 @@ def _interleave(groups: list[list[dict]]) -> list[dict]:
     return [r for row in zip_longest(*groups) for r in row if r is not None]
 
 
-def select_rulings(records: list[dict], preferred_hs6: set[str], n: int, seed: int = SEED) -> list[dict]:
+def select_rulings(records: list[dict], preferred_hs6: set[str], n: int | None, seed: int = SEED,
+                   keep: set[str] | None = None) -> list[dict]:
     """About n rulings with an embedded text, sorted by reference (spec FR-002). Up to half of n come from the HS-6 codes
     in `preferred_hs6` (preferred_codes), one per code in turn, so each code gets the same number, or all it has if
     fewer. The rest are spread evenly over the
     chapters, one per HS-6 code in turn, the most common codes first; the preferred codes' remaining rulings come only
-    after a chapter's other codes. The same records and seed always give the same choice."""
+    after a chapter's other codes. The same records and seed always give the same choice. Feature 013: the references
+    in `keep` (the previous store's rulings) come first within each code, before the seeded shuffle of the others, so
+    a kept ruling leaves only when it is gone from the records or its code's share falls; `n` None keeps every ruling
+    with a text (the `all` setting)."""
     from rag.bti import BTIStore
 
     embedded = {ruling_id for ruling_id, _, _ in BTIStore(records).chunk_texts()}
+    if n is None:
+        return sorted((r for r in records if f"bti:{r['reference']}" in embedded), key=lambda r: r["reference"])
     by_code: dict[str, list[dict]] = defaultdict(list)
     for r in sorted(records, key=lambda r: r["reference"]):
         if f"bti:{r['reference']}" in embedded:
             by_code[r.get("code") or ""].append(r)
     rng = random.Random(seed)
+    kept = set(keep or ())
     for code in sorted(by_code):
         rng.shuffle(by_code[code])
+        if kept:
+            by_code[code].sort(key=lambda r: r["reference"] not in kept)   # stable: the kept first, in the shuffle's order
     first = _interleave([by_code[c] for c in sorted(by_code) if c in preferred_hs6])[:int(n * PREFERRED_SHARE)]
     taken = {r["reference"] for r in first}
     left = {c: [r for r in rs if r["reference"] not in taken] for c, rs in by_code.items()}
@@ -130,11 +139,14 @@ def _chroma(path: Path) -> Any:
     return chromadb.PersistentClient(path=str(path), settings=ChromaSettings(anonymized_telemetry=False))
 
 
-def copy_vectors(source_dir: Path, target_dir: Path, ids: list[str]) -> set[str]:
+def copy_vectors(source_dir: Path, target_dir: Path, ids: list[str], metadatas: dict[str, dict] | None = None) -> set[str]:
     """Copies the vectors, texts and metadata of `ids` from the full ruling collection into a new one, created as
-    langchain_chroma creates it (cosine space, no embedding function). Returns the ids found; makes no embedding call.
-    Both clients are closed, which releases the database files."""
+    langchain_chroma creates it (cosine space, no embedding function). Feature 013: `metadatas` (id → metadata) is
+    written in place of the source's for the ids it names, so a reused ruling is served with its current code and
+    validity. Returns the ids found; makes no embedding call. Both clients are closed, which releases the database
+    files."""
     found: set[str] = set()
+    given = metadatas or {}
     with _chroma(source_dir) as source_client, _chroma(target_dir) as target_client:
         source = source_client.get_collection(BTI_COLLECTION, embedding_function=None)
         target = target_client.get_or_create_collection(BTI_COLLECTION, embedding_function=None,
@@ -143,10 +155,28 @@ def copy_vectors(source_dir: Path, target_dir: Path, ids: list[str]) -> set[str]
         for i in range(0, len(ids), step):
             got = source.get(ids=ids[i:i + step], include=["embeddings", "documents", "metadatas"])
             if got["ids"]:
-                target.add(ids=got["ids"], embeddings=got["embeddings"], documents=got["documents"],
-                           metadatas=got["metadatas"])
+                metas = [given.get(ruling_id, meta) for ruling_id, meta in zip(got["ids"], got["metadatas"])]
+                target.add(ids=got["ids"], embeddings=got["embeddings"], documents=got["documents"], metadatas=metas)
                 found.update(got["ids"])
     return found
+
+
+def add_vectors(target_dir: Path, docs: list[tuple[str, str, dict]], embeddings: Any) -> int:
+    """Feature 013: embeds `docs` ((id, text, metadata), as BTIStore.chunk_texts gives them) and adds them to the ruling
+    collection in `target_dir` through the same client as copy_vectors, writing the metadata as ChromaVectorSearch.add
+    does (with the id); chromadb allows one client setting per path in a process, so a refresh writes a collection
+    through this module only. Returns the number added."""
+    if not docs:
+        return 0
+    vectors = embeddings.embed_documents([text for _, text, _ in docs])
+    with _chroma(target_dir) as client:
+        target = client.get_or_create_collection(BTI_COLLECTION, embedding_function=None, metadata={"hnsw:space": "cosine"})
+        step = min(BATCH, client.get_max_batch_size())
+        for i in range(0, len(docs), step):
+            batch = docs[i:i + step]
+            target.add(ids=[d[0] for d in batch], embeddings=vectors[i:i + step], documents=[d[1] for d in batch],
+                       metadatas=[{**d[2], "id": d[0]} for d in batch])
+    return len(docs)
 
 
 def cut_demo_store(out: Path | str, rulings: int, *, store_dir: Path | str = STORE_DIR, bti_path: Path | str | None = None,

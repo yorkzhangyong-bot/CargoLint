@@ -243,3 +243,69 @@ class TestFetch:
         (root / "store").mkdir()
         (root / "store" / "index_meta.json").write_text("{}", encoding="utf-8")
         assert not demo_store_needed("https://example.org/demo.zip", root)
+
+
+# --------------------------------------------------------------------------- feature 013: keep and metadata (T014)
+from rag.demo_store import copy_vectors  # noqa: E402
+
+
+class TestKeep:
+    def test_kept_rulings_come_first_within_each_code(self):
+        records = _rulings()
+        plain = {r["reference"] for r in select_rulings(records, EVAL_CODES, 10)}
+        keep = set()
+        for code in list({r["code"] for r in records if r["reference"] in plain and r["code"] not in EVAL_CODES})[:2]:
+            keep.add(next(r["reference"] for r in records if r["code"] == code and r["reference"] not in plain))
+        chosen = {r["reference"] for r in select_rulings(records, EVAL_CODES, 10, keep=keep)}   # the kept take their
+        assert len(keep) == 2 and keep <= chosen and len(chosen) == 10                          # codes' places
+
+    def test_the_bound_holds_when_keep_exceeds_a_codes_share(self):
+        records = _rulings()
+        keep = {f"3923.10-{i}" for i in range(4)}
+        chosen = select_rulings(records, EVAL_CODES, 10, keep=keep)
+        of_code = [r["reference"] for r in chosen if r["code"] == "3923.10"]
+        assert len(chosen) == 10 and 0 < len(of_code) < 4 and set(of_code) <= keep   # the kept took the code's places
+
+    def test_a_kept_reference_absent_from_the_records_changes_nothing(self):
+        records = _rulings()
+        plain = [r["reference"] for r in select_rulings(records, EVAL_CODES, 10)]
+        assert [r["reference"] for r in select_rulings(records, EVAL_CODES, 10, keep={"ghost-1", "ghost-2"})] == plain
+
+    def test_a_kept_ruling_leaves_when_its_codes_share_falls(self):
+        records = _rulings()
+        keep = {f"3923.10-{i}" for i in range(4)}
+        roomy = {r["reference"] for r in select_rulings(records, EVAL_CODES, 36, keep=keep)}
+        tight = {r["reference"] for r in select_rulings(records, EVAL_CODES, 10, keep=keep)}
+        assert keep <= roomy and 0 < len(keep & tight) < 4
+
+    def test_the_choice_is_deterministic_with_keep(self):
+        records = _rulings()
+        keep = {"3924.10-2", "6110.20-0", "4203.10-3"}
+        once = [r["reference"] for r in select_rulings(records, EVAL_CODES, 12, keep=keep)]
+        assert [r["reference"] for r in select_rulings(list(reversed(records)), EVAL_CODES, 12, keep=set(keep))] == once
+        assert [r["reference"] for r in select_rulings(records, EVAL_CODES, 12, keep=keep)] == once
+        assert [r["reference"] for r in select_rulings(records, EVAL_CODES, 12)] == [
+            r["reference"] for r in select_rulings(records, EVAL_CODES, 12, keep=None)]
+
+    def test_none_keeps_every_ruling_with_text(self):
+        records = _rulings() + [_ruling("3923.10-blank", "39", "3923.10", text=False)]
+        chosen = select_rulings(records, EVAL_CODES, None, keep={"3923.10-blank"})
+        assert len(chosen) == 36 and all(r["description"] for r in chosen)
+        assert [r["reference"] for r in chosen] == sorted(r["reference"] for r in chosen)
+
+
+class TestCopyVectors:
+    def test_given_metadata_is_written_with_the_copied_vectors(self, full_build, tmp_path):
+        ids = ["bti:3926.90-0", "bti:3924.10-1"]
+        new = {"code": "3926.91", "cn_code": "3926910000", "chapter": "39", "id": "bti:3926.90-0"}
+        found = copy_vectors(full_build["store_dir"] / "chroma-bti", tmp_path / "target", ids, metadatas={"bti:3926.90-0": new})
+        assert found == set(ids)
+        with _client(tmp_path / "target") as client:
+            got = client.get_collection("bti", embedding_function=None).get(ids=ids, include=["embeddings", "documents", "metadatas"])
+        by = dict(zip(got["ids"], got["metadatas"]))
+        assert by["bti:3926.90-0"] == new                                           # the given metadata
+        assert by["bti:3924.10-1"] == {"code": "3924.10", "chapter": "39"}           # the source's when none is given
+        docs = dict(zip(got["ids"], got["documents"]))
+        assert docs == {"bti:3926.90-0": "goods 3926.90-0", "bti:3924.10-1": "goods 3924.10-1"}
+        for ruling_id, vector in zip(got["ids"], got["embeddings"]):
+            assert list(vector) == pytest.approx(full_build["vectors"][ruling_id])
