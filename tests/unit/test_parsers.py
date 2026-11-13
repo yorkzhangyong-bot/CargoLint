@@ -44,6 +44,36 @@ class TestSplitMixed:
         assert split_mixed(text) == (zh, en)
 
 
+class TestSplitMixedLines:
+    """Mixed Chinese/Latin lines as pasted or OCR'd from invoices and packing lists: R-14 splits on the CJK↔Latin
+    boundary in either order; a quantity with its unit goes to qty, not to either description."""
+
+    def test_chinese_then_english_on_one_line(self):
+        assert split_mixed("LED吸顶灯 LED ceiling lights, 24 W") == ("LED吸顶灯", "LED ceiling lights, 24 W")
+
+    def test_english_then_chinese(self):
+        assert split_mixed("Cotton canvas tote bags 棉帆布手提袋") == ("棉帆布手提袋", "Cotton canvas tote bags")
+
+    def test_chinese_with_quantity_and_unit(self):
+        split = split_mixed("蓝牙音箱 400 PCS Bluetooth speakers, portable")
+        assert split == ("蓝牙音箱", "Bluetooth speakers, portable")
+        assert split.qty == "400 PCS"
+
+    def test_full_width_punctuation_and_spaces(self):
+        assert split_mixed("硅胶手机壳，\u3000Silicone mobile phone cases") == ("硅胶手机壳", "Silicone mobile phone cases")
+
+    def test_slash_between_the_languages_keeps_slashes_inside_a_language(self):
+        assert split_mixed("男式棉质T恤 / Men's cotton T-shirts, S/M/L") == ("男式棉质T恤", "Men's cotton T-shirts, S/M/L")
+
+    def test_single_english_word_after_chinese(self):
+        assert split_mixed("配件 Parts") == ("配件", "Parts")
+
+    def test_quantity_at_the_end_goes_to_qty(self):
+        split = split_mixed("硅胶手机壳 Silicone mobile phone cases 2000 PCS")
+        assert split == ("硅胶手机壳", "Silicone mobile phone cases")
+        assert split.qty == "2000 PCS"
+
+
 class TestCaps:
     def test_file_too_large_is_rejected_before_parsing(self):
         with pytest.raises(FileTooLarge):
