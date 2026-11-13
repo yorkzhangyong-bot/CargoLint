@@ -135,6 +135,13 @@ class TestHeaderAndRows:
         lines, _ = rows_to_lines(rows, 0, {"description": 0, "qty": 1}, source="csv")
         assert len(lines) == MAX_LINES
 
+    def test_a_quantity_in_the_description_fills_only_an_empty_qty_cell(self):
+        rows = [["Description", "Qty"], ["硅胶手机壳 Silicone mobile phone cases 2000 PCS", "25 CTN"],
+                ["蓝牙音箱 400 PCS Bluetooth speakers, portable", ""]]
+        lines, _ = rows_to_lines(rows, 0, {"description": 0, "qty": 1}, source="csv")
+        assert [(l.text_zh, l.text_en, l.qty) for l in lines] == [("硅胶手机壳", "Silicone mobile phone cases", "25 CTN"),
+                                                                 ("蓝牙音箱", "Bluetooth speakers, portable", "400 PCS")]
+
 
 class TestReadTable:
     def test_xlsx_first_sheet_with_header(self):

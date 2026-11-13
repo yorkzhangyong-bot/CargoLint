@@ -233,13 +233,14 @@ def rows_to_lines(rows: list[list[Any]], header_idx: int, colmap: dict[str, int]
             continue
         if len(lines) >= MAX_LINES:
             raise TooManyLines(f"the file has more than {MAX_LINES} lines; split it and check the parts separately")
-        zh, en = split_mixed(desc)
+        split = split_mixed(desc)
+        zh, en = split
         truncated = False
         if len(zh) > MAX_DESC_CHARS:
             zh, truncated = zh[:MAX_DESC_CHARS], True
         if len(en) > MAX_DESC_CHARS:
             en, truncated = en[:MAX_DESC_CHARS], True
-        qty = col(cells, "qty") or None
+        qty = col(cells, "qty") or split.qty   # the quantity column wins; a quantity in the description fills an empty one
         weight = parse_number(col(cells, "weight")) if "weight" in colmap else None
         volume = parse_number(col(cells, "volume")) if "volume" in colmap else None
         value_num = parse_number(col(cells, "value")) if "value" in colmap else None

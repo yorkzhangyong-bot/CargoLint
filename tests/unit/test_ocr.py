@@ -76,3 +76,14 @@ def test_rapidocr_result_with_array_boxes_is_unpacked(monkeypatch):
 
     monkeypatch.setattr(engine, "_load", lambda: (lambda image: _Empty()))
     assert engine(np.zeros((10, 10, 3), dtype=np.uint8)) == []
+
+
+def test_an_ocr_line_keeps_its_quantity_in_qty():
+    from tools.ocr import OCRLine
+    from tools.parse_packing_list import _lines_from_ocr
+
+    warnings: list[str] = []
+    lines = _lines_from_ocr([OCRLine(text="硅胶手机壳 Silicone mobile phone cases 2000 PCS", score=0.9, unreadable=False, page=1)], warnings)
+    assert [(l.text_zh, l.text_en, l.qty, l.source_ref) for l in lines] == [("硅胶手机壳", "Silicone mobile phone cases", "2000 PCS",
+                                                                             "page 1 OCR line 1")]
+    assert warnings == []
