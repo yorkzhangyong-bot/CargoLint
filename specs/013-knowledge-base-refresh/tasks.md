@@ -406,16 +406,16 @@ shows the dates, the source versions and the releases in use.
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T032 [P] README.md: the "Knowledge base refresh" section (spec FR-024: the two commands and their options
+- [X] T032 [P] README.md: the "Knowledge base refresh" section (spec FR-024: the two commands and their options
   including `--repo` and `CARGOLINT_GH`, the releases, completeness, retention, the metadata file and the
   latest-release pointer, the exit codes including 3, the four settings, the switch from the feature-011 secrets
   once both kinds are published, a pin lasting only while retention keeps its release, the warning limits, the
   workflow switch, the rule that the scripts are run by hand only while the schedule is off or after checking the
   Actions tab, and the 60-day auto-disable) and the "Demo deployment" section updated to the repository setting;
   `scripts/` and `refresh*` in the repository layout
-- [ ] T033 [P] .env.example: `CARGOLINT_RELEASE_REPO`, `CARGOLINT_EBTI_RELEASE`, `CARGOLINT_TARIC_RELEASE` and
+- [X] T033 [P] .env.example: `CARGOLINT_RELEASE_REPO`, `CARGOLINT_EBTI_RELEASE`, `CARGOLINT_TARIC_RELEASE` and
   `CARGOLINT_EBTI_RULINGS` with one-line comments (spec FR-024)
-- [ ] T034 [P] tests/eval/e2e_eval.py: `--as-of YYYY-MM-DD`, the rulings' validity date (default: the set's
+- [X] T034 [P] tests/eval/e2e_eval.py: `--as-of YYYY-MM-DD`, the rulings' validity date (default: the set's
   `built_on`), recorded in the history entry and the report; a test in tests/unit/test_e2e_eval.py that the default
   is the set's build date and that a given date is used and recorded (spec SC-003, research R-14)
 - [ ] T035 `pytest -q`, offline, green; every touched file checked for LF (`git ls-files --eol`)

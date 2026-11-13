@@ -388,10 +388,27 @@ def _seen_text(seen: list[dict]) -> str:
     return f"{texts[0]} in every run" if len(set(texts)) == 1 else " · ".join(texts)
 
 
+def validity_date(value: str | None, data: dict) -> date:
+    """Feature 013 (research R-14): the day the rulings' validity is judged on: `--as-of`, else the set's build date,
+    so every earlier run is unchanged."""
+    if not value:
+        return date.fromisoformat(data["built_on"])
+    try:
+        return date.fromisoformat(value)
+    except ValueError as exc:
+        raise ValueError(f"--as-of must be a date, YYYY-MM-DD, not {value!r}") from exc
+
+
+def validity_text(h: dict) -> str:
+    """The report line that says which day an iteration judged the rulings' validity on."""
+    return f"Rulings valid on {h['as_of']} (--as-of)." if h.get("as_of") else "Rulings valid on the set's build date."
+
+
 def _entry_sections(h: dict) -> list[str]:
     n = h["n"]
     run = f", {h['lang']}, query expansion {h['expansion']}" if "lang" in h else ""   # feature 009
-    out = ["", f"## Iteration {h['iteration']} ({h.get('tag', '-')}, {h['model']}{run}, {h['run_on']})", ""]
+    out = ["", f"## Iteration {h['iteration']} ({h.get('tag', '-')}, {h['model']}{run}, {h['run_on']})", "",
+           validity_text(h), ""]
     if h.get("replay_of"):
         r = h["replay_of"]
         out += [f"Replay of iteration {r['iteration']} ({r.get('tag') or '-'}) at OVERRIDE_MIN {h['override_min']}, from "
@@ -469,7 +486,8 @@ def render_report(history: list[dict], data: dict) -> str:
         "parser cuts it, and the lines run the upload's steps through the line store: the description check, the HS-6 step "
         "and its vote gate, the CN-8 step and its vote gate for the lines whose HS-6 the gate decided, and the routes "
         f"(threshold {DEFAULT_THRESHOLD}, ask floor {ASK_FLOOR}). A line's own ruling is never a precedent and never votes "
-        "(leave-one-out); ruling validity on the set's build date. Then the clerk confirms the HS-6 each line in review "
+        "(leave-one-out); ruling validity on the set's build date, or on the day given with `--as-of` (feature 013), "
+        "shown per iteration. Then the clerk confirms the HS-6 each line in review "
         "opens with (the top candidate) and the CN-8 step runs on it. A flagged line stays locked. TARIC is not run. "
         "`python tests/eval/e2e_eval.py --repeat 3`.",
         "- **Right end to end**: the line's CN-8 pick, written by rule or to confirm, is the ruling's CN-8. "
@@ -550,6 +568,8 @@ def main(argv: list[str] | None = None) -> int:
                     help="feature 009: en, the 120 lines as given (default); zh, the 30 lines of hs6_eval_zh.json in Chinese")
     ap.add_argument("--expansion", choices=("on", "off"),
                     help="feature 009: query expansion for this run (default: CARGOLINT_QUERY_EXPANSION)")
+    ap.add_argument("--as-of", metavar="YYYY-MM-DD",
+                    help="feature 013: the day the rulings' validity is judged on (default: the set's build date)")
     args = ap.parse_args(argv)
     if args.repeat < 1:
         ap.error("--repeat must be 1 or more")
@@ -569,7 +589,10 @@ def main(argv: list[str] | None = None) -> int:
         return replay_main(args, data, source, override_min)
     rulings = eval_rulings(data, args.lang)
     rulings = rulings[:args.limit] if args.limit else rulings
-    as_of = date.fromisoformat(data["built_on"])
+    try:
+        as_of = validity_date(args.as_of, data)
+    except ValueError as exc:
+        ap.error(str(exc))
     settings, found = run_settings(get_settings(), args.model)
     reasoning = {"enabled": False} if settings.reasoning_off else None   # what the calls carry
     usage = Usage()
@@ -604,7 +627,7 @@ def main(argv: list[str] | None = None) -> int:
               f"(wrong {sum(not r['hit'] for r in auto)}), {seconds:.0f} s, €{costs[-1]:.4f}; invalid answers {parsed[-1]}")
     m = measures(runs)
     entry = {"iteration": iteration, "run_on": date.today().isoformat(), **({"tag": args.tag} if args.tag else {}),
-             "model": settings.chat_model, "reasoning": reasoning, "lang": args.lang,
+             "model": settings.chat_model, "reasoning": reasoning, "lang": args.lang, "as_of": as_of.isoformat(),
              "expansion": "on" if expansion else "off", "threshold": DEFAULT_THRESHOLD, "ask_floor": ASK_FLOOR,
              "temperature": temperature, "seed": seed, "repeat": args.repeat, **m, **override_measures(runs),
              "parse": {"retry_limit": client.max_retries, "runs": parsed}, "upload_s_runs": upload_s,

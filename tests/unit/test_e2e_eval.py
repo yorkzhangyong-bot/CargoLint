@@ -193,3 +193,17 @@ def test_feature_008_a_replay_makes_no_model_call_and_can_only_raise_the_minimum
 def test_feature_008_the_minimum_is_for_a_replay():
     with pytest.raises(SystemExit):
         ev.main(["--override-min", "5"])
+
+
+def test_feature_013_the_validity_date_defaults_to_the_sets_build_date_and_is_recorded():
+    from datetime import date
+
+    data = {"built_on": "2026-10-23"}
+    assert ev.validity_date(None, data) == date(2026, 10, 23) and ev.validity_date("", data) == date(2026, 10, 23)
+    assert ev.validity_date("2026-11-13", data) == date(2026, 11, 13)
+    with pytest.raises(ValueError, match="--as-of"):
+        ev.validity_date("today", data)
+    assert ev.validity_text({"as_of": "2026-11-13"}) == "Rulings valid on 2026-11-13 (--as-of)."
+    assert ev.validity_text({}) == "Rulings valid on the set's build date."            # every earlier entry
+    with pytest.raises(SystemExit):                                                   # a bad date is a usage error
+        ev.main(["--as-of", "yesterday", "--dry-run"])
