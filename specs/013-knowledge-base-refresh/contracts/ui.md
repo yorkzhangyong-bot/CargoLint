@@ -13,7 +13,8 @@ Inside the right-hand sub-container, under the Origin caption:
 | `st.warning` | `TARIC snapshot is 41 days old (limit 40 days).` | `view.freshness_warning(kb, today)`; shown only when it returns a text |
 | | `EBTI rulings are 46 days old (limit 45 days).` | |
 | | `TARIC snapshot is 41 days old (limit 40 days). EBTI rulings are 46 days old (limit 45 days).` | both old: one warning, TARIC first |
-| | `EBTI rulings: age unknown (no date recorded).` | an unparsable or missing date |
+| | `EBTI rulings: age unknown (no date recorded).` | no date at all: neither an extract nor a build date |
+| | `EBTI rulings: age unknown (recorded date 2027-01-01 cannot be used).` | an unparsable date, or one in the future, shown as recorded |
 
 At exactly the limit there is no warning. The ages are whole days between `today` and the date.
 

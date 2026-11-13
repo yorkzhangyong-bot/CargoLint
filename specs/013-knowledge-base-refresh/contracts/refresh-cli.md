@@ -24,7 +24,8 @@ python scripts/refresh_taric.py [--force] [--no-publish] [--repo OWNER/NAME]
    exit 1.
 4. Unless `--force`: list the releases; when a complete `taric-<date>` or a complete TARIC release with a newer date
    exists, print the "nothing new" line, apply retention and, when the repository's latest release is older than the
-   newest complete TARIC release (by publish time) or is incomplete, re-mark it as latest, then exit 0 (an incomplete
+   newest complete TARIC release (by publish time) or is incomplete, re-mark it as latest (the service's
+   latest-release query names the latest release, the listing gives the publish times), then exit 0 (an incomplete
    `taric-<date>` does not count: it is deleted in step 8 and published afresh). With `--no-publish` the check reads
    the releases only when `gh` is available, else it is skipped, and it neither prunes nor re-marks.
 5. Download the six files into `<rag.loader.TARIC_RAW_DIR>/<date>/` (the loader constant read at call time; normally
@@ -84,7 +85,9 @@ overrides it for one run.
 ### Steps
 
 1. Check the options (usage error → exit 2).
-2. Check the key and, unless `--no-publish`, `gh` (setup error → exit 2).
+2. Check the key and `gh` (setup error → exit 2); with `--no-publish`, `gh` is checked only when the previous store
+   is a release, named by `--previous` or to be resolved from the listing, since it is downloaded through `gh`; a
+   local folder needs none.
 3. Download the extract afresh to `build/DDS2-EBTI_Full.zip` (the file and its `.part` are removed first; the loader's
    `data/raw/` copy is never touched), or use `--extract ZIP`. Read the extract's date from the newest `.csv` entry;
    none → exit 1.
@@ -151,7 +154,7 @@ EBTI refresh: ebti-2026-11-13 is already published and complete; nothing new. Us
 | 0 | published, or nothing new |
 | 1 | the source was refused: listing unreadable, no complete batch, signature, parse, an extract without a date |
 | 2 | setup or usage: options, an invalid ruling count (neither a positive integer nor `all`), `gpg` or the key copy, `gh` missing or not signed in, `OPENROUTER_API_KEY` missing, no previous store, a previous store that is incomplete or of another model or nomenclature without `--full-embed`, `--out` not empty (the default work folder without `--force`, a given folder always), checked only once there is something to build |
-| 3 | the release service failed after the build: a create, the marking as latest, a deletion or the pruning; the message names the step and the release and says what was done before (an incomplete remnant deleted, a release created but not marked latest or pruned); the next run of the kind repairs it, pruning and re-marking the latest release even when the source has nothing new |
+| 3 | the release service failed after the build: a create, the marking as latest, a deletion or the pruning; or the retention or re-marking of a nothing-new run failed; the message names the step and the release and says what was done before (an incomplete remnant deleted, a release created but not marked latest or pruned); the next run of the kind repairs it, pruning and re-marking the latest release even when the source has nothing new |
 
 ### Guarantees
 

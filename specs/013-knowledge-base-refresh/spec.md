@@ -215,8 +215,9 @@ knowledge base replaced by a fake.
    **When** the app starts, **Then** it stops with an error naming the releases and the reasons.
 4. **Given** `CARGOLINT_EBTI_RELEASE` pins `ebti-D0` while `ebti-D1` is newer, **When** the app starts, **Then** it
    fetches `ebti-D0` by its name, reading neither the pointer nor the listing for that kind. When the pinned release
-   fails (deleted by retention, misspelled, unverifiable), the app falls back once to the newest release of the kind,
-   resolved as without a pin, logs that the pin was not honoured, and Admin › Data names the release in use.
+   fails (deleted by retention, well-formed but naming no release, unverifiable), the app falls back once to the
+   newest release of the kind, resolved as without a pin, logs that the pin was not honoured, and Admin › Data
+   names the release in use.
 5. **Given** an existing `store/index_meta.json` and `data/taric.jsonl`, **When** the app starts, **Then** nothing is
    listed or downloaded. Local development is unchanged.
 6. **Given** `CARGOLINT_DEMO_STORE_URL` and `CARGOLINT_DEMO_STORE_SHA256` set and the repository setting empty,
@@ -228,13 +229,13 @@ knowledge base replaced by a fake.
    and takes the newest complete releases of the kind from the listing. When the listing cannot be read either, a
    pinned release is still fetched by its name; without a pin the EBTI kind stops the app with the error naming both
    routes and the TARIC kind opens the app without TARIC.
-10. **Given** the pointer names releases of a kind that no longer exist or fail (a stale `current` block, left by two
-    runs that overlapped), while the listing holds a good complete release of the kind, **When** the app starts,
-    **Then** after the pointer's candidates fail it reads the listing, fetches the newest complete release of the
-    kind it has not tried, and opens with it.
-9. **Given** every TARIC candidate fails while the EBTI release is fetched (or present), **When** the app starts,
-   **Then** it opens without a TARIC snapshot: an error message on the page names the TARIC releases and the reasons,
-   the Origin box reads "TARIC not loaded", and the next start fetches TARIC again since its marker is missing.
+9. **Given** the pointer names releases of a kind that no longer exist or fail (a stale `current` block, left by two
+   runs that overlapped), while the listing holds a good complete release of the kind, **When** the app starts,
+   **Then** after the pointer's candidates fail it reads the listing, tries the newest complete releases of the kind
+   it has not tried (at most two) and opens with the first that succeeds.
+10. **Given** every TARIC candidate fails while the EBTI release is fetched (or present), **When** the app starts,
+    **Then** it opens without a TARIC snapshot: an error message on the page names the TARIC releases and the reasons,
+    the Origin box reads "TARIC not loaded", and the next start fetches TARIC again since its marker is missing.
 
 ---
 
@@ -380,8 +381,9 @@ switch.
   or the pruning): the message names the step and the release and says what the service did before it failed, since
   such a run may have deleted an incomplete remnant or created a release without marking it latest or pruning; the
   next run of the kind repairs it — it still prunes and re-marks the latest release when needed even when the source
-  has nothing new. A run that exits 1 or 2 has published nothing and deleted nothing. `--no-publish` builds and packs
-  without the release service. `--repo OWNER/NAME` names the repository for the release service (default: the
+  has nothing new, and a nothing-new run whose retention or re-marking fails exits 3 too, naming the step. A run that
+  exits 1 or 2 has published nothing and deleted nothing. `--no-publish` builds and packs without the release
+  service. `--repo OWNER/NAME` names the repository for the release service (default: the
   checkout's remote), and `CARGOLINT_GH` names the `gh` executable as `CARGOLINT_GPG` names `gpg`; both commands
   share them.
 
@@ -423,7 +425,9 @@ switch.
   copy nothing. The repository's `store/`, `data/bti_subset.jsonl` and `data/raw/` MUST NOT be touched.
 - **FR-009**: It MUST pack the work folder's `store/…` (and nothing else) as `cargolint-ebti-<date>.zip`, write the
   metadata file, publish `ebti-<date>` with both as its assets, mark it the latest release, and apply retention. Exit
-  codes as FR-005; a missing `OPENROUTER_API_KEY` is a setup error found before the download.
+  codes as FR-005; a missing `OPENROUTER_API_KEY` is a setup error found before the download. With `--no-publish`,
+  `gh` is still needed, and checked first, when the previous store is a release (named by `--previous` or resolved
+  from the listing), since it is downloaded through `gh`; a previous store given as a local folder needs none.
 
 **Releases, retention and metadata**
 
@@ -433,7 +437,8 @@ switch.
   is not `<kind>-YYYY-MM-DD`. A run that publishes nothing still applies that retention and, when the repository's
   latest release is older than the newest complete release of its kind (by publish time) or is incomplete, re-marks
   that release as latest (unless `--no-publish`), so a failed prune or mark-latest repairs itself on the next run even
-  when the source has nothing new.
+  when the source has nothing new. The script learns which release is marked latest from the release service's
+  latest-release query (none when the repository has no published release) and the publish times from the listing.
 - **FR-011**: Release names are `taric-YYYY-MM-DD` and `ebti-YYYY-MM-DD`, where the date is the data's snapshot date
   (the TARIC batch's date; the EBTI extract's date), never the day of publishing.
 - **FR-012**: Every release MUST carry `metadata.json` with: `kind`, `release`, `snapshot_date`, `source` (the source's
@@ -456,7 +461,10 @@ switch.
   releases, `owner/name`; empty by default: nothing is fetched from releases), the optional pins
   `CARGOLINT_EBTI_RELEASE` and `CARGOLINT_TARIC_RELEASE` (a release name each; empty by default: the newest of the
   kind), and `CARGOLINT_EBTI_RULINGS` (a positive integer or `all`; `5000` by default) for the EBTI store size of
-  FR-007.
+  FR-007. A pin MUST be of the form `<kind>-YYYY-MM-DD`, with a valid date and the kind of its setting; a pin of
+  another form, or a ruling count that is neither a positive integer nor `all`, is refused when the settings are
+  read (the scripts exit 2, the app does not start). A well-formed pin that names no existing release fails at fetch
+  time and falls back (FR-016).
 - **FR-015**: Once per server process, before it opens the knowledge base and only when the repository setting is set,
   for each kind whose files are missing (`store/index_meta.json` for the EBTI kind, `data/taric.jsonl` for the TARIC
   kind), the app MUST resolve the kind's candidates, in this order: the pinned release alone when a pin is set; else
@@ -473,9 +481,10 @@ switch.
 - **FR-016**: When a candidate fails at any step, the app MUST try the kind's next candidate once: the next newest
   release, or for a pin the newest release of the kind resolved as without a pin, with a log line that the pin was
   not honoured. When every candidate the pointer named has failed, the app MUST read the listing and try the newest
-  complete release of the kind it has not tried, so that a stale pointer (left by two runs that overlapped) never
-  stops the app while a good release is listed. When every candidate of the EBTI kind fails, or none can be resolved
-  (pointer and listing both unreadable), the app MUST stop with an error naming the releases, the routes and the
+  complete releases of the kind it has not tried, at most two as in FR-015, the first that succeeds opening the app,
+  so that a stale pointer (left by two runs that overlapped) never stops the app while a good release is listed.
+  When every candidate of the EBTI kind fails, or none can be resolved (pointer and listing both unreadable), the
+  app MUST stop with an error naming the releases, the routes and the
   reasons. When every candidate of the TARIC kind fails, the app MUST NOT stop: it opens
   without a TARIC snapshot, as it does today when `data/taric.jsonl` is missing, shows the failure as an error
   message on the page naming the releases and the reasons, and the Origin box reads "TARIC not loaded"; the marker

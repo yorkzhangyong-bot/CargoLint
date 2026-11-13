@@ -55,7 +55,8 @@ job's token in Actions) and `gpg`.
 feature 002 (the TARIC script's end-to-end test needs `gpg` and skips without it, as `test_taric_loader.py` does), a
 tiny EBTI extract built as a zip of CSV rows in the test, a tiny previous store with a real Chroma collection of
 8-dimensional vectors (the `full_build` fixture pattern of `tests/unit/test_demo_store.py`), `FakeEmbeddings`, a
-`FakeReleaseService` that records calls, a release listing in GitHub's JSON shape, and `file:` URLs for the
+`FakeReleaseService` that records calls and tracks the release marked latest, a release listing in GitHub's JSON
+shape, and `file:` URLs for the
 metadata and archives. The UI is tested through AppTest with `tests/ui/harness.make_kb` extended with dates. The
 workflow file is parsed with `yaml.safe_load` (PyYAML 6.0.3 is installed as a dependency of chromadb and
 langchain-core; YAML 1.1 reads the `on` key as the boolean `True`), so a test can look inside each job's condition.
@@ -94,8 +95,8 @@ release's metadata, a download address, no API) and a 2 MB TARIC download to tod
 `store_dir` parameter, the release files and `rulings_date` on `KnowledgeBase`), four settings and two constants in
 `agent/config.py`, about 20 lines in `app.py`, three functions in `ui/view.py`, a few lines in `ui/main_page.py` and
 `ui/admin.py`, one workflow file, a few lines in `tests/conftest.py`, one option in `tests/eval/e2e_eval.py`, two
-lines in `.gitignore`, five new test files and additions to seven, three fixture files, the README and
-`.env.example`.
+lines in `.gitignore`, five new test files and additions to eight (plus the UI harness, the fakes and the guard),
+three fixture files, the README and `.env.example`.
 
 ## Constitution Check
 
@@ -145,7 +146,7 @@ scripts/
 └── refresh_ebti.py      # new: thin entry point → rag.refresh_ebti.main
 rag/
 ├── refresh.py           # new: kinds, names, metadata, pack_entries, ReleaseService (gh), publish, prune,
-│                        #      fetch_releases / fetch_release for the app (standard library only)
+│                        #      repair_latest, fetch_releases / fetch_release for the app (standard library only)
 ├── refresh_taric.py     # new: the tot listing, current_batch, download_batch, main
 ├── refresh_ebti.py      # new: extract_date, previous_store, check_previous, partition, build_store, main
 ├── demo_store.py        # select_rulings(..., keep=None): the previous store's rulings first within each code;
@@ -213,21 +214,29 @@ tasks build.
    `_run_gh(argv)` (`subprocess.run` of `CARGOLINT_GH`, else `gh` on `PATH`), which the suite's offline guard replaces
    and the argv test swaps for a recorder (`ReleaseService(run=…)`). Calls: the listing through `gh api
    repos/<repo>/releases?per_page=100`, which returns the same JSON shape the app reads (`tag_name`, `draft`,
-   `assets[].name`), so one parser serves both and the scripts see assets and drafts; `release create <tag> <files>`
+   `published_at`, `assets[].name`), so one parser serves both and the scripts see assets, drafts and publish
+   times; the latest-release query `gh api repos/<repo>/releases/latest`, which names the release marked latest
+   (none on HTTP 404: no published release) for the re-mark rule of FR-010; `release create <tag> <files>`
    (gh uploads the assets before it publishes the release); `release edit <tag> --latest` after the create, so the
    pointer moves to the release just published; `release delete --yes --cleanup-tag`; `release download`. There is
    no `upload --clobber`: `--force` deletes the release and creates it afresh, so its assets always come from one
    build. `--repo OWNER/NAME` is passed through to every call (`gh api` gets it in the path). `check()` runs `gh auth
    status` before any download. A `gh` failure after the build (create, mark latest, delete, prune) raises
    `RefreshError(exit_code=3)` naming the step and what was done before it. A `FakeReleaseService` in the tests
-   records the calls, holds the releases in memory and can be told to fail at a call. `--no-publish` skips the
-   service entirely.
+   records the calls, holds the releases in memory with their publish times and which one is marked latest, and can
+   be told to fail at a call. `--no-publish` skips the service, except to download a previous store named as a
+   release (R-10): then `gh` is checked first.
 3. **Completeness and retention.** A release is complete when it carries both assets and is not a draft; only
    complete releases count for "nothing new" (the newest complete of the kind must be older than the source's date),
    for the `current` block and for the app. `publish` deletes an incomplete release of the name before creating it
    afresh, and with `--force` deletes the complete one before creating it afresh. `prune(service, kind)` lists the
    releases, keeps the two complete releases of the kind with the newest dates in their names and deletes every other
    release of the kind, older or incomplete, tag included. Names that do not match the pattern are ignored.
+   `repair_latest(service, kind, listing)` re-marks the newest complete release of the kind as latest when the
+   service's latest-release query names none, an incomplete release, or a release published before it (by
+   `published_at`); a release of the other kind published later stays latest. It runs after `prune` in a run that
+   publishes nothing, from that run's listing, never with `--no-publish`. A `gh` failure in `prune` or
+   `repair_latest` is `RefreshError(exit_code=3)` even when nothing was built.
    `current_block(listing, kind, name)` gives the `current` block from a listing the script reads immediately before
    writing the metadata (after the build and the pack: the "nothing new" listing may be ten minutes old by then)
    plus the release about to be published, with retention applied.
@@ -339,8 +348,10 @@ tasks build.
   ruling count, the constants.
 - **A1** `tests/unit/test_refresh.py`: names and kinds; completeness; retention keeps the two newest complete, deletes
   incomplete ones and ignores other names; the metadata file's fields and `current` from a fresh listing;
-  `pack_entries`; `publish` with `force` deleting then creating; a `gh` failure in `publish` or `prune` as
-  `RefreshError(exit_code=3)` naming the step; the service's argv through a recorder (`gh api`, `--cleanup-tag`,
+  `pack_entries`; `publish` with `force` deleting then creating; `repair_latest` re-marking only when the latest
+  release is none, incomplete or older by publish time; a `gh` failure in `publish`, `prune` or `repair_latest` as
+  `RefreshError(exit_code=3)` naming the step; the service's argv through a recorder (`gh api`, `releases/latest`,
+  `--cleanup-tag`,
   `edit --latest`, `--repo`, `CARGOLINT_GH`, the `check` failures); the listing parser on the recorded listing (expectations from the sidecar), on a listing whose
   newest batch is incomplete beside a complete one, and on one with no complete batch; `extract_date`; `partition`
   and the rewritten metadata of a reused ruling; the workflow file through `yaml.safe_load`.

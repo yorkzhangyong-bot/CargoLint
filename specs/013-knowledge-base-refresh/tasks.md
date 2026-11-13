@@ -41,8 +41,10 @@ end and are not part of these tasks. The tasks were renumbered after review roun
   `ebti-2026-11-01`, `ebti-2026-10-14` and `taric-2026-11-02` complete, `demo-store-v1` with its one zip, and a
   draft `taric-2026-11-03` with the archive only (incomplete)
 - [ ] T002 [P] Add `FakeReleaseService` to tests/fakes.py: releases held in memory (name → asset names, draft flag,
-  files), the calls `check`, `list` (the listing shape of contracts/releases.md), `create`, `mark_latest`, `delete`
-  and `download` recorded in order, archives served from a folder; `check` can be told to fail (not installed, not
+  files, publish time) and the name of the release marked latest; the calls `check`, `list` (the listing shape of
+  contracts/releases.md, with `published_at`), `latest` (that name, `None` when none), `create` (stamps the publish
+  time), `mark_latest` (moves the mark), `delete` (clears the mark when it deletes the latest release) and
+  `download` recorded in order, archives served from a folder; `check` can be told to fail (not installed, not
   signed in) and any other call can be told to fail at its turn, as a `gh` error would
 
 ---
@@ -61,19 +63,23 @@ end and are not part of these tasks. The tasks were renumbered after review roun
   age > limit
 - [ ] T005 Tests in tests/unit/test_refresh.py, class `TestReleases`, for the shared pieces of rag/refresh.py:
   `parse_release_name` (`ebti-2026-11-01` → kind and date; `demo-store-v1`, `ebti-latest` and `taric-2026-13-01` →
-  none); `parse_listing` on tests/fixtures/refresh/releases.json (names, asset names, the draft flag; a missing
-  `draft` reads as false); `is_complete` (both assets and not a draft); `names_of_kind` newest first by the date in
+  none); `parse_listing` on tests/fixtures/refresh/releases.json (names, asset names, the draft flag, `published_at`;
+  a missing `draft` reads as false, a missing `published_at` as none); `is_complete` (both assets and not a draft); `names_of_kind` newest first by the date in
   the name, not by listing order, complete ones only when asked; `prune` on the fake service keeps the two newest
   complete of the kind, deletes the older ones and the incomplete ones with their tags, and never touches the other
-  kind, `demo-store-v1` or a name that does not match; `current_block` from a listing plus the release about to be
-  published; `write_metadata` and `read_metadata` (data-model §2: the fields, `current`, the EBTI-only counts; a
+  kind, `demo-store-v1` or a name that does not match; `repair_latest` re-marks the newest complete release of the
+  kind when the fake's latest is none, incomplete or published before it, and marks nothing when it already is that
+  release or a release of the other kind published later; `current_block` from a listing plus the release about to
+  be published; `write_metadata` and `read_metadata` (data-model §2: the fields, `current`, the EBTI-only counts; a
   file without `kind`, `release`, `archive` or `sha256` is refused); `pack_entries` (the entries given, their order,
   the SHA-256 and size returned); `publish` on the fake service: creates then marks latest, deletes an incomplete
   release of the name first, with `force` deletes the complete one and creates afresh (never an upload), raises
-  without `force` on a complete one; a failing `create`, `mark_latest` or `delete` in `publish`, or a failing
-  `delete` in `prune`, raises `RefreshError(exit_code=3)` whose message names the step, the release and what was
-  done before it. Class `TestReleaseService`, with `ReleaseService(run=recorder)` so no `gh` runs: the argv of
-  `list` (`gh api repos/<repo>/releases?per_page=100`, parsed into the listing shape), `create` (files, `--title`,
+  without `force` on a complete one; a failing `create`, `mark_latest` or `delete` in `publish`, a failing `delete`
+  in `prune`, or a failing `mark_latest` in `repair_latest`, raises `RefreshError(exit_code=3)` whose message names
+  the step, the release and what was done before it. Class `TestReleaseService`, with `ReleaseService(run=recorder)`
+  so no `gh` runs: the argv of `list` (`gh api repos/<repo>/releases?per_page=100`, parsed into the listing shape),
+  `latest` (`gh api repos/<repo>/releases/latest`, the name; `None` when the recorder answers HTTP 404), `create`
+  (files, `--title`,
   `--notes`), `mark_latest` (`release edit <tag> --latest`), `delete` (`--yes --cleanup-tag`), `download`
   (`--pattern`, `--dir`); no `upload` call exists; `--repo` passed through to every call and absent otherwise;
   `CARGOLINT_GH` replacing the executable; `check` raising `RefreshError(exit_code=2)` when the recorder reports
@@ -84,7 +90,8 @@ end and are not part of these tasks. The tasks were renumbered after review roun
   `pack_entries`, `write_metadata`, `read_metadata`, `current_block`, `_run_gh` (the one function that runs the
   executable from `CARGOLINT_GH` or `PATH`), `ReleaseService(repo=None, run=None)` with the calls of
   contracts/releases.md (no `upload`), `publish` (an incomplete release of the name deleted first, the complete one
-  on `force`; create; `mark_latest`; a `gh` failure as `RefreshError(exit_code=3)` naming the step) and `prune`
+  on `force`; create; `mark_latest`; a `gh` failure as `RefreshError(exit_code=3)` naming the step), `prune` and
+  `repair_latest` (the re-mark rule of FR-010 from the service's `latest()` and the listing's `published_at`)
 - [ ] T007 Test in tests/unit/test_offline_guard.py: without a fake, `rag.refresh.ReleaseService().check()`,
   `rag.loader.download(url, dest)` and `urllib.request.urlopen("https://example.invalid/")` raise the guard's
   `RuntimeError` ("offline test") before anything runs or connects, and `urllib.request.urlopen` of a `file:` URL
@@ -129,7 +136,8 @@ from the fixtures and the fake release service.
   - when a complete `taric-2026-10-01`, or a complete `taric-2026-11-02`, exists, the run prints "nothing new",
     downloads nothing, applies retention and re-marks the newest complete TARIC release as latest when the
     repository's latest is older or incomplete (no re-mark when it already is), and exits 0; a listing with an extra
-    older TARIC release shows it deleted by this run; with `--force`
+    older TARIC release shows it deleted by this run; a nothing-new run whose prune or re-mark fails exits 3 naming
+    the step; with `--force`
     it downloads, rebuilds, deletes `taric-2026-10-01` and creates it afresh (no upload call), and marks the release
     latest;
   - a service whose `create` fails exits 3 with a message naming the create, the release and the remnant deleted
@@ -220,7 +228,7 @@ and the fake release service.
   - a complete `ebti-<date>`, or a complete newer EBTI release, already published: "nothing new", exit 0, the
     previous store not read, nothing embedded, retention applied and the newest complete EBTI release re-marked as
     latest when the repository's latest is older or incomplete (a listing with an extra older EBTI release shows it
-    deleted), and the same exit 0 with the
+    deleted; a nothing-new run whose prune or re-mark fails exits 3 naming the step), and the same exit 0 with the
     default work folder left non-empty from an earlier run (the folder is checked only when there is something to
     build); an incomplete
     `ebti-<date>` is deleted and published afresh; `--force` rebuilds, deletes the release and creates it afresh
@@ -233,7 +241,8 @@ and the fake release service.
     parameter; no `OpenRouterEmbeddings` is built, the guard would refuse it) and nothing is copied;
   - no previous store and no `--full-embed`: exit 2 naming `--previous demo-store-v1` and `--full-embed`;
   - `--previous <release>` downloads the release through the service into `<out>/previous/` and verifies it against
-    its metadata; `demo-store-v1` (no metadata) is unpacked as it is with a note;
+    its metadata, also with `--no-publish`, which then checks `gh` first (a missing `gh` exits 2); `demo-store-v1`
+    (no metadata) is unpacked as it is with a note;
   - the default work folder left non-empty: exit 2 naming it, `--force` and `--out`; with `--force` it is emptied
     and the run goes on; a non-empty folder given with `--out` is refused with and without `--force`; a missing key
     exits 2 before any download;
@@ -256,7 +265,8 @@ and the fake release service.
   `load_settings().ebti_rulings` overridden by `--rulings` (a positive integer or `all`; invalid → exit 2),
   `download_extract` (the
   file and its `.part` removed first, `rag.loader.download` looked up on the module), `extract_date`,
-  `previous_store(spec, service, work)`, `check_previous` (the layout, the model, the nomenclature), `partition`,
+  `previous_store(spec, service, work)` (a release needs `gh`, also with `--no-publish`), `check_previous` (the
+  layout, the model, the nomenclature), `partition`,
   `build_store` (reuse: copy `chroma/` and `bm25.pkl`, `rag.demo_store.copy_vectors(..., metadatas=…)` for the
   reused rulings with metadata from `BTIStore.chunk_texts` of the new records, `ChromaVectorSearch(out /
   "chroma-bti", emb, "bti").add` for the rest, `bti_docs.jsonl`, the index metadata of data-model §3;
@@ -350,8 +360,8 @@ shows the dates, the source versions and the releases in use.
 - [ ] T026 [P] [US4] Tests in tests/unit/test_view.py on small fakes: `snapshot_caption` with both dates, with
   "TARIC not loaded", with "EBTI rulings built <date>" and with "date unknown"; `freshness_warning(kb, today)` is
   None at 40 and 45 days, the TARIC text at 41, the EBTI text at 46, both texts in one warning when both are old,
-  the "age unknown" text for an unparsable date and for a date in the future (shown as recorded, age unknown), no
-  TARIC part when TARIC is not loaded; `rulings_statement`, `taric_statement` with the batch id,
+  the "age unknown" texts for no date at all and for an unparsable or future date (shown as recorded;
+  contracts/ui.md), no TARIC part when TARIC is not loaded; `rulings_statement`, `taric_statement` with the batch id,
   `release_statement` with one, two and no release files (contracts/ui.md)
 - [ ] T027 [P] [US4] tests/ui/harness.py: `make_kb(taric=…, meta=None, releases=None)` so a test can set the
   dates and the release files; tests/ui/test_main_page.py: the caption with both dates in the Origin box, an

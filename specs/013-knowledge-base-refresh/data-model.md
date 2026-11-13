@@ -15,7 +15,8 @@ keeps the newest two complete releases (`KEEP_RELEASES = 2`) and deletes every o
 incomplete, with their tags; names that do not match the pattern are never touched (FR-010). The release published
 last is the repository's **latest** release (`gh release edit <tag> --latest` after every publish), whose
 `metadata.json` is the app's pointer. `--force` deletes a complete release and creates it afresh; no asset is ever
-patched in place.
+patched in place. The listing gives each release's `published_at` (none for a draft) and the service's latest-release
+query the name of the release marked latest; `repair_latest` compares the two (FR-010).
 
 ## 2. Metadata file (`metadata.json`, one per release; FR-012)
 
@@ -102,8 +103,9 @@ The app refuses an archive with any other entry before unpacking anything.
 
 Precedence in `load_kb()`: `release_repo` set → `fetch_releases` (the feature-011 settings ignored, with a log note
 when they are set too); else `demo_store_url` set → `fetch_demo_store` (feature 011, unchanged); else nothing. A pin
-must match the release-name pattern of its kind, else a settings error at start. A pinned release that fails falls
-back once to the newest of its kind, with a log line; a pin lasts only while retention keeps its release.
+must match the release-name pattern of its kind (a valid date, the kind of its setting), else a settings error at
+start, as is a ruling count that is neither a positive integer nor `all`. A pinned release that fails falls back
+once to the newest of its kind, with a log line; a pin lasts only while retention keeps its release.
 
 ## 7. Constants
 
@@ -136,7 +138,7 @@ warning says the part's age is unknown. `today` defaults to `date.today()` and i
 
 | Outcome | Exit code | Published | Local files written |
 |---|---|---|---|
-| nothing new | 0 | no (retention and, when needed, re-marking the latest release from the listing already read; neither runs with `--no-publish`) | none |
+| nothing new | 0; 3 when its retention or re-marking fails | no (retention and, when needed, re-marking the latest release from the listing already read; neither runs with `--no-publish`) | none |
 | published | 0 | the release (an incomplete one of the name deleted first), marked latest, then retention | TARIC: `data/raw/taric/<date>/`, `data/taric.jsonl`, `data/SOURCES.md`, the mismatch log; EBTI: `build/DDS2-EBTI_Full.zip`, `build/ebti-<date>/` |
 | refused (source) | 1 | no, and nothing deleted | TARIC: the downloaded files only; EBTI: the extract only |
 | setup or usage error | 2 | no, and nothing deleted | none (an existing default work folder is emptied only by a `--force` run that gets past the checks) |

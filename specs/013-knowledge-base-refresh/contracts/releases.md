@@ -24,6 +24,7 @@ release until the first refresh, so the app's pointer route finds no metadata th
 def publish(service: ReleaseService, kind: str, snapshot_date: date, archive: Path, metadata: Path,
             force: bool = False) -> str:            # returns the release name
 def prune(service: ReleaseService, kind: str, keep: int = KEEP_RELEASES) -> list[str]:   # the deleted names
+def repair_latest(service: ReleaseService, kind: str, listing: list[dict] | None = None) -> str | None:   # re-marked
 ```
 
 - `publish` creates `<kind>-<date>` with the two assets, deleting first an incomplete release of that name (an
@@ -38,16 +39,23 @@ def prune(service: ReleaseService, kind: str, keep: int = KEEP_RELEASES) -> list
   other release of the kind, older or incomplete, with `--cleanup-tag`; other names are untouched. It runs after a
   successful publish and after a "nothing new" run (from the listing that run read), so a failed prune repairs itself
   on the next run; a run that exits 1 or 2 deletes nothing.
-- A `gh` failure inside `publish` or `prune` raises `RefreshError(exit_code=3)` whose message names the step
-  (`delete`, `create`, `mark latest`, `prune`), the release and what was done before it; the scripts exit 3 with it.
-  The next run of the kind repairs it, pruning and re-marking the latest release even when the source has nothing new.
+- `repair_latest` asks the service which release is marked latest (`latest()`; none when the repository has no
+  published release) and re-marks the newest complete release of the kind when that release is none, incomplete, or
+  published before it (`published_at` from the listing). A release of the other kind published later stays latest.
+  It runs after `prune` in a run that publishes nothing (never with `--no-publish`), from that run's listing, so a
+  failed mark-latest repairs itself.
+- A `gh` failure inside `publish`, `prune` or `repair_latest` raises `RefreshError(exit_code=3)` whose message names
+  the step (`delete`, `create`, `mark latest`, `prune`, `repair latest`), the release and what was done before it;
+  the scripts exit 3 with it, also in a nothing-new run. The next run of the kind repairs it, pruning and re-marking
+  the latest release even when the source has nothing new.
 
 ## The release service (`rag.refresh.ReleaseService`)
 
 | Method | `gh` call |
 |---|---|
 | `check()` | `gh auth status` (and `gh --version`); raises `RefreshError(exit_code=2)` when missing or not signed in |
-| `list()` | `gh api repos/<repo>/releases?per_page=100` → `[{name, draft, assets: [asset names]}]`, parsed by the same function as the app's listing (`tag_name`, `draft`, `assets[].name`) |
+| `list()` | `gh api repos/<repo>/releases?per_page=100` → `[{name, draft, published_at, assets: [asset names]}]`, parsed by the same function as the app's listing (`tag_name`, `draft`, `published_at`, `assets[].name`) |
+| `latest()` | `gh api repos/<repo>/releases/latest` → the name of the release marked latest, or `None` when the call answers HTTP 404 (no published release) |
 | `create(tag, title, notes, files)` | `gh release create <tag> <files…> --title … --notes …` (gh uploads the files before it publishes) |
 | `mark_latest(tag)` | `gh release edit <tag> --latest` |
 | `delete(tag)` | `gh release delete <tag> --yes --cleanup-tag` |
@@ -106,5 +114,6 @@ Guarantees:
 ## The listing's shape
 
 Both the app (the API) and the scripts (`gh api`) read GitHub's release list (`application/json`): a list of objects
-with `tag_name`, `draft` and `assets`, each asset with `name`. Other fields are ignored; a missing `draft` reads as
-false. One parser serves both. `tests/fixtures/refresh/releases.json` holds one in this shape, with a draft entry.
+with `tag_name`, `draft`, `published_at` and `assets`, each asset with `name`. Other fields are ignored; a missing
+`draft` reads as false and a missing `published_at` (a draft) as none. One parser serves both.
+`tests/fixtures/refresh/releases.json` holds one in this shape, with a draft entry.
