@@ -91,7 +91,7 @@ def handle_message(text: str, store, kb) -> None:
                                                         "message. Please upload the list as a file instead."})
             return
         _ensure_shipment(store)
-        parsed = [ParsedLine(text_zh=_zh(l), text_en=_en(l), source_ref=f"pasted line {i + 1}") for i, l in enumerate(lines)]
+        parsed = [ParsedLine(text_zh=_zh(l), text_en=_en(l), qty=_qty(l), source_ref=f"pasted line {i + 1}") for i, l in enumerate(lines)]
         added = store.add_lines(parsed, CreatedBy.paste)
         nos = [l.line_no for l in added]
         chat.append({"role": "user", "content": f"[{len(nos)} description{'s' if len(nos) != 1 else ''} added as line{'s' if len(nos) != 1 else ''} "
@@ -111,7 +111,13 @@ def _split(line: str) -> list[str]:
     from tools.parsers import split_mixed
 
     zh, en = split_mixed(line)
-    return [zh, en] if zh and en else [line]
+    return [zh, en] if zh and en else [zh or en or line]   # one language: the split text, its quantity taken out
+
+
+def _qty(line: str) -> str | None:
+    from tools.parsers import split_mixed
+
+    return split_mixed(line).qty
 
 
 def _zh(line: str) -> str:

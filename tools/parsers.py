@@ -53,6 +53,18 @@ TOTAL_RE = re.compile(r"\b(grand total|sub ?total|totals?)\b|合计|小计|总�
 _CJK = re.compile(r"[一-鿿]")
 _NUM_RE = re.compile(r"-?\d[\d,]*(?:\.\d+)?")
 _CURRENCY_RE = re.compile(r"\b(USD|EUR|CNY|RMB|GBP|JPY|HKD)\b|US\$|\$|€|¥", re.I)
+_LATIN = re.compile(r"[A-Za-z]")
+_WORD_RE = re.compile(r"[^\s,，/／（）()【】\[\]]+")   # the words of a line, cut at the separators of both widths
+_BRACKET_RE = re.compile(r"[（）()【】\[\]]")
+_SEP_RE = re.compile(r"[,，／（）()【】\[\]\n\r]")        # separators that always cut; the ASCII slash is decided per side
+_QTY_RE = re.compile(                                   # "2000 PCS", "1,200pcs", "60 CTN", "500 M", "2000个"
+    r"(?<![A-Za-z0-9.\-])\d[\d,]*(?:\.\d+)?"
+    r"(?:\s*(?:pcs?|pces?|sets?|pairs?|prs|kgs?|ctns?|cartons?|doz(?:en)?|pkgs?|mtrs?|met(?:er|re)s?)(?![A-Za-z0-9])"
+    r"|\s+m(?![A-Za-z0-9])"                             # a lone M needs the space: "3M", "899M" are names
+    r"|\s*(?:个|件|套|双|对|只|箱|包|卷|台|打|米|公斤|千克)(?![一-鿿A-Za-z0-9]))",   # not "3件套", "1个Type C端口"
+    re.I,
+)
+_EDGE = " ,，/／."                                      # separators stripped where a part begins or ends
 
 
 # --------------------------------------------------------------------------- caps and kinds
@@ -78,24 +90,85 @@ def cell_text(value: Any) -> str:
     return str(value).strip()
 
 
-def split_mixed(text: str) -> tuple[str, str]:
-    """Split a mixed Chinese/English cell into (zh, en) on '/', newline, parentheses or the CJK↔Latin boundary."""
+class MixedSplit(tuple):
+    """The (zh, en) pair of a mixed line — it unpacks as a pair for the existing callers — with the quantities found
+    on the line ("2000 PCS", "60 CTN 900 KG") in `qty`, or None."""
+
+    qty: str | None
+
+    def __new__(cls, zh: str, en: str, qty: str | None = None) -> MixedSplit:
+        self = super().__new__(cls, (zh, en))
+        self.qty = qty
+        return self
+
+    def __getnewargs__(self) -> tuple[str, str, str | None]:
+        return self[0], self[1], self.qty
+
+    def __repr__(self) -> str:
+        return f"MixedSplit({self[0]!r}, {self[1]!r}, qty={self.qty!r})"
+
+
+def _word_kind(word: str) -> str:
+    if _CJK.search(word):
+        return "zh"       # "LED台灯", "T恤": a Latin token inside a Chinese name stays Chinese
+    if _LATIN.search(word) and not word[0].isdigit():
+        return "en"
+    return "other"        # "24", "65/35", "500ml": stays with the part before it
+
+
+def _clean(part: str, brackets: bool = True) -> str:
+    """Collapse whitespace and strip separators at the ends; brackets inside a bilingual part are separators too."""
+    if brackets:
+        part = _BRACKET_RE.sub(" ", part)
+    return " ".join(part.split()).strip(_EDGE)
+
+
+def split_mixed(text: str) -> MixedSplit:
+    """Split a mixed Chinese/English line into (zh, en) at the CJK↔Latin boundary in either order, with its quantities
+    ("2000 PCS", "60箱") in `qty` and in neither description. Text without Chinese is returned as it is: ruling
+    descriptions and typed English or German lines keep their weights, lengths and line breaks.
+
+    Words are cut at whitespace, commas, slashes and brackets of both widths. The Chinese part runs from the first to
+    the last word with a Chinese character; the longer run of English words before or after it is the English part,
+    a shorter run on the other side stays Chinese ("PE/PP塑料袋 / PE/PP plastic bags"). Separators are stripped only
+    at the boundary, so "S/M/L" and "T-shirts, knitted" survive inside a part."""
     t = (text or "").strip()
     if not t:
-        return "", ""
-    parts = [p.strip(" \t/（）()【】[]") for p in re.split(r"\n|\r|\s*/\s*|\s*[（(]\s*|\s*[)）]\s*", t)]
-    parts = [p for p in parts if p]
-    if len(parts) >= 2:
-        zh = [p for p in parts if _CJK.search(p)]
-        en = [p for p in parts if not _CJK.search(p)]
-        if zh and en:
-            return " ".join(zh), " ".join(en)
-    m = re.match(r"^([一-鿿][^A-Za-z]*?)\s+([A-Za-z].*)$", t)
-    if m and len(m.group(2).split()) >= 2:
-        return m.group(1).strip(), m.group(2).strip()
-    if _CJK.search(t):
-        return t, ""
-    return "", t
+        return MixedSplit("", "", None)
+    if not _CJK.search(t):
+        return MixedSplit("", t, None)
+    qty = " ".join(" ".join(m.group(0).split()) for m in _QTY_RE.finditer(t)) or None
+    t = _QTY_RE.sub(" ", t)
+    words = list(_WORD_RE.finditer(t))
+    kinds = [_word_kind(m.group(0)) for m in words]
+    zh_idx = [i for i, kind in enumerate(kinds) if kind == "zh"]
+    en_idx = [i for i, kind in enumerate(kinds) if kind == "en"]
+    if not zh_idx:
+        return MixedSplit("", _clean(t, brackets=False), qty)
+    before = [i for i in en_idx if i < zh_idx[0]]
+    after = [i for i in en_idx if i > zh_idx[-1]]
+    if not before and not after:
+        return MixedSplit(_clean(t, brackets=False), "", qty)
+    if len(after) >= len(before):
+        cut = _cut(t, words, zh_idx[-1], after[0])
+        return MixedSplit(_clean(t[:cut]), _clean(t[cut:]), qty)
+    cut = _cut(t, words, before[-1], zh_idx[0])
+    return MixedSplit(_clean(t[cut:]), _clean(t[:cut]), qty)
+
+
+def _cut(t: str, words: list[re.Match[str]], lo: int, hi: int) -> int:
+    """Where the part owning words[lo] ends and the part owning words[hi] begins: at the first word between them that
+    follows a separator — an ASCII slash counts only with Chinese on one side and Latin on the other — else at
+    words[hi], so "65/35" and "500ml" stay with the part before them and "3M adhesive tape" starts the English."""
+    for i in range(lo + 1, hi):
+        gap = t[words[i - 1].end():words[i].start()]
+        if _SEP_RE.search(gap) or ("/" in gap and {_side(words[i - 1].group(0)), _side(words[i].group(0))} == {"zh", "latin"}):
+            return words[i].start()
+    return words[hi].start()
+
+
+def _side(word: str) -> str:
+    return "zh" if _CJK.search(word) else "latin" if _LATIN.search(word) else ""
 
 
 def parse_number(text: Any) -> float | None:
@@ -160,13 +233,14 @@ def rows_to_lines(rows: list[list[Any]], header_idx: int, colmap: dict[str, int]
             continue
         if len(lines) >= MAX_LINES:
             raise TooManyLines(f"the file has more than {MAX_LINES} lines; split it and check the parts separately")
-        zh, en = split_mixed(desc)
+        split = split_mixed(desc)
+        zh, en = split
         truncated = False
         if len(zh) > MAX_DESC_CHARS:
             zh, truncated = zh[:MAX_DESC_CHARS], True
         if len(en) > MAX_DESC_CHARS:
             en, truncated = en[:MAX_DESC_CHARS], True
-        qty = col(cells, "qty") or None
+        qty = col(cells, "qty") or split.qty   # the quantity column wins; a quantity in the description fills an empty one
         weight = parse_number(col(cells, "weight")) if "weight" in colmap else None
         volume = parse_number(col(cells, "volume")) if "volume" in colmap else None
         value_num = parse_number(col(cells, "value")) if "value" in colmap else None

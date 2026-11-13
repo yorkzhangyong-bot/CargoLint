@@ -52,3 +52,16 @@ def test_hint_only_when_the_text_could_have_been_a_reply(store_with_lines):
     assert _not_applied_hint("stainless steel vacuum flask 500ml", store_with_lines) == NOT_APPLIED_HINT
     assert _not_applied_hint("status", store_with_lines) is None
     assert _not_applied_hint("Why only 31% on line 1?", store_with_lines) is None
+
+
+def test_pasted_lines_keep_their_quantity_in_qty(memory_store, monkeypatch):
+    import streamlit as st
+
+    from ui import chat
+
+    monkeypatch.setattr(chat, "_start", lambda *args, **kwargs: None)   # the background check is not under test
+    st.session_state["chat"] = []
+    chat.handle_message("硅胶手机壳 Silicone mobile phone cases 2000 PCS", memory_store, None)
+    chat.handle_message("add: 蓝牙音箱 400 PCS", memory_store, None)
+    assert [(l.current.text_zh, l.current.text_en, l.qty) for l in memory_store.lines] == [
+        ("硅胶手机壳", "Silicone mobile phone cases", "2000 PCS"), ("蓝牙音箱", "", "400 PCS")]

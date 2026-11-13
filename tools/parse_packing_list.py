@@ -48,10 +48,11 @@ def _lines_from_ocr(ocr: list, warnings: list[str]) -> list[ParsedLine]:
             continue  # numbers-only fragments, rulers, noise
         if len(lines) >= MAX_LINES:
             raise TooManyLines(f"more than {MAX_LINES} lines were recognised; split the document")
-        zh, en = split_mixed(text)
+        split = split_mixed(text)
+        zh, en = split
         truncated = len(zh) > MAX_DESC_CHARS or len(en) > MAX_DESC_CHARS
         page = f"page {item.page} " if item.page else ""
-        lines.append(ParsedLine(line_no=len(lines) + 1, text_zh=zh[:MAX_DESC_CHARS], text_en=en[:MAX_DESC_CHARS],
+        lines.append(ParsedLine(line_no=len(lines) + 1, text_zh=zh[:MAX_DESC_CHARS], text_en=en[:MAX_DESC_CHARS], qty=split.qty,
                                 source_ref=f"{page}OCR line {len(lines) + 1}", truncated=truncated, unreadable=item.unreadable))
     unreadable = sum(1 for l in lines if l.unreadable)
     if unreadable:
