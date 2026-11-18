@@ -4,13 +4,15 @@ Future work, in priority order. Each entry is a short sketch, not a spec; run it
 
 1. **013 Knowledge base refresh.** EBTI rulings and TARIC data are frozen in demo-store-v1. Add a script that downloads current EBTI and TARIC data, rebuilds the vector store, publishes a new release, and shows the snapshot date in the app with a warning when it is older than 30 days.
 
-2. **014a Retrieval and evidence.** Does not change the model's output.
+2. **014a Retrieval and evidence.** Does not change the prompt; changes the rulings fed into it.
 
    - **Index all chapters.** The EBTI store currently covers only twelve indexed chapters, so goods in other chapters (e.g. 27 and 34 for metal-working coolants and lubricants) have no rulings at all. `refresh_ebti` and the loader index rulings from every chapter, with the chapter list as a setting whose default is all; the demo store keeps `CARGOLINT_EBTI_RULINGS=5000`.
    - **Chapter-filtered retrieval.** Search the nearest rulings only within the chapters of the model's HS-6 candidates, so a coolant (2710, 3403) never matches cooling machinery in chapter 84.
    - **No relevant rulings.** Show "no rulings indexed for chapter NN" when a candidate's chapter is not indexed, or "no relevant rulings found" when no relevant ruling is found, instead of "0 of 5 agree".
    - **Precedent mismatch check.** The model sometimes cites a ruling that does not match the candidate code. Compare each ruling the model cites with that ruling's real code and drop or flag mismatches.
    - **Customs wording.** Rewrite the description into customs wording before embedding. "Coolant" currently pulls rulings on cooling machinery (headings 8419, 8414, 8424, 7309).
+
+   **Note:** run the eval set before and after, and compare HS-6 accuracy.
 
 3. **014b Model output.** Changes the prompt and needs eval runs.
 
