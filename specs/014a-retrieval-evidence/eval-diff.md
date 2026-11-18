@@ -4,6 +4,7 @@ Rendered by `tests/eval/eval_diff_014a.py` from `tests/eval/hs6_eval_history.jso
 
 - Baseline (T006): 120-line iteration 12, coolant iteration 1, on the store of twelve chapters (74,044 rulings) and the code of `main` plus the coolant set.
 - After-runs (T044): 120-line iterations 13 (switch off) and 15 (switch on), coolant iterations 2 and 3, on the rebuilt store of every chapter (123,531 rulings in 95 chapters, T043).
+- The precedent override: each row's route, and every route and auto-accept count below unless marked, has it off, as the evaluation keeps its history comparable (feature 008), while the app ships with it on (`CARGOLINT_HS6_OVERRIDE`, at OVERRIDE_MIN 5). Section 1 adds the rows with it on from each history entry's `on` block: the same model answers routed with the override on, no model call. In the coolant rows it changes no route and no HS-6, so section 2 stands for both settings.
 - Iteration 14 (120 lines, switch on) is not used: the German rewrite of the longest ruling descriptions exceeded its 300-character cap, refused inside the call before the retry, so 6 to 7 lines per run failed. Commit 290b3f5 retries such an answer once; iteration 15 is the re-run (see section 4).
 - In the baseline, runs 2 and 3 each lost one line to an OpenRouter rate-limit error (HS-6 step failed).
 - Spend: T006 $0.5576 (the evaluation's tally); T043 $0.194 (the refresh's own count, equal to the key's usage over the run); T044 $1.718 by the key's usage, the provider's charge for its five runs, the discarded iteration 14 among them. The evaluation's own tallies for those runs sum to $1.7767: they price tokens from the project's price table and miss one failed rewrite call of 65,521 output tokens.
@@ -19,6 +20,10 @@ Rendered by `tests/eval/eval_diff_014a.py` from `tests/eval/hs6_eval_history.jso
 | Wrong, auto-accepted per run | 3 / 4 / 3 | 4 / 4 / 4 | 6 / 8 / 9 |
 | Decided without a voting ruling per run | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 |
 | HS-6 step failed per run | 0 / 1 / 1 | 0 / 0 / 0 | 3 / 5 / 6 |
+| Majority top-1, override on | 87/120 | 80/120 | 79/120 |
+| Top-1 per run, override on | 87 / 87 / 87 | 79 / 80 / 80 | 81 / 79 / 79 |
+| Auto-accepted per run, override on | 72 / 73 / 71 | 68 / 68 / 68 | 74 / 74 / 77 |
+| Wrong, auto-accepted per run, override on | 3 / 4 / 3 | 4 / 4 / 4 | 7 / 9 / 11 |
 | Cost (eval tally) | $0.5237 | $0.5249 | $0.5965 |
 
 ## 2. The coolant set
@@ -69,8 +74,8 @@ No floor change is made: the 120-line set does not move at any of these floors, 
 - **SC-001** (T043): passed. The rebuild kept every valid ruling of the extract of 2026-11-18, 123,531 in 95 chapters; its counts show the 74,044 unchanged rulings of the twelve chapters reused and the 49,487 new ones embedded, none dropped; $0.194 (17,648,924 tokens), 6,333 s, the store 3,454,915,131 bytes.
 - **SC-002**: passed. In the coolant set's after-runs no row has a voting ruling outside its vote chapters (0 switch off, 0 switch on) and none lists a chapter 84 ruling (0 and 0).
 - **SC-003**: this report, every number from the history entries and rows above.
-- **SC-004**: **failed**. Wrong auto-accepts on the 120-line set, summed over three runs: 12 after (switch off, the shipped default) against 10 in the baseline. The lines (section 5): IEBTIIENEN004-2024-BTI284 -1 (run-to-run variation); IEBTIIENEN004-2024-BTI208 +3 (vote scope). The vote scope's line is auto-accepted wrong in every run where the old vote, on the same rows, would have sent it to review. No fallback to the unscoped vote and no switch for it were added; the author decides.
-- **FR-026's criterion** for turning the switch on later: **not met**. Majority top-1 of both sets together: 82 with the switch on (120 lines 74, coolant 8) against 84 with it off (77 and 7). The plain 冷却液 routed to ask the shipper in every switch-on run (ask_shipper, ask_shipper, ask_shipper), the second condition, met. The switch stays off (SC-006). With the switch on, some lines still failed their HS-6 step after the fix (3 / 5 / 6 per run; 7 lines: the rewrite of a long ruling description stayed over 300 characters after its retry, and one call ran to 65,521 output tokens); on the 113 lines that never failed, the majority top-1 is 73 with the switch on against 73 with it off.
+- **SC-004**: **failed**. Wrong auto-accepts on the 120-line set, summed over three runs: 12 after (switch off, the shipped default) against 10 in the baseline. The lines (section 5): IEBTIIENEN004-2024-BTI284 -1 (run-to-run variation); IEBTIIENEN004-2024-BTI208 +3 (vote scope). The vote scope's line is auto-accepted wrong in every run where the old vote, on the same rows, would have sent it to review. No fallback to the unscoped vote and no switch for it were added; the author decides. With the precedent override on, as the app ships: 12 against 10, the same verdict.
+- **FR-026's criterion** for turning the switch on later: **not met**. Majority top-1 of both sets together: 82 with the switch on (120 lines 74, coolant 8) against 84 with it off (77 and 7); with the precedent override on, 87 against 87, not higher either, and the switch-on after-run then auto-accepts 27 wrong over its three runs against 23 with the override off. The plain 冷却液 routed to ask the shipper in every switch-on run (ask_shipper, ask_shipper, ask_shipper), the second condition, met. The switch stays off (SC-006). With the switch on, some lines still failed their HS-6 step after the fix (3 / 5 / 6 per run; 7 lines: the rewrite of a long ruling description stayed over 300 characters after its retry, and one call ran to 65,521 output tokens); on the 113 lines that never failed, the majority top-1 is 73 with the switch on against 73 with it off.
 - **SC-005**: every caption state and citation case is covered offline (`pytest -q`).
 - **SC-006**: `CARGOLINT_CUSTOMS_WORDING` is off by default; this report records the off/on comparison.
 
@@ -125,4 +130,4 @@ The plain 冷却液 (coolant-8) is flagged vague in every run, so no vote routes
 - SC-004 failed by two wrong auto-accepts: keep the chapter-scoped vote, or change it (the spec forbids a fallback without the author's decision).
 - The new chapters lowered the 120-line majority top-1 through the candidate proposal (section 5); the spec keeps the proposal over every chapter (clarification 1).
 - FR-026's criterion is not met; the customs-wording switch stays off.
-- The rewrite's 300-character cap still fails some long lines after one retry, and a runaway answer is possible (65,521 output tokens once); both matter only with the switch on.
+- A rewrite still over its 300 characters after its one retry fails the line's HS-6 step, as FR-025 says; the alternative is a cut at the last word boundary before the switch is ever turned on. Since review round 1 the rewrite's output is capped at 512 tokens, so a runaway answer (65,521 output tokens once) can no longer happen, and every attempt counts in the shipment's cost. Both matter only with the switch on.

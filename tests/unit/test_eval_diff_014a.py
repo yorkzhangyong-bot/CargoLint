@@ -55,3 +55,17 @@ def view(top1, routes, props=(), unscoped=None, expected="3403.99", gated=True):
 ])
 def test_the_cause_rules(b, o, causes):
     assert ed.cause_of(b, o) == causes
+
+
+def test_the_120_line_table_adds_the_override_on_rows_from_each_entrys_on_block():
+    """Review finding 7: the eval routes with the precedent override off, the app ships with it on."""
+    h = {"majority_top1": 77, "top1_runs": [76, 77, 77], "top3_runs": [104, 105, 105], "cost_usd": 0.5249,
+         "routes_runs": [{"auto_accept": 65}] * 3, "wrong_auto_runs": [[{}] * 4] * 3, "gate_runs": [{"no_rulings": 0}] * 3,
+         "on": {"majority_top1": 80, "top1_runs": [79, 80, 80], "routes_runs": [{"auto_accept": 68}] * 3,
+                "wrong_auto_runs": [[{}] * 4, [{}] * 4, [{}] * 5]}}
+    table = "\n".join(ed._set_table([("After", h)], 120, coolant=False, override=True))
+    assert "| Majority top-1, override on | 80/120 |" in table
+    assert "| Top-1 per run, override on | 79 / 80 / 80 |" in table
+    assert "| Auto-accepted per run, override on | 68 / 68 / 68 |" in table
+    assert "| Wrong, auto-accepted per run, override on | 4 / 4 / 5 |" in table
+    assert "override on" not in "\n".join(ed._set_table([("After", h)], 120, coolant=False))

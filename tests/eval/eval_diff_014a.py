@@ -21,7 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from agent.config import ASK_FLOOR, DEFAULT_THRESHOLD, HS6_VOTE_K, HS6_VOTE_MIN_SIMILARITY  # noqa: E402
+from agent.config import ASK_FLOOR, DEFAULT_THRESHOLD, HS6_VOTE_K, HS6_VOTE_MIN_SIMILARITY, OVERRIDE_MIN  # noqa: E402
 from agent.routing import hs6_ruling_vote, route_line  # noqa: E402
 from agent.schemas import FlagKind  # noqa: E402
 from rag.bti import TARGET_CHAPTERS  # noqa: E402
@@ -146,7 +146,9 @@ def _runs(values) -> str:
     return " / ".join(str(v) for v in values)
 
 
-def _set_table(rows: list[tuple[str, dict]], n: int, coolant: bool) -> list[str]:
+def _set_table(rows: list[tuple[str, dict]], n: int, coolant: bool, override: bool = False) -> list[str]:
+    """A set's before/after table from the history entries; with `override`, the rows of each entry's `on` block too:
+    the same answers routed with the precedent override on, as the app ships (review finding 7)."""
     label = "right" if coolant else "top-1"
     head = "| | " + " | ".join(name for name, _ in rows) + " |"
     out = [head, "|---|" + "---|" * len(rows)]
@@ -161,8 +163,20 @@ def _set_table(rows: list[tuple[str, dict]], n: int, coolant: bool) -> list[str]
     row("Wrong, auto-accepted per run", lambda h: _runs(len(w) for w in h["wrong_auto_runs"]))
     row("Decided without a voting ruling per run", lambda h: _runs(g["no_rulings"] for g in h["gate_runs"]))
     row("HS-6 step failed per run", lambda h: _runs(p["failed_lines"] for p in h["parse"]["runs"]) if "parse" in h else "-")
+    if override:
+        row(f"Majority {label}, override on", lambda h: f"{h['on']['majority_top1']}/{n}")
+        row(f"{label.capitalize()} per run, override on", lambda h: _runs(h["on"]["top1_runs"]))
+        row("Auto-accepted per run, override on", lambda h: _runs(r["auto_accept"] for r in h["on"]["routes_runs"]))
+        row("Wrong, auto-accepted per run, override on", lambda h: _runs(len(w) for w in h["on"]["wrong_auto_runs"]))
     row("Cost (eval tally)", lambda h: f"${h['cost_usd']:.4f}")
     return out
+
+
+def _override_moves(set_name: str) -> str:
+    """What the precedent override changes in a set's logged rows (their `on` fields against their own route and top-1)."""
+    moved = sum(r["on"]["route"] != r["route"] or r["on"]["chosen"] != r["top1"]
+                for which in ("baseline", "off", "on") for run in runs_of(set_name, which) for r in run)
+    return "no route and no HS-6" if not moved else f"the route or HS-6 of {moved} rows"
 
 
 def _sc002(set_name: str, which: str) -> tuple[int, int, list[str]]:
@@ -198,6 +212,11 @@ def render() -> str:
            f"- After-runs (T044): 120-line iterations {off['iteration']} (switch off) and {on['iteration']} (switch on), "
            f"coolant iterations {coff['iteration']} and {con['iteration']}, on the rebuilt store of every chapter "
            "(123,531 rulings in 95 chapters, T043).",
+           "- The precedent override: each row's route, and every route and auto-accept count below unless marked, has it "
+           "off, as the evaluation keeps its history comparable (feature 008), while the app ships with it on "
+           f"(`CARGOLINT_HS6_OVERRIDE`, at OVERRIDE_MIN {OVERRIDE_MIN}). Section 1 adds the rows with it on from each "
+           "history entry's `on` block: the same model answers routed with the override on, no model call. In the "
+           f"coolant rows it changes {_override_moves('coolant')}, so section 2 stands for both settings.",
            f"- Iteration {flawed['iteration']} (120 lines, switch on) is not used: the German rewrite of the longest ruling "
            "descriptions exceeded its 300-character cap, refused inside the call before the retry, so 6 to 7 lines per run "
            f"failed. Commit 290b3f5 retries such an answer once; iteration {on['iteration']} is the re-run (see section 4).",
@@ -209,7 +228,7 @@ def render() -> str:
            "table and miss one failed rewrite call of 65,521 output tokens.", ""]
     out += ["## 1. The 120-line set", ""] + _set_table(
         [(f"Baseline (it. {base['iteration']})", base), (f"After, switch off (it. {off['iteration']})", off),
-         (f"After, switch on (it. {on['iteration']})", on)], 120, coolant=False)
+         (f"After, switch on (it. {on['iteration']})", on)], 120, coolant=False, override=True)
     out += ["", "## 2. The coolant set", ""] + _set_table(
         [(f"Baseline (it. {cbase['iteration']})", cbase), (f"After, switch off (it. {coff['iteration']})", coff),
          (f"After, switch on (it. {con['iteration']})", con)], 8, coolant=True)
@@ -259,10 +278,15 @@ def render() -> str:
             f"(switch off, the shipped default) against {wrong_base} in the baseline. The lines (section 5): "
             + "; ".join(f"{ref} {delta:+d} ({cause})" for ref, cause, delta in sc004)
             + ". The vote scope's line is auto-accepted wrong in every run where the old vote, on the same rows, would have "
-            "sent it to review. No fallback to the unscoped vote and no switch for it were added; the author decides.",
+            "sent it to review. No fallback to the unscoped vote and no switch for it were added; the author decides. "
+            f"With the precedent override on, as the app ships: {sum_wrong(off['on'])} against {sum_wrong(base['on'])}, "
+            "the same verdict.",
             f"- **FR-026's criterion** for turning the switch on later: **not met**. Majority top-1 of both sets together: "
             f"{combined_on} with the switch on (120 lines {on['majority_top1']}, coolant {con['majority_top1']}) against "
-            f"{combined_off} with it off ({off['majority_top1']} and {coff['majority_top1']}). The plain 冷却液 routed to "
+            f"{combined_off} with it off ({off['majority_top1']} and {coff['majority_top1']}); with the precedent override on, "
+            f"{on['on']['majority_top1'] + con['majority_top1']} against {off['on']['majority_top1'] + coff['majority_top1']}, "
+            "not higher either, and the switch-on after-run then auto-accepts "
+            f"{sum_wrong(on['on'])} wrong over its three runs against {sum_wrong(on)} with the override off. The plain 冷却液 routed to "
             f"ask the shipper in every switch-on run ({', '.join(plain_on)}), the second condition, met. The switch stays "
             "off (SC-006). With the switch on, some lines still failed their HS-6 step after the fix "
             f"({_runs(p['failed_lines'] for p in on['parse']['runs'])} per run; {len(failed_on)} lines: the rewrite of a long "
@@ -355,8 +379,10 @@ def render() -> str:
             "- The new chapters lowered the 120-line majority top-1 through the candidate proposal (section 5); the spec "
             "keeps the proposal over every chapter (clarification 1).",
             "- FR-026's criterion is not met; the customs-wording switch stays off.",
-            "- The rewrite's 300-character cap still fails some long lines after one retry, and a runaway answer is "
-            "possible (65,521 output tokens once); both matter only with the switch on.", ""]
+            "- A rewrite still over its 300 characters after its one retry fails the line's HS-6 step, as FR-025 says; "
+            "the alternative is a cut at the last word boundary before the switch is ever turned on. Since review round 1 "
+            "the rewrite's output is capped at 512 tokens, so a runaway answer (65,521 output tokens once) can no longer "
+            "happen, and every attempt counts in the shipment's cost. Both matter only with the switch on.", ""]
     return "\n".join(out)
 
 
