@@ -60,7 +60,7 @@ not.
 
 | Field | Type | Rule |
 |---|---|---|
-| `reference` | string | the ruling reference as stored (`DEBTI1234/22`), or as written in the reasoning when the store does not know it |
+| `reference` | string | the ruling reference as stored (`DEBTI1234/22`), or as written in the reasoning when the store does not know it or its normal form names several stored rulings |
 | `kind` | `"other_code"` or `"not_retrieved"` | `other_code`: retrieved for the line in that run, its stored HS-6 differs from the candidate's code; `not_retrieved`: not among the rulings retrieved for the line in that run, known to the store or not (FR-021) |
 | `ruling_hs6` | `####.##` or `None` | the stored HS-6 for `other_code`; `None` for `not_retrieved` |
 
@@ -68,12 +68,17 @@ Carried as `Candidate.citation_notes: list[CitationNote]` (default empty), in th
 the reasoning, each reference once. **Retrieved for the line in that run**: the rulings of the proposal's and the
 vote's searches of that HS-6 step, less an evaluation's excluded references. **Matching**: the reasoning's reference
 tokens are found by the pattern "two letters, `BTI` in any case, then letters, digits, `/`, `.` and `-`, a space
-allowed only before a digit", with trailing punctuation dropped; a token without a digit is no reference (a word such
-as "subtitle" fits the pattern, while every stored reference contains a digit); a token is compared with the
-references by its normal form (upper case, spaces and punctuation removed) and must be equal, never a prefix (the
-shortest stored reference, `DEBTI1/25-1`, has a normal form of nine characters and is a prefix of longer ones). Every
-stored reference matches the pattern (all 74,044 start with two letters and `BTI` and contain a digit). Never a
-routing input; not in the CSV or JSON export (FR-023).
+allowed only before a digit and only right after `BTI`, `/`, `.` or `-`" (so a following number never joins a
+reference), with trailing punctuation dropped; a token without a digit is no reference (a word such as "subtitle"
+fits the pattern, while every stored reference contains a digit). The retrieved references, and the stored references
+the pattern does not fit whole (8 of the 123,531 of 2026-11-18, such as `NLBTI2025 - 0691`), are also found as
+written. A cited reference written exactly, case aside, is the one meant; otherwise it is compared by its normal form
+(upper case, spaces and punctuation removed), which must be equal, never a prefix (the shortest stored reference,
+`DEBTI1/25-1`, has a normal form of nine characters and is a prefix of longer ones). Every reference is kept per
+normal form, as distinct references can share one (`GRBTIDEC-036-2025` at 2102.20, `GRBTIDEC-036/2025` at 2304.00):
+when the form names several rulings and one of them was retrieved, no note is made, as none could say which ruling is
+meant; when none was, the note names the reference as written (review round 1). Never a routing input; not in the CSV
+or JSON export (FR-023).
 
 ## 6. Customs wording (`agent/schemas.CustomsWording`, new; `WordingOut`, new model output)
 

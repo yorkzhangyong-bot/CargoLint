@@ -166,6 +166,15 @@ candidate's code gives an "other code" note with that HS-6; a token that matches
 store or not, gives a "not retrieved" note. The notes are stored on the candidate; nothing else changes
 (clarification 3). Texts: contracts/ui.md §2.
 
+**Review round 1** (the rebuilt store of 123,531 rulings): three normal forms are shared, two of them by rulings at
+different HS-6 (`GRBTIDEC-036-2025` at 2102.20 and `GRBTIDEC-036/2025` at 2304.00; `MTBTI2024 - 001` at 8544.70 and
+`MTBTI2024-001` at 7610.90), and eight stored references do not fit the pattern whole (`NLBTI2025 - 0691`,
+`ROBTI2025_005214`, `XIBTIXI BTI 505069073`, ...). A reference written exactly, case aside, is now the one meant, and
+every reference is kept per normal form: a form that names several rulings gives no note when one of them was
+retrieved, and a note with the reference as written when none was. The eight are also found as written, and a space
+joins a token only right after `BTI`, `/`, `.` or `-`, so a following number never runs into a reference
+(data-model §5).
+
 **Alternatives considered**: a structured citation field in the ranking schema (changes the classification prompt,
 which this feature keeps); dropping the reference from the text (clarification 3 chose flagging).
 

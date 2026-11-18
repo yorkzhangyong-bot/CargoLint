@@ -10,6 +10,7 @@ import re
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import date
+from functools import lru_cache
 
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
@@ -60,8 +61,8 @@ VAGUE_CONFIDENCE_CAP = 59      # a vague-flagged line's candidates never exceed 
 HISTORY_CHUNKS_MAX = 5         # shipper past codes injected as candidates
 PRECEDENT_CODES_MAX = 3        # codes proposed by matching BTI rulings (precedent-driven retrieval)
 # feature 014a (FR-020): a reference in a reasoning, two letters and BTI in any case, then letters, digits, "/", "." and
-# "-", a space only before a digit
-REF_TOKEN = re.compile(r"\b[a-z]{2}bti(?:[a-z0-9/.\-]| (?=\d))+", re.I)
+# "-", a space only before a digit and only right after "BTI", "/", "." or "-", so a following number never joins it
+REF_TOKEN = re.compile(r"\b[a-z]{2}bti(?:[a-z0-9/.\-]|(?:(?<=bti)|(?<=[/.\-])) (?=\d))+", re.I)
 RUN_ON = re.compile(r"[/.\-]?[0-9a-z]", re.I)   # what continues a reference into a longer one
 
 
@@ -112,12 +113,20 @@ def ruling_scope(codes: list[str], indexed: frozenset[str] | set[str]) -> Ruling
     return RulingScope(chapters=chapters, not_indexed=[c for c in chapters if c not in indexed])
 
 
-def _cited(rationale: str, retrieved: Iterable[str]) -> list[str]:
-    """The references a reasoning cites, in order: each retrieved reference written in it as stored (in any case, not
-    run on into a longer reference), and every other token of REF_TOKEN that holds a digit, its trailing punctuation
-    dropped."""
+@lru_cache(maxsize=8)
+def _off_pattern(store) -> tuple[str, ...]:
+    """The stored references REF_TOKEN does not fit whole (8 of the 123,531 of 2026-11-18, such as "NLBTI2025 - 0691"):
+    found only as written, so a reasoning citing one gets no note on its first part (review finding 5)."""
+    return tuple(r["reference"] for r in getattr(store, "records", ())
+                 if r.get("reference") and not REF_TOKEN.fullmatch(r["reference"]))
+
+
+def _cited(rationale: str, verbatim: Iterable[str]) -> list[str]:
+    """The references a reasoning cites, in order: each of the `verbatim` references (the retrieved ones and those off
+    the pattern) written in it as stored (in any case, not run on into a longer reference), and every other token of
+    REF_TOKEN that holds a digit, its trailing punctuation dropped."""
     spans: list[tuple[int, int, str]] = []
-    for ref in retrieved:
+    for ref in verbatim:
         for m in re.finditer(re.escape(ref), rationale, re.I):
             if not (m.start() and rationale[m.start() - 1].isalnum()) and not RUN_ON.match(rationale, m.end()):
                 spans.append((m.start(), m.end(), ref))
@@ -129,26 +138,45 @@ def _cited(rationale: str, retrieved: Iterable[str]) -> list[str]:
     return [ref for _, _, ref in sorted(spans)]
 
 
+def _rulings_meant(cited: str, retrieved: set[str], store) -> dict[str, str]:
+    """The rulings a cited reference can mean, one per reference case aside, a retrieved spelling first: those written
+    exactly so, else every one with its normal form, among the retrieved and the stored references (review finding 5)."""
+    upper = cited.upper()
+    found = [ref for ref in [*retrieved, *store.references_like(cited)] if ref.upper() == upper]
+    if not found:
+        form = normal_reference(cited)
+        found = [ref for ref in retrieved if normal_reference(ref) == form] + store.references_like(cited)
+    rulings: dict[str, str] = {}
+    for ref in found:
+        rulings.setdefault(ref.upper(), ref)
+    return rulings
+
+
 def citation_notes(rationale: str, code: str, retrieved: Iterable[str], store) -> list[CitationNote]:
-    """Feature 014a (spec FR-020 to FR-022): the notes on the rulings a candidate's reasoning cites, compared by the
-    normal form of their references: a ruling retrieved for the line in that run whose stored HS-6 is not the
-    candidate's `code` ("other_code", with that HS-6), or a reference not retrieved in that run, known to the store or
-    not ("not_retrieved"); in the order the references first occur, each once. `retrieved` holds the references of the
+    """Feature 014a (spec FR-020 to FR-022): the notes on the rulings a candidate's reasoning cites: a ruling retrieved
+    for the line in that run whose stored HS-6 is not the candidate's `code` ("other_code", with that HS-6), or a
+    reference not retrieved in that run, known to the store or not ("not_retrieved"); in the order the references first
+    occur, each once. A reference written exactly, case aside, is the one meant; otherwise its normal form must name one
+    ruling: when several share it and one of them was retrieved, no note can say which is meant and none is made, and
+    when none was, the note names the reference as written (review finding 5). `retrieved` holds the references of the
     run's ruling searches, less those an evaluation keeps out."""
-    by_normal = {normal_reference(ref): ref for ref in retrieved}
+    retrieved = set(retrieved)
     notes: list[CitationNote] = []
     seen: set[str] = set()
-    for cited in _cited(rationale or "", by_normal.values()):
-        key = normal_reference(cited)
+    for cited in _cited(rationale or "", {*retrieved, *_off_pattern(store)}):
+        rulings = _rulings_meant(cited, retrieved, store)
+        key = next(iter(rulings)) if len(rulings) == 1 else normal_reference(cited)
         if key in seen:
             continue
         seen.add(key)
-        if key not in by_normal:
-            notes.append(CitationNote(reference=store.stored_reference(cited) or cited, kind="not_retrieved"))
-            continue
-        hs6 = (store.get(f"bti:{by_normal[key]}") or {}).get("code")
-        if hs6 and hs6 != code:
-            notes.append(CitationNote(reference=by_normal[key], kind="other_code", ruling_hs6=hs6))
+        hit = [ref for ref in rulings.values() if ref in retrieved]
+        if len(rulings) == 1 and hit:
+            hs6 = (store.get(f"bti:{hit[0]}") or {}).get("code")
+            if hs6 and hs6 != code:
+                notes.append(CitationNote(reference=hit[0], kind="other_code", ruling_hs6=hs6))
+        elif not hit:
+            only = next(iter(rulings.values())) if len(rulings) == 1 else cited
+            notes.append(CitationNote(reference=only, kind="not_retrieved"))
     return notes
 
 

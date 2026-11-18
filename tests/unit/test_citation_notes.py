@@ -76,3 +76,32 @@ def test_an_excluded_ruling_counts_as_not_retrieved():
 def test_a_retrieved_reference_written_as_stored_is_found_even_off_the_pattern():
     notes = citation_notes("Ruling MTBTI2024 - 001 covers it.", "2710.19", {"MTBTI2024 - 001"}, STORE)
     assert notes == [other("MTBTI2024 - 001", "3403.99")]                               # no note for "MTBTI2024" alone
+
+
+# --------------------------------------------------------------------------- review finding 5: shared forms, odd references
+TWINS = BTIStore([{"reference": ref, "code": code, "chapter": code[:2], "member_state": ref[:2]} for ref, code in (
+    ("GRBTIDEC-036-2025", "2102.20"), ("GRBTIDEC-036/2025", "2304.00"), ("NLBTI2025 - 0691", "0701.90"),
+    ("DEBTI1234/22", "8419.89"), ("SEBTITV-2025- 15834", "6307.90"))])                 # as in the store of 2026-11-18
+
+
+def test_a_reference_written_exactly_is_the_one_meant_although_its_normal_form_is_shared():
+    only_dash = {"GRBTIDEC-036-2025"}                                                   # the slash one: another ruling
+    assert citation_notes("See GRBTIDEC-036/2025.", "2102.20", only_dash, TWINS) == [missing("GRBTIDEC-036/2025")]
+    both = {"GRBTIDEC-036-2025", "GRBTIDEC-036/2025"}
+    assert citation_notes("See GRBTIDEC-036/2025.", "2102.20", both, TWINS) == [other("GRBTIDEC-036/2025", "2304.00")]
+    assert citation_notes("See grbtidec-036-2025.", "2304.00", both, TWINS) == [other("GRBTIDEC-036-2025", "2102.20")]
+
+
+def test_a_shared_form_written_neither_way_gets_no_note_when_one_of_its_rulings_was_retrieved():
+    assert citation_notes("See GRBTIDEC-036.2025.", "2102.20", {"GRBTIDEC-036-2025"}, TWINS) == []
+    assert citation_notes("See GRBTIDEC-036.2025.", "2102.20", set(), TWINS) == [missing("GRBTIDEC-036.2025")]
+
+
+def test_a_stored_reference_off_the_pattern_is_named_whole_when_not_retrieved():
+    assert citation_notes("As NLBTI2025 - 0691 shows.", "0701.90", set(), TWINS) == [missing("NLBTI2025 - 0691")]
+
+
+def test_a_reference_never_runs_on_into_a_following_number():
+    assert citation_notes("DEBTI1234/22 2 rulings agree.", "8419.89", set(), TWINS) == [missing("DEBTI1234/22")]
+    assert citation_notes("cf. debti 1234/22", "3403.99", set(), TWINS) == [missing("DEBTI1234/22")]   # a space after BTI
+    assert citation_notes("SEBTITV-2025- 15834 too", "6307.90", set(), TWINS) == [missing("SEBTITV-2025- 15834")]

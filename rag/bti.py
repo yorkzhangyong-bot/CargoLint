@@ -105,12 +105,12 @@ class BTIStore:
         self.records = list(records)
         self._by_code: dict[str, list[dict]] = {}
         self._by_id: dict[str, dict] = {}
-        self._by_normal: dict[str, str] = {}     # feature 014a: normal form → the reference as stored (the first one)
+        self._by_normal: dict[str, list[str]] = {}   # feature 014a: normal form → every reference stored with it
         for r in self.records:
             self._by_code.setdefault(r.get("code", ""), []).append(r)
             if r.get("reference"):
                 self._by_id[f"bti:{r['reference']}"] = r
-                self._by_normal.setdefault(normal_reference(r["reference"]), r["reference"])
+                self._by_normal.setdefault(normal_reference(r["reference"]), []).append(r["reference"])
 
     @classmethod
     def from_jsonl(cls, path: Path | str) -> "BTIStore":
@@ -134,9 +134,11 @@ class BTIStore:
                 return None
         return r
 
-    def stored_reference(self, reference: str) -> str | None:
-        """Feature 014a: the stored reference equal to `reference` in normal form, or None."""
-        return self._by_normal.get(normal_reference(reference))
+    def references_like(self, reference: str) -> list[str]:
+        """Feature 014a: the stored references equal to `reference` case aside, else every stored reference with its
+        normal form, as two can share one (GRBTIDEC-036-2025 and GRBTIDEC-036/2025; review finding 5)."""
+        same = self._by_normal.get(normal_reference(reference), [])
+        return [ref for ref in same if ref.upper() == (reference or "").upper()] or list(same)
 
     def lookup(self, code: str, as_of: date, limit: int = 3) -> list[Precedent]:
         hits = []
