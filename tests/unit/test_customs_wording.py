@@ -142,6 +142,42 @@ def test_a_failing_call_raises():
         translate.customs_wording(StubCaller(fail=True), ZH, "de")
 
 
+class OverlongFirst(StubCaller):
+    """A client whose first `overlong` answers are over the cap: the SDK's own parse raises the ValidationError inside
+    the call (what the live after-run met for long ruling descriptions), so the caller's schema retry never sees it."""
+
+    def __init__(self, overlong: int = 1):
+        super().__init__()
+        self.overlong = overlong
+
+    def call(self, schema, system, user, max_retries=None):
+        self.calls.append({"schema": schema, "system": system, "user": user})
+        if self.overlong > 0:
+            self.overlong -= 1
+            return schema.model_validate({"text": "Lange Warenbeschreibung " * 20})      # over 300 characters: raises
+        return schema.model_validate({"text": self.text})
+
+
+def test_the_prompt_states_the_length_limit():
+    client = StubCaller()
+    translate.customs_wording(client, DE, "de")
+    assert "at most 300 characters" in client.calls[0]["system"]
+
+
+def test_an_answer_over_the_cap_is_retried_once_with_the_limit():
+    client = OverlongFirst()
+    assert translate.customs_wording(client, ZH, "de").text == client.text
+    assert len(client.calls) == 2 and "at most 300 characters" in client.calls[1]["user"]
+    assert client.calls[1]["user"].startswith(client.calls[0]["user"])                     # the same fenced line
+
+
+def test_a_second_answer_over_the_cap_fails_the_rewrite():
+    client = OverlongFirst(overlong=2)
+    with pytest.raises(ValidationError):
+        translate.customs_wording(client, ZH, "de")
+    assert len(client.calls) == 2                                                          # bounded: one retry
+
+
 # --------------------------------------------------------------------------- the glossary
 def entry(term: str, renderings: dict, by: str | None = "Y. Zhang", on: str | None = "2026-11-18") -> dict:
     found = {"term": term, "renderings": renderings}

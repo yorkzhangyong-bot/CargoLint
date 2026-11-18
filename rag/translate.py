@@ -10,7 +10,9 @@ from __future__ import annotations
 import json
 from collections import OrderedDict
 
-from agent.config import LANGUAGE_NAMES
+from pydantic import ValidationError
+
+from agent.config import LANGUAGE_NAMES, WORDING_MAX_CHARS
 from agent.llm import StructuredCaller
 from agent.prompts import fence
 from agent.routing import _found, _normalise   # the phrase rule of the CN-8 evidence check
@@ -33,7 +35,8 @@ it is void."""
 
 WORDING_SYSTEM = """You rewrite a cargo description into customs wording, to search EU Binding Tariff Information (EBTI)
 rulings with it. The description may be Chinese, English, German or mixed; whatever its language,
-write one sentence in {language}, in the style of the goods descriptions of EBTI rulings written in {language}.
+write one sentence in {language}, of at most {limit} characters, in the style of the goods descriptions of EBTI rulings
+written in {language}.
 Rules:
 - Translate and normalise the description's own terms only. Never add a use, a material, a composition or a percentage
   that the description does not state.
@@ -96,7 +99,12 @@ def customs_wording(client: StructuredCaller, line: LineText, language: str, glo
                  f"{fence(f'material: {line.extracted.material}; part: {line.extracted.part_name}; use: {line.extracted.use}', line.line_no)}")
     if applied:
         user += "\nFixed renderings from the reviewed glossary: " + "; ".join(f'"{t}" → "{r}"' for t, r in applied)
-    out = client.call(WordingOut, WORDING_SYSTEM.format(language=LANGUAGE_NAMES.get(language, language)), user)
+    system = WORDING_SYSTEM.format(language=LANGUAGE_NAMES.get(language, language), limit=WORDING_MAX_CHARS)
+    try:
+        out = client.call(WordingOut, system, user)
+    except ValidationError:   # an answer over the cap can be refused inside the call, before the caller's own retry:
+        out = client.call(WordingOut, system, user + "\n\nYour previous answer did not fit: write one sentence of at most "
+                          f"{WORDING_MAX_CHARS} characters.")   # one more try; a second refusal fails the line (FR-025)
     found = CustomsWording(text=out.text, language=language, glossary_terms=[t for t, _ in applied])
     _wording[key] = found
     while len(_wording) > WORDING_CACHE_MAX:

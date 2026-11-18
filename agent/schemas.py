@@ -13,7 +13,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field, StringConstraints, computed_field, field_validator, model_validator
 
-from agent.config import HS6_VOTE_K
+from agent.config import HS6_VOTE_K, WORDING_MAX_CHARS
 
 CODE_PATTERN = r"^\d{4}\.\d{2}$"
 CODE_RE = re.compile(CODE_PATTERN)
@@ -657,9 +657,10 @@ class ExpandOut(BaseModel):
 
 
 class WordingOut(BaseModel):
-    """Feature 014a: the customs-wording rewrite, one sentence of 1 to 300 characters after stripping."""
+    """Feature 014a: the customs-wording rewrite, one sentence of 1 to WORDING_MAX_CHARS (300) characters after
+    stripping."""
 
-    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=300)]
+    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=WORDING_MAX_CHARS)]
 
 
 class RankCandidate(BaseModel):
