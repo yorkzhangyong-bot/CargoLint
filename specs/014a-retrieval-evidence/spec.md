@@ -361,8 +361,8 @@ and shown in block 1, and with the switch off nothing changes.
   in that store and is reported as "No rulings indexed for chapter NN": the message is true of the store in use.
 - A chapter whose stored rulings have all expired on the day is indexed but has no eligible ruling: "No relevant
   rulings found".
-- The model returns no valid candidate: there is no vote and no chapter to search, and block 3 shows what it shows
-  today for a line without candidates.
+- The model returns no valid candidate: there is no vote and no chapter to search, so the line has no chapter facts and
+  block 3 shows no ruling caption (today's "No ruling was within the similarity floor." is not shown, FR-018).
 - A code typed by the clerk under "Other HS-6 code…" whose chapter is not among the candidates' chapters: no ruling of
   its chapter was searched, so block 3 shows no agreement caption for it rather than "0 of m agree".
 - The candidates span one, two or three chapters: the vote searches all of them together; rulings at codes in those
@@ -424,7 +424,10 @@ and shown in block 1, and with the switch off nothing changes.
   top 3 per run, auto-accepted and wrong auto-accepted per run, and the lines decided without a voting ruling per run;
   for the coolant set also each line's majority outcome; for the after-runs the customs-wording switch off against on;
   and the vote replayed at the similarity floors tried (FR-012). Numbers come from the evaluation's history entries,
-  not from memory.
+  not from memory. On the coolant set a line's top-1 result is its score of User Story 1, scenario 1 (an "ask the
+  shipper" line counts on its route), its majority outcome is its most frequent top-1, or route for an "ask the
+  shipper" line, over the runs (a tie goes to the earliest run, as on the 120-line set), and a wrong auto-accept is an
+  auto-accepted line that is not right.
 - **FR-005**: The evaluation rows MUST keep, for each line, the chapters the vote searched, the candidate chapters with
   no indexed ruling, the similarity of each ruling the vote considered, the rewrite when the switch is on, and the
   citation notes (FR-022), so that a change in the numbers can be traced to its lines and the vote can be replayed at
@@ -550,10 +553,10 @@ and shown in block 1, and with the switch off nothing changes.
   feature never turns it on. The after-runs run both sets with it off and on, and the pull request reports both
   (clarification 5) and states whether the criterion for the author's later decision holds: default on only if HS-6
   accuracy improves with the switch on (the majority top-1 over three runs, the 120-line set and the coolant set counted
-  together, is higher than with it off) and the plain line "冷却液" still routes to `ask_shipper` in every after-run with
-  the switch on. Turning the default on is the author's later decision on that evidence; if that change needs a
-  Principle IV amendment, the author makes it then (the plan's question B). The comparison and its numbers are recorded
-  in the evaluation report.
+  together, the coolant set as FR-004 scores it, is higher than with it off) and the plain line "冷却液" still routes
+  to `ask_shipper` in every after-run with the switch on. Turning the default on is the author's later decision on that
+  evidence; if that change needs a Principle IV amendment, the author makes it then (the plan's question B). The
+  comparison and its numbers are recorded in the evaluation report.
 - **FR-027**: An optional, reviewed glossary file MAY hold fixed renderings of terms: each entry a term as shippers
   write it, its customs wording in the store's main language, who reviewed it and when. When the file exists, the
   reviewed entries whose term occurs in the line (a Chinese term anywhere in the text; any other term as whole words,

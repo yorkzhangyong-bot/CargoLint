@@ -158,7 +158,8 @@ removed) is nine characters (`DEBTI1/25-1` → `DEBTI1251`) and is a prefix of l
 matching on normal forms would confuse references.
 
 **Decision**: a pure function finds the reference tokens of a reasoning (two letters, `BTI` in any case, then letters,
-digits and `/ . -`, a space allowed only before a digit, trailing punctuation dropped) and compares each, on its
+digits and `/ . -`, a space allowed only before a digit, trailing punctuation dropped, a token without a digit
+ignored) and compares each, on its
 normal form and by equality, with the rulings retrieved for the line in that run (the proposal's and the vote's hits,
 less an evaluation's excluded ruling). A cited ruling that was retrieved and whose stored HS-6 differs from the
 candidate's code gives an "other code" note with that HS-6; a token that matches no retrieved ruling, known to the
@@ -217,7 +218,7 @@ stored answers with no model call. `tests/eval/e2e_eval.py` imports `eval_ruling
 and more from it.
 
 **Decision**:
-- `tests/eval/hs6_eval_coolant.json` holds the eight lines (FR-001) with an `id`, the `text`, either
+- `tests/eval/hs6_eval_coolant_set.json` holds the eight lines (FR-001) with an `id`, the `text`, either
   `expected_hs6` or `expected_route: "ask_shipper"`, a `note` and a `source`, and a `built_on` date (2026-11-18), the
   day the coolant set's rulings are judged valid on.
 - `--set coolant` runs it: the line is the text as typed (split as the app splits a typed line); no own ruling to
@@ -230,7 +231,8 @@ and more from it.
   similarity and eligibility), `customs_wording` and `citation_notes`.
 - `--replay FILE --floor X` recomputes each row's vote from `vote_hits` at the floor X with the routing functions, no
   model call, and reports routes, auto-accepted and wrong auto-accepted lines, and lines without a voting ruling, in a
-  history entry marked as a replay (exact for X at or above the run's floor, R-07).
+  history entry marked as a replay, in the history of the set its file belongs to (exact for X at or above the run's
+  floor, R-07).
 - Functions `e2e_eval.py` imports keep their names and behaviour for the 120-line set.
 
 **Alternatives considered**: appending the coolant lines to `cn8_eval_set.json` (they are not rulings and have no CN-8

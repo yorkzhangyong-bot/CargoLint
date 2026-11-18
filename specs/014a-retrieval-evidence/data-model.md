@@ -68,11 +68,12 @@ Carried as `Candidate.citation_notes: list[CitationNote]` (default empty), in th
 the reasoning, each reference once. **Retrieved for the line in that run**: the rulings of the proposal's and the
 vote's searches of that HS-6 step, less an evaluation's excluded references. **Matching**: the reasoning's reference
 tokens are found by the pattern "two letters, `BTI` in any case, then letters, digits, `/`, `.` and `-`, a space
-allowed only before a digit", with trailing punctuation dropped; a token is compared with the references by its
-normal form (upper case, spaces and punctuation removed) and must be equal, never a prefix (the shortest stored
-reference, `DEBTI1/25-1`, has a normal form of nine characters and is a prefix of longer ones). Every stored
-reference matches the pattern (all 74,044 start with two letters and `BTI` and contain a digit). Never a routing
-input; not in the CSV or JSON export (FR-023).
+allowed only before a digit", with trailing punctuation dropped; a token without a digit is no reference (a word such
+as "subtitle" fits the pattern, while every stored reference contains a digit); a token is compared with the
+references by its normal form (upper case, spaces and punctuation removed) and must be equal, never a prefix (the
+shortest stored reference, `DEBTI1/25-1`, has a normal form of nine characters and is a prefix of longer ones). Every
+stored reference matches the pattern (all 74,044 start with two letters and `BTI` and contain a digit). Never a
+routing input; not in the CSV or JSON export (FR-023).
 
 ## 6. Customs wording (`agent/schemas.CustomsWording`, new; `WordingOut`, new model output)
 
@@ -115,7 +116,7 @@ the knowledge base opens). The glossary is project data, never third-party data;
 as fixed renderings outside the line's data block. `data/SOURCES.md` lists the file when it exists (constitution: data
 and privacy). The example entry above shows the format only; this feature ships no entries.
 
-## 8. Coolant set (`tests/eval/hs6_eval_coolant.json`, new)
+## 8. Coolant set (`tests/eval/hs6_eval_coolant_set.json`, new)
 
 ```json
 {
@@ -160,7 +161,7 @@ contracts/eval-cli.md). The coolant set's runs go to `hs6_eval_coolant.json`, `h
 |---|---|---|---|
 | `None` | `not_indexed == chapters` | any | (a) "No rulings indexed for chapter NN." / "chapters NN, MM and LL." |
 | `None` | some chapter indexed | any | (b) "No relevant rulings found." + " No rulings indexed for chapter NN." for each unindexed one, if any |
-| set | chosen code's chapter in `not_indexed` | a candidate | (c) "No rulings indexed for chapter NN." |
+| set | chosen code's chapter in `not_indexed` | any | (c) "No rulings indexed for chapter NN." |
 | set | chosen code's chapter not in `chapters` | a typed code | no caption |
 | set | otherwise | any | (d) "n of m agree with <code>" (unchanged) |
-| `None` | `None` | — | no ruling text (no valid candidate, as today) |
+| `None` | `None` | — | no caption (no valid candidate, or the step failed) |

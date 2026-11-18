@@ -32,7 +32,7 @@ The feature changes which rulings reach the HS-6 step and how they are shown; th
   first; the rewrite joins the HS-6 step's two ruling searches only, merged with the raw text's hits; it is stored on
   the line version and shown in block 1. The nomenclature search and the CN-8 step's ruling search keep the raw text
   (research R-16).
-- **Measurement first** (`tests/eval/hs6_eval.py`, `tests/eval/hs6_eval_coolant.json`): the eight coolant lines and
+- **Measurement first** (`tests/eval/hs6_eval.py`, `tests/eval/hs6_eval_coolant_set.json`): the eight coolant lines and
   `--set coolant` come before any product change; the baseline runs; after the implementation and the rebuild, the
   after-runs compare the switch off and on; every run has query expansion off; `--replay --floor` tunes the floor
   without model calls; the pull request reports the difference.
@@ -51,7 +51,7 @@ The feature changes which rulings reach the HS-6 step and how they are shown; th
 
 **Storage**: unchanged layout. `store/` (the ruling index, `bti_docs.jsonl`, `index_meta.json` with the new source
 version text); `build/ebti-<date>/` for the rebuild (git-ignored); `data/rules/customs_glossary.json`, optional and
-absent by default; `tests/eval/hs6_eval_coolant.json` and the coolant set's results, history and report files. The
+absent by default; `tests/eval/hs6_eval_coolant_set.json` and the coolant set's results, history and report files. The
 line store (`st.session_state`) gains `ruling_scope`, `customs_wording` and per-candidate `citation_notes` on the line
 version (data-model.md).
 
@@ -160,7 +160,8 @@ specs/014a-retrieval-evidence/
 │   └── settings-and-scripts.md   # the two settings, the refresh/loader/bti options, the source version
 ├── checklists/
 │   └── requirements.md           # the spec quality checklist
-└── tasks.md                      # Phase 2 output (/speckit-tasks)
+├── tasks.md                      # Phase 2 output (/speckit-tasks)
+└── eval-diff.md                  # the evaluation report (T045, T046): before against after, floor replays
 ```
 
 ### Source Code (repository root)
@@ -190,7 +191,7 @@ ui/
 scripts/refresh_ebti.py  # docstring: --chapters
 tests/
 ├── eval/hs6_eval.py             # --set coolant, --customs-wording, --replay --floor, row fields, coolant files
-├── eval/hs6_eval_coolant.json   # new: the eight coolant lines
+├── eval/hs6_eval_coolant_set.json # new: the eight coolant lines (results go to hs6_eval_coolant*.json)
 ├── unit/test_settings.py        # + the two settings
 ├── unit/test_ruling_scope.py    # new: indexed chapters, main language, RulingScope
 ├── unit/test_citation_notes.py  # new: match, other code, not retrieved, unknown, normal form, order

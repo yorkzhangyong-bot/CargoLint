@@ -42,10 +42,10 @@ candidates' chapters only. The caption under the list (or alone, when nothing vo
 |---|---|---|
 | (a) | no vote, and no chapter of `ruling_scope.chapters` is indexed | `No rulings indexed for chapter 34.` / `No rulings indexed for chapters 27, 34 and 38.` |
 | (b) | no vote, and at least one of them is indexed | `No relevant rulings found.` then, if some are not indexed, ` No rulings indexed for chapter 38.` |
-| (c) | a vote, and the chosen code is a candidate whose chapter is in `ruling_scope.not_indexed` | `No rulings indexed for chapter 38.` |
+| (c) | a vote, and the chosen code's chapter is in `ruling_scope.not_indexed` (a candidate's chapter, or the searched chapter of a code typed under "Other HS-6 code…") | `No rulings indexed for chapter 38.` |
 | (d) | a vote, and the chosen code's chapter was searched and is indexed | `n of m agree with <code>` (unchanged wording) |
 | (e) | a vote, and the chosen code was typed under "Other HS-6 code…" and its chapter was not searched | no caption |
-| (f) | no `ruling_scope` (no valid candidate, or the step failed) | as today for such a line: no ruling text |
+| (f) | no `ruling_scope` (no valid candidate, or the step failed) | no caption (today's "No ruling was within the similarity floor." is not shown) |
 
 Chapter lists are two-digit chapters in ascending order, joined with ", " and a final " and ". The explanation line
 under the list (why the line waits for the clerk) keeps its wording; with no vote it is the existing threshold text.

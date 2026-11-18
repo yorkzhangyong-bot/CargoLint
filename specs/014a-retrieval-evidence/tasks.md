@@ -60,7 +60,7 @@ environment for the live steps", the author's answer to the plan's question A)
 
 **⚠️ CRITICAL**: no product code may change until T006 has recorded the baseline.
 
-- [ ] T003 [P] Create `tests/eval/hs6_eval_coolant.json` (data-model §8; LF, UTF-8 without a byte-order mark) with
+- [ ] T003 [P] Create `tests/eval/hs6_eval_coolant_set.json` (data-model §8; LF, UTF-8 without a byte-order mark) with
   `built_on` "2026-11-18", a `source` naming docs/backlog.md item 10, the author's German line and the plain line of
   clarification 5, and these eight `lines`, in this order, each with `id` `coolant-1` … `coolant-8`, the `text`
   verbatim, a `note`, and exactly one of `expected_hs6` (`####.##`) and `expected_route` (`ask_shipper`) ("A line has
@@ -79,15 +79,17 @@ environment for the live steps", the author's answer to the plan's question A)
   hand-written rows, no model and no store: the set loads from the file of T003 (a temporary copy in the test); each
   line's text is split as a typed line (`tools.parsers.split_mixed`); `right` is `hit` for a line with
   `expected_hs6` and `route == "ask_shipper"` for a line with `expected_route`, whatever codes it shows; `in_top3`
-  counts coded lines only; validity is judged on the set's `built_on`; no CN-8 results are required and no
-  cross-layer table is built; results, history and report go to `tests/eval/hs6_eval_coolant.json`,
-  `hs6_eval_coolant_<tag>_<lang>_expansion-<on|off>.json`, `hs6_eval_coolant_history.json` and
-  `hs6_eval_coolant.md`, and the 120-line set's files are not touched; the history entry has `set: "coolant"`;
-  `--dry-run` writes nothing; the 120-line set (`--set cn8`, the default) behaves as before and
-  tests/unit/test_e2e_eval.py still passes (spec FR-002, FR-030)
+  counts coded lines only; a line's majority outcome is its most frequent top-1 or route (a tie goes to the earliest
+  run) and a wrong auto-accept is an auto-accepted row that is not `right` (contracts/eval-cli.md); validity is judged
+  on the set's `built_on`; no CN-8 results are required and no cross-layer table is built; results, history and
+  report go to `tests/eval/hs6_eval_coolant.json`, `hs6_eval_coolant_<tag>_<lang>_expansion-<on|off>.json`,
+  `hs6_eval_coolant_history.json` and `hs6_eval_coolant.md`, and neither the 120-line set's files nor the set file of
+  T003 are touched; the history entry has `set: "coolant"`; `--dry-run` writes nothing; the 120-line set (`--set
+  cn8`, the default) behaves as before and tests/unit/test_e2e_eval.py still passes (spec FR-002, FR-030)
 - [ ] T005 Implement `--set {cn8,coolant}` in tests/eval/hs6_eval.py per contracts/eval-cli.md: load the coolant set,
-  build its lines as typed lines, score `right` and keep `expected_route` on the row, skip the CN-8 results check and
-  the cross-layer table for it, write its own results, history and report (`hs6_eval_coolant.md`: per entry, right
+  build its lines as typed lines, score `right` (with the majority outcome and the wrong auto-accepts of
+  contracts/eval-cli.md) and keep `expected_route` on the row, skip the CN-8 results check and the cross-layer table
+  for it, write its own results, history and report (`hs6_eval_coolant.md`: per entry, right
   per run, majority right, each line's majority outcome, routes, wrong auto-accepts, cost), and add `set` to every new
   history entry; keep the names and behaviour of the functions tests/eval/e2e_eval.py imports; make T004 pass
   (spec FR-002)
@@ -220,7 +222,8 @@ boundary (User Story 4 scenarios 1 to 6).
 - [ ] T020 [P] [US4] Tests in tests/unit/test_view.py for `rulings_caption(line, chosen)`, one per row of
   contracts/ui.md §3: (a) "No rulings indexed for chapter 34." and "No rulings indexed for chapters 27, 34 and 38.";
   (b) "No relevant rulings found." and "No relevant rulings found. No rulings indexed for chapter 38."; (c) chosen
-  3820.00 with chapter 38 in `not_indexed` and voters from chapter 34 → "No rulings indexed for chapter 38."; (d)
+  3820.00 with chapter 38 in `not_indexed` and voters from chapter 34 → "No rulings indexed for chapter 38.", and the
+  same for a typed 3824.99, whose chapter 38 was searched; (d)
   "3 of 5 agree with 3403.99"; (e) a typed code outside `ruling_scope.chapters` → `None`; (f) no `ruling_scope` →
   `None`; "No ruling was within the similarity floor." is never returned (spec FR-018)
 - [ ] T021 [P] [US4] Tests in tests/unit/test_ruling_scope.py for the relevance boundary (constitution I): with
@@ -261,7 +264,8 @@ written by code after "Why: …"; nothing else changes.
   a retrieved ruling coded 3403.99 gives none; a stored but unretrieved reference gives `not_retrieved`; an unknown
   reference gives `not_retrieved` with the reference as written; "debti 1234/22" matches `DEBTI1234/22`;
   `DEBTI1/25-1` does not match inside `DEBTI12510/23` (equality of normal forms, never a prefix); trailing
-  punctuation is dropped; a space is allowed only before a digit; notes come "in the order the references first
+  punctuation is dropped; a space is allowed only before a digit; a word such as "subtitle" (two letters, `bti`,
+  letters, no digit) gives no note; notes come "in the order the references first
   occur in the reasoning, each reference once"; an evaluation's excluded reference counts as not retrieved (spec
   FR-020, FR-021)
 - [ ] T026 [P] [US5] Tests in a new tests/integration/test_citation_check.py: `classify_lines` with a recorded ranking
@@ -280,9 +284,9 @@ written by code after "Why: …"; nothing else changes.
   list[CitationNote]` defaulting to empty (spec FR-022)
 - [ ] T029 [US5] tools/classify_hs6.py: the pure `citation_notes(...)` with the token pattern "two letters, `BTI` in
   any case, then letters, digits, `/`, `.` and `-`, a space allowed only before a digit", trailing punctuation
-  dropped, compared by equality of normal forms (upper case, spaces and punctuation removed); `retrieved` = the
-  proposal's and the vote search's rulings less `exclude_refs`; the notes set on each candidate; make T025 and T026
-  pass (spec FR-020, FR-021, FR-023)
+  dropped, a token without a digit ignored, compared by equality of normal forms (upper case, spaces and punctuation
+  removed); `retrieved` = the proposal's and the vote search's rulings less `exclude_refs`; the notes set on each
+  candidate; make T025 and T026 pass (spec FR-020, FR-021, FR-023)
 - [ ] T030 [US5] ui/view.py note texts and ui/expand.py `_block2`: the notes appended to the chosen candidate's
   "Why: …" caption; the CSV and JSON exports untouched; make T027 pass (spec FR-022, FR-023)
 
@@ -379,8 +383,9 @@ run's floor).
   row's vote from `vote_hits` with the routing functions and no model call (the client factory raises if called): on a
   hand-made row a 0.44 voter drops at 0.45 and a line left without voters falls back to the model estimate; the replay
   entry has `replay: {"of": FILE, "floor": X}` and the routes, auto-accepted and wrong auto-accepted lines and lines
-  without a voter per run; a file without `vote_hits` is refused; `--floor` combines with `--override-min`; entries
-  carry `floor` (spec FR-004, FR-005, FR-012)
+  without a voter per run; a file without `vote_hits` is refused; a replay belongs to the set its results file names
+  (its summary's `set`) and writes that set's history and report, a coolant replay reading no CN-8 results; `--floor`
+  combines with `--override-min`; entries carry `floor` (spec FR-004, FR-005, FR-012)
 - [ ] T042 [US1] Implement in tests/eval/hs6_eval.py: the row fields (the vote search's hits told apart from the
   proposal's in the logged searches), `--customs-wording`, `--replay --floor`, the entry fields `customs_wording`,
   `floor` and `replay`; tests/eval/e2e_eval.py's imports keep working; make T041 pass (spec FR-004, FR-005, FR-012)
@@ -408,8 +413,10 @@ run's floor).
   file> --floor X` for the 120-line set's and the coolant set's switch-off after-runs, at the floors the author picks at
   or above the run's floor of 0.40, where a replay is exact (for example 0.45, 0.50, 0.55); if the author approves
   another value, change `HS6_VOTE_MIN_SIMILARITY` in agent/config.py with its comment naming the evidence, keep T021's
-  boundary tests green, and record the decision in the evaluation report; otherwise it stays 0.40 (spec FR-012)
-- [ ] T046 [US1] Write the comparison for the pull request in specs/014a-retrieval-evidence/eval-diff.md, numbers from
+  boundary tests green, and record the decision in the evaluation report (`specs/014a-retrieval-evidence/eval-diff.md`,
+  T046); otherwise it stays 0.40 (spec FR-012)
+- [ ] T046 [US1] Write the evaluation report of spec FR-012, FR-026 and SC-006,
+  specs/014a-retrieval-evidence/eval-diff.md, which the pull request's comparison is taken from, numbers from
   tests/eval/hs6_eval_history.json and tests/eval/hs6_eval_coolant_history.json only: per set, baseline against after
   (switch off) against after (switch on): majority top-1, top-1 per run, in top 3 per run, auto-accepted and wrong
   auto-accepted per run, lines decided without a voting ruling per run; the coolant set's per-line majority outcomes;
