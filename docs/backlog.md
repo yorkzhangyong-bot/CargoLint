@@ -21,16 +21,16 @@ Future work, in priority order. Each entry is a short sketch, not a spec; run it
 
 5. **UI language switch EN / DE / 中文.** Let the clerk switch the screen language, needed for Chinese-owned forwarders in Hamburg as the first target customers.
 
-6. **TARIC subdivision descriptions.** Show the text of the 8- and 10-digit subdivisions, not only the code.
+6. **One text input for one or many lines.** The "Check a single line" tab becomes one box that accepts either a single goods description or a free-text message from a shipper (Chinese, English or mixed, e.g. "two coolants, codes 2710199900 and 3403990000, one with more than 70% mineral oil, one without mineral base oil"). A cheap rule decides first: short text with no list markers, no "one ... one ..." pattern and at most one code is treated as one line with no extra model call; otherwise one model call splits it into goods lines (description, material, use, quantity, shipper's stated code). All resulting lines go straight into the existing result list and are checked as usual, with no confirmation table. A wrong split is fixed with the existing edit-description and re-check. Add one small control: delete a line. If the shipper stated a code, compare its first six digits with the suggested HS-6 and show "matches" or "differs, please check".
 
-7. **Multi-file upload.** Check the invoice and packing list of one shipment in a single check, with a file column.
+7. **TARIC subdivision descriptions.** Show the text of the 8- and 10-digit subdivisions, not only the code.
 
-8. **Shipper code hint.** If a line carries a Chinese 10-digit customs code, use its first six digits as a strong HS-6 hint.
+8. **Multi-file upload.** Check the invoice and packing list of one shipment in a single check, with a file column.
 
-9. **Eval-set fixes.** Review and correct mislabelled lines in `tests/eval`. Add six lines from the user test on two metal-working coolants, with their expected HS-6:
+9. **Eval-set fixes.** Review and correct mislabelled lines in `tests/eval`. Add six lines from the user test on two metal-working coolants, with their expected results:
 
    - `冷却液 矿物油含量大于70%` → 2710.19
-   - `没有矿物基础油的冷却液` → 3403.99
+   - `没有矿物基础油的冷却液` → ask shipper for the intended use (3820.00 if engine coolant, 3403.99 if metal-working)
    - `金属加工用的冷却液，不含矿物油` → 3403.99
    - `coolant without mineral base oil, for metal working` → 3403.99
    - `金属加工冷却液，矿物油含量大于70% / Metal-working coolant, petroleum mineral oil content more than 70% by weight` → 2710.19 (CN 2710 19 91)
