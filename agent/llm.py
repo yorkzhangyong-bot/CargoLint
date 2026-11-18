@@ -113,7 +113,7 @@ class StructuredCaller:
                 else:
                     last_error = ValueError("the answer was not valid JSON")
                     feedback = "\n\nYour previous answer was not valid JSON. Return only valid JSON that matches the schema."
-                log.info("structured output not JSON (attempt %s/%s) for %s", attempt, attempts, schema.__name__)
+                log.info("structured output invalid, %s (attempt %s/%s) for %s", last_error, attempt, attempts, schema.__name__)
                 continue
             try:
                 if isinstance(out, schema):
