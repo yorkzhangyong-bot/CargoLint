@@ -259,7 +259,7 @@ written by code after "Why: …"; nothing else changes.
 
 ### Tests for User Story 5
 
-- [ ] T025 [P] [US5] Tests in a new tests/unit/test_citation_notes.py for `citation_notes(rationale, code, retrieved,
+- [X] T025 [P] [US5] Tests in a new tests/unit/test_citation_notes.py for `citation_notes(rationale, code, retrieved,
   store)`: a retrieved ruling coded 8419.89 cited for 3403.99 gives one `other_code` note with `ruling_hs6` "8419.89";
   a retrieved ruling coded 3403.99 gives none; a stored but unretrieved reference gives `not_retrieved`; an unknown
   reference gives `not_retrieved` with the reference as written; "debti 1234/22" matches `DEBTI1234/22`;
@@ -268,26 +268,26 @@ written by code after "Why: …"; nothing else changes.
   letters, no digit) gives no note; notes come "in the order the references first
   occur in the reasoning, each reference once"; an evaluation's excluded reference counts as not retrieved (spec
   FR-020, FR-021)
-- [ ] T026 [P] [US5] Tests in a new tests/integration/test_citation_check.py: `classify_lines` with a recorded ranking
+- [X] T026 [P] [US5] Tests in a new tests/integration/test_citation_check.py: `classify_lines` with a recorded ranking
   whose second candidate's reasoning cites the proposal ruling of the first candidate's code: that candidate's
   `citation_notes` hold the `other_code` note; route, `hs6_vote` and the candidates' order equal those of the same
   run with the notes removed; `LineStore.to_csv_bytes()` and `LineStore.to_json_bytes()` carry no note (spec FR-022,
   FR-023)
-- [ ] T027 [P] [US5] Tests in tests/unit/test_view.py for the note texts of contracts/ui.md §2: "Cited ruling
+- [X] T027 [P] [US5] Tests in tests/unit/test_view.py for the note texts of contracts/ui.md §2: "Cited ruling
   DEBTI1234/22 classifies under 8419.89, not 3403.99." and "Cited ruling DEBTI1234/22 was not retrieved for this line;
   it is not a source.", appended after the reasoning in block 2's "Why: …" caption text (spec FR-022)
 
 ### Implementation for User Story 5
 
-- [ ] T028 [US5] agent/schemas.py: `CitationNote(reference: str, kind: Literal["other_code", "not_retrieved"],
+- [X] T028 [US5] agent/schemas.py: `CitationNote(reference: str, kind: Literal["other_code", "not_retrieved"],
   ruling_hs6: str | None)` with `ruling_hs6` "`####.##` or `None`" (data-model §5) and `Candidate.citation_notes:
   list[CitationNote]` defaulting to empty (spec FR-022)
-- [ ] T029 [US5] tools/classify_hs6.py: the pure `citation_notes(...)` with the token pattern "two letters, `BTI` in
+- [X] T029 [US5] tools/classify_hs6.py: the pure `citation_notes(...)` with the token pattern "two letters, `BTI` in
   any case, then letters, digits, `/`, `.` and `-`, a space allowed only before a digit", trailing punctuation
   dropped, a token without a digit ignored, compared by equality of normal forms (upper case, spaces and punctuation
   removed); `retrieved` = the proposal's and the vote search's rulings less `exclude_refs`; the notes set on each
   candidate; make T025 and T026 pass (spec FR-020, FR-021, FR-023)
-- [ ] T030 [US5] ui/view.py note texts and ui/expand.py `_block2`: the notes appended to the chosen candidate's
+- [X] T030 [US5] ui/view.py note texts and ui/expand.py `_block2`: the notes appended to the chosen candidate's
   "Why: …" caption; the CSV and JSON exports untouched; make T027 pass (spec FR-022, FR-023)
 
 **Checkpoint**: a ruling cited for the wrong code, or from memory, is marked as such.

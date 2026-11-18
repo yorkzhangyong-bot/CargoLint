@@ -87,6 +87,11 @@ def ruling_url(reference: str) -> str:
     return f"https://ec.europa.eu/taxation_customs/dds2/ebti/ebti_details.jsp?Lang=en&reference={quote(reference, safe='')}"
 
 
+def normal_reference(reference: str) -> str:
+    """Feature 014a (spec FR-020): a ruling reference compared without regard to case, spaces or punctuation."""
+    return re.sub(r"[^0-9A-Z]", "", (reference or "").upper())
+
+
 def ruling_text(r: dict) -> str:
     """The text a ruling is embedded with: description and reasoning (feature 013 compares it to find changed rulings)."""
     return (r.get("description", "") + "\n" + r.get("reasoning", "")).strip()
@@ -99,10 +104,12 @@ class BTIStore:
         self.records = list(records)
         self._by_code: dict[str, list[dict]] = {}
         self._by_id: dict[str, dict] = {}
+        self._by_normal: dict[str, str] = {}     # feature 014a: normal form → the reference as stored (the first one)
         for r in self.records:
             self._by_code.setdefault(r.get("code", ""), []).append(r)
             if r.get("reference"):
                 self._by_id[f"bti:{r['reference']}"] = r
+                self._by_normal.setdefault(normal_reference(r["reference"]), r["reference"])
 
     @classmethod
     def from_jsonl(cls, path: Path | str) -> "BTIStore":
@@ -125,6 +132,10 @@ class BTIStore:
             if (end is not None and end < as_of) or (start is not None and start > as_of):
                 return None
         return r
+
+    def stored_reference(self, reference: str) -> str | None:
+        """Feature 014a: the stored reference equal to `reference` in normal form, or None."""
+        return self._by_normal.get(normal_reference(reference))
 
     def lookup(self, code: str, as_of: date, limit: int = 3) -> list[Precedent]:
         hits = []

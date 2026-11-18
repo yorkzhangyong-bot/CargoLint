@@ -284,6 +284,7 @@ class CandidateRow:
     rationale: str | None = None
     history_only: bool = False
     precedent: Any = None
+    notes: tuple = ()                # feature 014a: an HS-6 candidate's citation notes, in stored order
 
 
 def _path(path: str) -> list[str]:
@@ -299,7 +300,7 @@ def hs6_rows(store: Any, line: Any) -> list[CandidateRow]:
         path = store.index.label_path(c.code) if store.index is not None else []
         rows.append(CandidateRow(spaced(lines[0][0] if len(lines) == 1 else c.code), c.code,
                                  " › ".join(path) or c.subheading_text, c.confidence, c.rationale or None,
-                                 c.history_only, c.precedent))
+                                 c.history_only, c.precedent, tuple(c.citation_notes)))
     return rows
 
 
@@ -753,6 +754,18 @@ def candidate_label(r: CandidateRow) -> str:
     path = r.description.split(" › ")
     text = path[-1] if len(path) == 1 or len(path[-1]) >= 20 else f"{cut(path[-2], 35)} › {path[-1]}"
     return f"{r.value} {cut(text, 55)} — {r.confidence}%"   # one line, so its confidence bar sits beside it
+
+
+def citation_text(note: Any, code: str) -> str:
+    """Feature 014a (contracts/ui.md §2): a citation note on candidate `code`, written by code."""
+    if note.kind == "other_code":
+        return f"Cited ruling {note.reference} classifies under {note.ruling_hs6}, not {code}."
+    return f"Cited ruling {note.reference} was not retrieved for this line; it is not a source."
+
+
+def reasoning_text(rationale: str, notes: Any, code: str) -> str:
+    """Block 2's "Why: …" text: the model's reasoning as it wrote it, then its citation notes in stored order."""
+    return " ".join([rationale, *(citation_text(n, code) for n in notes)])
 
 
 def vote_lines(vote: Any, code: str | None) -> list[tuple[bool, str, str]]:

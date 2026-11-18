@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import json
 import logging
+import re
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import date
 
@@ -16,8 +18,9 @@ from agent.config import HS6_VOTE_MIN_SIMILARITY, RETRIEVAL_K, get_settings
 from agent.llm import StructuredCaller
 from agent.prompts import fence
 from agent.routing import hs6_ruling_vote, validate_classification, validate_code
-from agent.schemas import (Candidate, Classification, LineStatus, RankOut, RetrievalMode, RetrievalTrace, RulingScope, Source,
-                           SourceKind)
+from agent.schemas import (Candidate, CitationNote, Classification, LineStatus, RankOut, RetrievalMode, RetrievalTrace,
+                           RulingScope, Source, SourceKind)
+from rag.bti import normal_reference
 from rag.retriever import rrf, precedent_codes, stable_order
 from rag.rules import find_shipper, load_shippers
 from rag.translate import build_queries
@@ -56,6 +59,10 @@ with at most three entries, best first."""
 VAGUE_CONFIDENCE_CAP = 59      # a vague-flagged line's candidates never exceed this (FR-016, FR-020)
 HISTORY_CHUNKS_MAX = 5         # shipper past codes injected as candidates
 PRECEDENT_CODES_MAX = 3        # codes proposed by matching BTI rulings (precedent-driven retrieval)
+# feature 014a (FR-020): a reference in a reasoning, two letters and BTI in any case, then letters, digits, "/", "." and
+# "-", a space only before a digit
+REF_TOKEN = re.compile(r"\b[a-z]{2}bti(?:[a-z0-9/.\-]| (?=\d))+", re.I)
+RUN_ON = re.compile(r"[/.\-]?[0-9a-z]", re.I)   # what continues a reference into a longer one
 
 
 @dataclass
@@ -102,6 +109,46 @@ def ruling_scope(codes: list[str], indexed: frozenset[str] | set[str]) -> Ruling
     if not chapters:
         return None
     return RulingScope(chapters=chapters, not_indexed=[c for c in chapters if c not in indexed])
+
+
+def _cited(rationale: str, retrieved: Iterable[str]) -> list[str]:
+    """The references a reasoning cites, in order: each retrieved reference written in it as stored (in any case, not
+    run on into a longer reference), and every other token of REF_TOKEN that holds a digit, its trailing punctuation
+    dropped."""
+    spans: list[tuple[int, int, str]] = []
+    for ref in retrieved:
+        for m in re.finditer(re.escape(ref), rationale, re.I):
+            if not (m.start() and rationale[m.start() - 1].isalnum()) and not RUN_ON.match(rationale, m.end()):
+                spans.append((m.start(), m.end(), ref))
+    for m in REF_TOKEN.finditer(rationale):
+        token = m.group().rstrip("/.- ")
+        end = m.start() + len(token)
+        if any(ch.isdigit() for ch in token) and not any(s < end and m.start() < e for s, e, _ in spans):
+            spans.append((m.start(), end, token))
+    return [ref for _, _, ref in sorted(spans)]
+
+
+def citation_notes(rationale: str, code: str, retrieved: Iterable[str], store) -> list[CitationNote]:
+    """Feature 014a (spec FR-020 to FR-022): the notes on the rulings a candidate's reasoning cites, compared by the
+    normal form of their references: a ruling retrieved for the line in that run whose stored HS-6 is not the
+    candidate's `code` ("other_code", with that HS-6), or a reference not retrieved in that run, known to the store or
+    not ("not_retrieved"); in the order the references first occur, each once. `retrieved` holds the references of the
+    run's ruling searches, less those an evaluation keeps out."""
+    by_normal = {normal_reference(ref): ref for ref in retrieved}
+    notes: list[CitationNote] = []
+    seen: set[str] = set()
+    for cited in _cited(rationale or "", by_normal.values()):
+        key = normal_reference(cited)
+        if key in seen:
+            continue
+        seen.add(key)
+        if key not in by_normal:
+            notes.append(CitationNote(reference=store.stored_reference(cited) or cited, kind="not_retrieved"))
+            continue
+        hs6 = (store.get(f"bti:{by_normal[key]}") or {}).get("code")
+        if hs6 and hs6 != code:
+            notes.append(CitationNote(reference=by_normal[key], kind="other_code", ruling_hs6=hs6))
+    return notes
 
 
 def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCaller | None) -> Classification:
@@ -207,6 +254,9 @@ def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCal
                  if scope is not None and bti_vectors is not None else [])   # with the line's query vectors
     vote = (hs6_ruling_vote(hs6_voters(vote_hits, kb.bti, kb.index, ctx.as_of, ctx.exclude_refs), codes)
             if candidates else None)   # feature 006: the HS-6 auto-accept gate
+    retrieved = {doc_id.removeprefix("bti:") for found in (*hits, *vote_hits) for doc_id, _ in found} - set(ctx.exclude_refs or ())
+    candidates = [c.model_copy(update={"citation_notes": citation_notes(c.rationale, c.code, retrieved, kb.bti)})
+                  for c in candidates]   # feature 014a: notes written by code, after the reasoning; no routing input
     return Classification(line_no=line.line_no, candidates=candidates, no_valid_candidate=not candidates, retrieval_trace=rt,
                           sources=sources, status=LineStatus.checked, hs6_vote=vote, ruling_scope=scope)
 

@@ -236,8 +236,8 @@ def _block2(store: Any, line: Any) -> str | None:
                       label_visibility="collapsed")
         return selected_code(line)
     r = rows[picked]
-    if r.rationale:
-        st.caption(f"Why: {md_escape(r.rationale)}")
+    if r.rationale:   # feature 014a: the citation notes follow the reasoning in the same caption
+        st.caption(f"Why: {md_escape(view.reasoning_text(r.rationale, r.notes, r.value))}")
     st.caption(ESTIMATE)
     return picked
 

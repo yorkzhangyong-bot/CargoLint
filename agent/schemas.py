@@ -180,6 +180,16 @@ class Source(BaseModel):
     excerpt: str = ""
 
 
+class CitationNote(BaseModel):
+    """Feature 014a (data-model §5): a ruling a candidate's reasoning cites that does not support it: one retrieved for
+    the line in that run whose stored HS-6 is not the candidate's code, or a reference not retrieved in that run. Written
+    by code after the reasoning; never a routing input, never exported."""
+
+    reference: str                                                    # as stored, or as written when the store lacks it
+    kind: Literal["other_code", "not_retrieved"]
+    ruling_hs6: str | None = Field(default=None, pattern=CODE_PATTERN)   # the stored HS-6, for "other_code"
+
+
 class Candidate(BaseModel):
     code: str = Field(pattern=CODE_PATTERN)
     subheading_text: str = ""
@@ -190,6 +200,7 @@ class Candidate(BaseModel):
     precedent: Precedent | None = None
     cn8: str | None = Field(default=None, pattern=CN8_PATTERN)              # feature 004: only on the decided HS-6 candidate
     taric10: str | None = Field(default=None, pattern=TARIC10_PATTERN)      # feature 004: the highlighted subdivision
+    citation_notes: list[CitationNote] = Field(default_factory=list)       # feature 014a: in the order the references occur
 
     @computed_field  # type: ignore[misc]
     @property

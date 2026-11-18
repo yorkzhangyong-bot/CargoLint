@@ -1167,6 +1167,20 @@ def test_feature_014a_block3_lists_the_voters_and_how_many_agree(kb, recorder):
     assert not any(t.startswith(("No rulings indexed", "No relevant rulings", "No ruling was within")) for t in page)
 
 
+def test_feature_014a_block2_shows_the_citation_notes_after_the_reasoning(kb, recorder):
+    from agent.schemas import CitationNote, Classification, LineStatus
+
+    store, nos = h.store_with("review", kb=kb)
+    n = nos["review"]
+    v = store.get_line(n).current
+    note = CitationNote(reference="DEBTI1234/22", kind="other_code", ruling_hs6="8419.89")
+    noted = v.candidates[0].model_copy(update={"citation_notes": [note]})
+    store.update_classification(n, Classification(line_no=n, candidates=[noted, *v.candidates[1:]], status=LineStatus.checked,
+                                                  ruling_scope=v.ruling_scope))
+    page = texts(opened(store, kb, n))
+    assert "Why: matches the subheading 9405.21 Cited ruling DEBTI1234/22 classifies under 8419.89, not 9405.21." in page
+
+
 def test_an_overridden_line_whose_cn8_is_to_pick_says_the_rulings_overrode_the_model(kb, recorder):
     store, nos = h.store_with("hs6_override_cn8", kb=kb, hs6_override_min=4)
     n = nos["hs6_override_cn8"]

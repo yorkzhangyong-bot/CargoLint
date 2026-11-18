@@ -1064,3 +1064,19 @@ def test_feature_014a_the_rulings_caption(line, chosen, caption):
 
 def test_feature_014a_a_vote_stored_before_the_scope_keeps_its_agreement_caption():
     assert view.rulings_caption(scoped_line(vote=COOLANT_VOTE), "3403.99") == "3 of 5 agree with 3403.99"
+
+
+# --------------------------------------------------------------------------- feature 014a: block 2's citation notes
+def test_feature_014a_citation_notes_follow_the_reasoning():
+    from agent.schemas import CitationNote
+
+    other = CitationNote(reference="DEBTI1234/22", kind="other_code", ruling_hs6="8419.89")
+    gone = CitationNote(reference="DEBTI1234/22", kind="not_retrieved", ruling_hs6=None)
+    assert view.citation_text(other, "3403.99") == "Cited ruling DEBTI1234/22 classifies under 8419.89, not 3403.99."
+    assert view.citation_text(gone, "3403.99") == ("Cited ruling DEBTI1234/22 was not retrieved for this line; it is not "
+                                                   "a source.")
+    why = "Coolants for metal working are lubricating preparations."
+    assert view.reasoning_text(why, [other, gone], "3403.99") == (
+        f"{why} Cited ruling DEBTI1234/22 classifies under 8419.89, not 3403.99. Cited ruling DEBTI1234/22 was not "
+        "retrieved for this line; it is not a source.")                                    # in stored order
+    assert view.reasoning_text(why, [], "3403.99") == why                                 # no note: as today
