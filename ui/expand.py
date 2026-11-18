@@ -189,6 +189,9 @@ def _block1(store: Any, kb: Any, line: Any, status: view.LineStatus) -> None:
         st.caption(original)
     else:
         st.caption(f"{original} · Stop-word check: {md_escape(view.stop_word_result(line))}")
+    wording = view.wording_caption(line)   # feature 014a: what the rulings were also searched with; display only
+    if wording:
+        st.caption(md_escape(wording))
     if status.colour == "red":
         _lines(view.reason_line(store, line) or "")
         if status.question:

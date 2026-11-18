@@ -23,7 +23,7 @@ from agent.schemas import (Candidate, CitationNote, Classification, LineStatus, 
 from rag.bti import normal_reference
 from rag.retriever import rrf, precedent_codes, stable_order
 from rag.rules import find_shipper, load_shippers
-from rag.translate import build_queries
+from rag.translate import build_queries, customs_wording
 from tools import register
 from tools.common import LineText, get_context, run_per_line, select_lines
 
@@ -74,6 +74,7 @@ class ClassifyContext:
     precedents: bool = True        # let matching BTI rulings propose candidate codes
     exclude_refs: frozenset[str] | None = None   # feature 006: rulings kept out of the precedents (an eval's own ruling)
     expansion: bool = field(default_factory=lambda: get_settings().query_expansion)   # feature 009: query expansion
+    customs_wording: bool = field(default_factory=lambda: get_settings().customs_wording)   # feature 014a: the rewrite
 
 
 def _history_chapters(codes: list[str]) -> list[str]:
@@ -155,8 +156,14 @@ def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCal
     if line.pure_stop_word:
         return Classification(line_no=line.line_no, candidates=[], no_valid_candidate=False, status=LineStatus.checked)
     queries = build_queries(client, line, ctx.expansion)
+    # feature 014a: the customs wording in the store's main language, for the two ruling searches only
+    language = getattr(kb, "main_language", None)
+    wording = (customs_wording(client, line, language, getattr(kb, "glossary", None))
+               if ctx.customs_wording and language and client is not None else None)
     mode = "hybrid" if ctx.hybrid else "vector_only"
-    query_vectors = kb.retriever.embed_queries(queries)  # one embedding request per line
+    # one embedding request per line; the nomenclature search gets the queries' vectors, never the rewrite's
+    ruling_vectors = kb.retriever.embed_queries(queries + ([wording.text] if wording else []))
+    query_vectors = ruling_vectors[:-1] if wording else ruling_vectors
     chunks, trace = kb.retriever.search(queries, chapter_filter=None, mode=mode, k=ctx.k, query_vectors=query_vectors)
     chapter_filter = None
     filter_reason = "none"
@@ -182,10 +189,10 @@ def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCal
     precedents: list[dict] = []
     precedent_chunks = 0
     bti_vectors = getattr(kb, "bti_vectors", None)
-    hits = [bti_vectors.search_by_vector(vec, ctx.k * 2, None) for vec in query_vectors] if bti_vectors is not None else []
+    hits = [bti_vectors.search_by_vector(vec, ctx.k * 2, None) for vec in ruling_vectors] if bti_vectors is not None else []
     if ctx.precedents and hits:
         present = {c.id for c in chunks}
-        for p in precedent_codes(bti_vectors, kb.bti, query_vectors, k=ctx.k, as_of=ctx.as_of, exclude_refs=ctx.exclude_refs,
+        for p in precedent_codes(bti_vectors, kb.bti, ruling_vectors, k=ctx.k, as_of=ctx.as_of, exclude_refs=ctx.exclude_refs,
                                  hits=hits):
             if len(precedents) >= PRECEDENT_CODES_MAX:
                 break
@@ -247,18 +254,19 @@ def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCal
                         bm25_hits=trace["bm25_hits"], vector_hits=trace["vector_hits"], fused=trace["fused"],
                         sent_to_model=len(chunks), history_chunks=history_chunks, precedent_chunks=precedent_chunks,
                         precedent_codes=[p["code"] for p in precedents], mode=RetrievalMode(mode),
-                        expansion=ctx.expansion)
+                        expansion=ctx.expansion, customs_wording=wording.text if wording else None)
     codes = [c.code for c in candidates]
     scope = ruling_scope(codes, kb.indexed_chapters)   # feature 014a: the vote searches the candidates' chapters only,
-    vote_hits = ([bti_vectors.search_by_vector(vec, ctx.k * 2, scope.chapters) for vec in query_vectors]
-                 if scope is not None and bti_vectors is not None else [])   # with the line's query vectors
+    vote_hits = ([bti_vectors.search_by_vector(vec, ctx.k * 2, scope.chapters) for vec in ruling_vectors]
+                 if scope is not None and bti_vectors is not None else [])   # with the line's vectors, embedded already
     vote = (hs6_ruling_vote(hs6_voters(vote_hits, kb.bti, kb.index, ctx.as_of, ctx.exclude_refs), codes)
             if candidates else None)   # feature 006: the HS-6 auto-accept gate
     retrieved = {doc_id.removeprefix("bti:") for found in (*hits, *vote_hits) for doc_id, _ in found} - set(ctx.exclude_refs or ())
     candidates = [c.model_copy(update={"citation_notes": citation_notes(c.rationale, c.code, retrieved, kb.bti)})
                   for c in candidates]   # feature 014a: notes written by code, after the reasoning; no routing input
     return Classification(line_no=line.line_no, candidates=candidates, no_valid_candidate=not candidates, retrieval_trace=rt,
-                          sources=sources, status=LineStatus.checked, hs6_vote=vote, ruling_scope=scope)
+                          sources=sources, status=LineStatus.checked, hs6_vote=vote, ruling_scope=scope,
+                          customs_wording=wording)
 
 
 def classify_lines(lines: list[LineText], ctx: ClassifyContext, kb, client: StructuredCaller | None, workers: int = 4) -> list[Classification]:

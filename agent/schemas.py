@@ -238,6 +238,16 @@ class RetrievalTrace(BaseModel):
     precedent_codes: list[str] = Field(default_factory=list)   # codes proposed by matching rulings (≤ 3)
     mode: RetrievalMode = RetrievalMode.hybrid
     expansion: bool = False                                    # feature 009: CARGOLINT_QUERY_EXPANSION for this line
+    customs_wording: str | None = None                         # feature 014a: the rewrite the rulings were also searched with
+
+
+class CustomsWording(BaseModel):
+    """Feature 014a (data-model §6): the line rewritten into customs wording in the store's main language, searched by
+    the HS-6 step's ruling searches beside the raw text; shown in block 1, never exported."""
+
+    text: str
+    language: str                                              # the store's main language when the call was made
+    glossary_terms: list[str] = Field(default_factory=list)    # the reviewed glossary terms applied, in glossary order
 
 
 class Decision(BaseModel):
@@ -378,6 +388,8 @@ class LineVersion(BaseModel):
     hs6_gate: Hs6Gate | None = None           # feature 006: the rule that decided the HS-6 auto-accept, set with the route
     ruling_scope: RulingScope | None = None   # feature 014a: the chapters the vote searched; None without a valid
                                               # candidate (no vote) or when the step failed
+    customs_wording: CustomsWording | None = None   # feature 014a: None when the switch was off or the store has no
+                                                    # main language
 
     @property
     def top_confidence(self) -> int | None:
@@ -570,6 +582,7 @@ class Classification(BaseModel):
     error_reason: str | None = None
     hs6_vote: Hs6Vote | None = None           # feature 006: the nearest rulings' vote on the top HS-6
     ruling_scope: RulingScope | None = None   # feature 014a: the chapters the vote searched, and those not indexed
+    customs_wording: CustomsWording | None = None   # feature 014a: the rewrite the rulings were also searched with
 
 
 class LookupPrecedentOutput(BaseModel):
@@ -641,6 +654,12 @@ class JudgementOut(BaseModel):
 class ExpandOut(BaseModel):
     queries: list[str] = Field(min_length=1, max_length=5)
     hyde: str | None = None
+
+
+class WordingOut(BaseModel):
+    """Feature 014a: the customs-wording rewrite, one sentence of 1 to 300 characters after stripping."""
+
+    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=300)]
 
 
 class RankCandidate(BaseModel):

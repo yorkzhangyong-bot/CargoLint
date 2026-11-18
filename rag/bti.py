@@ -10,6 +10,7 @@ import random
 import re
 import sys
 import zipfile
+from collections import Counter
 from datetime import date, datetime
 from pathlib import Path
 from typing import Iterable, Iterator
@@ -194,6 +195,16 @@ class BTIStore:
 def indexed_chapters(records: Iterable[dict]) -> frozenset[str]:
     """Feature 014a (spec FR-016): the chapters that hold at least one stored ruling."""
     return frozenset(r["chapter"] for r in records if r.get("chapter"))
+
+
+def main_language(records: Iterable[dict]) -> str | None:
+    """Feature 014a (spec FR-024): the language most stored rulings are written in, as the extract records it, lower
+    case; a tie goes to the alphabetically first code; None for a store without a ruling that records one."""
+    counts = Counter(lang for lang in ((r.get("language") or "").strip().lower() for r in records) if lang)
+    if not counts:
+        return None
+    top = max(counts.values())
+    return min(lang for lang, n in counts.items() if n == top)
 
 
 # --------------------------------------------------------------------------- extract processing

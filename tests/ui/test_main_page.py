@@ -1181,6 +1181,23 @@ def test_feature_014a_block2_shows_the_citation_notes_after_the_reasoning(kb, re
     assert "Why: matches the subheading 9405.21 Cited ruling DEBTI1234/22 classifies under 8419.89, not 9405.21." in page
 
 
+def test_feature_014a_block1_shows_the_customs_wording_only_when_the_line_has_one(kb, recorder):
+    from agent.schemas import Classification, CustomsWording, LineStatus
+
+    store, nos = h.store_with("review", "ready", kb=kb)
+    n = nos["review"]
+    v = store.get_line(n).current
+    before = view.export_csv(store)
+    rewrite = CustomsWording(text="LED-Schreibtischleuchte, über USB betrieben", language="de")
+    store.update_classification(n, Classification(line_no=n, candidates=v.candidates, status=LineStatus.checked,
+                                                  ruling_scope=v.ruling_scope, customs_wording=rewrite))
+    page = texts(opened(store, kb, n))
+    assert "Rulings also searched in customs wording (German): LED-Schreibtischleuchte, über USB betrieben" in page
+    assert f"Original: {v.display_text} · Stop-word check: none found" in page            # the raw text stays
+    assert not any(t.startswith("Rulings also searched") for t in texts(opened(store, kb, nos["ready"])))
+    assert view.export_csv(store) == before                                               # the CSV is unchanged
+
+
 def test_an_overridden_line_whose_cn8_is_to_pick_says_the_rulings_overrode_the_model(kb, recorder):
     store, nos = h.store_with("hs6_override_cn8", kb=kb, hs6_override_min=4)
     n = nos["hs6_override_cn8"]

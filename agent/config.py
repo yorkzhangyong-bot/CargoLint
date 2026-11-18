@@ -57,6 +57,12 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 # Retrieval
 RETRIEVAL_K = 6
 RRF_K = 60
+# Feature 014a: the names of the EU languages EBTI rulings are written in, by the code the extract records; the customs
+# wording is asked for, and shown, in the store's main language
+LANGUAGE_NAMES = {"bg": "Bulgarian", "cs": "Czech", "da": "Danish", "de": "German", "el": "Greek", "en": "English",
+                  "es": "Spanish", "et": "Estonian", "fi": "Finnish", "fr": "French", "ga": "Irish", "hr": "Croatian",
+                  "hu": "Hungarian", "it": "Italian", "lt": "Lithuanian", "lv": "Latvian", "mt": "Maltese", "nl": "Dutch",
+                  "pl": "Polish", "pt": "Portuguese", "ro": "Romanian", "sk": "Slovak", "sl": "Slovenian", "sv": "Swedish"}
 
 # TARIC snapshot (feature 002): digits 9-10 and measures, never embedded or indexed
 TARIC_RAW_DIR = DATA_DIR / "raw" / "taric"
@@ -110,6 +116,9 @@ class Settings:
     ebti_chapters: str = "all"      # feature 014a: CARGOLINT_EBTI_CHAPTERS, the chapters whose rulings a build or refresh
                                     # keeps: "all", or chapters and ranges (parse_chapter_setting); the scripts' chapter
                                     # options override it for one run
+    customs_wording: bool = False   # feature 014a: CARGOLINT_CUSTOMS_WORDING "on" adds the line's customs wording in the
+                                    # store's main language to the HS-6 step's ruling searches (rag/translate.py); off by
+                                    # default, and off when feature 014a merges (its spec, FR-026)
 
     @property
     def has_key(self) -> bool:
@@ -167,6 +176,9 @@ def load_settings(env: dict | None = None) -> Settings:
     rulings = (e.get("CARGOLINT_EBTI_RULINGS") or "5000").strip().lower()
     if rulings != "all" and not (re.fullmatch(r"[0-9]+", rulings) and int(rulings) > 0):
         raise ValueError(f"CARGOLINT_EBTI_RULINGS must be a positive integer or all, not {rulings!r}")
+    wording = (e.get("CARGOLINT_CUSTOMS_WORDING") or "").strip().lower() or "off"
+    if wording not in ("on", "off"):
+        raise ValueError(f"CARGOLINT_CUSTOMS_WORDING must be on or off, not {wording!r}")
     chapters = (e.get("CARGOLINT_EBTI_CHAPTERS") or "").strip().lower() or "all"
     try:
         parse_chapter_setting(chapters)
@@ -195,6 +207,7 @@ def load_settings(env: dict | None = None) -> Settings:
         taric_release=_release_pin(e, "taric"),
         ebti_rulings=rulings,
         ebti_chapters=chapters,
+        customs_wording=wording == "on",
     )
 
 

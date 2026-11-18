@@ -12,7 +12,8 @@ import streamlit as st
 from agent.config import MAX_PASTED_LINES
 from agent.schemas import CreatedBy, ParsedLine
 from tools.apply_shipper_reply import QUESTION_RE, looks_like_shipper_reply
-from ui import jobs, runner
+from ui import jobs, runner, view
+from ui.view import md_escape
 
 ADD_LINES_RE = re.compile(r"^\s*(?:add|check|new)\s*(?:lines?|descriptions?)?\s*[:：]\s*(.+)$|^\s*(?:添加|新增|检查)\s*[:：]\s*(.+)$", re.I | re.S)
 NOT_APPLIED_HINT = ("Answered, not applied: to update a line with this text start with “line N is …”; to add it as a new line "
@@ -250,7 +251,7 @@ def _render_trace(store, line_no: int | None) -> None:
         if t.precedent_codes:
             hist += f" (+{t.precedent_chunks} from BTI precedents; precedent codes {', '.join(t.precedent_codes)})"
         st.markdown(f"- **Original**: {t.original}\n- **Queries** (expansion {'on' if t.expansion else 'off'}): "
-                    f"{', '.join(t.queries)}\n"
+                    f"{', '.join(t.queries)}{md_escape(view.wording_queries_text(v))}\n"
                     f"- **Metadata filter**: {('chapters ' + ', '.join(t.chapter_filter) + ' — ' + t.filter_reason) if t.chapter_filter else 'none'}\n"
                     f"- **Hits**: BM25 {t.bm25_hits} + vectors {t.vector_hits} → RRF {t.fused} → {t.sent_to_model} chunks to the model{hist} ({t.mode.value})")
 

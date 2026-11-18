@@ -1080,3 +1080,16 @@ def test_feature_014a_citation_notes_follow_the_reasoning():
         f"{why} Cited ruling DEBTI1234/22 classifies under 8419.89, not 3403.99. Cited ruling DEBTI1234/22 was not "
         "retrieved for this line; it is not a source.")                                    # in stored order
     assert view.reasoning_text(why, [], "3403.99") == why                                 # no note: as today
+
+
+# --------------------------------------------------------------------------- feature 014a: the customs wording shown
+def test_feature_014a_the_customs_wording_texts():
+    from agent.schemas import CustomsWording
+
+    rewrite = "Kühlschmierstoff für die Metallbearbeitung, ohne Mineralöl"
+    line = Line(line_no=1, versions=[LineVersion(text_zh="金属加工用的冷却液，不含矿物油",
+                                                 customs_wording=CustomsWording(text=rewrite, language="de"))])
+    assert view.wording_caption(line) == f"Rulings also searched in customs wording (German): {rewrite}"
+    assert view.wording_queries_text(line.current) == f" · rulings only, in German: {rewrite}"
+    plain = Line(line_no=2, versions=[LineVersion(text_en="LED desk lamp")])            # the switch was off
+    assert view.wording_caption(plain) is None and view.wording_queries_text(plain.current) == ""

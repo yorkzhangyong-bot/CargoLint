@@ -86,3 +86,17 @@ def test_any_other_chapter_value_is_refused(value):
         parse_chapter_setting(value)
     with pytest.raises(ValueError, match="CARGOLINT_EBTI_CHAPTERS"):
         load_settings({"CARGOLINT_EBTI_CHAPTERS": value})
+
+
+# --------------------------------------------------------------------------- feature 014a: the customs-wording switch
+@pytest.mark.parametrize("env, on", [({}, False), ({"CARGOLINT_CUSTOMS_WORDING": ""}, False),
+                                     ({"CARGOLINT_CUSTOMS_WORDING": "off"}, False), ({"CARGOLINT_CUSTOMS_WORDING": "OFF"}, False),
+                                     ({"CARGOLINT_CUSTOMS_WORDING": "on"}, True), ({"CARGOLINT_CUSTOMS_WORDING": " On "}, True)])
+def test_the_customs_wording_switch_is_off_by_default(env, on):
+    assert load_settings(env).customs_wording is on
+
+
+@pytest.mark.parametrize("value", ["yes", "true", "1", "enabled"])
+def test_any_other_customs_wording_value_is_refused(value):
+    with pytest.raises(ValueError, match="CARGOLINT_CUSTOMS_WORDING"):
+        load_settings({"CARGOLINT_CUSTOMS_WORDING": value})

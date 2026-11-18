@@ -292,7 +292,11 @@ def write_sources_md(meta: dict[str, Any], rules: RuleSet, demo: bool) -> None:
         taric = None
     if taric:
         lines.append(taric_sources_row(taric, TARIC_RAW_DIR))
-    lines += ["", f"- Firm stop-word list: {rules.firm.source_doc} ({rules.firm.source_date}) — synthetic demo data.",
+    from rag.rules import GLOSSARY, load_glossary
+
+    glossary = ([f"- Customs glossary (`{GLOSSARY.relative_to(ROOT).as_posix()}`): {len(load_glossary())} reviewed entries; "
+                 "project data, reviewed by the author (feature 014a)."] if GLOSSARY.exists() else [])
+    lines += ["", f"- Firm stop-word list: {rules.firm.source_doc} ({rules.firm.source_date}) — synthetic demo data.", *glossary,
               "- Shipper history (`data/shippers.json`) and the sample packing list are synthetic demo data; no real companies.",
               f"- Embedding model `{meta.get('embedding_model')}`, dimension {meta.get('dimension')}, built {meta.get('built_at')}.",
               f"- Nomenclature chunks: {meta.get('nomenclature_chunks')}; BTI rulings in the document store: {meta.get('bti_rulings')}"
@@ -414,13 +418,16 @@ class KnowledgeBase:
     def __init__(self, index: NomenclatureIndex, retriever: HybridRetriever, bti: bti_mod.BTIStore, rules: RuleSet,
                  meta: dict[str, Any], embeddings: Any, shippers: list | None = None, bti_vectors: Any = None,
                  taric: TaricStore | None = None, releases: dict[str, dict | None] | None = None,
-                 fetch_failures: dict[str, str] | None = None) -> None:
+                 fetch_failures: dict[str, str] | None = None, glossary: list | None = None) -> None:
         self.bti_vectors = bti_vectors  # Chroma collection of ruling texts for precedent-driven retrieval; None when empty
         self.index = index
         self.retriever = retriever
         self.bti = bti
-        # feature 014a (FR-016): the chapters that hold a stored ruling, counted once when the knowledge base opens
+        # feature 014a (FR-016, FR-024): the chapters that hold a stored ruling and the language most stored rulings are
+        # written in, counted once when the knowledge base opens; the reviewed glossary entries (FR-027)
         self.indexed_chapters = bti_mod.indexed_chapters(bti.records) if bti is not None else frozenset()
+        self.main_language = bti_mod.main_language(bti.records) if bti is not None else None
+        self.glossary = list(glossary or [])
         self.rules = rules
         self.meta = meta
         self.embeddings = embeddings
@@ -464,10 +471,11 @@ def open_knowledge_base(settings: Settings | None = None, usage_sink: Any = None
     bti_vectors = ChromaVectorSearch(STORE_DIR / "chroma-bti", emb, "bti") if (STORE_DIR / "chroma-bti").exists() else None
     if bti_vectors is not None and bti_vectors.count() == 0:
         bti_vectors = None
-    from rag.rules import load_shippers
+    from rag.rules import load_glossary, load_shippers
 
     return KnowledgeBase(index, retriever, bti_store, rules, meta, emb, shippers=load_shippers(), bti_vectors=bti_vectors,
-                         taric=open_taric_store(TARIC_SNAPSHOT), releases=read_release_files(ROOT))
+                         taric=open_taric_store(TARIC_SNAPSHOT), releases=read_release_files(ROOT),
+                         glossary=load_glossary())   # feature 014a: a malformed glossary file is refused here
 
 
 # --------------------------------------------------------------------------- CLI

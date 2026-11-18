@@ -224,6 +224,7 @@ class LineStore:
             v.candidates = []
             v.hs6_vote = None
             v.ruling_scope = None
+            v.customs_wording = None
             self._recompute(line, Actor.system, ChangeKind.line_failed)
             return
         v.candidates = list(cls.candidates)
@@ -231,6 +232,7 @@ class LineStore:
         v.retrieval_trace = cls.retrieval_trace
         v.hs6_vote = cls.hs6_vote
         v.ruling_scope = cls.ruling_scope              # feature 014a: the chapters the vote searched, for block 3
+        v.customs_wording = cls.customs_wording        # feature 014a: the rewrite searched with, shown in block 1
         existing = {s.id for s in v.sources}
         v.sources.extend(s for s in cls.sources if s.id not in existing)
         v.status = LineStatus.checked

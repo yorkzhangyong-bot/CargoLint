@@ -1,10 +1,13 @@
 """Rule lists (firm stop-words, the two ICS2 lists, bilingual aliases), deterministic matching on the goods name
-(feature 007), the pure-stop-word test and shipper profiles (FR-007 … FR-011, FR-016, FR-042)."""
+(feature 007), the pure-stop-word test and shipper profiles (FR-007 … FR-011, FR-016, FR-042), and the optional reviewed
+customs glossary (feature 014a, FR-027)."""
 from __future__ import annotations
 
 import json
 import re
 from dataclasses import dataclass, field
+from datetime import date
+from functools import lru_cache
 from pathlib import Path
 from typing import Iterable
 
@@ -259,6 +262,62 @@ def is_pure_stop_word(text_zh: str, text_en: str, match: RuleMatch | None, rules
     remaining = rest_zh + " " + rest_en
     letters = len(_LATIN_WORD.findall(remaining.lower())) + len(_CJK.findall(remaining))
     return letters < 2
+
+
+# --------------------------------------------------------------------------- the customs glossary (feature 014a)
+GLOSSARY = RULES_DIR / "customs_glossary.json"   # optional, absent by default: project data, never third-party data
+
+
+@dataclass(frozen=True)
+class GlossaryEntry:
+    """A reviewed, fixed rendering of a term as shippers write it, per language code (data-model §7)."""
+
+    term: str
+    renderings: dict[str, str]
+    reviewed_by: str
+    reviewed_on: str
+
+
+def _reviewed(entry: dict) -> bool:
+    """An entry is applied only when `reviewed_by` and `reviewed_on` are both given and `reviewed_on` is an ISO date."""
+    by, on = entry.get("reviewed_by"), entry.get("reviewed_on")
+    if not (isinstance(by, str) and by.strip() and isinstance(on, str) and on.strip()):
+        return False
+    try:
+        date.fromisoformat(on.strip())
+    except ValueError:
+        return False
+    return True
+
+
+@lru_cache(maxsize=8)
+def _glossary(path: str) -> tuple[GlossaryEntry, ...]:
+    p = Path(path)
+    if not p.exists():
+        return ()
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+        entries = data["entries"]
+        if not isinstance(entries, list):
+            raise TypeError("entries must be a list")
+        out = []
+        for e in entries:
+            term, renderings = e["term"], e["renderings"]
+            if not (isinstance(term, str) and term.strip() and isinstance(renderings, dict)
+                    and all(isinstance(k, str) and isinstance(v, str) for k, v in renderings.items())):
+                raise TypeError(f"an entry needs a term and renderings of strings: {e!r}")
+            if _reviewed(e):
+                out.append(GlossaryEntry(term=term.strip(), renderings={k.strip().lower(): v.strip() for k, v in renderings.items()},
+                                         reviewed_by=e["reviewed_by"].strip(), reviewed_on=e["reviewed_on"].strip()))
+    except (ValueError, KeyError, TypeError) as exc:
+        raise ValueError(f"the customs glossary {p} is malformed: {exc}") from exc
+    return tuple(out)
+
+
+def load_glossary(path: Path | str | None = None) -> list[GlossaryEntry]:
+    """The reviewed entries of the customs glossary file, read once per process (feature 014a, FR-027): a missing file is
+    no glossary; an entry without a review is ignored; a malformed file is refused with its path (ValueError)."""
+    return list(_glossary(str(path or GLOSSARY)))
 
 
 # --------------------------------------------------------------------------- shippers

@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
-from agent.config import EBTI_STALE_DAYS, MAX_DESC_CHARS, TARIC_STALE_DAYS
+from agent.config import EBTI_STALE_DAYS, LANGUAGE_NAMES, MAX_DESC_CHARS, TARIC_STALE_DAYS
 from agent.routing import cn8_precedent_conflict, hs6_choice, hs6_gate
 from agent.schemas import (Actor, ChangeKind, ChosenHow, Cn8Gate, CreatedBy, DecisionRoute, FlagKind, Hs6Gate, TaricRule,
                            WrittenBy)
@@ -754,6 +754,23 @@ def candidate_label(r: CandidateRow) -> str:
     path = r.description.split(" › ")
     text = path[-1] if len(path) == 1 or len(path[-1]) >= 20 else f"{cut(path[-2], 35)} › {path[-1]}"
     return f"{r.value} {cut(text, 55)} — {r.confidence}%"   # one line, so its confidence bar sits beside it
+
+
+def _language(code: str) -> str:
+    return LANGUAGE_NAMES.get(code, code)
+
+
+def wording_caption(line: Any) -> str | None:
+    """Block 1 (feature 014a, contracts/ui.md §1): the customs wording the line's rulings were also searched with, when
+    the switch was on for its HS-6 step; display only."""
+    w = line.current.customs_wording
+    return None if w is None else f"Rulings also searched in customs wording ({_language(w.language)}): {w.text}"
+
+
+def wording_queries_text(version: Any) -> str:
+    """Admin › Ask the agent, Retrieval steps (contracts/ui.md §4): the rewrite after the queries, when the line has one."""
+    w = version.customs_wording
+    return "" if w is None else f" · rulings only, in {_language(w.language)}: {w.text}"
 
 
 def citation_text(note: Any, code: str) -> str:
