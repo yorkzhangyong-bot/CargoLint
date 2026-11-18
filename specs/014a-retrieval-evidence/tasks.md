@@ -375,7 +375,7 @@ run's floor).
 
 **Independent Test**: unit tests on hand-written rows and stubbed runs (contracts/eval-cli.md).
 
-- [ ] T041 [US1] Tests in tests/unit/test_hs6_eval.py (after T004, same file): rows carry `vote_chapters`,
+- [X] T041 [US1] Tests in tests/unit/test_hs6_eval.py (after T004, same file): rows carry `vote_chapters`,
   `not_indexed`, `vote_hits` (reference, HS-6, similarity, `eligible`, where "`eligible` ignores the floor (valid,
   coded, not excluded), so a replay can apply any floor; it is exact, and evidence for a new value, only at or above the
   run's floor"), `customs_wording` and `citation_notes`; `--customs-wording on|off` overrides the setting for the run
@@ -386,7 +386,7 @@ run's floor).
   without a voter per run; a file without `vote_hits` is refused; a replay belongs to the set its results file names
   (its summary's `set`) and writes that set's history and report, a coolant replay reading no CN-8 results; `--floor`
   combines with `--override-min`; entries carry `floor` (spec FR-004, FR-005, FR-012)
-- [ ] T042 [US1] Implement in tests/eval/hs6_eval.py: the row fields (the vote search's hits told apart from the
+- [X] T042 [US1] Implement in tests/eval/hs6_eval.py: the row fields (the vote search's hits told apart from the
   proposal's in the logged searches), `--customs-wording`, `--replay --floor`, the entry fields `customs_wording`,
   `floor` and `replay`; tests/eval/e2e_eval.py's imports keep working; make T041 pass (spec FR-004, FR-005, FR-012)
 

@@ -454,7 +454,8 @@ def test_feature_014a_the_coolant_report_shows_each_lines_majority_outcome():
     data = {"built_on": "2026-11-18", "source": "a test", "lines": [
         {"id": "C1", "text": "冷却液 矿物油含量大于70%"}, {"id": "C2", "text": "没有矿物基础油的冷却液"}, {"id": "C3", "text": "*cool*"}]}
     text = ev.render_coolant_report([entry], data)
-    assert "| 1 | 2026-11-18 | 014a-baseline | 3 | off | 2 / 1 / 1 of 3 | 2/3 | 2 / 1 / 1 | 1 / 1 / 1 | 0 / 1 / 1 | 3 / 3 / 3 |" in text
+    assert ("| 1 | 2026-11-18 | 014a-baseline | 3 | off | - | - | 2 / 1 / 1 of 3 | 2/3 | 2 / 1 / 1 | 1 / 1 / 1 | 0 / 1 / 1 | "
+            "3 / 3 / 3 |") in text                                       # no customs wording and no floor before them
     assert ("| C2 | 没有矿物基础油的冷却液 | ask_shipper | 3820.00 (ask_shipper) | 3820.00 (review) | 3820.00 (auto_accept) | "
             "ask_shipper | yes |") in text
     assert "| C3 | \\*cool\\* | 3403.99 |" in text and "| 3403.19 | no |" in text
@@ -472,8 +473,9 @@ def stub_live_run(monkeypatch, runs):
     calls = []
     queue = iter(runs)
 
-    def run_once(rulings, kb, client, as_of, workers, expansion=False, leave_one_out=True):
-        calls.append({"references": [r["reference"] for r in rulings], "as_of": as_of, "leave_one_out": leave_one_out})
+    def run_once(rulings, kb, client, as_of, workers, expansion=False, leave_one_out=True, customs_wording=False):
+        calls.append({"references": [r["reference"] for r in rulings], "as_of": as_of, "leave_one_out": leave_one_out,
+                      "customs_wording": customs_wording})
         return next(queue), 1.0
 
     monkeypatch.setattr(ev, "run_once", run_once)
@@ -496,7 +498,7 @@ def test_feature_014a_a_coolant_run_writes_its_own_files_only(tmp_path, monkeypa
     assert ev.main(["--set", "coolant", "--repeat", "3", "--tag", "t1", "--expansion", "off"]) == 0
     assert [c["leave_one_out"] for c in calls] == [False] * 3                 # no line is a ruling: no leakage guard
     assert calls[0]["as_of"] == date(2026, 11, 18) and calls[0]["references"][0] == "coolant-1"   # on the set's date
-    assert ev.COOLANT_OUT.exists() and (tmp_path / "hs6_eval_coolant_t1_en_expansion-off.json").exists()
+    assert ev.COOLANT_OUT.exists() and (tmp_path / "hs6_eval_coolant_t1_en_expansion-off_wording-off.json").exists()
     entry = json.loads(ev.COOLANT_HISTORY.read_text(encoding="utf-8"))[-1]
     assert (entry["iteration"], entry["set"], entry["tag"], entry["n"], entry["repeat"]) == (1, "coolant", "t1", 8, 3)
     assert entry["top1_runs"] == [2, 2, 2] and entry["majority_top1"] == 2   # the two 2710.19 lines
@@ -534,7 +536,7 @@ def test_feature_014a_the_120_line_set_stays_the_default_and_names_its_set(tmp_p
     assert calls[0]["leave_one_out"] is True                                  # each line's own ruling kept out
     entry = json.loads(ev.HISTORY.read_text(encoding="utf-8"))[-1]
     assert (entry["set"], entry["majority_top1"], entry["cross_layer"]["majority"]["hs6_right_cn8_right"]) == ("cn8", 2, 2)
-    assert (tmp_path / "hs6_eval_t2_en_expansion-off.json").exists()
+    assert (tmp_path / "hs6_eval_t2_en_expansion-off_wording-off.json").exists()   # since Phase 8: the switch named
     assert not any(p.exists() for p in (ev.COOLANT_OUT, ev.COOLANT_HISTORY, ev.COOLANT_REPORT))
 
 
@@ -569,3 +571,165 @@ def test_feature_014a_run_once_scores_coolant_lines_with_no_leakage_guard(small_
 def test_feature_014a_lang_is_for_the_120_line_set():
     with pytest.raises(SystemExit):
         ev.main(["--set", "coolant", "--lang", "zh", "--dry-run"])
+
+
+# --------------------------------------------------------------------------- feature 014a: the after-runs' fields and replays
+def test_feature_014a_vote_hits_keep_each_ruling_once_with_its_similarity_and_eligibility():
+    kb = SimpleNamespace(bti=BTIStore([ruling("OWN", "3403.99"), ruling("A", "3403.99"), ruling("LOW", "3403.19"),
+                                       ruling("OLD", "3403.19", valid_to="2024-12-31"), ruling("GONE", "9999.99")]),
+                         index=SimpleNamespace(get=lambda code: object() if code in ("3403.99", "3403.19") else None))
+    searches = [[("bti:OWN", 0.9), ("bti:A", 0.62), ("bti:OLD", 0.41)],
+                [("bti:A", 0.70), ("bti:GONE", 0.39), ("bti:LOW", 0.30)]]                # a second query vector
+    hits = ev.vote_hits(searches, "OWN", kb, date(2026, 11, 18))
+    assert [(h["reference"], h["hs6"], h["similarity"], h["eligible"]) for h in hits] == [
+        ("OWN", "3403.99", 0.9, False),        # the line's own ruling
+        ("A", "3403.99", 0.7, True),           # once, at its highest similarity
+        ("OLD", "3403.19", 0.41, False),       # expired on the day
+        ("GONE", "9999.99", 0.39, False),      # coded to a subheading the nomenclature does not have
+        ("LOW", "3403.19", 0.3, True)]         # below the floor, still eligible: a replay applies any floor
+    assert ev.vote_hits(searches, None, kb, date(2026, 11, 18))[0]["eligible"]            # no line kept out
+
+
+def test_feature_014a_a_row_keeps_the_scope_the_vote_hits_the_rewrite_and_the_notes(small_index, fake_embeddings, rules,
+                                                                                   fake_llm):
+    from agent.llm import get_client
+    from rag.loader import KnowledgeBase
+    from rag.retriever import BM25Index, HybridRetriever, InMemoryVectorSearch
+
+    text = "Silicone mobile phone cases"
+    fake_llm.recorded.setdefault("JudgementOut", {})[text] = {"vague": False, "missing": [], "reason": "specific"}
+    fake_llm.recorded.setdefault("WordingOut", {})[text] = {"text": "Schutzhüllen für Mobiltelefone, aus Silikon"}
+    fake_llm.recorded.setdefault("RankOut", {})[text] = {"candidates": [
+        {"code": "3926.90", "confidence": 90, "rationale": "Like FRBTI3, a fitted cover.", "history_only": False},
+        {"code": "4202.21", "confidence": 40, "rationale": "a case", "history_only": False}]}
+    records = [{**ruling(ref, code), "chapter": code[:2], "language": "de"} for ref, code in
+               (("IEBTI1", "3926.90"), ("DEBTI2", "3926.90"), ("FRBTI3", "4202.21"), ("XIBTI4", "8452.90"))]
+    vectors = InMemoryVectorSearch([(c.id, c.text, c.metadata) for c in small_index.chunks], fake_embeddings)
+    kb = KnowledgeBase(small_index, HybridRetriever(bm25=BM25Index([(c.id, c.text) for c in small_index.chunks]),
+                                                    vectors=vectors, chunks=small_index), BTIStore(records), rules,
+                       {"embedding_model": "fake", "built_at": "2026-11-18T00:00:00"}, fake_embeddings)
+
+    class Scoped:
+        hits = [("bti:XIBTI4", 0.95), ("bti:IEBTI1", 0.80), ("bti:DEBTI2", 0.70), ("bti:FRBTI3", 0.60)]
+
+        def search_by_vector(self, vector, k, chapter_filter=None, where=None):
+            return [(i, s) for i, s in self.hits if not chapter_filter or kb.bti.get(i)["chapter"] in chapter_filter][:k]
+
+    kb.bti_vectors = Scoped()
+    item = {"reference": "coolant-x", "chapter": "39", "language": "", "description": text, "expected_hs6": "3926.90"}
+    row = ev.run_once([item], kb, get_client(), date(2026, 11, 18), workers=1, leave_one_out=False, customs_wording=True)[0][0]
+    assert (row["vote_chapters"], row["not_indexed"]) == (["39", "42"], [])
+    assert [h["reference"] for h in row["vote_hits"]] == ["IEBTI1", "DEBTI2", "FRBTI3"]           # never the machine
+    assert all(h["eligible"] for h in row["vote_hits"]) and row["vote_hits"][0]["similarity"] == 0.8
+    assert row["customs_wording"] == "Schutzhüllen für Mobiltelefone, aus Silikon"
+    assert row["citation_notes"] == [{"code": "3926.90", "notes": [
+        {"reference": "FRBTI3", "kind": "other_code", "ruling_hs6": "4202.21"}]}]
+    assert row["nearest_hits"][0]["reference"] == "XIBTI4"                     # the proposal's search over every chapter
+
+
+def test_feature_014a_the_customs_wording_option_is_kept_in_the_entry_and_the_file_name(tmp_path, monkeypatch):
+    from agent.config import HS6_VOTE_MIN_SIMILARITY
+
+    coolant_set_copy(tmp_path, monkeypatch)
+    eval_files_in(tmp_path, monkeypatch)
+    items = ev.coolant_items(json.loads(ev.COOLANT_SET.read_text(encoding="utf-8")))
+    rows = [coolant_row(i["reference"], "3403.99", "review", expected=i.get("expected_hs6") or "3403.99",
+                        expected_route=i.get("expected_route")) for i in items]
+    calls = stub_live_run(monkeypatch, [rows, rows])
+    assert ev.main(["--set", "coolant", "--tag", "t3", "--expansion", "off", "--customs-wording", "on"]) == 0
+    assert calls[0]["customs_wording"] is True
+    entry = json.loads(ev.COOLANT_HISTORY.read_text(encoding="utf-8"))[-1]
+    assert (entry["customs_wording"], entry["floor"]) == ("on", HS6_VOTE_MIN_SIMILARITY)
+    assert (tmp_path / "hs6_eval_coolant_t3_en_expansion-off_wording-on.json").exists()
+    assert ev.main(["--set", "coolant", "--tag", "t4", "--expansion", "off", "--customs-wording", "off"]) == 0
+    assert calls[1]["customs_wording"] is False and (tmp_path / "hs6_eval_coolant_t4_en_expansion-off_wording-off.json").exists()
+
+
+def hit(reference, hs6, similarity, eligible=True):
+    return {"reference": reference, "hs6": hs6, "similarity": similarity, "eligible": eligible}
+
+
+def replayable(reference, hits, confidence=90, expected="3403.99"):
+    """A coolant row as an after-run writes it, its route the run's (floor 0.40), with its vote_hits."""
+    r = {**coolant_row(reference, "3403.99", "review", expected=expected, top3=["3403.99", "2710.19"], confidence=confidence),
+         "flag": "ok", "vote_hits": hits, "vote": None}
+    return r
+
+
+def write_source(tmp_path, rows, set_name="coolant", **summary) -> str:
+    source = tmp_path / "source.json"
+    source.write_text(json.dumps({"summary": {"iteration": 3, "tag": "014a-after", "model": "m", "set": set_name, "repeat": 1,
+                                              "n": len(rows), "floor": 0.40, "customs_wording": "off", **summary},
+                                  "rows": rows}), encoding="utf-8")
+    return str(source)
+
+
+def no_model(monkeypatch):
+    from agent.llm import set_client_factory
+
+    def refuse():
+        raise AssertionError("a replay makes no model call")
+
+    set_client_factory(refuse)
+    monkeypatch.setattr(ev, "open_knowledge_base", lambda *a, **k: pytest.fail("a replay opens no knowledge base"))
+
+
+def test_feature_014a_a_floor_replay_rebuilds_each_vote_with_no_model_call(tmp_path, monkeypatch, capsys):
+    from agent.llm import set_client_factory
+
+    coolant_set_copy(tmp_path, monkeypatch)
+    eval_files_in(tmp_path, monkeypatch)
+    no_model(monkeypatch)
+    rows = [replayable("A", [hit("R1", "3403.99", 0.60), hit("R2", "2710.19", 0.44)]),    # a tie at 0.40, agrees at 0.45
+            replayable("B", [hit("R3", "3403.99", 0.42)], confidence=70)]                  # no voter left at 0.45
+    try:
+        source = write_source(tmp_path, rows)
+        assert ev.main(["--replay", source, "--floor", "0.45", "--tag", "floor045"]) == 0
+    finally:
+        set_client_factory(None)
+    replayed = json.loads((tmp_path / "hs6_eval_coolant_floor045.json").read_text(encoding="utf-8"))["rows"]
+    assert [(r["route"], r["gate"]) for r in replayed] == [("auto_accept", "vote_agrees"), ("review", "no_rulings")]
+    assert replayed[0]["vote"]["counts"] == [["3403.99", 1]] and replayed[1]["vote"] is None   # 0.44 and 0.42 dropped
+    entry = json.loads(ev.COOLANT_HISTORY.read_text(encoding="utf-8"))[-1]                     # the coolant set's history
+    assert (entry["set"], entry["floor"], entry["replay"]) == ("coolant", 0.45, {"of": "source.json", "floor": 0.45,
+                                                                                 "exact": True})
+    assert (entry["routes_runs"], [len(w) for w in entry["wrong_auto_runs"]]) == (
+        [{"auto_accept": 1, "review": 1, "ask_shipper": 0}], [0])
+    assert entry["no_voter_runs"] == [1] and entry["cost_eur"] == 0.0 and entry["customs_wording"] == "off"
+    assert not ev.HISTORY.exists() and not ev.COOLANT_OUT.exists()            # no 120-line file, no latest paid run
+    assert "floor 0.45" in ev.COOLANT_REPORT.read_text(encoding="utf-8")
+
+
+def test_feature_014a_a_replay_below_the_runs_floor_is_marked_not_exact(tmp_path, monkeypatch):
+    coolant_set_copy(tmp_path, monkeypatch)
+    eval_files_in(tmp_path, monkeypatch)
+    no_model(monkeypatch)
+    source = write_source(tmp_path, [replayable("A", [hit("R1", "3403.99", 0.60)])])
+    assert ev.main(["--replay", source, "--floor", "0.35", "--override-min", "4"]) == 0
+    entry = json.loads(ev.COOLANT_HISTORY.read_text(encoding="utf-8"))[-1]
+    assert entry["replay"]["exact"] is False and entry["override_min"] == 4                 # combined with --override-min
+
+
+def test_feature_014a_a_120_line_replay_writes_the_120_line_history(tmp_path, monkeypatch):
+    eval_files_in(tmp_path, monkeypatch)
+    no_model(monkeypatch)
+    rows = [{**r, "route_by_confidence": r["route"], "vote_hits": [hit("R1", "3926.90", 0.6)], "nearest_hits": []}
+            for r in REPLAYED]
+    source = write_source(tmp_path, rows, set_name="cn8")
+    refs = [r["reference"] for r in json.loads(ev.SET.read_text(encoding="utf-8"))["rulings"]] + list("ABCDE")
+    cn8 = tmp_path / "cn8.json"
+    cn8.write_text(json.dumps({"summary": {"iteration": 12}, "rows": [cn8_row(r, "39269097") for r in refs]}), encoding="utf-8")
+    assert ev.main(["--replay", source, "--floor", "0.5", "--cn8", str(cn8)]) == 0
+    entry = json.loads(ev.HISTORY.read_text(encoding="utf-8"))[-1]
+    assert (entry["set"], entry["floor"], entry["replay"]["of"]) == ("cn8", 0.5, "source.json")
+    assert "cross_layer" in entry and not ev.COOLANT_HISTORY.exists()
+
+
+def test_feature_014a_a_file_without_vote_hits_is_refused(tmp_path, monkeypatch):
+    eval_files_in(tmp_path, monkeypatch)
+    no_model(monkeypatch)
+    source = write_source(tmp_path, [coolant_row("A", "3403.99", "review")])               # a baseline row
+    with pytest.raises(SystemExit):
+        ev.main(["--replay", source, "--floor", "0.45"])
+    with pytest.raises(SystemExit):
+        ev.main(["--floor", "0.45"])                                                       # a floor is for a replay
