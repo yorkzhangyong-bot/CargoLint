@@ -12,6 +12,9 @@ Future work, in priority order. Each entry is a short sketch, not a spec; run it
    - **No relevant rulings.** When no relevant ruling is found, show "no relevant rulings found" instead of "0 of 5 agree".
    - **Subheading consistency check.** A description that says "without mineral oil" must not get a subheading defined as containing petroleum oils (3403.19 was given at 95 % instead of 3403.99), and the confidence must drop when the check fails.
    - **Subdivision by use.** When the description names the use, rank the matching TARIC subdivision first, e.g. 2710 19 91 metal-working compounds for a coolant with more than 70 % mineral oil.
+   - **Index all chapters.** The EBTI store currently covers only twelve indexed chapters, so goods in other chapters (e.g. 27 and 34 for metal-working coolants and lubricants) have no rulings at all. `refresh_ebti` and the loader index rulings from every chapter, with the chapter list as a setting whose default is all; the demo store keeps `CARGOLINT_EBTI_RULINGS=5000`.
+   - **Chapter-filtered retrieval.** Search the nearest rulings only within the chapters of the model's HS-6 candidates, so a coolant (2710, 3403) never matches cooling machinery in chapter 84.
+   - **Unindexed chapters.** Until all chapters are indexed, when a candidate's chapter is not indexed, show "no rulings indexed for chapter NN" instead of "0 of 5 agree".
 
 3. **Line-specific shipper questions.** Shipper questions must be specific to the line, not generic. If the material is already given, ask for what is missing, e.g. for a coolant the intended use and whether mineral oil is the basic constituent.
 
