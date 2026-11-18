@@ -398,7 +398,7 @@ run's floor).
 
 **Goal**: User Story 2 scenario 4 and User Story 1 scenarios 3 and 4, on the code of Phases 3 to 8.
 
-- [ ] T043 [US2] LIVE (embedding credits, about $0.36 per 100,000 rulings embedded): rebuild the local store in the
+- [X] T043 [US2] LIVE (embedding credits, about $0.36 per 100,000 rulings embedded): rebuild the local store in the
   worktree: `.venv/Scripts/python scripts/refresh_ebti.py --no-publish --rulings all --previous store --out
   build/ebti-<date>` (the worktree's copy of T002 as the previous store; the extract downloaded into `build/`, or a
   downloaded one given with `--extract`); before the embedding starts, read the log's valid-ruling and chapter counts
@@ -406,16 +406,16 @@ run's floor).
   counts (`reused` = the unchanged rulings of the twelve chapters, `embedded` = new and changed only), the cost and
   `du -sb build/ebti-<date>/store`; then move `store/` to `build/store-baseline/` and `build/ebti-<date>/store` to
   `store/`; write nothing under `C:\ai\CargoLint` (spec FR-009, SC-001)
-- [ ] T044 [US1] LIVE (about $1.2): the after-runs of tests/eval/hs6_eval.py on the rebuilt store, each `--repeat 3
+- [X] T044 [US1] LIVE (about $1.2): the after-runs of tests/eval/hs6_eval.py on the rebuilt store, each `--repeat 3
   --tag 014a-after --expansion off`: the 120-line set and `--set coolant`, each with `--customs-wording off` and with
   `--customs-wording on`; keep the files and entries they write (spec FR-003, FR-026, User Story 1 scenario 3)
-- [ ] T045 [US1] Floor replays, no model call: `.venv/Scripts/python tests/eval/hs6_eval.py --replay <after-run results
+- [X] T045 [US1] Floor replays, no model call: `.venv/Scripts/python tests/eval/hs6_eval.py --replay <after-run results
   file> --floor X` for the 120-line set's and the coolant set's switch-off after-runs, at the floors the author picks at
   or above the run's floor of 0.40, where a replay is exact (for example 0.45, 0.50, 0.55); if the author approves
   another value, change `HS6_VOTE_MIN_SIMILARITY` in agent/config.py with its comment naming the evidence, keep T021's
   boundary tests green, and record the decision in the evaluation report (`specs/014a-retrieval-evidence/eval-diff.md`,
   T046); otherwise it stays 0.40 (spec FR-012)
-- [ ] T046 [US1] Write the evaluation report of spec FR-012, FR-026 and SC-006,
+- [X] T046 [US1] Write the evaluation report of spec FR-012, FR-026 and SC-006,
   specs/014a-retrieval-evidence/eval-diff.md, which the pull request's comparison is taken from, numbers from
   tests/eval/hs6_eval_history.json and tests/eval/hs6_eval_coolant_history.json only: per set, baseline against after
   (switch off) against after (switch on): majority top-1, top-1 per run, in top 3 per run, auto-accepted and wrong
