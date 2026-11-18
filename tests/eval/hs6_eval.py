@@ -59,6 +59,14 @@ The line-by-line results go to tests/eval/hs6_eval.json, the latest run, and to 
 tests/eval/hs6_eval_<tag>_<lang>_expansion-<on|off>.json (iteration<N> in place of the tag without --tag), which a run
 with another tag leaves alone, as the CN-8 iteration files keep earlier CN-8 runs (feature 007).
 
+Feature 014a: `--set coolant` runs the eight coolant lines of tests/eval/hs6_eval_coolant_set.json (the six of the
+author's user test in docs/backlog.md item 10, a German line and the plain 冷却液) through the same path, each line as
+typed, with no leakage guard (no line is a ruling), no cross-layer table (no line has a CN-8 result) and ruling validity
+on the set's build date. A line with an expected HS-6 is right when its top-1 is that code; a line expecting "ask the
+shipper" when its route is ask_shipper, whatever codes it shows. Its results, history and report are its own:
+tests/eval/hs6_eval_coolant.json, hs6_eval_coolant_<tag>_<lang>_expansion-<on|off>.json, hs6_eval_coolant_history.json
+and hs6_eval_coolant.md; every new history entry names its set (`set`: cn8 or coolant).
+
 --model names another OpenRouter chat model for this run only (the default is the configured CARGOLINT_CHAT_MODEL,
 Gemini 2.5 Flash since feature 006; the entry keeps the model and the reasoning sent next to its tag), through
 tests/eval/cn8_eval.run_settings: thinking stays off ({"enabled": false}; "minimal" still thinks) unless the model has no
@@ -109,6 +117,10 @@ OUT = ROOT / "tests" / "eval" / "hs6_eval.json"
 HISTORY = ROOT / "tests" / "eval" / "hs6_eval_history.json"
 REPORT = ROOT / "tests" / "eval" / "hs6_eval.md"
 CN8_RESULTS = ROOT / "tests" / "eval" / "cn8_eval_iteration11.json"
+COOLANT_SET = ROOT / "tests" / "eval" / "hs6_eval_coolant_set.json"   # feature 014a: the eight coolant lines
+COOLANT_OUT = ROOT / "tests" / "eval" / "hs6_eval_coolant.json"
+COOLANT_HISTORY = ROOT / "tests" / "eval" / "hs6_eval_coolant_history.json"
+COOLANT_REPORT = ROOT / "tests" / "eval" / "hs6_eval_coolant.md"
 HITS_LOGGED = 40
 SEARCHED = 2 * RETRIEVAL_K    # the rulings precedent_codes reads per query vector
 QUADRANTS = ("hs6_right_cn8_right", "hs6_right_cn8_wrong", "hs6_wrong_cn8_right", "hs6_wrong_cn8_wrong")
@@ -122,6 +134,29 @@ _rec = threading.local()       # per worker thread, for the line in hand: the lo
 def expected_hs6(ruling: dict) -> str:
     """The correct HS-6 of an eval line: the first six digits of its ruling's CN-8, dotted as the nomenclature is."""
     return f"{ruling['cn8'][:4]}.{ruling['cn8'][4:6]}"
+
+
+def expected_of(item: dict) -> str | None:
+    """A line's correct HS-6: a coolant line's expected_hs6, None for one that expects "ask the shipper" (feature 014a);
+    else the first six digits of its ruling's CN-8."""
+    if "expected_hs6" in item or "expected_route" in item:
+        return item.get("expected_hs6")
+    return expected_hs6(item)
+
+
+def coolant_items(data: dict) -> list[dict]:
+    """Feature 014a: the coolant set's lines as run_once takes them: the id as the reference, the text as the
+    description, and the expected HS-6 or route."""
+    return [{"reference": line["id"], "chapter": (line.get("expected_hs6") or "")[:2], "language": "",
+             "description": line["text"], **{k: line[k] for k in ("expected_hs6", "expected_route") if k in line}}
+            for line in data["lines"]]
+
+
+def coolant_score(row: dict, item: dict) -> dict:
+    """Feature 014a (spec User Story 1, scenario 1): a coolant row's expected route and whether it is right: a line with
+    an expected HS-6 on its top-1, a line expecting "ask the shipper" on its route, whatever codes it shows."""
+    route = item.get("expected_route")
+    return {"expected_route": route, "right": row["route"] == route if route else bool(row["hit"])}
 
 
 def line_text(line_no: int, ruling: dict) -> LineText:
@@ -243,8 +278,9 @@ def results_name(base: str, lang: str, expansion: bool) -> str:
 
 
 def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: int,
-             expansion: bool = False) -> tuple[list[dict], float]:
-    """One pass of the app's HS-6 path over the set: one row per ruling, and the elapsed seconds."""
+             expansion: bool = False, leave_one_out: bool = True) -> tuple[list[dict], float]:
+    """One pass of the app's HS-6 path over the set: one row per ruling, and the elapsed seconds. `leave_one_out` keeps
+    each line's own ruling out; the coolant set has none (feature 014a)."""
     clear_expansions()   # an independent run: no query expansion carried over
     lines = [line_text(i, r) for i, r in enumerate(rulings, start=1)]
     base = ClassifyContext(hybrid=True, as_of=as_of, expansion=expansion)   # context_for_shipment for an unknown
@@ -262,7 +298,8 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
     def one(item: tuple[LineText, str]) -> tuple[Any, list, Any]:
         line, reference = item
         _rec.searches, _rec.rank = [], None
-        ctx = replace(base, exclude_refs=frozenset({reference}))   # the leakage guard: never the line's own ruling
+        ctx = replace(base, exclude_refs=frozenset({reference}) if leave_one_out else None)   # the leakage guard: never
+                                                                                              # the line's own ruling
         return classify_lines([line], ctx, kb, recorder, workers=1)[0], _rec.searches, _rec.rank
 
     vectors = getattr(kb, "bti_vectors", None)
@@ -292,7 +329,7 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
             status, error = LineStatus.failed, "timed out"
         else:
             status, error = cls.status, cls.error_reason
-        expected = expected_hs6(r)
+        expected = expected_of(r)
         candidates = cls.candidates if cls is not None else []
         codes = [c.code for c in candidates]
         conf = candidates[0].confidence if candidates else None
@@ -323,6 +360,8 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
             "own_rank": next((k for k, h in enumerate(hits, start=1) if h["reference"] == r["reference"]), None),
             "nearest_hits": hits})
         rows[-1].update(override_fields(rows[-1]))   # feature 008: the switch on, from the same answers
+        if "expected_hs6" in r or "expected_route" in r:
+            rows[-1].update(coolant_score(rows[-1], r))   # feature 014a: a coolant line, right on its code or its route
     return rows, elapsed
 
 
@@ -394,6 +433,29 @@ def gate_measures(runs: list[list[dict]]) -> dict:
                               for r in run) for run in runs]}
 
 
+def coolant_measures(runs: list[list[dict]]) -> dict:
+    """Feature 014a: the coolant set over N runs (spec FR-004): right per run, the lines right on majority (a line's most
+    frequent top-1, or route for a line expecting "ask the shipper", a tie going to the earliest run), the expected
+    HS-6 in the top 3 per run (lines with one only), the routes, the wrong auto-accepts (auto-accepted and not right)
+    and each line's outcome per run and on majority."""
+    lines = []
+    for seen in zip(*runs):
+        first = seen[0]
+        expected = first["expected_route"] or first["expected"]
+        found = majority([r["route"] if first["expected_route"] else r["top1"] for r in seen])
+        lines.append({"id": first["reference"], "expected": expected, "majority": found, "right": found == expected,
+                      "seen": [{"top1": r["top1"], "route": r["route"]} for r in seen]})
+    return {"top1_runs": [sum(r["right"] for r in run) for run in runs],
+            "majority_top1": sum(line["right"] for line in lines),
+            "top3_runs": [sum(r["in_top3"] for r in run) for run in runs],
+            "routes_runs": [{route: sum(r["route"] == route for r in run) for route in ("auto_accept", "review", "ask_shipper")}
+                            for run in runs],
+            "wrong_auto_runs": [[{"reference": r["reference"], "expected": r["expected_route"] or r["expected"],
+                                  "top1": r["top1"], "confidence": r["confidence"]}
+                                 for r in run if r["route"] == "auto_accept" and not r["right"]] for run in runs],
+            "lines": lines}
+
+
 def own_ruling(runs: list[list[dict]]) -> dict:
     """Run by run, how many lines had their own ruling nearest, among the rulings the precedent search reads, and among
     the logged ones: what the leakage guard keeps out."""
@@ -440,6 +502,11 @@ def override_measures(runs: list[list[dict]], cn8: dict[str, dict], override_min
                                 for r in run if r["on"]["gate"] == "vote_override"] for run in runs],
             "supported_runs": [{"lines": sum(r["supported"]["rank"] is not None for r in run),
                                 "right": sum(r["supported"]["right"] is True for r in run)} for run in runs]}
+
+
+def set_files(name: str) -> tuple[Path, Path, Path]:
+    """Feature 014a: a set's results, history and report files; the coolant set keeps its own."""
+    return (COOLANT_OUT, COOLANT_HISTORY, COOLANT_REPORT) if name == "coolant" else (OUT, HISTORY, REPORT)
 
 
 def write_results(report: dict, out: Path, name: str) -> Path:
@@ -654,6 +721,53 @@ def render_report(history: list[dict], data: dict) -> str:
     return "\n".join(out)
 
 
+def render_coolant_report(history: list[dict], data: dict) -> str:
+    """Feature 014a: tests/eval/hs6_eval_coolant.md, one row per entry and, per entry, each line's outcome per run and on
+    majority."""
+    texts = {line["id"]: line["text"] for line in data["lines"]}
+    out = [
+        "# HS-6 evaluation report: the coolant set (feature 014a)",
+        "",
+        f"- **Set**: `tests/eval/hs6_eval_coolant_set.json`, {len(data['lines'])} lines (built {data['built_on']}): "
+        f"{data['source']}.",
+        "- **Method**: each line, as typed, goes through the 120-line set's path: the description check, the HS-6 step "
+        "(hybrid search and BTI precedents, no shipper history) and the route the store computes (threshold "
+        f"{DEFAULT_THRESHOLD}, ask floor {ASK_FLOOR}); no leakage guard, as no line is a ruling; ruling validity on the "
+        "set's build date. `python tests/eval/hs6_eval.py --set coolant --repeat 3`.",
+        "- **Right**: a line with an expected HS-6 when its top-1 is that code; a line expecting \"ask the shipper\" when "
+        "its route is ask_shipper, whatever codes it shows. **Majority**: a line's most frequent top-1, or route for a "
+        "line expecting \"ask the shipper\" (a tie goes to the earliest run). **In top 3**: the lines with an expected "
+        "HS-6 only. **Wrong, auto-accepted**: auto-accepted and not right. **No ruling voted**: the vote gate's "
+        "no_rulings lines.",
+        "",
+        "| Iteration | Run on | Tag | Runs | Query expansion | Right per run | Majority right | In top 3 per run | "
+        "Auto-accepted per run | Wrong, auto-accepted per run | No ruling voted per run | Cost |",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|",
+    ]
+    for h in history:
+        n = h["n"]
+        out.append(f"| {h['iteration']} | {h['run_on']} | {h.get('tag', '-')} | {h['repeat']} | {h['expansion']} | "
+                   f"{_runs(h['top1_runs'])} of {n} | {h['majority_top1']}/{n} | {_runs(h['top3_runs'])} | "
+                   f"{_runs(routes['auto_accept'] for routes in h['routes_runs'])} | "
+                   f"{_runs(len(w) for w in h['wrong_auto_runs'])} | {_runs(g['no_rulings'] for g in h['gate_runs'])} | "
+                   f"${h['cost_usd']:.4f} (€{h['cost_eur']:.4f}), {h['elapsed_s']:.0f} s |")
+    for h in history:
+        k = len(h["top1_runs"])
+        out += ["", f"## Iteration {h['iteration']} ({h.get('tag', '-')}, {h['model']}, query expansion {h['expansion']}, "
+                    f"{h['run_on']})"]
+        if h.get("note"):
+            out += ["", f"Note: {h['note']}"]
+        out += ["", "| Line | Text | Expected | " + " | ".join(f"Run {i + 1}" for i in range(k)) + " | Majority | Right |",
+                "|---|---|---|" + "---|" * k + "---|---|"]
+        for line in h["lines"]:
+            seen = " | ".join(f"{s['top1'] or 'no code'} ({s['route']})" for s in line["seen"])
+            out.append(f"| {line['id']} | {_md(texts.get(line['id'], ''), 60)} | {line['expected']} | {seen} | "
+                       f"{line['majority'] or 'no code'} | {'yes' if line['right'] else 'no'} |")
+    out += ["", f"Model: {history[-1]['model'] if history else '-'}. Line-by-line results of the latest run: "
+            "`tests/eval/hs6_eval_coolant.json`; each run also keeps its own, `tests/eval/hs6_eval_coolant_<tag>_….json`.", ""]
+    return "\n".join(out)
+
+
 def replay_main(args: argparse.Namespace, data: dict, cn8: dict[str, dict], cn8_data: dict, override_min: int) -> int:
     """Feature 008: a stored run's answers with the switch on at `override_min`, with no model call. The replay keeps its
     own results file (hs6_eval.json stays the latest paid run), a history entry marked as a replay, and the report."""
@@ -665,7 +779,7 @@ def replay_main(args: argparse.Namespace, data: dict, cn8: dict[str, dict], cn8_
     m, x = entry_measures(runs, cn8, cn8_data, args.cn8, override_min)
     entry = {"iteration": iteration, "run_on": date.today().isoformat(),
              "change": f"replay of iteration {s['iteration']} at OVERRIDE_MIN {override_min}; no model call",
-             **({"tag": args.tag} if args.tag else {}),
+             **({"tag": args.tag} if args.tag else {}), "set": "cn8",
              **{k: s[k] for k in ("model", "reasoning", "lang", "expansion", "threshold", "ask_floor", "temperature",
                                   "seed", "repeat", "n") if k in s},
              "replay_of": {"iteration": s["iteration"], "tag": s.get("tag")}, **m,
@@ -718,7 +832,11 @@ def main(argv: list[str] | None = None) -> int:
                     help="feature 009: en, the 120 lines as given (default); zh, the 30 lines of hs6_eval_zh.json in Chinese")
     ap.add_argument("--expansion", choices=("on", "off"),
                     help="feature 009: query expansion for this run (default: CARGOLINT_QUERY_EXPANSION)")
+    ap.add_argument("--set", choices=("cn8", "coolant"), default="cn8", dest="set_name",
+                    help="feature 014a: cn8, the 120 rulings of cn8_eval_set.json (default); coolant, the eight lines of "
+                         "hs6_eval_coolant_set.json")
     args = ap.parse_args(argv)
+    coolant = args.set_name == "coolant"
     if args.repeat < 1:
         ap.error("--repeat must be 1 or more")
     if args.limit is not None and not args.dry_run:
@@ -729,16 +847,27 @@ def main(argv: list[str] | None = None) -> int:
         ap.error("--override-min is for a --replay: a run computes the switch on at OVERRIDE_MIN")
     if args.replay and not 1 <= (args.override_min or OVERRIDE_MIN) <= HS6_VOTE_K:
         ap.error(f"--override-min must be between 1 and {HS6_VOTE_K}")
-    data = json.loads(SET.read_text(encoding="utf-8"))
-    rulings = eval_rulings(data, args.lang)
+    if coolant and args.lang != "en":
+        ap.error("--lang is for the 120-line set: the coolant set's lines are run as typed")
+    if coolant and args.replay:
+        ap.error("--replay replays the 120-line set's results")
+    if coolant:
+        data = json.loads(COOLANT_SET.read_text(encoding="utf-8"))
+        rulings = coolant_items(data)
+        cn8 = cn8_data = None
+    else:
+        data = json.loads(SET.read_text(encoding="utf-8"))
+        rulings = eval_rulings(data, args.lang)
     rulings = rulings[:args.limit] if args.limit else rulings
-    cn8_data = json.loads(Path(args.cn8).read_text(encoding="utf-8"))
-    cn8 = cn8_results(cn8_data)
-    missing = [r["reference"] for r in rulings if r["reference"] not in cn8]
-    if missing:
-        ap.error(f"{len(missing)} lines are missing from {args.cn8}, such as {missing[0]}")
-    if args.replay:
-        return replay_main(args, data, cn8, cn8_data, args.override_min or OVERRIDE_MIN)
+    if not coolant:
+        cn8_data = json.loads(Path(args.cn8).read_text(encoding="utf-8"))
+        cn8 = cn8_results(cn8_data)
+        missing = [r["reference"] for r in rulings if r["reference"] not in cn8]
+        if missing:
+            ap.error(f"{len(missing)} lines are missing from {args.cn8}, such as {missing[0]}")
+        if args.replay:
+            return replay_main(args, data, cn8, cn8_data, args.override_min or OVERRIDE_MIN)
+    out, history_file, report_file = set_files(args.set_name)
     as_of = date.fromisoformat(data["built_on"])
     settings, found = run_settings(get_settings(), args.model)
     reasoning = {"enabled": False} if settings.reasoning_off else None   # what the calls carry
@@ -754,40 +883,46 @@ def main(argv: list[str] | None = None) -> int:
     invalid = count_invalid(client)
     model = client.raw._model
     temperature, seed = getattr(model, "temperature", None), getattr(model, "seed", None)   # what the calls carry
-    history = json.loads(HISTORY.read_text(encoding="utf-8")) if HISTORY.exists() else []
+    history = json.loads(history_file.read_text(encoding="utf-8")) if history_file.exists() else []
     iteration = args.iteration if args.iteration is not None else max((h["iteration"] for h in history), default=0) + 1
     change = args.change or (f"{args.repeat} independent run{'s' if args.repeat > 1 else ''}, temperature {temperature}, "
                              f"seed {seed if seed is not None else 'none'}")
     expansion = settings.query_expansion if args.expansion is None else args.expansion == "on"
-    print(f"HS-6 iteration {iteration}: {len(rulings)} lines ({args.lang}, query expansion "
-          f"{'on' if expansion else 'off'}) × {args.repeat} run(s); BTI vectors "
+    print(f"HS-6 iteration {iteration}: {len(rulings)} lines ({'the coolant set' if coolant else args.lang}, query "
+          f"expansion {'on' if expansion else 'off'}) × {args.repeat} run(s); BTI vectors "
           f"{'loaded' if getattr(kb, 'bti_vectors', None) is not None else 'not loaded'}; model {settings.chat_model}, "
-          f"temperature {temperature}, seed {seed}; CN-8 results: iteration {cn8_data['summary'].get('iteration')}")
+          f"temperature {temperature}, seed {seed}"
+          + ("" if coolant else f"; CN-8 results: iteration {cn8_data['summary'].get('iteration')}"))
 
     runs, elapsed, costs, parsed = [], 0.0, [], []
     for k in range(args.repeat):
         before = usage.cost_eur
         invalid.clear()
-        rows, seconds = run_once(rulings, kb, client, as_of, settings.workers, expansion)
+        rows, seconds = run_once(rulings, kb, client, as_of, settings.workers, expansion, leave_one_out=not coolant)
         runs.append(rows)
         parsed.append(parse_counts(invalid, rows))
         elapsed += seconds
         costs.append(round(usage.cost_eur - before, 4))
-        print(f"  run {k + 1}: top-1 {sum(r['hit'] for r in rows)}/{len(rows)}, in top 3 {sum(r['in_top3'] for r in rows)}, "
+        scored = f"right {sum(r['right'] for r in rows)}" if coolant else f"top-1 {sum(r['hit'] for r in rows)}"
+        print(f"  run {k + 1}: {scored}/{len(rows)}, in top 3 {sum(r['in_top3'] for r in rows)}, "
               f"{seconds:.0f} s, €{costs[-1]:.4f}; invalid answers {parsed[-1]}")
-    m, x = entry_measures(runs, cn8, cn8_data, args.cn8)
+    if coolant:   # feature 014a: no cross-layer table, as no line has a CN-8 result
+        m, x = {**coolant_measures(runs), **gate_measures(runs)}, None
+    else:
+        m, x = entry_measures(runs, cn8, cn8_data, args.cn8)
     entry = {
         "iteration": iteration, "run_on": date.today().isoformat(), "change": change,
-        **({"tag": args.tag} if args.tag else {}), "model": settings.chat_model, "reasoning": reasoning,
-        "lang": args.lang, "expansion": "on" if expansion else "off",
+        **({"tag": args.tag} if args.tag else {}), "set": args.set_name, "model": settings.chat_model,
+        "reasoning": reasoning, **({} if coolant else {"lang": args.lang}), "expansion": "on" if expansion else "off",
         "threshold": DEFAULT_THRESHOLD, "ask_floor": ASK_FLOOR, "temperature": temperature, "seed": seed,
         "repeat": args.repeat, "n": len(rulings), **m,
-        "parse": {"retry_limit": client.max_retries, "runs": parsed}, "confidence": confidence_table(runs),
+        "parse": {"retry_limit": client.max_retries, "runs": parsed},
+        **({} if coolant else {"confidence": confidence_table(runs)}),
         "elapsed_s": round(elapsed, 1), "cost_usd": round(usage.cost_usd, 4), "cost_eur": round(usage.cost_eur, 4),
         "cost_eur_runs": costs}
     if args.note:
         entry["note"] = args.note
-    summary = {**entry, "set_built_on": data["built_on"], "cn8_lines": x["lines"],
+    summary = {**entry, "set_built_on": data["built_on"], **({} if x is None else {"cn8_lines": x["lines"]}),
                "usage": {"total_tokens": usage.total_tokens, "prompt_tokens": usage.prompt_tokens,
                          "completion_tokens": usage.completion_tokens, "calls": usage.calls,
                          "cost_usd": round(usage.cost_usd, 4), "cost_eur": round(usage.cost_eur, 4)}}
@@ -796,20 +931,35 @@ def main(argv: list[str] | None = None) -> int:
         report["runs"] = runs
     history = [h for h in history if h["iteration"] != iteration] + [entry]
     history.sort(key=lambda h: h["iteration"])
-    n, mx = len(rulings), x["majority"]
+    render = render_coolant_report if coolant else render_report
+    n = len(rulings)
     if args.dry_run:
         first = runs[0][0]
         print("\n== a row (run 1, line 1; nearest_hits: the first 3 of "
               f"{len(first['nearest_hits'])}):\n" + json.dumps({**first, "nearest_hits": first["nearest_hits"][:3]},
                                                                 ensure_ascii=False, indent=1))
-        print("\n== the summary in tests/eval/hs6_eval.json (the history entry plus cn8_lines and usage):\n"
-              + json.dumps(summary, ensure_ascii=False, indent=1))
-        print("\n== tests/eval/hs6_eval.md:\n" + render_report(history, data))
+        print(f"\n== the summary in tests/eval/{out.name} (the history entry plus "
+              f"{'' if coolant else 'cn8_lines and '}usage):\n" + json.dumps(summary, ensure_ascii=False, indent=1))
+        print(f"\n== tests/eval/{report_file.name}:\n" + render(history, data))
         print("dry run: nothing written")
     else:
-        write_results(report, OUT, results_name(args.tag or f"iteration{iteration}", args.lang, expansion))
-        HISTORY.write_text(json.dumps(history, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
-        REPORT.write_text(render_report(history, data), encoding="utf-8", newline="\n")
+        write_results(report, out, results_name(args.tag or f"iteration{iteration}", args.lang, expansion))
+        history_file.write_text(json.dumps(history, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
+        report_file.write_text(render(history, data), encoding="utf-8", newline="\n")
+    if coolant:
+        print(f"HS-6, coolant set: right per run {m['top1_runs']} of {n}; majority right {m['majority_top1']}/{n}; in top 3 "
+              f"per run {m['top3_runs']}; auto-accepted per run {[routes['auto_accept'] for routes in m['routes_runs']]}; "
+              f"wrong but auto-accepted per run {[len(w) for w in m['wrong_auto_runs']]}; no ruling voted per run "
+              f"{[g['no_rulings'] for g in m['gate_runs']]}")
+        for line in m["lines"]:
+            print(f"  {line['id']}: expected {line['expected']}, majority {line['majority'] or 'no code'} "
+                  f"({'right' if line['right'] else 'wrong'})")
+        print(f"  model {settings.chat_model}, reasoning {reasoning}; invalid answers per run (retried at most "
+              f"{client.max_retries} times) {parsed}")
+        print(f"  {elapsed:.0f} s; usage {usage.total_tokens} tokens, {usage.calls} calls, ${usage.cost_usd:.4f} ≈ "
+              f"€{usage.cost_eur:.4f}")
+        return 0
+    mx = x["majority"]
     print(f"HS-6 top-1 per run {m['top1_runs']} of {n}; majority {m['majority_top1']}/{n}; in top 3 per run {m['top3_runs']}; "
           f"same top-1 in all runs {m['same_top1']}/{n}; same route {m['same_route']}/{n}")
     print(f"  auto-accepted per run {[routes['auto_accept'] for routes in m['routes_runs']]}; wrong but auto-accepted per "

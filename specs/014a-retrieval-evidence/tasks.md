@@ -40,11 +40,11 @@ new files are UTF-8 without a byte-order mark. Nothing in the main checkout `C:\
 **Purpose**: the worktree's own environment and store, without touching the main checkout (plan "Store and
 environment for the live steps", the author's answer to the plan's question A)
 
-- [ ] T001 Create the worktree's environment: `python -m venv .venv`, then `.venv/Scripts/python -m pip install -e
+- [X] T001 Create the worktree's environment: `python -m venv .venv`, then `.venv/Scripts/python -m pip install -e
   ".[dev]"` in `C:\Users\Yong\orca\workspaces\CargoLint\014a-retrieval-evidence` (`.venv/` is git-ignored; never use
   or change `C:\ai\CargoLint\.venv`); run `.venv/Scripts/python -m pytest -q` on the unchanged branch and note the
   pass count as the starting point (spec FR-009, FR-030)
-- [ ] T002 Copy the five entries of the main checkout's store layout into the worktree, reading the main checkout
+- [X] T002 Copy the five entries of the main checkout's store layout into the worktree, reading the main checkout
   only: `mkdir -p store && cp -r /c/ai/CargoLint/store/{index_meta.json,bm25.pkl,bti_docs.jsonl,chroma,chroma-bti}
   store/` (`store/` is git-ignored; the old logs and screenshots of that folder are left behind); check `du -sb store`
   (about 3,350,384,841 bytes, measured 2026-11-18) and that `store/index_meta.json` reads 74,044 rulings,
@@ -60,7 +60,7 @@ environment for the live steps", the author's answer to the plan's question A)
 
 **⚠️ CRITICAL**: no product code may change until T006 has recorded the baseline.
 
-- [ ] T003 [P] Create `tests/eval/hs6_eval_coolant_set.json` (data-model §8; LF, UTF-8 without a byte-order mark) with
+- [X] T003 [P] Create `tests/eval/hs6_eval_coolant_set.json` (data-model §8; LF, UTF-8 without a byte-order mark) with
   `built_on` "2026-11-18", a `source` naming docs/backlog.md item 10, the author's German line and the plain line of
   clarification 5, and these eight `lines`, in this order, each with `id` `coolant-1` … `coolant-8`, the `text`
   verbatim, a `note`, and exactly one of `expected_hs6` (`####.##`) and `expected_route` (`ask_shipper`) ("A line has
@@ -75,7 +75,7 @@ environment for the live steps", the author's answer to the plan's question A)
   7. `Kühlschmierstoff für die Metallbearbeitung, ohne Mineralöl` → 3403.99, note "the author's German line, 2026-11-18";
   8. `冷却液` → `expected_route` ask_shipper, note "check line of the customs-wording switch (FR-026)"
   (spec FR-001)
-- [ ] T004 Tests in tests/unit/test_hs6_eval.py for `--set coolant` (contracts/eval-cli.md), with stubbed runs and
+- [X] T004 Tests in tests/unit/test_hs6_eval.py for `--set coolant` (contracts/eval-cli.md), with stubbed runs and
   hand-written rows, no model and no store: the set loads from the file of T003 (a temporary copy in the test); each
   line's text is split as a typed line (`tools.parsers.split_mixed`); `right` is `hit` for a line with
   `expected_hs6` and `route == "ask_shipper"` for a line with `expected_route`, whatever codes it shows; `in_top3`
@@ -86,14 +86,14 @@ environment for the live steps", the author's answer to the plan's question A)
   `hs6_eval_coolant_history.json` and `hs6_eval_coolant.md`, and neither the 120-line set's files nor the set file of
   T003 are touched; the history entry has `set: "coolant"`; `--dry-run` writes nothing; the 120-line set (`--set
   cn8`, the default) behaves as before and tests/unit/test_e2e_eval.py still passes (spec FR-002, FR-030)
-- [ ] T005 Implement `--set {cn8,coolant}` in tests/eval/hs6_eval.py per contracts/eval-cli.md: load the coolant set,
+- [X] T005 Implement `--set {cn8,coolant}` in tests/eval/hs6_eval.py per contracts/eval-cli.md: load the coolant set,
   build its lines as typed lines, score `right` (with the majority outcome and the wrong auto-accepts of
   contracts/eval-cli.md) and keep `expected_route` on the row, skip the CN-8 results check and the cross-layer table
   for it, write its own results, history and report (`hs6_eval_coolant.md`: per entry, right
   per run, majority right, each line's majority outcome, routes, wrong auto-accepts, cost), and add `set` to every new
   history entry; keep the names and behaviour of the functions tests/eval/e2e_eval.py imports; make T004 pass
   (spec FR-002)
-- [ ] T006 LIVE (about $0.55): the baseline, with `git status` showing changes under `tests/` only, the `.venv` of
+- [X] T006 LIVE (about $0.55): the baseline, with `git status` showing changes under `tests/` only, the `.venv` of
   T001 and the store copy of T002: `.venv/Scripts/python tests/eval/hs6_eval.py --repeat 3 --tag 014a-baseline
   --expansion off` and `.venv/Scripts/python tests/eval/hs6_eval.py --set coolant --repeat 3 --tag 014a-baseline
   --expansion off`; keep the history entries, results files and reports they write; note each set's majority top-1,

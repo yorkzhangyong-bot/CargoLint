@@ -1,0 +1,290 @@
+[
+ {
+  "iteration": 1,
+  "run_on": "2026-11-18",
+  "change": "3 independent runs, temperature 0.0, seed none",
+  "tag": "014a-baseline",
+  "set": "coolant",
+  "model": "google/gemini-2.5-flash",
+  "reasoning": {
+   "enabled": false
+  },
+  "expansion": "off",
+  "threshold": 85,
+  "ask_floor": 50,
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 3,
+  "n": 8,
+  "top1_runs": [
+   6,
+   6,
+   6
+  ],
+  "majority_top1": 6,
+  "top3_runs": [
+   4,
+   4,
+   4
+  ],
+  "routes_runs": [
+   {
+    "auto_accept": 0,
+    "review": 5,
+    "ask_shipper": 3
+   },
+   {
+    "auto_accept": 0,
+    "review": 5,
+    "ask_shipper": 3
+   },
+   {
+    "auto_accept": 0,
+    "review": 5,
+    "ask_shipper": 3
+   }
+  ],
+  "wrong_auto_runs": [
+   [],
+   [],
+   []
+  ],
+  "lines": [
+   {
+    "id": "coolant-1",
+    "expected": "2710.19",
+    "majority": "3820.00",
+    "right": false,
+    "seen": [
+     {
+      "top1": "3819.00",
+      "route": "ask_shipper"
+     },
+     {
+      "top1": "3820.00",
+      "route": "ask_shipper"
+     },
+     {
+      "top1": "3820.00",
+      "route": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "id": "coolant-2",
+    "expected": "ask_shipper",
+    "majority": "ask_shipper",
+    "right": true,
+    "seen": [
+     {
+      "top1": "3820.00",
+      "route": "ask_shipper"
+     },
+     {
+      "top1": "3820.00",
+      "route": "ask_shipper"
+     },
+     {
+      "top1": "3820.00",
+      "route": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "id": "coolant-3",
+    "expected": "3403.99",
+    "majority": "3403.99",
+    "right": true,
+    "seen": [
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.99",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "coolant-4",
+    "expected": "3403.99",
+    "majority": "3403.99",
+    "right": true,
+    "seen": [
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.99",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "coolant-5",
+    "expected": "2710.19",
+    "majority": "2710.19",
+    "right": true,
+    "seen": [
+     {
+      "top1": "2710.19",
+      "route": "review"
+     },
+     {
+      "top1": "2710.19",
+      "route": "review"
+     },
+     {
+      "top1": "2710.19",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "coolant-6",
+    "expected": "3403.99",
+    "majority": "3403.19",
+    "right": false,
+    "seen": [
+     {
+      "top1": "3403.19",
+      "route": "review"
+     },
+     {
+      "top1": "3403.19",
+      "route": "review"
+     },
+     {
+      "top1": "3403.19",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "coolant-7",
+    "expected": "3403.99",
+    "majority": "3403.99",
+    "right": true,
+    "seen": [
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.99",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "coolant-8",
+    "expected": "ask_shipper",
+    "majority": "ask_shipper",
+    "right": true,
+    "seen": [
+     {
+      "top1": "3820.00",
+      "route": "ask_shipper"
+     },
+     {
+      "top1": "3820.00",
+      "route": "ask_shipper"
+     },
+     {
+      "top1": "3820.00",
+      "route": "ask_shipper"
+     }
+    ]
+   }
+  ],
+  "gate_runs": [
+   {
+    "vote_agrees": 0,
+    "vote_disagrees": 3,
+    "vote_tie": 1,
+    "vote_share_low": 0,
+    "no_rulings": 0,
+    "not_gated": 4
+   },
+   {
+    "vote_agrees": 0,
+    "vote_disagrees": 3,
+    "vote_tie": 1,
+    "vote_share_low": 0,
+    "no_rulings": 0,
+    "not_gated": 4
+   },
+   {
+    "vote_agrees": 0,
+    "vote_disagrees": 3,
+    "vote_tie": 1,
+    "vote_share_low": 0,
+    "no_rulings": 0,
+    "not_gated": 4
+   }
+  ],
+  "no_rulings_review_runs": [
+   0,
+   0,
+   0
+  ],
+  "right_auto_runs": [
+   0,
+   0,
+   0
+  ],
+  "lost_runs": [
+   3,
+   3,
+   3
+  ],
+  "parse": {
+   "retry_limit": 2,
+   "runs": [
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    },
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    },
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    }
+   ]
+  },
+  "elapsed_s": 63.0,
+  "cost_usd": 0.0339,
+  "cost_eur": 0.0311,
+  "cost_eur_runs": [
+   0.0104,
+   0.0103,
+   0.0104
+  ]
+ }
+]

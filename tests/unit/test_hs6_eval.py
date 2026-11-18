@@ -374,3 +374,198 @@ def test_feature_008_a_replay_makes_no_model_call_and_writes_its_own_file_only(t
 def test_feature_008_the_minimum_is_for_a_replay():
     with pytest.raises(SystemExit):
         ev.main(["--override-min", "5"])
+
+
+# --------------------------------------------------------------------------- feature 014a: the coolant set
+def coolant_set_copy(tmp_path, monkeypatch):
+    """A temporary copy of the coolant set (tasks T003) that the eval reads instead of the repository's file."""
+    copy = tmp_path / "hs6_eval_coolant_set.json"
+    copy.write_bytes(ev.COOLANT_SET.read_bytes())
+    monkeypatch.setattr(ev, "COOLANT_SET", copy)
+    return copy
+
+
+def test_feature_014a_the_coolant_set_loads_as_typed_lines(tmp_path, monkeypatch):
+    copy = coolant_set_copy(tmp_path, monkeypatch)
+    data = json.loads(copy.read_text(encoding="utf-8"))
+    assert data["built_on"] == "2026-11-18" and len(data["lines"]) == 8
+    assert all(("expected_hs6" in line) != ("expected_route" in line) for line in data["lines"])   # exactly one of them
+    items = ev.coolant_items(data)
+    assert [i["reference"] for i in items] == [f"coolant-{k}" for k in range(1, 9)]
+    assert [i.get("expected_hs6") or i["expected_route"] for i in items] == [
+        "2710.19", "ask_shipper", "3403.99", "3403.99", "2710.19", "3403.99", "3403.99", "ask_shipper"]
+    assert [ev.expected_of(i) for i in items][:2] == ["2710.19", None]                     # an "ask the shipper" line
+    fifth = ev.line_text(5, items[4])                                                       # split as a typed line
+    assert (fifth.text_zh, fifth.text_en) == ("金属加工冷却液，矿物油含量大于70%",
+                                              "Metal-working coolant, petroleum mineral oil content more than 70% by weight")
+    assert ev.line_text(7, items[6]).text_en == "Kühlschmierstoff für die Metallbearbeitung, ohne Mineralöl"
+    assert (ev.line_text(8, items[7]).text_zh, ev.line_text(8, items[7]).text_en) == ("冷却液", "")
+
+
+def coolant_row(reference, top1, route, expected="2710.19", expected_route=None, top3=None, confidence=90):
+    """A coolant row as run_once writes it, scored by coolant_score."""
+    top3 = top3 if top3 is not None else ([top1] if top1 else [])
+    r = {**row(reference, top1, route, expected=expected, top3=top3, confidence=confidence),
+         "route_by_confidence": route, "gate": "no_rulings", "nearest_hits": [], "status": "checked"}
+    if expected_route:
+        r.update(expected=None, hit=False, in_top3=False)
+    item = {"reference": reference, **({"expected_route": expected_route} if expected_route else {"expected_hs6": expected})}
+    return {**r, **ev.coolant_score(r, item)}
+
+
+def test_feature_014a_a_coolant_line_is_right_on_its_code_or_on_its_route():
+    coded = {"reference": "C1", "expected_hs6": "2710.19"}
+    ask = {"reference": "C2", "expected_route": "ask_shipper"}
+    assert ev.coolant_score({"hit": True, "route": "review"}, coded) == {"expected_route": None, "right": True}
+    assert ev.coolant_score({"hit": False, "route": "ask_shipper"}, coded)["right"] is False
+    assert ev.coolant_score({"hit": False, "route": "ask_shipper"}, ask) == {"expected_route": "ask_shipper", "right": True}
+    assert ev.coolant_score({"hit": False, "route": "review"}, ask)["right"] is False      # whatever codes it shows
+
+
+def coolant_runs():
+    """Three runs of three lines: C1 and C3 expect a code, C2 asks the shipper."""
+    ask = {"expected_route": "ask_shipper"}
+    return [
+        [coolant_row("C1", "2710.19", "auto_accept"), coolant_row("C2", "3820.00", "ask_shipper", **ask),
+         coolant_row("C3", "3403.19", "review", expected="3403.99", top3=["3403.19", "3403.99"])],
+        [coolant_row("C1", "3403.99", "auto_accept"), coolant_row("C2", "3820.00", "review", **ask),
+         coolant_row("C3", "3403.99", "review", expected="3403.99")],
+        [coolant_row("C1", "2710.19", "review"), coolant_row("C2", "3820.00", "auto_accept", **ask),
+         coolant_row("C3", "3403.19", "review", expected="3403.99", top3=["3403.19"])]]
+
+
+def test_feature_014a_the_coolant_measures():
+    m = ev.coolant_measures(coolant_runs())
+    assert m["top1_runs"] == [2, 1, 1]                       # right per run
+    assert m["majority_top1"] == 2                           # C1 on its code; C2's three routes tie: run 1's route
+    assert m["top3_runs"] == [2, 1, 1]                       # lines with an expected HS-6 only
+    assert m["routes_runs"][2] == {"auto_accept": 1, "review": 2, "ask_shipper": 0}
+    assert [[w["reference"] for w in run] for run in m["wrong_auto_runs"]] == [[], ["C1"], ["C2"]]
+    assert m["wrong_auto_runs"][2][0]["top1"] == "3820.00"   # an "ask the shipper" line auto-accepted is wrong
+    assert [(line["id"], line["expected"], line["majority"], line["right"]) for line in m["lines"]] == [
+        ("C1", "2710.19", "2710.19", True), ("C2", "ask_shipper", "ask_shipper", True), ("C3", "3403.99", "3403.19", False)]
+    assert m["lines"][1]["seen"] == [{"top1": "3820.00", "route": r} for r in ("ask_shipper", "review", "auto_accept")]
+
+
+def test_feature_014a_the_coolant_report_shows_each_lines_majority_outcome():
+    entry = {"iteration": 1, "run_on": "2026-11-18", "tag": "014a-baseline", "set": "coolant", "repeat": 3, "n": 3,
+             "model": "m", "expansion": "off", **ev.coolant_measures(coolant_runs()), **ev.gate_measures(coolant_runs()),
+             "elapsed_s": 12.0, "cost_usd": 0.01, "cost_eur": 0.0093}
+    data = {"built_on": "2026-11-18", "source": "a test", "lines": [
+        {"id": "C1", "text": "冷却液 矿物油含量大于70%"}, {"id": "C2", "text": "没有矿物基础油的冷却液"}, {"id": "C3", "text": "*cool*"}]}
+    text = ev.render_coolant_report([entry], data)
+    assert "| 1 | 2026-11-18 | 014a-baseline | 3 | off | 2 / 1 / 1 of 3 | 2/3 | 2 / 1 / 1 | 1 / 1 / 1 | 0 / 1 / 1 | 3 / 3 / 3 |" in text
+    assert ("| C2 | 没有矿物基础油的冷却液 | ask_shipper | 3820.00 (ask_shipper) | 3820.00 (review) | 3820.00 (auto_accept) | "
+            "ask_shipper | yes |") in text
+    assert "| C3 | \\*cool\\* | 3403.99 |" in text and "| 3403.19 | no |" in text
+
+
+def stub_live_run(monkeypatch, runs):
+    """The live parts of a run replaced, so main() runs offline: no store, no model; run_once returns `runs` in turn."""
+    from collections import Counter
+
+    client = SimpleNamespace(raw=SimpleNamespace(_model=SimpleNamespace(temperature=None, seed=None)), max_retries=2)
+    monkeypatch.setattr(ev, "open_knowledge_base", lambda settings, usage_sink=None: SimpleNamespace(bti_vectors=None))
+    monkeypatch.setattr(ev, "get_client", lambda usage_sink=None, settings=None: client)
+    monkeypatch.setattr(ev, "price_for_run", lambda client, found: None)
+    monkeypatch.setattr(ev, "count_invalid", lambda client: Counter())
+    calls = []
+    queue = iter(runs)
+
+    def run_once(rulings, kb, client, as_of, workers, expansion=False, leave_one_out=True):
+        calls.append({"references": [r["reference"] for r in rulings], "as_of": as_of, "leave_one_out": leave_one_out})
+        return next(queue), 1.0
+
+    monkeypatch.setattr(ev, "run_once", run_once)
+    return calls
+
+
+def eval_files_in(tmp_path, monkeypatch):
+    for name in ("OUT", "HISTORY", "REPORT", "COOLANT_OUT", "COOLANT_HISTORY", "COOLANT_REPORT"):
+        monkeypatch.setattr(ev, name, tmp_path / getattr(ev, name).name)
+
+
+def test_feature_014a_a_coolant_run_writes_its_own_files_only(tmp_path, monkeypatch):
+    copy = coolant_set_copy(tmp_path, monkeypatch)
+    before = copy.read_bytes()
+    eval_files_in(tmp_path, monkeypatch)
+    items = ev.coolant_items(json.loads(before.decode("utf-8")))
+    runs = [[coolant_row(i["reference"], "2710.19", "review", expected=i.get("expected_hs6") or "2710.19",
+                         expected_route=i.get("expected_route")) for i in items] for _ in range(3)]
+    calls = stub_live_run(monkeypatch, runs)
+    assert ev.main(["--set", "coolant", "--repeat", "3", "--tag", "t1", "--expansion", "off"]) == 0
+    assert [c["leave_one_out"] for c in calls] == [False] * 3                 # no line is a ruling: no leakage guard
+    assert calls[0]["as_of"] == date(2026, 11, 18) and calls[0]["references"][0] == "coolant-1"   # on the set's date
+    assert ev.COOLANT_OUT.exists() and (tmp_path / "hs6_eval_coolant_t1_en_expansion-off.json").exists()
+    entry = json.loads(ev.COOLANT_HISTORY.read_text(encoding="utf-8"))[-1]
+    assert (entry["iteration"], entry["set"], entry["tag"], entry["n"], entry["repeat"]) == (1, "coolant", "t1", 8, 3)
+    assert entry["top1_runs"] == [2, 2, 2] and entry["majority_top1"] == 2   # the two 2710.19 lines
+    assert "cross_layer" not in entry                                         # no CN-8 results for these lines
+    assert "| coolant-8 | 冷却液 | ask_shipper |" in ev.COOLANT_REPORT.read_text(encoding="utf-8")
+    assert not any(p.exists() for p in (ev.OUT, ev.HISTORY, ev.REPORT))      # the 120-line set's files
+    assert copy.read_bytes() == before                                        # the set itself is never written
+
+
+def test_feature_014a_a_coolant_dry_run_writes_nothing(tmp_path, monkeypatch, capsys):
+    coolant_set_copy(tmp_path, monkeypatch)
+    eval_files_in(tmp_path, monkeypatch)
+    items = ev.coolant_items(json.loads(ev.COOLANT_SET.read_text(encoding="utf-8")))
+    stub_live_run(monkeypatch, [[coolant_row(i["reference"], None, "ask_shipper", expected_route="ask_shipper")
+                                 for i in items]])
+    assert ev.main(["--set", "coolant", "--dry-run"]) == 0
+    assert "dry run: nothing written" in capsys.readouterr().out
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["hs6_eval_coolant_set.json"]
+
+
+def test_feature_014a_the_120_line_set_stays_the_default_and_names_its_set(tmp_path, monkeypatch):
+    eval_files_in(tmp_path, monkeypatch)
+    rulings = [{"reference": r, "chapter": "39", "hs6": "3926.90", "cn8": "39269097", "language": "en",
+                "description": f"goods {r}"} for r in ("A", "B")]
+    test_set = tmp_path / "set.json"
+    test_set.write_text(json.dumps({"built_on": "2026-10-23", "rulings": rulings}), encoding="utf-8")
+    monkeypatch.setattr(ev, "SET", test_set)
+    cn8 = tmp_path / "cn8.json"
+    cn8.write_text(json.dumps({"summary": {"iteration": 12}, "rows": [cn8_row(r, "39269097") for r in "AB"]}),
+                   encoding="utf-8")
+    calls = stub_live_run(monkeypatch, [[{**voted(r, [], top3=["3926.90"]), "route": "review",
+                                          "route_by_confidence": "review", "raw_confidence": 90,
+                                          **ev.override_fields(voted(r, [], top3=["3926.90"]))} for r in "AB"]])
+    assert ev.main(["--tag", "t2", "--cn8", str(cn8)]) == 0
+    assert calls[0]["leave_one_out"] is True                                  # each line's own ruling kept out
+    entry = json.loads(ev.HISTORY.read_text(encoding="utf-8"))[-1]
+    assert (entry["set"], entry["majority_top1"], entry["cross_layer"]["majority"]["hs6_right_cn8_right"]) == ("cn8", 2, 2)
+    assert (tmp_path / "hs6_eval_t2_en_expansion-off.json").exists()
+    assert not any(p.exists() for p in (ev.COOLANT_OUT, ev.COOLANT_HISTORY, ev.COOLANT_REPORT))
+
+
+def test_feature_014a_run_once_scores_coolant_lines_with_no_leakage_guard(small_index, fake_embeddings, rules, fake_llm,
+                                                                          monkeypatch):
+    from agent.llm import get_client
+    from rag.loader import KnowledgeBase
+    from rag.retriever import BM25Index, HybridRetriever, InMemoryVectorSearch
+
+    coded, plain = "coolant without mineral base oil, for metal working", "冷却液"
+    fake_llm.recorded.setdefault("JudgementOut", {})[coded] = {"vague": False, "missing": [], "reason": "specific"}
+    fake_llm.recorded.setdefault("RankOut", {})[coded] = {"candidates": [
+        {"code": "3926.90", "confidence": 95, "rationale": "r", "history_only": False}]}   # an unrecorded line is vague
+    vectors = InMemoryVectorSearch([(c.id, c.text, c.metadata) for c in small_index.chunks], fake_embeddings)
+    kb = KnowledgeBase(small_index, HybridRetriever(bm25=BM25Index([(c.id, c.text) for c in small_index.chunks]),
+                                                    vectors=vectors, chunks=small_index), BTIStore([]), rules,
+                       {"embedding_model": "fake", "built_at": "2026-11-18T00:00:00"}, fake_embeddings)
+    guards = []
+    classify = ev.classify_lines
+    monkeypatch.setattr(ev, "classify_lines", lambda lines, ctx, *a, **k: guards.append(ctx.exclude_refs)
+                        or classify(lines, ctx, *a, **k))
+    items = ev.coolant_items({"lines": [{"id": "coolant-1", "text": coded, "expected_hs6": "3926.90"},
+                                        {"id": "coolant-2", "text": plain, "expected_route": "ask_shipper"}]})
+    rows, _ = ev.run_once(items, kb, get_client(), date(2026, 11, 18), workers=1, leave_one_out=False)
+    assert guards == [None, None]                                              # nothing is kept out
+    assert (rows[0]["top1"], rows[0]["route"], rows[0]["expected_route"], rows[0]["right"]) == (
+        "3926.90", "auto_accept", None, True)                                   # no ruling votes: the estimate decides
+    assert (rows[1]["flag"], rows[1]["route"], rows[1]["expected"], rows[1]["right"]) == (
+        "vague", "ask_shipper", None, True)                                     # right on its route
+
+
+def test_feature_014a_lang_is_for_the_120_line_set():
+    with pytest.raises(SystemExit):
+        ev.main(["--set", "coolant", "--lang", "zh", "--dry-run"])

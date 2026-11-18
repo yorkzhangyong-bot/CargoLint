@@ -1,0 +1,14 @@
+{
+  "built_on": "2026-11-18",
+  "source": "docs/backlog.md item 10 (user test on two metal-working coolants), the author's German line and the plain line of clarification 5",
+  "lines": [
+    {"id": "coolant-1", "text": "冷却液 矿物油含量大于70%", "expected_hs6": "2710.19", "note": ""},
+    {"id": "coolant-2", "text": "没有矿物基础油的冷却液", "expected_route": "ask_shipper", "note": "3820.00 if engine coolant, 3403.99 if metal-working"},
+    {"id": "coolant-3", "text": "金属加工用的冷却液，不含矿物油", "expected_hs6": "3403.99", "note": ""},
+    {"id": "coolant-4", "text": "coolant without mineral base oil, for metal working", "expected_hs6": "3403.99", "note": ""},
+    {"id": "coolant-5", "text": "金属加工冷却液，矿物油含量大于70% / Metal-working coolant, petroleum mineral oil content more than 70% by weight", "expected_hs6": "2710.19", "note": "CN 2710 19 91 (not scored)"},
+    {"id": "coolant-6", "text": "金属加工冷却液，不含矿物基础油 / Metal-working coolant, without mineral base oil", "expected_hs6": "3403.99", "note": ""},
+    {"id": "coolant-7", "text": "Kühlschmierstoff für die Metallbearbeitung, ohne Mineralöl", "expected_hs6": "3403.99", "note": "the author's German line, 2026-11-18"},
+    {"id": "coolant-8", "text": "冷却液", "expected_route": "ask_shipper", "note": "check line of the customs-wording switch (FR-026)"}
+  ]
+}
