@@ -428,7 +428,7 @@ and shown in block 1, and with the switch off nothing changes.
 - **FR-005**: The evaluation rows MUST keep, for each line, the chapters the vote searched, the candidate chapters with
   no indexed ruling, the similarity of each ruling the vote considered, the rewrite when the switch is on, and the
   citation notes (FR-022), so that a change in the numbers can be traced to its lines and the vote can be replayed at
-  another floor at or above the run's floor without a model call.
+  another floor without a model call (exact, and evidence for a new value, only at or above the run's floor).
 
 **Rulings of every chapter**
 

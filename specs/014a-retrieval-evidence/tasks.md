@@ -366,20 +366,21 @@ scenarios 1 to 10).
 ## Phase 8: User Story 1 - The measurement, part 2: the evaluation's new fields and options (Priority: P1)
 
 **Goal**: the after-runs can record the scoped vote, the rewrite and the notes, compare the switch off and on, and
-replay the vote at other floors, at or above the run's floor, without a model call.
+replay the vote at other floors without a model call (exact, and evidence for a new floor value, only at or above the
+run's floor).
 
 **Independent Test**: unit tests on hand-written rows and stubbed runs (contracts/eval-cli.md).
 
 - [ ] T041 [US1] Tests in tests/unit/test_hs6_eval.py (after T004, same file): rows carry `vote_chapters`,
   `not_indexed`, `vote_hits` (reference, HS-6, similarity, `eligible`, where "`eligible` ignores the floor (valid,
-  coded, not excluded), so a replay can apply any floor at or above the run's floor"), `customs_wording` and
-  `citation_notes`; `--customs-wording on|off` overrides the setting for the run and is kept in the entry and in the
-  file name (`…_wording-<on|off>.json`); `--replay FILE --floor X` rebuilds each row's vote from `vote_hits` with the
-  routing functions and no model call (the client factory raises if called): on a hand-made row a 0.44 voter drops at
-  0.45 and a line left without voters falls back to the model estimate; the replay entry has `replay: {"of": FILE,
-  "floor": X}` and the routes, auto-accepted and wrong auto-accepted lines and lines without a voter per run; a file
-  without `vote_hits` is refused; `--floor` combines with `--override-min`; entries carry `floor` (spec FR-004, FR-005,
-  FR-012)
+  coded, not excluded), so a replay can apply any floor; it is exact, and evidence for a new value, only at or above the
+  run's floor"), `customs_wording` and `citation_notes`; `--customs-wording on|off` overrides the setting for the run
+  and is kept in the entry and in the file name (`…_wording-<on|off>.json`); `--replay FILE --floor X` rebuilds each
+  row's vote from `vote_hits` with the routing functions and no model call (the client factory raises if called): on a
+  hand-made row a 0.44 voter drops at 0.45 and a line left without voters falls back to the model estimate; the replay
+  entry has `replay: {"of": FILE, "floor": X}` and the routes, auto-accepted and wrong auto-accepted lines and lines
+  without a voter per run; a file without `vote_hits` is refused; `--floor` combines with `--override-min`; entries
+  carry `floor` (spec FR-004, FR-005, FR-012)
 - [ ] T042 [US1] Implement in tests/eval/hs6_eval.py: the row fields (the vote search's hits told apart from the
   proposal's in the logged searches), `--customs-wording`, `--replay --floor`, the entry fields `customs_wording`,
   `floor` and `replay`; tests/eval/e2e_eval.py's imports keep working; make T041 pass (spec FR-004, FR-005, FR-012)

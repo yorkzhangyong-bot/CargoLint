@@ -120,11 +120,12 @@ product reads the 12 nearest rulings per query vector, each ruling once at its b
 
 **Decision**: relevance is the vote's eligibility within the candidates' chapters (clarification 2); "No relevant
 rulings found" is shown exactly when no ruling votes. Tuning (clarification 5): the evaluation rows keep the vote's hits
-with their similarities (R-11), and a replay recomputes the vote at another floor at or above the run's floor, with no
-model call. For such a floor the replay is exact: the product would read the same 12 nearest per query vector and drop
-more of them; a lower floor could need rulings beyond those searched, so it is not replayed. A value other than 0.40 is
-adopted only on the after-runs' evidence, with the author's approval, and recorded in the evaluation report and the pull
-request; at any value, exactly the floor counts, and the test of the boundary uses the constant.
+with their similarities (R-11), and a replay recomputes the vote at another floor, with no model call. For a floor at or
+above the run's floor the replay is exact: the product would read the same 12 nearest per query vector and drop more of
+them; a lower floor could need rulings beyond those the run searched, so a replay there is not exact and is not evidence
+for a new value. A value other than 0.40 is adopted only on the after-runs' evidence, with the author's approval, and
+recorded in the evaluation report and the pull request; at any value, exactly the floor counts, and the test of the
+boundary uses the constant.
 
 **Alternatives considered**: a separate message floor (clarification 2 rejects it); tuning on ruling texts (they score
 about 0.82 against their neighbours, packing-list lines 0.51–0.73, so such a floor would switch the gate off).

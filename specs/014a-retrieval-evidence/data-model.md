@@ -141,7 +141,7 @@ New row fields (both sets; FR-005):
 |---|---|---|
 | `vote_chapters` | `list[str]` | `ruling_scope.chapters` |
 | `not_indexed` | `list[str]` | `ruling_scope.not_indexed` |
-| `vote_hits` | list of `{reference, hs6, similarity, eligible}` | the scoped search's rulings, each once at its best similarity, nearest first; `eligible` ignores the floor (valid, coded, not excluded), so a replay can apply any floor at or above the run's floor (see the replay paragraph below) |
+| `vote_hits` | list of `{reference, hs6, similarity, eligible}` | the scoped search's rulings, each once at its best similarity, nearest first; `eligible` ignores the floor (valid, coded, not excluded), so a replay can apply any floor; it is exact, and evidence for a new value, only at or above the run's floor (see the replay paragraph below) |
 | `customs_wording` | string or `null` | the rewrite searched with |
 | `citation_notes` | list | per candidate code, its notes |
 | `expected_route` | string or `null` | the coolant set's "ask the shipper" lines |
