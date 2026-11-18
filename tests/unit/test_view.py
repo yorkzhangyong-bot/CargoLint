@@ -1026,3 +1026,41 @@ def test_clerk_changed_at_the_cn8_and_the_taric10(kb):  # FR-013: another code t
     assert changed(t) == "false"                                     # the suggested one
     store.confirm_taric10(t, "7318155810")
     assert changed(t) == "true"                                      # another subdivision
+
+
+# --------------------------------------------------------------------------- feature 014a: block 3's caption
+from agent.schemas import Hs6Vote, Line, LineVersion, RulingScope  # noqa: E402
+
+FLOOR_TEXT = "No ruling was within the similarity floor."
+COOLANT_VOTE = Hs6Vote(majority="3403.99", majority_share=0.6, model_is_majority=True, agrees=True,
+                       competing=[("3403.99", ["DE", "AT", "BE"]), ("3403.19", ["FR", "LU"])])
+
+
+def scoped_line(chapters=None, not_indexed=(), vote=None) -> Line:
+    scope = RulingScope(chapters=list(chapters), not_indexed=list(not_indexed)) if chapters is not None else None
+    return Line(line_no=1, versions=[LineVersion(text_en="coolant", hs6_vote=vote, ruling_scope=scope)])
+
+
+@pytest.mark.parametrize("line, chosen, caption", [
+    (scoped_line(["34"], ["34"]), "3403.99", "No rulings indexed for chapter 34."),                          # (a)
+    (scoped_line(["27", "34", "38"], ["27", "34", "38"]), "3403.99", "No rulings indexed for chapters 27, 34 and 38."),
+    (scoped_line(["27", "34", "38"], ["27", "34", "38"]), None, "No rulings indexed for chapters 27, 34 and 38."),
+    (scoped_line(["27", "34", "38"]), "3403.99", "No relevant rulings found."),                              # (b)
+    (scoped_line(["27", "34", "38"], ["38"]), "3403.99", "No relevant rulings found. No rulings indexed for chapter 38."),
+    (scoped_line(["27", "34", "38"], ["27", "38"]), "8419.89",
+     "No relevant rulings found. No rulings indexed for chapters 27 and 38."),
+    (scoped_line(["27", "34", "38"], ["38"], COOLANT_VOTE), "3820.00", "No rulings indexed for chapter 38."),   # (c)
+    (scoped_line(["27", "34", "38"], ["38"], COOLANT_VOTE), "3824.99", "No rulings indexed for chapter 38."),   # typed
+    (scoped_line(["27", "34", "38"], ["38"], COOLANT_VOTE), "3403.99", "3 of 5 agree with 3403.99"),            # (d)
+    (scoped_line(["27", "34", "38"], ["38"], COOLANT_VOTE), "2710.19", "0 of 5 agree with 2710.19"),   # searched, indexed
+    (scoped_line(["27", "34", "38"], ["38"], COOLANT_VOTE), "8419.89", None),                    # (e) typed, not searched
+    (scoped_line(["27", "34", "38"], ["38"], COOLANT_VOTE), "", None),                           # no code chosen yet
+    (scoped_line(), "3403.99", None),                                                            # (f) no scope, no vote
+])
+def test_feature_014a_the_rulings_caption(line, chosen, caption):
+    assert view.rulings_caption(line, chosen) == caption
+    assert view.rulings_caption(line, chosen) != FLOOR_TEXT
+
+
+def test_feature_014a_a_vote_stored_before_the_scope_keeps_its_agreement_caption():
+    assert view.rulings_caption(scoped_line(vote=COOLANT_VOTE), "3403.99") == "3 of 5 agree with 3403.99"

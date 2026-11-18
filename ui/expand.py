@@ -246,13 +246,12 @@ def _block2(store: Any, line: Any) -> str | None:
 def _block3(store: Any, line: Any, code: str | None, kind: str | None) -> None:
     st.markdown("**3 Similar rulings (5 nearest, EBTI)**")
     vote = line.current.hs6_vote
-    if vote is None or not vote.competing:
-        st.caption("No ruling was within the similarity floor.")
-    else:
+    if vote is not None:
         for same, c, countries in view.vote_lines(vote, code):
             st.markdown(f"{':green[✓]' if same else ':red[✗]'} {c} · {md_escape(countries)}")
-        if code:
-            st.caption(view.agree_text(vote, code))
+    caption = view.rulings_caption(line, code)   # feature 014a: why no ruling votes, or how many agree with the code
+    if caption:
+        st.caption(caption)
     if kind == "a_hs6":
         _lines(view.explain_a(store, line, kind)[1])      # why the line waits for the clerk
     for i, c in enumerate(line.current.candidates[:3]):

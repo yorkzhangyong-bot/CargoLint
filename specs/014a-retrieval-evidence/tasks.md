@@ -219,29 +219,29 @@ boundary (User Story 4 scenarios 1 to 6).
 
 ### Tests for User Story 4
 
-- [ ] T020 [P] [US4] Tests in tests/unit/test_view.py for `rulings_caption(line, chosen)`, one per row of
+- [X] T020 [P] [US4] Tests in tests/unit/test_view.py for `rulings_caption(line, chosen)`, one per row of
   contracts/ui.md §3: (a) "No rulings indexed for chapter 34." and "No rulings indexed for chapters 27, 34 and 38.";
   (b) "No relevant rulings found." and "No relevant rulings found. No rulings indexed for chapter 38."; (c) chosen
   3820.00 with chapter 38 in `not_indexed` and voters from chapter 34 → "No rulings indexed for chapter 38.", and the
   same for a typed 3824.99, whose chapter 38 was searched; (d)
   "3 of 5 agree with 3403.99"; (e) a typed code outside `ruling_scope.chapters` → `None`; (f) no `ruling_scope` →
   `None`; "No ruling was within the similarity floor." is never returned (spec FR-018)
-- [ ] T021 [P] [US4] Tests in tests/unit/test_ruling_scope.py for the relevance boundary (constitution I): with
+- [X] T021 [P] [US4] Tests in tests/unit/test_ruling_scope.py for the relevance boundary (constitution I): with
   `hs6_voters`, a ruling of a candidate's chapter at exactly `HS6_VOTE_MIN_SIMILARITY` votes; at
   `HS6_VOTE_MIN_SIMILARITY - 1e-4` it does not, and as the only hit it leaves no vote, so a line version with a
   `ruling_scope` reads "No relevant rulings found."; with no vote, `route_line` and `hs6_gate` decide by the model
   estimate against the threshold as before (exactly the threshold passes); the tests read the constant, never the
   literal 0.40 (spec FR-015, FR-019)
-- [ ] T022 [P] [US4] AppTest tests in tests/ui/test_main_page.py with `tests/ui/harness.make_kb`: an open line with no
+- [X] T022 [P] [US4] AppTest tests in tests/ui/test_main_page.py with `tests/ui/harness.make_kb`: an open line with no
   vote and unindexed candidate chapters shows caption (a) in block 3; a line with voters shows the codes and "n of m
   agree with <code>"; "No ruling was within the similarity floor." appears nowhere; no new element appears in the
   block (spec FR-017, FR-018)
 
 ### Implementation for User Story 4
 
-- [ ] T023 [US4] ui/view.py: `rulings_caption(line, chosen)` per data-model §10 and contracts/ui.md §3 (chapter lists
+- [X] T023 [US4] ui/view.py: `rulings_caption(line, chosen)` per data-model §10 and contracts/ui.md §3 (chapter lists
   ascending, joined with ", " and a final " and "); `agree_text` stays for case (d); make T020 pass (spec FR-018)
-- [ ] T024 [US4] ui/expand.py `_block3`: show `view.rulings_caption(...)` with `st.caption` where "No ruling was
+- [X] T024 [US4] ui/expand.py `_block3`: show `view.rulings_caption(...)` with `st.caption` where "No ruling was
   within the similarity floor." and the agreement caption were; the list of codes and countries and the explanation
   line unchanged; make T021 and T022 pass (spec FR-017 to FR-019)
 

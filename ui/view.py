@@ -765,6 +765,34 @@ def agree_text(vote: Any, code: str) -> str:
     return f"{n} of {m} agree with {code}"
 
 
+def _not_indexed(chapters: list[str]) -> str:
+    """Feature 014a: "No rulings indexed for chapter 38." or "... for chapters 27, 34 and 38.", ascending."""
+    return f"No rulings indexed for chapter{'s' if len(chapters) > 1 else ''} {_and(sorted(chapters))}."
+
+
+def rulings_caption(line: Any, chosen: str | None) -> str | None:
+    """Block 3's caption (feature 014a, contracts/ui.md §3), read from the line version's vote and the chapters its vote
+    searched: with no ruling voting, that no candidate's chapter holds a ruling (a) or that none was relevant (b); with a
+    vote, that the chosen code's chapter holds no ruling (c), or how many agree with it (d); None for a code typed
+    outside the chapters searched (e), before a code is chosen, and without a scope and a vote (f)."""
+    v = line.current
+    vote, scope = v.hs6_vote, v.ruling_scope
+    if vote is None:
+        if scope is None:
+            return None
+        if len(scope.not_indexed) == len(scope.chapters):
+            return _not_indexed(scope.not_indexed)
+        return "No relevant rulings found." + (f" {_not_indexed(scope.not_indexed)}" if scope.not_indexed else "")
+    if not chosen:
+        return None
+    if scope is not None:                    # a vote stored before feature 014a has no scope: as before
+        if chosen[:2] in scope.not_indexed:
+            return _not_indexed([chosen[:2]])
+        if chosen[:2] not in scope.chapters:
+            return None
+    return agree_text(vote, chosen)
+
+
 def cn8_lines(store: Any, line: Any, code: str) -> list[tuple[str, str]]:
     """Block 4 before "Accept": the CN-8 lines under the chosen HS-6, spaced, with the last two levels of their labels."""
     return [(spaced(cn8), " › ".join(_path(path)[-2:])) for cn8, path in _cn8_options(store, line, code)]

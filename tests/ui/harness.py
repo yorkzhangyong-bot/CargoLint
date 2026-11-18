@@ -18,7 +18,7 @@ from typing import Any
 from langchain_core.messages import AIMessage
 
 from agent.schemas import (Candidate, Classification, Cn8Choice, CreatedBy, Decision, DecisionRoute, Hs6Vote, LineStatus,
-                           LineVersion, ParsedLine, Precedent, TaricOutcome, TaricRule, WrittenBy)
+                           LineVersion, ParsedLine, Precedent, RulingScope, TaricOutcome, TaricRule, WrittenBy)
 from agent.store import LineStore
 from tests.fakes import FakeRawClient, ScriptedChatModel, ai_tool_call
 
@@ -143,12 +143,13 @@ def fake_client_caller() -> Any:
 
 
 def _classify(store: LineStore, n: int, cands: list[tuple[str, int]], no_valid: bool = False,
-              rationale: str = "matches the subheading", hs6_vote: Hs6Vote | None = None) -> None:
+              rationale: str = "matches the subheading", hs6_vote: Hs6Vote | None = None,
+              ruling_scope: RulingScope | None = None) -> None:
     index = store.index
     candidates = [Candidate(code=code, subheading_text=index.subheading_text(code), confidence=conf,
                             rationale=f"{rationale} {code}", history_only=(i == 2)) for i, (code, conf) in enumerate(cands)]
     store.update_classification(n, Classification(line_no=n, candidates=candidates, no_valid_candidate=no_valid,
-                                                  status=LineStatus.checked, hs6_vote=hs6_vote))
+                                                  status=LineStatus.checked, hs6_vote=hs6_vote, ruling_scope=ruling_scope))
     by_code = {}
     if cands:
         by_code[cands[0][0]] = [Precedent(reference=f"DE-{cands[0][0].replace('.', '')}-01", member_state="DE",
@@ -227,7 +228,8 @@ def build_state(store: LineStore, kb: Any, state: str) -> int:
         return n
     if state == "review":
         n = _clear(store, kb, "LED desk lamp, USB powered", "LED台灯 USB供电")
-        _classify(store, n, [("9405.21", 58), ("8543.70", 20), ("9403.60", 10)])
+        _classify(store, n, [("9405.21", 58), ("8543.70", 20), ("9403.60", 10)],   # feature 014a: no ruling of the
+                  ruling_scope=RulingScope(chapters=["85", "94"], not_indexed=["85", "94"]))   # candidates' chapters
         return n
     if state == "ready_to_accept":
         n = _clear(store, kb, "Spare parts")
@@ -279,7 +281,8 @@ def build_state(store: LineStore, kb: Any, state: str) -> int:
         n = _clear(store, kb, "LED desk lamp, USB powered", "LED台灯 USB供电")   # store with the switch on
         vote = Hs6Vote(majority="9405.21", majority_share=0.8, candidate=2,
                        competing=[("9405.21", ["IE", "DE", "DE", "FR"]), ("8543.70", ["NL"])])
-        _classify(store, n, [("8543.70", 90), ("9405.21", 60), ("9403.60", 20)], hs6_vote=vote)
+        _classify(store, n, [("8543.70", 90), ("9405.21", 60), ("9403.60", 20)], hs6_vote=vote,
+                  ruling_scope=RulingScope(chapters=["85", "94"], not_indexed=[]))
         if state == "hs6_override_cn8":   # the CN-8 left to confirm: "Pick: CN-8"
             _cn8(store, n, "9405.21", "94052140", conf=70, written=False)
             return n

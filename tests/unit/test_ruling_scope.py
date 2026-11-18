@@ -37,3 +37,37 @@ def test_the_scope_is_the_candidates_chapters_sorted_with_those_not_indexed():
     assert ruling_scope(["6109.10", "6109.90", "6110.20"], frozenset({"61"})) == RulingScope(chapters=["61"], not_indexed=[])
     assert ruling_scope(["3403.99"], frozenset()) == RulingScope(chapters=["34"], not_indexed=["34"])
     assert ruling_scope([], frozenset({"34"})) is None                                      # no candidate: no vote
+
+
+# --------------------------------------------------------------------------- User Story 4: relevant means eligible to vote
+def test_a_ruling_at_exactly_the_floor_is_relevant_and_one_just_below_is_not():
+    from datetime import date
+    from types import SimpleNamespace
+
+    from agent.config import HS6_VOTE_MIN_SIMILARITY
+    from agent.routing import hs6_ruling_vote
+    from agent.schemas import Line, LineVersion
+    from tools.classify_hs6 import hs6_voters
+    from ui import view
+
+    store = BTIStore([ruling("DE-1", "3403.99")])
+    index = SimpleNamespace(get=lambda code: object() if code == "3403.99" else None)
+    on_the_day = date(2026, 11, 18)
+    assert hs6_voters([[("bti:DE-1", HS6_VOTE_MIN_SIMILARITY)]], store, index, on_the_day) == [("3403.99", "DE")]
+    below = hs6_voters([[("bti:DE-1", HS6_VOTE_MIN_SIMILARITY - 1e-4)]], store, index, on_the_day)
+    assert below == [] and hs6_ruling_vote(below, ["3403.99"]) is None                    # as the only hit: no vote
+    line = Line(line_no=1, versions=[LineVersion(text_en="coolant", hs6_vote=None,
+                                                 ruling_scope=RulingScope(chapters=["34"], not_indexed=[]))])
+    assert view.rulings_caption(line, "3403.99") == "No relevant rulings found."
+
+
+@pytest.mark.parametrize("below, passes", [(0, True), (1, False)])            # exactly the threshold, and one below
+def test_with_no_relevant_ruling_the_estimate_decides_against_the_threshold_as_before(below, passes):
+    from agent.config import ASK_FLOOR, DEFAULT_THRESHOLD
+    from agent.routing import hs6_gate, route_line
+    from agent.schemas import FlagKind, Hs6Gate, LineStatus, Route
+
+    estimate = DEFAULT_THRESHOLD - below
+    assert hs6_gate(estimate, DEFAULT_THRESHOLD, None) == (passes, Hs6Gate.no_rulings)
+    route, _ = route_line(FlagKind.ok, estimate, LineStatus.checked, False, DEFAULT_THRESHOLD, ASK_FLOOR, hs6_vote=None)
+    assert route == (Route.auto_accept if passes else Route.review)

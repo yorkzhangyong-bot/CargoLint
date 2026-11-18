@@ -486,7 +486,9 @@ def test_an_hs6_to_choose(kb, recorder):
     assert "Why: matches the subheading 9405.21" in page
     assert "Confidence is a model estimate, not a calibrated probability." in page
     assert [p.proto.value for p in at.get("progress")] == [r.confidence for r in rows]   # a bar beside each candidate
-    assert "No ruling was within the similarity floor." in page      # block 3: no ruling voted
+    assert "No rulings indexed for chapters 85 and 94." in page      # block 3: no ruling voted, none of 85 or 94 stored
+    assert "No ruling was within the similarity floor." not in page  # (feature 014a: the caption says why)
+    assert sum(t.startswith(("No rulings indexed", "No relevant rulings")) for t in page) == 1   # one caption, no new one
     assert view.explain_a(store, line, "a_hs6")[1] in page           # why the clerk decides
     rulings = [plain(p.proto.popover.label) for p in at.get("popover") if p.proto.popover.label.startswith("BTI")]
     assert rulings == ["BTI DE DE-940521-01 · 9405.21"]
@@ -1154,6 +1156,15 @@ def test_an_overridden_line_shows_the_chosen_candidate_and_its_audit_entry(kb, r
     assert decided in texts(opened(store, kb, n))                                  # the open line says who decided
     assert [(r.previous, r.new, r.note) for r in store.shipment.audit if r.line_no == n and r.change == ChangeKind.code_decided] \
         == [("8543.70", "9405.21", "rulings overrode the model: 4 of 5 agree on 9405.21; candidate 2 chosen")]
+
+
+def test_feature_014a_block3_lists_the_voters_and_how_many_agree(kb, recorder):
+    store, nos = h.store_with("hs6_override", kb=kb, hs6_override_min=4)
+    n = nos["hs6_override"]
+    page = texts(opened(store, kb, n))
+    assert any(t.endswith("9405.21 · IE, DE, DE, FR") for t in page) and any(t.endswith("8543.70 · NL") for t in page)
+    assert [t for t in page if "agree with" in t] == ["4 of 5 agree with 9405.21"]   # the caption as before, once
+    assert not any(t.startswith(("No rulings indexed", "No relevant rulings", "No ruling was within")) for t in page)
 
 
 def test_an_overridden_line_whose_cn8_is_to_pick_says_the_rulings_overrode_the_model(kb, recorder):
