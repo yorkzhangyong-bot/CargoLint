@@ -100,7 +100,7 @@ import zipfile  # noqa: E402
 from types import SimpleNamespace  # noqa: E402
 
 import rag.loader as loader_mod  # noqa: E402
-from agent.config import ROOT  # noqa: E402
+from agent.config import ROOT, get_settings  # noqa: E402
 
 COLUMNS = list(_row().keys())
 
@@ -162,6 +162,46 @@ class TestBuildBti:
         assert extract == "2026-11-12" and len(store) == 2
         loader_mod.SUBSET_META.unlink()                                             # a subset cut before feature 013
         assert loader_mod.build_bti(False, {"84", "96"}, store_dir=loader_paths.store)[1] is None
+
+    def test_a_subset_cut_for_other_chapters_is_never_reused(self, loader_paths, monkeypatch):
+        """Review finding 3: a subset cut for other chapters would be labelled with the requested ones."""
+        loader_mod.build_bti(False, {"84", "96"}, store_dir=loader_paths.store)
+        monkeypatch.setattr(loader_mod, "download", _forbidden)                     # never cut again silently
+        with pytest.raises(loader_mod.SubsetMismatch, match=r"chapters 84,96, not all chapters; rerun with --force"):
+            loader_mod.build_bti(False, None, store_dir=loader_paths.store)         # the all-chapter default
+        with pytest.raises(loader_mod.SubsetMismatch, match="not chapters 84;"):
+            loader_mod.build_bti(False, {"84"}, store_dir=loader_paths.store)
+        assert len(loader_mod.build_bti(False, {"96", "84"}, store_dir=loader_paths.store)[0]) == 2   # the same: reused
+
+    def test_the_loader_stops_on_such_a_subset_and_labels_a_reused_one_from_its_sidecar(self, loader_paths, monkeypatch,
+                                                                                         capsys):
+        repo_docs = ROOT / "store" / "bti_docs.jsonl"
+        before = repo_docs.stat() if repo_docs.exists() else None
+        loader_mod.build_bti(False, {"84", "96"}, store_dir=loader_paths.store)
+        real_build_bti = loader_mod.build_bti           # main() passes no store_dir, and the default is bound to the
+        monkeypatch.setattr(loader_mod, "build_bti",    # repository's store/: the temporary store instead
+                            lambda demo, chapters, force=False: real_build_bti(demo, chapters, force=force,
+                                                                               store_dir=loader_paths.store))
+        monkeypatch.setattr(loader_mod, "download", _forbidden)
+        monkeypatch.setattr(loader_mod, "build_nomenclature", lambda force=False: SimpleNamespace(chunks=[]))
+        monkeypatch.setattr(loader_mod, "build_rules", lambda force=False: None)
+        monkeypatch.setattr(loader_mod, "build_indexes", lambda *a, **k: {})
+        monkeypatch.setattr(loader_mod, "write_sources_md", lambda *a, **k: None)
+        monkeypatch.delenv("CARGOLINT_EBTI_CHAPTERS", raising=False)
+        get_settings.cache_clear()
+        try:
+            assert loader_mod.main(["--no-embed"]) == 2                              # the default asks for all chapters
+            err = capsys.readouterr().err
+            assert "Knowledge base not built" in err and "rerun with --force" in err
+            assert not (loader_mod.STORE_DIR / "index_meta.json").exists()
+            assert loader_mod.main(["--no-embed", "--bti-chapters", "84,96"]) == 0
+        finally:
+            get_settings.cache_clear()
+        meta = json.loads((loader_mod.STORE_DIR / "index_meta.json").read_text(encoding="utf-8"))
+        sidecar = json.loads(loader_mod.SUBSET_META.read_text(encoding="utf-8"))
+        assert meta["ebti_source_version"] == sidecar["source_version"] == "full extract of 2026-11-12, chapters 84,96"
+        after = repo_docs.stat() if repo_docs.exists() else None
+        assert (after and (after.st_size, after.st_mtime_ns)) == (before and (before.st_size, before.st_mtime_ns))
 
     def test_the_demo_path_has_no_extract_date(self, loader_paths, monkeypatch):
         monkeypatch.setattr(loader_mod, "download", _forbidden)

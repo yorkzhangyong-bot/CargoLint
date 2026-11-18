@@ -159,11 +159,21 @@ def build_rules(force: bool = False) -> RuleSet:
     return rs
 
 
+def chapters_text(chapters: set[str] | frozenset[str] | None) -> str:
+    """The chapters as a source version names them: "all chapters" for None (feature 014a), else "chapters 84,96"."""
+    spec = bti_mod.chapters_spec(chapters)
+    return spec if chapters is None else f"chapters {spec}"
+
+
 def ebti_source_version(extract_date: str, chapters: set[str] | frozenset[str] | None = None) -> str:
     """The rulings' source version as the release metadata and index_meta record it (feature 013, data-model §2):
     "all chapters" for None, every chapter (feature 014a), else the chapters."""
-    spec = bti_mod.chapters_spec(chapters)
-    return f"full extract of {extract_date}, {spec if chapters is None else 'chapters ' + spec}"
+    return f"full extract of {extract_date}, {chapters_text(chapters)}"
+
+
+class SubsetMismatch(RuntimeError):
+    """data/bti_subset.jsonl was cut for other chapters than a build asks for: it is never reused under the requested
+    chapters' name, nor cut again without --force (review finding 3)."""
 
 
 def _write_subset_meta(extract_date: str | None, chapters: set[str] | frozenset[str] | None) -> None:
@@ -176,11 +186,14 @@ def _write_subset_meta(extract_date: str | None, chapters: set[str] | frozenset[
                            encoding="utf-8", newline="\n")
 
 
-def _read_subset_meta() -> str | None:
+def _read_subset_meta() -> dict[str, Any]:
+    """The sidecar of data/bti_subset.jsonl; {} when there is none or it cannot be read (a subset cut before feature
+    013)."""
     try:
-        return json.loads(SUBSET_META.read_text(encoding="utf-8")).get("extract_date") or None
-    except (OSError, ValueError, AttributeError):
-        return None
+        meta = json.loads(SUBSET_META.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return meta if isinstance(meta, dict) else {}
 
 
 def build_bti(demo: bool, chapters: set[str] | frozenset[str] | None, force: bool = False,
@@ -206,7 +219,12 @@ def build_bti(demo: bool, chapters: set[str] | frozenset[str] | None, force: boo
             log(f"bti: {len(records)} valid rulings for {'all chapters' if chapters is None else f'chapters {sorted(chapters)}'} "
                 f"from the extract of {extract_date or 'an unknown date'} → {BTI_SUBSET.name}")
         else:
-            extract_date = _read_subset_meta()
+            sidecar = _read_subset_meta()
+            extract_date = sidecar.get("extract_date") or None
+            cut_for = sidecar.get("source_version")
+            if extract_date and cut_for and cut_for != ebti_source_version(extract_date, chapters):
+                raise SubsetMismatch(f"{BTI_SUBSET.name} holds the {cut_for}, not {chapters_text(chapters)}; rerun "
+                                     "with --force to cut it again")
         store = bti_mod.BTIStore.from_jsonl(BTI_SUBSET)
     store_dir = Path(store_dir)
     store_dir.mkdir(parents=True, exist_ok=True)
@@ -524,10 +542,15 @@ def main(argv: list[str] | None = None) -> int:
         index = NomenclatureIndex([c for c in index.chunks if c.metadata.get("chapter") in keep])
         log(f"nomenclature restricted to chapters {sorted(keep)}: {len(index)} chunks")
     rules = build_rules(force=args.force)
-    bti_store, extract = build_bti(args.demo, chapters, force=args.force)
+    try:
+        bti_store, extract = build_bti(args.demo, chapters, force=args.force)
+    except SubsetMismatch as exc:
+        print(f"Knowledge base not built: {exc}", file=sys.stderr)
+        return 2
     meta = build_indexes(index, bti_store, settings, force=args.force, embed=not args.no_embed)
-    if extract:                                       # feature 013 (FR-018): the rulings' snapshot date and source version
-        meta.update(ebti_snapshot_date=extract, ebti_source_version=ebti_source_version(extract, chapters))
+    if extract:                                       # feature 013 (FR-018): the rulings' snapshot date and source version,
+        source = _read_subset_meta().get("source_version") or ebti_source_version(extract, chapters)   # as the subset's
+        meta.update(ebti_snapshot_date=extract, ebti_source_version=source)                             # sidecar records
         write_index_meta(STORE_DIR, meta)
     write_sources_md(meta, rules, args.demo)
     log("done")
