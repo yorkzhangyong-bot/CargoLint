@@ -180,6 +180,11 @@ class BTIStore:
         return out
 
 
+def indexed_chapters(records: Iterable[dict]) -> frozenset[str]:
+    """Feature 014a (spec FR-016): the chapters that hold at least one stored ruling."""
+    return frozenset(r["chapter"] for r in records if r.get("chapter"))
+
+
 # --------------------------------------------------------------------------- extract processing
 def iter_extract(zip_path: Path | str, chapters: set[str] | None, today: date) -> Iterator[dict]:
     with zipfile.ZipFile(zip_path) as zf:

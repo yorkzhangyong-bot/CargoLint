@@ -419,6 +419,8 @@ class KnowledgeBase:
         self.index = index
         self.retriever = retriever
         self.bti = bti
+        # feature 014a (FR-016): the chapters that hold a stored ruling, counted once when the knowledge base opens
+        self.indexed_chapters = bti_mod.indexed_chapters(bti.records) if bti is not None else frozenset()
         self.rules = rules
         self.meta = meta
         self.embeddings = embeddings

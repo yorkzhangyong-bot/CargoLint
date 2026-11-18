@@ -223,12 +223,14 @@ class LineStore:
             v.error_reason = cls.error_reason or "classification failed"
             v.candidates = []
             v.hs6_vote = None
+            v.ruling_scope = None
             self._recompute(line, Actor.system, ChangeKind.line_failed)
             return
         v.candidates = list(cls.candidates)
         v.no_valid_candidate = cls.no_valid_candidate
         v.retrieval_trace = cls.retrieval_trace
         v.hs6_vote = cls.hs6_vote
+        v.ruling_scope = cls.ruling_scope              # feature 014a: the chapters the vote searched, for block 3
         existing = {s.id for s in v.sources}
         v.sources.extend(s for s in cls.sources if s.id not in existing)
         v.status = LineStatus.checked

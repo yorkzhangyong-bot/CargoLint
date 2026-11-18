@@ -282,6 +282,14 @@ class Hs6Vote(BaseModel):
     candidate: int | None = None                                      # the majority is the model's candidate 2 or 3
 
 
+class RulingScope(BaseModel):
+    """Feature 014a (data-model §4): the chapters the HS-6 vote searched, those of the model's validated candidates, and
+    those of them that held no ruling in the store when the HS-6 step ran."""
+
+    chapters: list[str] = Field(default_factory=list)      # two digits each, sorted, one to three
+    not_indexed: list[str] = Field(default_factory=list)   # the chapters above with no ruling in the store
+
+
 class VoteCode(BaseModel):
     """Feature 006: one CN-8 among the nearest eligible rulings and the issuing country of each ruling at it."""
 
@@ -357,6 +365,8 @@ class LineVersion(BaseModel):
     taric: TaricOutcome | None = None         # feature 004: the TARIC step's result for the shipment's origin
     hs6_vote: Hs6Vote | None = None           # feature 006: the nearest rulings' vote on the HS-6; None when none voted
     hs6_gate: Hs6Gate | None = None           # feature 006: the rule that decided the HS-6 auto-accept, set with the route
+    ruling_scope: RulingScope | None = None   # feature 014a: the chapters the vote searched; None without a valid
+                                              # candidate (no vote) or when the step failed
 
     @property
     def top_confidence(self) -> int | None:
@@ -548,6 +558,7 @@ class Classification(BaseModel):
     status: LineStatus = LineStatus.checked
     error_reason: str | None = None
     hs6_vote: Hs6Vote | None = None           # feature 006: the nearest rulings' vote on the top HS-6
+    ruling_scope: RulingScope | None = None   # feature 014a: the chapters the vote searched, and those not indexed
 
 
 class LookupPrecedentOutput(BaseModel):

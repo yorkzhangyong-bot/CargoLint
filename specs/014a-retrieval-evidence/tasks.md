@@ -171,13 +171,13 @@ Story 3 scenarios 1 to 5).
 
 ### Tests for User Story 3
 
-- [ ] T014 [P] [US3] Tests in a new tests/unit/test_ruling_scope.py: `rag.bti.indexed_chapters(records)` is the set
+- [X] T014 [P] [US3] Tests in a new tests/unit/test_ruling_scope.py: `rag.bti.indexed_chapters(records)` is the set
   of the records' `chapter`; `KnowledgeBase.indexed_chapters` is computed from its `BTIStore` at construction ("the
   `chapter` of every stored ruling (`BTIStore.records`), computed once at construction"); `ruling_scope(codes,
   indexed)` gives `chapters` "the chapters of the model's validated HS-6 candidates, two digits each, sorted, one to
   three" and `not_indexed` "those of `chapters` that are not in `KnowledgeBase.indexed_chapters`", and `None` for no
   candidate (spec FR-014, FR-016, FR-017)
-- [ ] T015 [P] [US3] Tests in a new tests/integration/test_hs6_vote_scope.py, `classify_lines` with a recorded
+- [X] T015 [P] [US3] Tests in a new tests/integration/test_hs6_vote_scope.py, `classify_lines` with a recorded
   ranking, `InMemoryVectorSearch` rulings in chapters 27, 34, 38 and 84 (with `chapter` metadata) and `FakeEmbeddings`
   wrapped to count its calls: with candidates 2710.19, 3403.99, 3820.00 and machinery rulings nearest overall, only
   rulings of chapters 27, 34 and 38 vote and none of chapter 84 is in `hs6_vote.competing`; with candidates 6109.10,
@@ -192,17 +192,17 @@ Story 3 scenarios 1 to 5).
 
 ### Implementation for User Story 3
 
-- [ ] T016 [US3] agent/schemas.py: `RulingScope(chapters: list[str], not_indexed: list[str])` (data-model §4);
+- [X] T016 [US3] agent/schemas.py: `RulingScope(chapters: list[str], not_indexed: list[str])` (data-model §4);
   `Classification.ruling_scope: RulingScope | None = None` and `LineVersion.ruling_scope: RulingScope | None = None`
   ("`None` when the line has no valid candidate (no vote) or the step failed") (spec FR-014, FR-017)
-- [ ] T017 [US3] rag/bti.py `indexed_chapters(records)` and rag/loader.py `KnowledgeBase.indexed_chapters` computed
+- [X] T017 [US3] rag/bti.py `indexed_chapters(records)` and rag/loader.py `KnowledgeBase.indexed_chapters` computed
   in `__init__` from `bti.records`; make T014's knowledge-base tests pass (spec FR-016)
-- [ ] T018 [US3] tools/classify_hs6.py: `ruling_scope(...)`; after the ranking and the code validation, when there is
+- [X] T018 [US3] tools/classify_hs6.py: `ruling_scope(...)`; after the ranking and the code validation, when there is
   a candidate, `chapters = sorted({c.code[:2] for c in candidates})` and one more `search_by_vector(vec, ctx.k * 2,
   chapters)` per query vector, whose hits go to the unchanged `hs6_voters`; the proposal keeps its unfiltered
   `hits`; `RulingScope(chapters, not_indexed)` from `kb.indexed_chapters` on the `Classification`; `RANK_SYSTEM` and
   the ranking's user message unchanged; make T014 and T015 pass (spec FR-011 to FR-014, FR-017)
-- [ ] T019 [US3] agent/store.py `update_classification`: copy `ruling_scope` to the line version as `hs6_vote` is
+- [X] T019 [US3] agent/store.py `update_classification`: copy `ruling_scope` to the line version as `hs6_vote` is
   copied, and clear it when the step failed; a test in tests/unit/test_store.py (spec FR-017)
 
 **Checkpoint**: a coolant's vote can no longer be cast by cooling machinery.

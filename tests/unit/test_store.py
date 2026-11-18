@@ -177,6 +177,17 @@ class TestCountsAndDerived:
         assert v.status == LineStatus.failed and v.error_reason == "boom"
         assert v.computed_route == Route.review
 
+    def test_feature_014a_the_ruling_scope_is_copied_and_cleared_when_the_step_fails(self, memory_store):
+        from agent.schemas import RulingScope
+
+        memory_store.add_lines([_parsed(1, "冷却液", "coolant")], CreatedBy.paste)
+        memory_store.update_check(1, _check(1, FlagKind.ok))
+        scope = RulingScope(chapters=["27", "34", "38"], not_indexed=["38"])
+        memory_store.update_classification(1, _classify(1, [("3403.99", 90)]).model_copy(update={"ruling_scope": scope}))
+        assert memory_store.get_line(1).current.ruling_scope == scope            # read by block 3 from the line store
+        memory_store.update_classification(1, _classify(1, [], failed=True))
+        assert memory_store.get_line(1).current.ruling_scope is None
+
 
 class TestAuditAndRegistries:
     def test_every_mutation_is_recorded_with_an_actor(self, populated):

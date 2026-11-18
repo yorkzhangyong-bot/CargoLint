@@ -1,5 +1,7 @@
 """Tool 3 — classify_hs6: queries (the raw text, optionally expanded) → (history-boosted) hybrid retrieval → ranking →
-code-existence validation (FR-012 … FR-018, constitution Principles III and IV)."""
+code-existence validation (FR-012 … FR-018, constitution Principles III and IV). Feature 014a: the rulings that vote on
+the HS-6 are searched within the chapters of the model's validated candidates, after the ranking; the precedent search
+before it keeps every chapter."""
 from __future__ import annotations
 
 import json
@@ -14,7 +16,8 @@ from agent.config import HS6_VOTE_MIN_SIMILARITY, RETRIEVAL_K, get_settings
 from agent.llm import StructuredCaller
 from agent.prompts import fence
 from agent.routing import hs6_ruling_vote, validate_classification, validate_code
-from agent.schemas import Candidate, Classification, LineStatus, RankOut, RetrievalMode, RetrievalTrace, Source, SourceKind
+from agent.schemas import (Candidate, Classification, LineStatus, RankOut, RetrievalMode, RetrievalTrace, RulingScope, Source,
+                           SourceKind)
 from rag.retriever import rrf, precedent_codes, stable_order
 from rag.rules import find_shipper, load_shippers
 from rag.translate import build_queries
@@ -89,6 +92,16 @@ def hs6_voters(hits: list[list[tuple[str, float]]], bti_store, index, as_of: dat
         if code and index.get(code) is not None:
             voters.append((code, rec.get("member_state") or ""))
     return voters
+
+
+def ruling_scope(codes: list[str], indexed: frozenset[str] | set[str]) -> RulingScope | None:
+    """Feature 014a (spec FR-011, FR-014, FR-017): the chapters the HS-6 vote searches, those of the model's validated
+    candidates (two digits each, sorted, one to three), with those of them that hold no ruling in the store; None
+    without a candidate, as then nothing votes."""
+    chapters = sorted({code[:2] for code in codes})
+    if not chapters:
+        return None
+    return RulingScope(chapters=chapters, not_indexed=[c for c in chapters if c not in indexed])
 
 
 def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCaller | None) -> Classification:
@@ -188,10 +201,14 @@ def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCal
                         sent_to_model=len(chunks), history_chunks=history_chunks, precedent_chunks=precedent_chunks,
                         precedent_codes=[p["code"] for p in precedents], mode=RetrievalMode(mode),
                         expansion=ctx.expansion)
-    vote = (hs6_ruling_vote(hs6_voters(hits, kb.bti, kb.index, ctx.as_of, ctx.exclude_refs), [c.code for c in candidates])
+    codes = [c.code for c in candidates]
+    scope = ruling_scope(codes, kb.indexed_chapters)   # feature 014a: the vote searches the candidates' chapters only,
+    vote_hits = ([bti_vectors.search_by_vector(vec, ctx.k * 2, scope.chapters) for vec in query_vectors]
+                 if scope is not None and bti_vectors is not None else [])   # with the line's query vectors
+    vote = (hs6_ruling_vote(hs6_voters(vote_hits, kb.bti, kb.index, ctx.as_of, ctx.exclude_refs), codes)
             if candidates else None)   # feature 006: the HS-6 auto-accept gate
     return Classification(line_no=line.line_no, candidates=candidates, no_valid_candidate=not candidates, retrieval_trace=rt,
-                          sources=sources, status=LineStatus.checked, hs6_vote=vote)
+                          sources=sources, status=LineStatus.checked, hs6_vote=vote, ruling_scope=scope)
 
 
 def classify_lines(lines: list[LineText], ctx: ClassifyContext, kb, client: StructuredCaller | None, workers: int = 4) -> list[Classification]:
