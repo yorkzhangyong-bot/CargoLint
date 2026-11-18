@@ -2,7 +2,7 @@
 
 Future work, in priority order. Each entry is a short sketch, not a spec; run it through Spec Kit when it is picked up.
 
-1. **013 Knowledge base refresh.** EBTI rulings and TARIC data are frozen in demo-store-v1. Add a script that downloads current EBTI and TARIC data, rebuilds the vector store, publishes a new release, and shows the snapshot date in the app with a warning when it is older than 30 days.
+1. **013 Knowledge base refresh.** Done, merged in PR #4. Two scripts download current TARIC and EBTI data, rebuild the store and publish a release per kind; the app shows both snapshot dates, with a warning when the TARIC snapshot is older than 40 days or the EBTI rulings older than 45 days.
 
 2. **014a Retrieval and evidence.** Does not change the prompt; changes the rulings fed into it.
 

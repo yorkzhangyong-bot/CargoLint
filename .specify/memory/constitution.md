@@ -276,8 +276,8 @@ Tesseract or PaddleOCR (Chinese and English) for scans and photos; Pydantic; pyt
 ### Knowledge-base sources
 
 EU Combined Nomenclature 2026 (Commission Implementing Regulation (EU) 2025/1926, Annex I: the
-full HS 2022 six-digit structure plus EU eight-digit codes); EBTI rulings for chapters 39, 42,
-61–64, 73, 84, 85, 94, 95 and 96; the ICS2 guidance on acceptable goods descriptions and the
+full HS 2022 six-digit structure plus EU eight-digit codes); EBTI rulings for all chapters; the
+chapter list is a setting, default all; the ICS2 guidance on acceptable goods descriptions and the
 updated ICS2 stop-word list; the firm stop-word list (hand-written, 32 terms in the demo);
 shipper history (synthetic demo data); the EU TARIC from the Swedish Customs Tariff File
 Distribution (distr.tullverket.se/tulltaxan), used only for digits 9 to 10 and measures, never
@@ -460,5 +460,12 @@ to depart from; MAY is optional.
   that Streamlit 1.65 cannot set natively, such as the fixed 6rem padding above the page
   (measured in feature 012, T041). The static native-UI test allows CSS in `ui/theme.py` only, and
   the UI Design Contract's styling line follows.
+- 1.11.0 (2026-11-18): "Knowledge-base sources" reads "EBTI rulings for all chapters; the chapter
+  list is a setting, default all" instead of "EBTI rulings for chapters 39, 42, 61–64, 73, 84, 85,
+  94, 95 and 96" (feature 014a, FR-031). Reason: feature 014a indexes all chapters
+  (`CARGOLINT_EBTI_CHAPTERS`, default all), so goods outside the twelve chapters, such as
+  metal-working coolants in chapters 27 and 34, have rulings to retrieve; the rebuilt store holds
+  123,531 valid rulings in 95 chapters of the extract of 2026-11-18. Principle IV and every other
+  text are unchanged.
 
-**Version**: 1.10.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-29
+**Version**: 1.11.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-11-18

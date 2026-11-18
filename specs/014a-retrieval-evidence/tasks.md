@@ -431,26 +431,26 @@ run's floor).
 
 ## Phase 10: Polish, documentation and the constitution
 
-- [ ] T047 [P] README.md: the chapter setting and the all-chapter default, how the local store was rebuilt, the vote
+- [X] T047 [P] README.md: the chapter setting and the all-chapter default, how the local store was rebuilt, the vote
   within the candidates' chapters and the two block 3 captions, the citation notes, the customs-wording switch (off,
   the ruling searches only, the stored rewrite in block 1, the optional reviewed glossary file), the similarity floor
   and its tuning by replay, the coolant set and `--set coolant`, `--customs-wording` and `--replay --floor`; the list
   of weaknesses states the coverage that remains (the demo's 5,000 rulings spread over every chapter; chapters with
   no valid ruling) (spec FR-010, FR-029)
-- [ ] T048 [P] .env.example: `CARGOLINT_EBTI_CHAPTERS=all` and `CARGOLINT_CUSTOMS_WORDING=off` with one-line comments
+- [X] T048 [P] .env.example: `CARGOLINT_EBTI_CHAPTERS=all` and `CARGOLINT_CUSTOMS_WORDING=off` with one-line comments
   (spec FR-029)
-- [ ] T049 [P] docs/backlog.md entry 1 (013 Knowledge base refresh): mark it done, in the backlog's short style:
+- [X] T049 [P] docs/backlog.md entry 1 (013 Knowledge base refresh): mark it done, in the backlog's short style:
   merged in PR #4, the snapshot dates shown in the app, the warnings at 40 days (TARIC) and 45 days (EBTI); no other
   entry changes (spec FR-028, SC-007)
-- [ ] T050 Amend the constitution through `/speckit-constitution` with the wording the author approved (the plan's
+- [X] T050 Amend the constitution through `/speckit-constitution` with the wording the author approved (the plan's
   question B): in "Knowledge-base sources", "EBTI rulings for chapters 39, 42, 61–64, 73, 84, 85, 94, 95 and 96" becomes
   "EBTI rulings for all chapters; the chapter list is a setting, default all"; bump the version to 1.11.0 (MINOR,
   confirmed by the author), set the last-amended date, add the amendment-log entry with the reason (feature 014a indexes
   all chapters), and run the procedure's consistency review; Principle IV and every other text unchanged;
   .specify/memory/constitution.md keeps its line endings (spec FR-031, SC-008)
-- [ ] T051 `.venv/Scripts/python -m pytest -q` over tests/: green, offline, without a key; `git ls-files --eol` shows
+- [X] T051 `.venv/Scripts/python -m pytest -q` over tests/: green, offline, without a key; `git ls-files --eol` shows
   LF for every touched file; nothing under `C:\ai\CargoLint` changed by this feature (spec FR-030, SC-005)
-- [ ] T052 Run specs/014a-retrieval-evidence/quickstart.md's checks (§2 offline; the records of T006, T043 to T046)
+- [X] T052 Run specs/014a-retrieval-evidence/quickstart.md's checks (§2 offline; the records of T006, T043 to T046)
   and hand the manual UI check of quickstart.md §9 to the author: block 3 on a coolant line with the rebuilt store
   and with `build/store-baseline/`, block 1 with the switch on, a citation note (spec FR-017, FR-018, FR-022, FR-025)
 
