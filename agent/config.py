@@ -26,7 +26,9 @@ MAX_FILE_BYTES = 20_971_520          # 20 MB
 MAX_LINES = 200                      # lines per shipment
 MAX_DESC_CHARS = 300                 # characters per description (truncated beyond)
 MAX_PASTED_LINES = 50                # lines per pasted chat message
-WORDING_MAX_CHARS = 300              # feature 014a: the customs-wording rewrite's length (WordingOut), stated in its prompt
+WORDING_MAX_CHARS = 300              # feature 014a: the customs-wording rewrite's length, stated in its prompt and checked
+                                     # after the recorded call (rag/translate.py), never in the schema the provider sees
+WORDING_MAX_TOKENS = 512             # feature 014a: the rewrite call's output cap (WordingOut), its only capped call
 SUPPORTED_FILE_KINDS = ("xlsx", "csv", "pdf", "jpg", "jpeg", "png")
 
 # Routing (FR-020, FR-021)

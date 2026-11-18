@@ -9,11 +9,11 @@ import re
 from datetime import date, datetime, timezone
 from decimal import Decimal
 from enum import Enum
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, ClassVar, Literal
 
 from pydantic import BaseModel, Field, StringConstraints, computed_field, field_validator, model_validator
 
-from agent.config import HS6_VOTE_K, WORDING_MAX_CHARS
+from agent.config import HS6_VOTE_K, WORDING_MAX_TOKENS
 
 CODE_PATTERN = r"^\d{4}\.\d{2}$"
 CODE_RE = re.compile(CODE_PATTERN)
@@ -657,10 +657,12 @@ class ExpandOut(BaseModel):
 
 
 class WordingOut(BaseModel):
-    """Feature 014a: the customs-wording rewrite, one sentence of 1 to WORDING_MAX_CHARS (300) characters after
-    stripping."""
+    """Feature 014a: the customs-wording rewrite, one non-empty sentence after stripping. Its WORDING_MAX_CHARS (300)
+    are checked after the recorded call (rag/translate.customs_wording), not here, so the SDK's own parse never refuses
+    an over-long answer uncounted (review finding 2); the call's output is capped at `max_output_tokens`."""
 
-    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=WORDING_MAX_CHARS)]
+    max_output_tokens: ClassVar[int] = WORDING_MAX_TOKENS     # read by OpenRouterRawClient: the only capped call
+    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
 
 class RankCandidate(BaseModel):

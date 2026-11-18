@@ -5,12 +5,22 @@ from __future__ import annotations
 
 import json
 import re
+from collections import OrderedDict
+from types import SimpleNamespace
 
 import pytest
+from langchain_core.messages import AIMessage
+from openai import LengthFinishReasonError
+from openai.types.chat import ChatCompletion
+from openai.types.completion_usage import CompletionUsage
 from pydantic import ValidationError
 
+from agent import llm
+from agent.config import WORDING_MAX_TOKENS, Settings
+from agent.llm import OpenRouterRawClient as RealRawClient   # bound at import: the offline guard replaces the name
+from agent.llm import StructuredCaller
 from agent.routing import SchemaError
-from agent.schemas import CustomsWording, Extracted, WordingOut
+from agent.schemas import CustomsWording, Extracted, RankOut, WordingOut
 from rag import translate
 from rag.bti import BTIStore, main_language
 from rag.loader import KnowledgeBase
@@ -103,14 +113,21 @@ def test_what_the_shipper_confirmed_reaches_the_rewrite_fenced_too():
 
 
 @pytest.mark.parametrize("text, kept", [("  Kühlflüssigkeit  ", "Kühlflüssigkeit"), ("x" * 300, "x" * 300)])
-def test_the_rewrite_is_one_to_300_characters_after_stripping(text, kept):
+def test_the_rewrite_is_kept_after_stripping(text, kept):
     assert WordingOut(text=text).text == kept
 
 
-@pytest.mark.parametrize("text", ["", "   ", "x" * 301])
-def test_an_empty_or_overlong_rewrite_is_invalid(text):
+@pytest.mark.parametrize("text", ["", "   "])
+def test_an_empty_rewrite_is_invalid(text):
     with pytest.raises(ValidationError):
         WordingOut(text=text)
+
+
+def test_the_schema_the_provider_sees_has_no_length_cap():
+    """Review finding 2: the 300 characters are checked after the recorded call, so the SDK's own parse never refuses
+    an over-long answer before its tokens are counted and its retry is asked for."""
+    assert WordingOut(text="x" * 301).text == "x" * 301
+    assert "maxLength" not in json.dumps(WordingOut.model_json_schema())
 
 
 def test_the_rewrite_is_kept_per_line_text_language_and_glossary(tmp_path):
@@ -137,25 +154,48 @@ def test_the_cache_drops_the_least_recently_used_text_beyond_its_bound(monkeypat
     assert len(client.calls) == 4
 
 
+class LockedOnly(OrderedDict):
+    """The rewrite cache, failing any access made without its lock held (review finding 6: classify_lines' worker
+    threads share the cache, and an eviction between a lookup and its move_to_end would fail a line)."""
+
+    def _held(self):
+        assert translate._wording_lock.locked(), "the rewrite cache was used without its lock"
+
+    def get(self, *args):
+        self._held()
+        return super().get(*args)
+
+    def move_to_end(self, *args, **kwargs):
+        self._held()
+        return super().move_to_end(*args, **kwargs)
+
+    def setdefault(self, *args):
+        self._held()
+        return super().setdefault(*args)
+
+    def popitem(self, *args, **kwargs):
+        self._held()
+        return super().popitem(*args, **kwargs)
+
+    def clear(self):
+        self._held()
+        return super().clear()
+
+
+def test_every_use_of_the_rewrite_cache_holds_its_lock(monkeypatch):
+    monkeypatch.setattr(translate, "_wording", LockedOnly())
+    monkeypatch.setattr(translate, "WORDING_CACHE_MAX", 1)
+    client = StubCaller()
+    for line in (ZH, EN, ZH):                                        # a store, an eviction, a lookup and a store again
+        translate.customs_wording(client, line, "de")
+    translate.customs_wording(client, ZH, "de")                      # found: a lookup and a move to the end
+    translate.clear_cache()
+    assert len(client.calls) == 3
+
+
 def test_a_failing_call_raises():
     with pytest.raises(SchemaError):
         translate.customs_wording(StubCaller(fail=True), ZH, "de")
-
-
-class OverlongFirst(StubCaller):
-    """A client whose first `overlong` answers are over the cap: the SDK's own parse raises the ValidationError inside
-    the call (what the live after-run met for long ruling descriptions), so the caller's schema retry never sees it."""
-
-    def __init__(self, overlong: int = 1):
-        super().__init__()
-        self.overlong = overlong
-
-    def call(self, schema, system, user, max_retries=None):
-        self.calls.append({"schema": schema, "system": system, "user": user})
-        if self.overlong > 0:
-            self.overlong -= 1
-            return schema.model_validate({"text": "Lange Warenbeschreibung " * 20})      # over 300 characters: raises
-        return schema.model_validate({"text": self.text})
 
 
 def test_the_prompt_states_the_length_limit():
@@ -164,18 +204,113 @@ def test_the_prompt_states_the_length_limit():
     assert "at most 300 characters" in client.calls[0]["system"]
 
 
-def test_an_answer_over_the_cap_is_retried_once_with_the_limit():
-    client = OverlongFirst()
-    assert translate.customs_wording(client, ZH, "de").text == client.text
-    assert len(client.calls) == 2 and "at most 300 characters" in client.calls[1]["user"]
-    assert client.calls[1]["user"].startswith(client.calls[0]["user"])                     # the same fenced line
+# --------------------------------------------------------------------------- the rewrite call (review findings 1 and 2)
+class Answers:
+    """A raw backend that gives the scripted answers in turn and reports each call's tokens, as OpenRouterRawClient
+    does."""
+
+    def __init__(self, *answers):
+        self.answers, self.users, self.last_usage = list(answers), [], {}
+
+    def raw_structured(self, schema, system, user):
+        self.users.append(user)
+        self.last_usage = {"input_tokens": 100, "output_tokens": 40}
+        return self.answers.pop(0)
 
 
-def test_a_second_answer_over_the_cap_fails_the_rewrite():
-    client = OverlongFirst(overlong=2)
-    with pytest.raises(ValidationError):
-        translate.customs_wording(client, ZH, "de")
-    assert len(client.calls) == 2                                                          # bounded: one retry
+def caller_with_sink(raw) -> tuple[StructuredCaller, list]:
+    seen: list = []
+    return StructuredCaller(raw=raw, model_name="m", prices=None, usd_eur=0.92, usage_sink=seen.append), seen
+
+
+def test_an_answer_over_the_cap_is_counted_and_retried_once_with_feedback():
+    caller, seen = caller_with_sink(Answers({"text": "Lange Warenbeschreibung " * 20}, {"text": "Kühlflüssigkeit"}))
+    assert translate.customs_wording(caller, ZH, "de").text == "Kühlflüssigkeit"
+    assert len(seen) == 2                                                    # both attempts count in the shipment's cost
+    first, retry = caller.raw.users
+    assert retry.startswith(first)                                           # the same fenced line
+    assert "479 characters" in retry and "at most 300 characters" in retry
+
+
+def test_an_answer_still_over_the_cap_after_its_retry_fails_with_the_reason():
+    caller, seen = caller_with_sink(Answers({"text": "x" * 301}, {"text": "y" * 400}, {"text": "never asked"}))
+    with pytest.raises(SchemaError, match="400 characters after its retry, over the limit of 300"):
+        translate.customs_wording(caller, ZH, "de")
+    assert len(seen) == 2 and len(caller.raw.answers) == 1                  # bounded: one retry, both counted
+
+
+class FakeChatModel:
+    """The chat model inside OpenRouterRawClient, offline: records what each structured call binds and the prompt it
+    gets, and answers in turn with an answer or an exception."""
+
+    extra_body = {"provider": {"require_parameters": True}, "reasoning": {"enabled": False}}
+
+    def __init__(self, *answers):
+        self.answers, self.bound, self.prompts = list(answers), {}, []
+
+    def with_structured_output(self, schema, method, include_raw, **kwargs):
+        self.bound[schema] = kwargs
+        return SimpleNamespace(invoke=lambda messages: self.answer(schema, messages))
+
+    def answer(self, schema, messages):
+        self.prompts.append(messages[-1].content)
+        answer = self.answers.pop(0)
+        if isinstance(answer, BaseException):
+            raise answer
+        usage = {"input_tokens": 90, "output_tokens": 20, "total_tokens": 110}
+        return {"raw": AIMessage(content=json.dumps(answer), usage_metadata=usage), "parsed": schema.model_validate(answer)}
+
+
+def length_stop(completion_tokens: int = 512) -> LengthFinishReasonError:
+    usage = CompletionUsage(prompt_tokens=90, completion_tokens=completion_tokens, total_tokens=90 + completion_tokens)
+    return LengthFinishReasonError(completion=ChatCompletion.model_construct(usage=usage))
+
+
+SETTINGS = Settings(api_key=None, http_referer=None, app_title="CargoLint", chat_model="m", embed_model="e",
+                    structured_method="json_schema", usd_eur=0.92, workers=1, ocr_min_score=0.6)
+
+
+def raw_client(monkeypatch, model: FakeChatModel):
+    monkeypatch.setattr(llm, "_chat_model_factory", lambda: model)
+    return RealRawClient(SETTINGS)
+
+
+def test_only_the_rewrite_call_carries_an_output_cap(monkeypatch):
+    model = FakeChatModel({"text": "Kühlflüssigkeit"}, {"candidates": []})
+    client = raw_client(monkeypatch, model)
+    client.raw_structured(WordingOut, "s", "u")
+    client.raw_structured(RankOut, "s", "u")
+    assert WORDING_MAX_TOKENS == 512
+    assert model.bound[WordingOut] == {"extra_body": {**FakeChatModel.extra_body, "max_tokens": WORDING_MAX_TOKENS}}
+    assert model.bound[RankOut] == {}                                        # every other call as before: no cap
+
+
+def test_a_length_stop_on_the_rewrite_is_an_invalid_answer_with_its_tokens(monkeypatch):
+    client = raw_client(monkeypatch, FakeChatModel(length_stop()))
+    assert client.raw_structured(WordingOut, "s", "u") == {"_invalid": True, "finish_reason": "length", "content": ""}
+    assert client.last_usage == {"input_tokens": 90, "output_tokens": 512}
+
+
+def test_a_length_stop_on_an_uncapped_call_still_raises(monkeypatch):
+    client = raw_client(monkeypatch, FakeChatModel(length_stop(65_521)))
+    with pytest.raises(LengthFinishReasonError):
+        client.raw_structured(RankOut, "s", "u")
+
+
+def test_a_length_stop_takes_the_one_retry_and_its_tokens_count(monkeypatch):
+    model = FakeChatModel(length_stop(), {"text": "Kühlflüssigkeit"})
+    caller, seen = caller_with_sink(raw_client(monkeypatch, model))
+    assert translate.customs_wording(caller, ZH, "de").text == "Kühlflüssigkeit"
+    assert [u.completion_tokens for u in seen] == [512, 20]
+    assert "reached the output limit" in model.prompts[1] and model.prompts[1].startswith(model.prompts[0])
+
+
+def test_a_second_length_stop_fails_the_rewrite(monkeypatch):
+    model = FakeChatModel(length_stop(), length_stop(), {"text": "never asked"})
+    caller, seen = caller_with_sink(raw_client(monkeypatch, model))
+    with pytest.raises(SchemaError, match="output limit"):
+        translate.customs_wording(caller, ZH, "de")
+    assert len(seen) == 2 and len(model.answers) == 1
 
 
 # --------------------------------------------------------------------------- the glossary

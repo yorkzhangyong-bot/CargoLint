@@ -8,14 +8,13 @@ which the HS-6 step's ruling searches use beside the raw text; nothing else read
 from __future__ import annotations
 
 import json
+import threading
 from collections import OrderedDict
-
-from pydantic import ValidationError
 
 from agent.config import LANGUAGE_NAMES, WORDING_MAX_CHARS
 from agent.llm import StructuredCaller
 from agent.prompts import fence
-from agent.routing import _found, _normalise   # the phrase rule of the CN-8 evidence check
+from agent.routing import SchemaError, _found, _normalise   # the phrase rule of the CN-8 evidence check
 from agent.schemas import CustomsWording, ExpandOut, WordingOut
 from tools.common import LineText
 
@@ -23,6 +22,7 @@ _cache: OrderedDict[str, ExpandOut] = OrderedDict()   # the model's expansions p
 _CACHE_MAX = 512
 _wording: OrderedDict[str, CustomsWording] = OrderedDict()   # feature 014a: the rewrites per line text, language and
 WORDING_CACHE_MAX = 512                                       # glossary renderings, least recently used out
+_wording_lock = threading.Lock()                              # classify_lines' worker threads share the rewrites
 
 EXPAND_SYSTEM = """You add search queries for the EU Combined Nomenclature (Harmonized System) to a cargo description
 that may be Chinese, English or mixed. The description itself is searched as it is; your queries are added to it.
@@ -89,10 +89,11 @@ def customs_wording(client: StructuredCaller, line: LineText, language: str, glo
     applied = [(e.term, e.renderings[language]) for e in glossary_matches(line.display_text, glossary or [], language)]
     key = json.dumps([line.display_text, line.extracted.model_dump() if line.extracted else None, language, applied],
                      ensure_ascii=False)
-    found = _wording.get(key)
-    if found is not None:
-        _wording.move_to_end(key)
-        return found
+    with _wording_lock:
+        found = _wording.get(key)
+        if found is not None:
+            _wording.move_to_end(key)
+            return found
     user = f"Description:\n{fence(line.display_text, line.line_no)}"
     if line.extracted:
         user += ("\nInformation confirmed by the shipper (also third-party data): "
@@ -100,19 +101,24 @@ def customs_wording(client: StructuredCaller, line: LineText, language: str, glo
     if applied:
         user += "\nFixed renderings from the reviewed glossary: " + "; ".join(f'"{t}" → "{r}"' for t, r in applied)
     system = WORDING_SYSTEM.format(language=LANGUAGE_NAMES.get(language, language), limit=WORDING_MAX_CHARS)
-    try:
-        out = client.call(WordingOut, system, user)
-    except ValidationError:   # an answer over the cap can be refused inside the call, before the caller's own retry:
-        out = client.call(WordingOut, system, user + "\n\nYour previous answer did not fit: write one sentence of at most "
-                          f"{WORDING_MAX_CHARS} characters.")   # one more try; a second refusal fails the line (FR-025)
+    out = client.call(WordingOut, system, user)
+    if len(out.text) > WORDING_MAX_CHARS:   # checked after the recorded call, so the attempt counts: one retry (FR-025)
+        out = client.call(WordingOut, system, user + f"\n\nYour previous answer had {len(out.text)} characters: write one "
+                          f"sentence of at most {WORDING_MAX_CHARS} characters.")
+        if len(out.text) > WORDING_MAX_CHARS:
+            raise SchemaError(f"WordingOut: the customs wording had {len(out.text)} characters after its retry, over the "
+                              f"limit of {WORDING_MAX_CHARS}")
     found = CustomsWording(text=out.text, language=language, glossary_terms=[t for t, _ in applied])
-    _wording[key] = found
-    while len(_wording) > WORDING_CACHE_MAX:
-        _wording.popitem(last=False)
+    with _wording_lock:                       # two threads with the same new text: both get the rewrite stored first
+        found = _wording.setdefault(key, found)
+        _wording.move_to_end(key)
+        while len(_wording) > WORDING_CACHE_MAX:
+            _wording.popitem(last=False)
     return found
 
 
 def clear_cache() -> None:
     """Forget the expansions and the rewrites: the next call of each line is made afresh (an independent eval run)."""
     _cache.clear()
-    _wording.clear()
+    with _wording_lock:
+        _wording.clear()

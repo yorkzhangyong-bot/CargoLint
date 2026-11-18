@@ -77,8 +77,11 @@ routing input; not in the CSV or JSON export (FR-023).
 
 ## 6. Customs wording (`agent/schemas.CustomsWording`, new; `WordingOut`, new model output)
 
-`WordingOut` (the model's answer, validated like every model output): `text: str`, 1 to 300 characters after
-stripping.
+`WordingOut` (the model's answer, validated like every model output): `text: str`, non-empty after stripping; the
+call's output is capped at 512 tokens (`WORDING_MAX_TOKENS`), and an answer that reaches the cap is an invalid answer
+with its one retry. The 300-character limit (`WORDING_MAX_CHARS`) is checked after the recorded call, not in the schema
+the provider sees, so every attempt counts in the shipment's cost: an answer over it is retried once with feedback,
+then fails the line's HS-6 step with the reason (FR-025; review round 1).
 
 | `CustomsWording` field | Type | Rule |
 |---|---|---|
