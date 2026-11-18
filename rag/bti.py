@@ -14,11 +14,11 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Iterable, Iterator
 
-from agent.config import DATA_DIR, STORE_DIR
+from agent.config import DATA_DIR, STORE_DIR, get_settings, parse_chapter_setting
 from agent.schemas import Precedent
 
-TARGET_CHAPTERS = ["39", "42", "61", "62", "63", "64", "73", "84", "85", "94", "95", "96"]
-TARGET_CHAPTERS_SPEC = "39,42,61-64,73,84,85,94,95,96"   # the chapters as the loader's option and the source version name them
+TARGET_CHAPTERS = ["39", "42", "61", "62", "63", "64", "73", "84", "85", "94", "95", "96"]   # the twelve chapters indexed
+TARGET_CHAPTERS_SPEC = "39,42,61-64,73,84,85,94,95,96"   # before feature 014a, as the source version still names them
 DROP_FIELDS = ("NAME_AND_ADDRESS",)
 _INVALID = re.compile(r"invalid|withdraw|revok|annul|cancel", re.I)
 
@@ -200,8 +200,11 @@ def extract_date(zip_path: Path | str) -> date | None:
     return date(*max(stamps)[:3]) if stamps else None
 
 
-def chapters_spec(chapters: set[str] | list[str]) -> str:
-    """The chapters as a source version names them: the loader's spec for the twelve indexed chapters, else a list."""
+def chapters_spec(chapters: set[str] | frozenset[str] | list[str] | None) -> str:
+    """The chapters as a source version names them: "all chapters" for None (feature 014a), the loader's spec for the
+    twelve chapters indexed before it, else a sorted list."""
+    if chapters is None:
+        return "all chapters"
     wanted = set(chapters)
     return TARGET_CHAPTERS_SPEC if wanted == set(TARGET_CHAPTERS) else ",".join(sorted(wanted))
 
@@ -234,16 +237,17 @@ def make_demo(records: list[dict], n: int = 200, seed: int = 7) -> list[dict]:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="EBTI extract → filtered rulings")
     ap.add_argument("--zip", default=str(DATA_DIR / "raw" / "DDS2-EBTI_Full.zip"))
-    ap.add_argument("--chapters", default=",".join(TARGET_CHAPTERS))
+    ap.add_argument("--chapters", help="the chapters to keep: all, or chapters and ranges such as 39,42,61-64 (default: "
+                                       "CARGOLINT_EBTI_CHAPTERS, all)")
     ap.add_argument("--out", default=str(DATA_DIR / "bti_subset.jsonl"))
     ap.add_argument("--make-demo", action="store_true", help="also write data/bti_demo.jsonl (~200 rulings)")
     ap.add_argument("--demo-size", type=int, default=200)
     args = ap.parse_args(argv)
-    chapters = {c.strip() for c in args.chapters.split(",") if c.strip()}
+    chapters = parse_chapter_setting(args.chapters if args.chapters is not None else get_settings().ebti_chapters)
     today = date.today()
     records = list(iter_extract(args.zip, chapters, today))
     n = write_jsonl(records, args.out)
-    print(f"wrote {n} valid rulings for chapters {sorted(chapters)} to {args.out}")
+    print(f"wrote {n} valid rulings for {'' if chapters is None else 'chapters '}{chapters_spec(chapters)} to {args.out}")
     if args.make_demo:
         demo = make_demo(records, args.demo_size)
         m = write_jsonl(demo, DATA_DIR / "bti_demo.jsonl")

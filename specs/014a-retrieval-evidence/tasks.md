@@ -113,7 +113,7 @@ embeddings and the fake release service (User Story 2 scenarios 1 to 6).
 
 ### Tests for User Story 2
 
-- [ ] T007 [P] [US2] Tests in tests/unit/test_settings.py: `ebti_chapters` read from `CARGOLINT_EBTI_CHAPTERS`, `"all"`
+- [X] T007 [P] [US2] Tests in tests/unit/test_settings.py: `ebti_chapters` read from `CARGOLINT_EBTI_CHAPTERS`, `"all"`
   by default; `parse_chapter_setting` returns `None` for `all`, also written `"ALL"` or `"All"` (the value is
   lower-cased, as `CARGOLINT_EBTI_RULINGS` is; research R-03), and the two-digit chapters otherwise: `"27,34,38"` → {27,
   34, 38}, `"61-64"` → {61, 62, 63, 64}, `"1"` → {01}, spaces around items tolerated; `"84,abc"`, `"100"`, `"00"`,
@@ -121,7 +121,7 @@ embeddings and the fake release service (User Story 2 scenarios 1 to 6).
   as `CARGOLINT_EBTI_RULINGS` is), or a comma-separated list of chapters `01`–`99` and ascending ranges (`27,34,38`,
   `61-64`); one-digit chapters are padded (`1` → `01`); anything else raises `ValueError` when the settings are read")
   (spec FR-006)
-- [ ] T008 [P] [US2] Tests in a new tests/unit/test_chapters.py: `rag.loader.parse_chapters` gives the config parser's
+- [X] T008 [P] [US2] Tests in a new tests/unit/test_chapters.py: `rag.loader.parse_chapters` gives the config parser's
   result; `rag.bti.chapters_spec(None)` is "all chapters" and the twelve still give
   "39,42,61-64,73,84,85,94,95,96"; `rag.loader.ebti_source_version("2026-11-18", None)` is "full extract of
   2026-11-18, all chapters", another set gives the sorted list; `rag.loader.main` without `--bti-chapters` passes the
@@ -129,7 +129,7 @@ embeddings and the fake release service (User Story 2 scenarios 1 to 6).
   when the setting is bad; `rag.bti.main` accepts `--chapters all` and ranges and defaults to the setting; every
   test uses a temporary `store_dir` and monkeypatches `rag.loader.STORE_DIR`, `RAW_DIR`, `BTI_SUBSET` and
   `SUBSET_META` (no repository path is written) (spec FR-006, FR-008)
-- [ ] T009 [P] [US2] Tests in tests/integration/test_refresh_ebti.py, on a tiny extract built in the test with valid
+- [X] T009 [P] [US2] Tests in tests/integration/test_refresh_ebti.py, on a tiny extract built in the test with valid
   rulings in chapters 27, 34, 38, 39 and 84, `FakeEmbeddings` and the fake release service, `--no-publish`: with the
   setting unset the store holds all five chapters and its `index_meta.json` and `metadata.json` carry "full extract
   of <date>, all chapters"; `--chapters 39,84` keeps those two; the setting `39,42,61-64,73,84,85,94,95,96` keeps the
@@ -140,20 +140,20 @@ embeddings and the fake release service (User Story 2 scenarios 1 to 6).
 
 ### Implementation for User Story 2
 
-- [ ] T010 [US2] agent/config.py: the pure `parse_chapter_setting(value) -> frozenset[str] | None` with the rule
+- [X] T010 [US2] agent/config.py: the pure `parse_chapter_setting(value) -> frozenset[str] | None` with the rule
   quoted in T007, and `Settings.ebti_chapters: str = "all"` read from `CARGOLINT_EBTI_CHAPTERS` and validated in
   `load_settings` (an empty value reads as unset, like the other settings); make T007 pass (spec FR-006)
-- [ ] T011 [US2] rag/bti.py and rag/loader.py: `chapters_spec(None)` → "all chapters" (the twelve keep
+- [X] T011 [US2] rag/bti.py and rag/loader.py: `chapters_spec(None)` → "all chapters" (the twelve keep
   `TARGET_CHAPTERS_SPEC`); `rag.bti.main`'s `--chapters` defaults to the setting and goes through the parser;
   `rag.loader.parse_chapters` uses `agent.config.parse_chapter_setting`; `--bti-chapters` defaults to
   `get_settings().ebti_chapters`; `ebti_source_version(date, None)` → "full extract of <date>, all chapters";
   `rag.loader.main` catches the `ValueError` of a bad setting and returns 2 with the message; the module docstrings'
   examples follow; make T008 pass (spec FR-006, FR-008)
-- [ ] T012 [US2] rag/refresh_ebti.py and scripts/refresh_ebti.py: `--chapters SPEC` over the setting; the extract
+- [X] T012 [US2] rag/refresh_ebti.py and scripts/refresh_ebti.py: `--chapters SPEC` over the setting; the extract
   filtered with the chapters (`None` for all) instead of `TARGET_CHAPTERS`; the log line with the valid-ruling and
   chapter counts before the choice and any embedding; `ebti_source_version(snapshot, chapters)` in `index_meta.json`
   and `metadata.json`; the script's docstring lists `--chapters`; make T009 pass (spec FR-007, FR-008)
-- [ ] T013 [US2] Admin › Data states the coverage through the existing `ui/view.rulings_statement`: add a test in
+- [X] T013 [US2] Admin › Data states the coverage through the existing `ui/view.rulings_statement`: add a test in
   tests/unit/test_view.py that a knowledge base whose `ebti_source_version` reads "full extract of 2026-11-18, all
   chapters" is shown with it, and change `ui/view.py` only if the test fails (spec FR-010)
 

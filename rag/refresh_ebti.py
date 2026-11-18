@@ -1,10 +1,11 @@
-"""The EBTI refresh (feature 013, User Story 2): `python scripts/refresh_ebti.py [--rulings N|all] [--out DIR]
-[--previous RELEASE|DIR] [--full-embed] [--extract ZIP] [--force] [--no-publish] [--repo OWNER/NAME]`.
+"""The EBTI refresh (feature 013, User Story 2): `python scripts/refresh_ebti.py [--rulings N|all] [--chapters SPEC]
+[--out DIR] [--previous RELEASE|DIR] [--full-embed] [--extract ZIP] [--force] [--no-publish] [--repo OWNER/NAME]`.
 
 It downloads the current EBTI full extract afresh into the work area under build/ (never the loader's data/raw/ copy),
-reads the extract's date, takes the previous store (the newest complete EBTI release, `demo-store-v1`, or a folder),
-chooses the configured number of rulings with the demo store's rule (the previous store's rulings first; `all` keeps
-every valid ruling), copies the vectors of the unchanged rulings with their metadata rewritten from the new extract,
+reads the extract's date, keeps the valid rulings of the chapters of CARGOLINT_EBTI_CHAPTERS (all by default; feature
+014a, `--chapters` for one run), takes the previous store (the newest complete EBTI release, `demo-store-v1`, or a
+folder), chooses the configured number of rulings with the demo store's rule (the previous store's rulings first; `all`
+keeps every valid ruling), copies the vectors of the unchanged rulings with their metadata rewritten from the new extract,
 embeds only the new and changed ones, copies the nomenclature index, writes the store in the layout of demo-store-v1
 into a work folder, packs `store/…`, publishes `ebti-<date>` with its metadata, marks it the latest release and keeps
 the two newest complete EBTI releases. `--full-embed` embeds everything afresh (a change of embedding model). The
@@ -24,7 +25,7 @@ from pathlib import Path
 from typing import Any
 
 import rag.loader as loader_mod
-from agent.config import ROOT, Settings, get_settings
+from agent.config import ROOT, Settings, get_settings, parse_chapter_setting
 from agent.schemas import Usage
 from rag import bti as bti_mod
 from rag import demo_store, refresh
@@ -258,6 +259,11 @@ def _run(args: argparse.Namespace, embeddings: Any, service: Any, t0: float) -> 
         raise RefreshError(str(exc), exit_code=2) from exc
     bound = rulings_bound(args.rulings if args.rulings is not None else settings.ebti_rulings)
     requested: int | str = "all" if bound is None else bound
+    try:                                              # feature 014a: None keeps every chapter
+        chapters = parse_chapter_setting(args.chapters if args.chapters is not None else settings.ebti_chapters)
+    except ValueError as exc:
+        raise RefreshError(f"--chapters must be all or chapters and ascending ranges such as 39,42,61-64: {exc}",
+                           exit_code=2) from exc
     if embeddings is None and not settings.api_key:
         raise RefreshError("OPENROUTER_API_KEY is not set (the embeddings need it)", exit_code=2)
     previous_is_release = bool(args.previous) and not Path(args.previous).is_dir()
@@ -279,8 +285,9 @@ def _run(args: argparse.Namespace, embeddings: Any, service: Any, t0: float) -> 
             return _nothing_new(service, listing, complete[0])
     out = _work_folder(args.out, name, args.force)
     today = date.today()
-    records = list(bti_mod.iter_extract(zip_path, set(bti_mod.TARGET_CHAPTERS), today))
-    refresh.log(f"extract {zip_path.name} dated {snapshot}, {len(records):,} valid rulings in {len(bti_mod.TARGET_CHAPTERS)} chapters")
+    records = list(bti_mod.iter_extract(zip_path, chapters, today))
+    refresh.log(f"extract {zip_path.name} dated {snapshot}, {len(records):,} valid rulings in "
+                f"{len({r['chapter'] for r in records})} chapters")   # before the choice and any embedding (feature 014a)
     index = NomenclatureIndex.from_jsonl(loader_mod.NOMENCLATURE_JSONL)
     previous_dir, vectors_from = previous_store(args.previous, service, out, listing)
     previous_meta: dict[str, Any] | None = None
@@ -313,7 +320,8 @@ def _run(args: argparse.Namespace, embeddings: Any, service: Any, t0: float) -> 
     counts = {"rulings": len(chosen), "extract_rulings": len(records), "reused": reused, "embedded": embedded,
               "dropped": part.dropped, "vectors_from": vectors_from}
     meta.update({"built_at": refresh.now_iso(), "bti_rulings": len(chosen), "embedding_usage": usage.model_dump(),
-                 "ebti_snapshot_date": snapshot.isoformat(), "ebti_source_version": loader_mod.ebti_source_version(snapshot.isoformat()),
+                 "ebti_snapshot_date": snapshot.isoformat(),
+                 "ebti_source_version": loader_mod.ebti_source_version(snapshot.isoformat(), chapters),
                  "refresh": {"rulings_requested": requested, **{k: counts[k] for k in ("extract_rulings", "reused", "embedded", "dropped", "vectors_from")},
                              "full_embed": bool(args.full_embed)}})
     write_index_meta(store, meta)
@@ -360,6 +368,8 @@ def main(argv: list[str] | None = None, embeddings: Any = None, service: Any = N
                                              "vectors, and publish the store as the release ebti-<date>")
     ap.add_argument("--rulings", metavar="N|all", help=f"the store size: a positive integer or all (default: "
                                                        f"CARGOLINT_EBTI_RULINGS, {DEFAULT_RULINGS})")
+    ap.add_argument("--chapters", metavar="SPEC", help="the chapters to keep: all, or chapters and ranges such as "
+                                                       "39,42,61-64 (default: CARGOLINT_EBTI_CHAPTERS, all)")
     ap.add_argument("--out", type=Path, metavar="DIR", help="the work folder, new or empty (default: build/ebti-<date>/)")
     ap.add_argument("--previous", metavar="RELEASE|DIR",
                     help="the previous store: a release name (demo-store-v1 on the first run) or a folder holding store/ "

@@ -346,6 +346,12 @@ def test_rulings_statement():
     assert view.rulings_statement(dated_kb(rulings=(None, "unknown"))) == "EBTI rulings: 2 · date unknown"
 
 
+def test_feature_014a_the_rulings_statement_names_every_chapter():
+    every = "full extract of 2026-11-18, all chapters"                          # a store built with all chapters
+    kb = dated_kb(bti=180000, rulings=("2026-11-18", "extract"), source=every)
+    assert view.rulings_statement(kb) == "EBTI rulings: 180,000 · extract 2026-11-18 · full extract of 2026-11-18, all chapters"
+
+
 def test_taric_statement_names_the_batch_when_present():
     batch = "e14b8e06-f3f6-4ce1-ba9b-1423d07f6b83"
     assert view.taric_statement(dated_kb(batch=batch)) == (

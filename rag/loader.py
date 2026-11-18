@@ -1,7 +1,9 @@
 """Knowledge-base loader: download → parse → chunk → embed → persist, plus the runtime opener.
 
     python -m rag.loader --demo                 # nomenclature + rule lists + demo BTI, embeds ~5.6k chunks
-    python -m rag.loader --bti-chapters 39,42,61-64,73,84,85,94,95,96   # full BTI subset (needs the 400 MB extract)
+    python -m rag.loader                        # full BTI subset of CARGOLINT_EBTI_CHAPTERS, all chapters by default
+                                                # (needs the 400 MB extract)
+    python -m rag.loader --bti-chapters 39,42,61-64,73,84,85,94,95,96   # a chapter list for this run
     python -m rag.loader --taric                # TARIC snapshot only (data/raw/taric/, needs gpg); no index is touched
 
 Idempotent: existing processed files and a complete Chroma collection are reused unless --force.
@@ -21,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from agent.config import (DATA_DIR, ROOT, RULES_DIR, STORE_DIR, TARIC_KEY, TARIC_KEY_FINGERPRINT, TARIC_LOG_DIR, TARIC_RAW_DIR,
-                          TARIC_SNAPSHOT, Settings, get_settings)
+                          TARIC_SNAPSHOT, Settings, get_settings, parse_chapter_setting)
 from agent.schemas import Usage
 from rag import bti as bti_mod
 from rag.nomenclature import NomenclatureIndex, build_chunks, parse_skos, write_jsonl
@@ -157,12 +159,14 @@ def build_rules(force: bool = False) -> RuleSet:
     return rs
 
 
-def ebti_source_version(extract_date: str, chapters: set[str] | None = None) -> str:
-    """The rulings' source version as the release metadata and index_meta record it (feature 013, data-model §2)."""
-    return f"full extract of {extract_date}, chapters {bti_mod.chapters_spec(chapters or set(bti_mod.TARGET_CHAPTERS))}"
+def ebti_source_version(extract_date: str, chapters: set[str] | frozenset[str] | None = None) -> str:
+    """The rulings' source version as the release metadata and index_meta record it (feature 013, data-model §2):
+    "all chapters" for None, every chapter (feature 014a), else the chapters."""
+    spec = bti_mod.chapters_spec(chapters)
+    return f"full extract of {extract_date}, {spec if chapters is None else 'chapters ' + spec}"
 
 
-def _write_subset_meta(extract_date: str | None, chapters: set[str]) -> None:
+def _write_subset_meta(extract_date: str | None, chapters: set[str] | frozenset[str] | None) -> None:
     """The sidecar of data/bti_subset.jsonl: the extract the subset was cut from (feature 013, FR-018)."""
     if extract_date is None:
         SUBSET_META.unlink(missing_ok=True)
@@ -179,10 +183,11 @@ def _read_subset_meta() -> str | None:
         return None
 
 
-def build_bti(demo: bool, chapters: set[str], force: bool = False, store_dir: Path = STORE_DIR) -> tuple[bti_mod.BTIStore, str | None]:
+def build_bti(demo: bool, chapters: set[str] | frozenset[str] | None, force: bool = False,
+              store_dir: Path = STORE_DIR) -> tuple[bti_mod.BTIStore, str | None]:
     """The ruling document store, written as bti_docs.jsonl into `store_dir`, and the date of the extract the rulings
     came from: read from the zip when the subset is cut and kept beside it, read back when the subset is reused; None
-    for --demo and for a subset cut before feature 013 recorded it."""
+    for --demo and for a subset cut before feature 013 recorded it. `chapters` None keeps every chapter (feature 014a)."""
     extract_date: str | None = None
     if demo:
         if not BTI_DEMO.exists():
@@ -198,8 +203,8 @@ def build_bti(demo: bool, chapters: set[str], force: bool = False, store_dir: Pa
             found = bti_mod.extract_date(zip_path)
             extract_date = found.isoformat() if found else None
             _write_subset_meta(extract_date, chapters)
-            log(f"bti: {len(records)} valid rulings for chapters {sorted(chapters)} from the extract of "
-                f"{extract_date or 'an unknown date'} → {BTI_SUBSET.name}")
+            log(f"bti: {len(records)} valid rulings for {'all chapters' if chapters is None else f'chapters {sorted(chapters)}'} "
+                f"from the extract of {extract_date or 'an unknown date'} → {BTI_SUBSET.name}")
         else:
             extract_date = _read_subset_meta()
         store = bti_mod.BTIStore.from_jsonl(BTI_SUBSET)
@@ -464,18 +469,10 @@ def open_knowledge_base(settings: Settings | None = None, usage_sink: Any = None
 
 
 # --------------------------------------------------------------------------- CLI
-def parse_chapters(spec: str) -> set[str]:
-    out: set[str] = set()
-    for part in spec.split(","):
-        part = part.strip()
-        if not part:
-            continue
-        if "-" in part:
-            a, b = part.split("-", 1)
-            out.update(f"{i:02d}" for i in range(int(a), int(b) + 1))
-        else:
-            out.add(f"{int(part):02d}")
-    return out
+def parse_chapters(spec: str) -> frozenset[str] | None:
+    """The loader's chapter options, read as CARGOLINT_EBTI_CHAPTERS is (feature 014a): None for `all`; ValueError for
+    anything that is not chapters and ascending ranges."""
+    return parse_chapter_setting(spec)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -483,7 +480,8 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.reconfigure(encoding="utf-8")  # progress lines contain arrows; a redirected Windows console defaults to cp1252
     ap = argparse.ArgumentParser(description="Build the CargoLint knowledge base")
     ap.add_argument("--demo", action="store_true", help="use data/bti_demo.jsonl instead of the full EBTI extract")
-    ap.add_argument("--bti-chapters", default=None)
+    ap.add_argument("--bti-chapters", default=None, help="the EBTI chapters to keep: all, or chapters and ranges such as "
+                                                         "39,42,61-64 (default: CARGOLINT_EBTI_CHAPTERS, all)")
     ap.add_argument("--chapters", default=None, help="nomenclature chapters to index (default: all)")
     ap.add_argument("--force", action="store_true", help="rebuild processed files and vectors; with --taric, rewrite data/taric.jsonl")
     ap.add_argument("--no-embed", action="store_true", help="skip embedding (BM25 + metadata only)")
@@ -497,17 +495,25 @@ def main(argv: list[str] | None = None) -> int:
             print(f"--taric cannot be combined with {', '.join(clash)}", file=sys.stderr)
             return 2
         return load_taric(Path(args.taric), force=args.force)
-    settings = get_settings()
+    try:
+        settings = get_settings()
+    except ValueError as exc:                         # feature 014a: a refused setting, CARGOLINT_EBTI_CHAPTERS among them
+        print(f"Knowledge base not built: {exc}", file=sys.stderr)
+        return 2
+    try:
+        chapters = parse_chapters(args.bti_chapters or settings.ebti_chapters)
+        keep = parse_chapters(args.chapters) if args.chapters else None
+    except ValueError as exc:
+        print(f"Knowledge base not built: --bti-chapters or --chapters: {exc}", file=sys.stderr)
+        return 2
     if not args.no_embed and not settings.api_key:
         print("OPENROUTER_API_KEY is not set; use --no-embed to build without vectors", file=sys.stderr)
         return 2
     index = build_nomenclature(force=args.force)
-    if args.chapters not in (None, "all"):
-        keep = parse_chapters(args.chapters)
+    if keep is not None:
         index = NomenclatureIndex([c for c in index.chunks if c.metadata.get("chapter") in keep])
         log(f"nomenclature restricted to chapters {sorted(keep)}: {len(index)} chunks")
     rules = build_rules(force=args.force)
-    chapters = parse_chapters(args.bti_chapters or ",".join(bti_mod.TARGET_CHAPTERS))
     bti_store, extract = build_bti(args.demo, chapters, force=args.force)
     meta = build_indexes(index, bti_store, settings, force=args.force, embed=not args.no_embed)
     if extract:                                       # feature 013 (FR-018): the rulings' snapshot date and source version

@@ -153,7 +153,7 @@ class TestBuildBti:
         meta = json.loads(loader_mod.SUBSET_META.read_text(encoding="utf-8"))
         assert meta["extract_date"] == "2026-11-12" and meta["cut_at"]
         assert meta["source_version"] == "full extract of 2026-11-12, chapters 84,96"
-        assert loader_mod.ebti_source_version("2026-11-12") == "full extract of 2026-11-12, chapters 39,42,61-64,73,84,85,94,95,96"
+        assert loader_mod.ebti_source_version("2026-11-12") == "full extract of 2026-11-12, all chapters"   # feature 014a
 
     def test_a_reused_subset_gives_the_sidecars_date_without_the_zip(self, loader_paths, monkeypatch):
         loader_mod.build_bti(False, {"84", "96"}, store_dir=loader_paths.store)

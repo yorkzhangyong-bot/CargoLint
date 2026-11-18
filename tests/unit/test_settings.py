@@ -1,10 +1,11 @@
 """Feature 013: the release settings and the freshness limits (spec FR-014, FR-020; data-model §6, §7). A pin of the
-wrong shape and an invalid ruling count are refused when the settings are read."""
+wrong shape and an invalid ruling count are refused when the settings are read. Feature 014a: the chapter setting
+(spec FR-006), refused the same way when it is neither `all` nor a list of chapters."""
 from __future__ import annotations
 
 import pytest
 
-from agent.config import EBTI_STALE_DAYS, TARIC_STALE_DAYS, load_settings, release_name_ok
+from agent.config import EBTI_STALE_DAYS, TARIC_STALE_DAYS, load_settings, parse_chapter_setting, release_name_ok
 
 pytestmark = pytest.mark.unit
 
@@ -52,3 +53,36 @@ def test_release_name_ok():
 
 def test_the_freshness_limits():
     assert (TARIC_STALE_DAYS, EBTI_STALE_DAYS) == (40, 45)
+
+
+# --------------------------------------------------------------------------- feature 014a: the chapter setting
+@pytest.mark.parametrize("env", [{}, {"CARGOLINT_EBTI_CHAPTERS": ""}, {"CARGOLINT_EBTI_CHAPTERS": "  "}])
+def test_every_chapter_by_default(env):
+    assert load_settings(env).ebti_chapters == "all"            # an empty value reads as unset
+
+
+@pytest.mark.parametrize("value", ["all", "ALL", "All", " all "])
+def test_all_in_any_case_is_every_chapter(value):
+    assert load_settings({"CARGOLINT_EBTI_CHAPTERS": value}).ebti_chapters == "all"   # lower-cased
+    assert parse_chapter_setting(value) is None
+
+
+@pytest.mark.parametrize("value, chapters", [
+    ("27,34,38", {"27", "34", "38"}),
+    ("61-64", {"61", "62", "63", "64"}),
+    ("1", {"01"}),                                              # a one-digit chapter is padded
+    (" 27 , 61-62 ", {"27", "61", "62"}),                       # spaces around items
+    ("39,42,61-64,73,84,85,94,95,96", {"39", "42", "61", "62", "63", "64", "73", "84", "85", "94", "95", "96"}),
+    ("99,01-02", {"01", "02", "99"}),
+])
+def test_a_chapter_list_gives_two_digit_chapters(value, chapters):
+    assert parse_chapter_setting(value) == frozenset(chapters)
+    assert load_settings({"CARGOLINT_EBTI_CHAPTERS": value}).ebti_chapters == value.strip().lower()
+
+
+@pytest.mark.parametrize("value", ["84,abc", "100", "00", "64-61", "27,,34", ",", "27-", "3a", "1-100", "all,27"])
+def test_any_other_chapter_value_is_refused(value):
+    with pytest.raises(ValueError):
+        parse_chapter_setting(value)
+    with pytest.raises(ValueError, match="CARGOLINT_EBTI_CHAPTERS"):
+        load_settings({"CARGOLINT_EBTI_CHAPTERS": value})

@@ -107,6 +107,9 @@ class Settings:
     taric_release: str = ""         # feature 013: CARGOLINT_TARIC_RELEASE, the same for the TARIC kind
     ebti_rulings: str = "5000"      # feature 013: CARGOLINT_EBTI_RULINGS, the EBTI store size of a refresh: a positive
                                     # integer, or "all" for every valid ruling; --rulings overrides it for one run
+    ebti_chapters: str = "all"      # feature 014a: CARGOLINT_EBTI_CHAPTERS, the chapters whose rulings a build or refresh
+                                    # keeps: "all", or chapters and ranges (parse_chapter_setting); the scripts' chapter
+                                    # options override it for one run
 
     @property
     def has_key(self) -> bool:
@@ -123,6 +126,26 @@ def release_name_ok(name: str, kind: str | None = None) -> bool:
     except ValueError:
         return False
     return True
+
+
+_CHAPTER_ITEM = re.compile(r"(\d{1,2})(?:-(\d{1,2}))?")
+
+
+def parse_chapter_setting(value: str) -> frozenset[str] | None:
+    """Feature 014a (spec FR-006): `all` in any case is every chapter (None); otherwise a comma-separated list of chapters
+    01-99 and ascending ranges ("27,34,38", "61-64"), spaces around items allowed, one-digit chapters padded ("1" is
+    "01"), as two-digit chapters. Anything else raises ValueError."""
+    text = (value or "").strip().lower()
+    if text == "all":
+        return None
+    chapters: set[str] = set()
+    for item in text.split(","):
+        m = _CHAPTER_ITEM.fullmatch(item.strip())
+        first, last = (int(m[1]), int(m[2] or m[1])) if m else (0, 0)
+        if not 1 <= first <= last <= 99:
+            raise ValueError(f"{item.strip()!r} is neither a chapter 01-99 nor an ascending range of them")
+        chapters.update(f"{c:02d}" for c in range(first, last + 1))
+    return frozenset(chapters)
 
 
 def _release_pin(e: dict, kind: str) -> str:
@@ -144,6 +167,12 @@ def load_settings(env: dict | None = None) -> Settings:
     rulings = (e.get("CARGOLINT_EBTI_RULINGS") or "5000").strip().lower()
     if rulings != "all" and not (re.fullmatch(r"[0-9]+", rulings) and int(rulings) > 0):
         raise ValueError(f"CARGOLINT_EBTI_RULINGS must be a positive integer or all, not {rulings!r}")
+    chapters = (e.get("CARGOLINT_EBTI_CHAPTERS") or "").strip().lower() or "all"
+    try:
+        parse_chapter_setting(chapters)
+    except ValueError as exc:
+        raise ValueError(f"CARGOLINT_EBTI_CHAPTERS must be all or a comma-separated list of chapters 01-99 and ascending "
+                         f"ranges such as 27,34,38 or 61-64, not {chapters!r}: {exc}") from None
     return Settings(
         api_key=e.get("OPENROUTER_API_KEY") or None,
         http_referer=e.get("OPENROUTER_HTTP_REFERER") or None,
@@ -165,6 +194,7 @@ def load_settings(env: dict | None = None) -> Settings:
         ebti_release=_release_pin(e, "ebti"),
         taric_release=_release_pin(e, "taric"),
         ebti_rulings=rulings,
+        ebti_chapters=chapters,
     )
 
 
