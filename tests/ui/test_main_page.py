@@ -870,7 +870,8 @@ def test_the_top_of_the_line_shows_the_contradiction_and_the_reply_fields(kb, re
     h._check(store, kb, n)
     h._classify(store, n, [("8452.90", 91), ("8452.30", 5)])
     at = opened(store, kb, n)
-    assert [plain(w.value) for w in at.warning] == ["The reply contradicts the file: 8452.90, not 9405.21"]
+    assert "The reply contradicts the file: 8452.90, not 9405.21" in [plain(w.value) for w in at.warning]   # beside the
+    assert sum("contradicts" in w.value for w in at.warning) == 1                       # Origin box's freshness warning
     assert "From the shipper's reply — material: steel · part: bobbin case · use: sewing machines" in texts(at)
 
 
@@ -1163,3 +1164,25 @@ def test_an_overridden_line_whose_cn8_is_to_pick_says_the_rulings_overrode_the_m
     page = texts(opened(store, kb, n))                                              # the open line holds the CN-8 pick
     assert ("The HS-6 is 9405 21; rulings overrode the model: 4 of 5 agree on 9405 21; its subheading has 3 CN-8 "
             "lines.") in page
+
+
+# --------------------------------------------------------------------------- feature 013: the Origin box's dates and warning
+def test_the_origin_box_shows_both_dates_and_warns_when_a_part_is_old(recorder, monkeypatch):
+    import functools
+
+    kb = h.make_kb(meta={"ebti_snapshot_date": "2026-11-01"})
+    monkeypatch.setattr(view, "freshness_warning", functools.partial(view.freshness_warning, today=date(2026, 11, 13)))
+    at = h.app(empty_store(), kb).run()
+    assert not at.exception
+    assert "TARIC snapshot 2026-10-01 · EBTI rulings 2026-11-01" in [c.value for c in at.caption]
+    assert [w.value for w in at.warning] == ["TARIC snapshot is 43 days old (limit 40 days)."]
+    monkeypatch.setattr(view, "freshness_warning", functools.partial(view.freshness_warning, today=date(2026, 11, 10)))
+    at = h.app(empty_store(), kb).run()
+    assert not at.exception and not at.warning                                           # exactly 40 days: no warning
+    old = h.make_kb(meta={"ebti_snapshot_date": "2026-09-28"})
+    monkeypatch.setattr(view, "freshness_warning", functools.partial(view.freshness_warning, today=date(2026, 11, 13)))
+    at = h.app(empty_store(), old).run()
+    assert [w.value for w in at.warning] == ["TARIC snapshot is 43 days old (limit 40 days). EBTI rulings are 46 days old (limit 45 days)."]
+    built = h.make_kb(taric=None)                                                          # demo-store-v1: the build date
+    at = h.app(empty_store(), built).run()
+    assert "TARIC not loaded · EBTI rulings built 2026-10-15" in [c.value for c in at.caption] and not at.warning

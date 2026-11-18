@@ -8,12 +8,14 @@ All line data is read from the LineStore; nothing in the UI is reconstructed fro
 from __future__ import annotations
 
 import hmac
+import logging
 
 import streamlit as st
 
 from agent.config import configure_logging, get_settings
 from agent.store import LineStore
 from rag.demo_store import DemoStoreError, demo_store_needed, fetch_demo_store
+from rag.refresh import RefreshError, fetch_releases, releases_needed
 from rag.retriever import IndexMismatchError
 
 st.set_page_config(page_title="CargoLint", page_icon="📦", layout="wide")
@@ -29,14 +31,27 @@ DEMO_NOTICE = (   # feature 011: shown when CARGOLINT_DEMO_NOTICE is "on"
 
 @st.cache_resource(show_spinner="Loading the knowledge base…")
 def load_kb():
-    """Once per server process. A hosted demo first fetches its store when it is missing (feature 011)."""
+    """Once per server process. A hosted demo first fetches its knowledge base when it is missing: the newest complete
+    release of each kind when CARGOLINT_RELEASE_REPO is set (feature 013), else the demo archive of feature 011. A TARIC
+    release that cannot be fetched leaves the app running without TARIC, with the reason kept on the knowledge base;
+    an EBTI release that cannot be fetched raises RefreshError, which main() shows before it stops."""
     from rag.loader import open_knowledge_base
 
     settings = get_settings()
-    if demo_store_needed(settings.demo_store_url):
+    failures: dict[str, str] = {}
+    if settings.release_repo:
+        if settings.demo_store_url:
+            logging.getLogger("app").info("CARGOLINT_RELEASE_REPO is set: the demo store settings of feature 011 "
+                                          "(CARGOLINT_DEMO_STORE_URL, CARGOLINT_DEMO_STORE_SHA256) are ignored")
+        if releases_needed(settings):
+            with st.spinner("Downloading the knowledge base releases…"):
+                failures = fetch_releases(settings).failed
+    elif demo_store_needed(settings.demo_store_url):
         with st.spinner("Downloading the demo knowledge base…"):
             fetch_demo_store(settings.demo_store_url, settings.demo_store_sha256)
-    return open_knowledge_base(settings)
+    kb = open_knowledge_base(settings)
+    kb.fetch_failures = failures
+    return kb
 
 
 def get_store(kb) -> LineStore:
@@ -80,6 +95,11 @@ def main() -> None:
     except DemoStoreError as exc:
         st.error(f"Demo knowledge base: {exc}", icon="📚")
         st.stop()
+    except RefreshError as exc:
+        st.error(f"Knowledge base release: {exc}", icon="📚")
+        st.stop()
+    for kind, reason in kb.fetch_failures.items():   # feature 013: a TARIC release not fetched; the app runs without it
+        st.error(f"Knowledge base release: {kind}: {reason}", icon="📚")
     store = get_store(kb)
     st.session_state.setdefault("chat", [])
     st.session_state.setdefault("selected_line_no", None)

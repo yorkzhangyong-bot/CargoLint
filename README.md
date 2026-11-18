@@ -255,6 +255,9 @@ the store, never from the model's prose.
   no link inside a file is followed.
 - **Secrets** come from the environment only; shipper contact details are dropped from the BTI data
   and never logged; nothing is ever sent to a shipper or a customs system.
+- **Knowledge base releases** (feature 013) are the project's own, read over HTTPS from github.com and
+  api.github.com at a cold start; each archive is verified against its release's SHA-256 and its entries are
+  checked before anything is unpacked. The scripts publish through `gh`; the app reads no GitHub token.
 - Residual risk: the clerk's own typed message is trusted as an instruction.
 
 ## Error scenarios and how they are handled
@@ -453,10 +456,117 @@ every pull request to main (Ubuntu, Python 3.13). It needs no API key: the suite
 stay deselected. The paid evals are not part of CI: `tests/eval/hs6_eval.py` and `tests/eval/e2e_eval.py` are run
 locally by hand, at about $0.20 (HS-6) and $0.27 (end to end) per run of the 120 lines.
 
+## Knowledge base refresh
+
+The EBTI rulings and the TARIC snapshot the hosted demo runs on are published as GitHub releases of this repository
+(feature 013), one release per kind and snapshot date, and the app fetches the newest complete release of each kind
+at a cold start. Two scripts publish them; the app never writes a release.
+
+### The two commands
+
+```bash
+python scripts/refresh_taric.py [--force] [--no-publish] [--repo OWNER/NAME]
+python scripts/refresh_ebti.py [--rulings N|all] [--out DIR] [--previous RELEASE|DIR] [--full-embed] [--extract ZIP]
+                               [--force] [--no-publish] [--repo OWNER/NAME]
+```
+
+- **`refresh_taric.py`** (daily by design) reads the Swedish Customs `tot` folder, takes the newest batch whose six
+  object files are all there (an incomplete newer batch is passed over), downloads them into `data/raw/taric/<date>/`,
+  runs the same load as `python -m rag.loader --taric` (signatures, parsing, `data/taric.jsonl`, the register row),
+  packs the snapshot and publishes `taric-<date>`. The full extract appears about monthly, so most days the command
+  says "nothing new". No embedding and no model call.
+- **`refresh_ebti.py`** (monthly by design) downloads the EBTI full extract afresh into `build/`, keeps the valid
+  rulings of the twelve indexed chapters, chooses them with the demo store's rule up to `CARGOLINT_EBTI_RULINGS`
+  (5000 by default; `all` keeps every valid ruling for a production store; `--rulings` overrides it for one run) with
+  the previous store's rulings first, copies the vectors of the unchanged rulings from the previous store (their code
+  and validity rewritten from the new extract), embeds only the new and changed rulings, copies the nomenclature
+  index, builds the store in `build/ebti-<date>/` and publishes `ebti-<date>`. The previous store is the newest
+  complete `ebti-*` release, or `--previous`: a release name (`demo-store-v1` on the first run) or a folder holding
+  `store/`. `--full-embed` embeds every nomenclature chunk and chosen ruling afresh (a change of embedding model) and
+  copies nothing. `--out` names the work folder (new or empty; the default one is emptied by `--force`, a given one
+  never); `--extract` uses a downloaded extract. The repository's `store/`, `data/bti_subset.jsonl` and `data/raw/`
+  are never touched.
+- Shared: `--force` rebuilds and replaces an existing release of the same date (deleted and created afresh, never
+  patched asset by asset); `--no-publish` builds and packs without publishing (the EBTI command still needs `gh` when
+  its previous store is a release); `--repo OWNER/NAME` names the repository (default: the checkout's remote);
+  `CARGOLINT_GH` names the `gh` executable, as `CARGOLINT_GPG` names `gpg`. Both need `gh` signed in (`gh auth
+  status`); the TARIC command needs `gpg` and the key copy, the EBTI command `OPENROUTER_API_KEY`.
+
+### Releases, completeness and retention
+
+A release is `<kind>-YYYY-MM-DD`, dated by the data's snapshot date (the TARIC batch's date, the EBTI extract's
+date), with two assets: `cargolint-<kind>-<date>.zip` (the EBTI archive holds `store/…`, the TARIC archive holds
+`data/taric.jsonl`) and `metadata.json` (kind, release, snapshot date, source and source version, build time, the
+archive's SHA-256, size and entries, the EBTI counts, and a `current` block naming the complete releases of both
+kinds left after the run). A release is **complete** when it carries both assets and is not a draft; only complete
+releases count for "nothing new", for `current`, for retention and for the app. After publishing, each script keeps
+the two newest complete releases of its kind and deletes every other release of the kind, older or incomplete;
+`demo-store-v1` belongs to no kind and is never touched. The release published last is marked the repository's
+**latest** release, so the latest release's `metadata.json`, at GitHub's fixed download address, is the app's pointer
+to both kinds. A run that finds nothing new still prunes and re-marks the latest release when it is older than the
+newest complete release of its kind or incomplete.
+
+Exit codes: **0** published or nothing new; **1** the source was refused (listing unreadable, no complete batch, a
+signature, an extract without a date); **2** setup or usage (options, an invalid ruling count, `gpg` or `gh` missing
+or signed out, `OPENROUTER_API_KEY` missing, no previous store, a previous store of another model or nomenclature
+without `--full-embed`, a work folder that is not empty); **3** the release service failed after the build or in a
+nothing-new run's retention: the message names the step and what was done before it, and the next run of the kind
+repairs it.
+
+### Settings and the fetch at a cold start
+
+| Variable | Meaning |
+|---|---|
+| `CARGOLINT_RELEASE_REPO` | `owner/name` of the repository that publishes the releases; empty (the default): no release fetch |
+| `CARGOLINT_EBTI_RELEASE`, `CARGOLINT_TARIC_RELEASE` | a pinned release name, `<kind>-YYYY-MM-DD`, for a rollback; empty: the newest complete release of the kind. A pin lasts only while retention keeps its release (the next refresh of its kind deletes it); a pin that fails falls back once to the newest, with a log line |
+| `CARGOLINT_EBTI_RULINGS` | the EBTI store size of a refresh: a positive integer (5000 by default) or `all` |
+
+With `CARGOLINT_RELEASE_REPO` set and a part missing (`store/index_meta.json`, `data/taric.jsonl`), the app reads the
+latest release's metadata from the public download address (no token, no API call), takes each kind's newest complete
+release from its `current` block (or the pin), verifies the archive's SHA-256 and its entries before unpacking it,
+unpacks with the marker last, and falls back once to the next newest release; when the pointer cannot be read or
+every release it names fails, the release list is read through the API. An EBTI release that cannot be fetched stops
+the app with the reason; a TARIC release that cannot be fetched does not: the app opens without TARIC and says so on
+the page, and the next start fetches it again. The release in use is kept beside the data (`store/release.json`,
+`data/taric_release.json`) and shown on Admin › Data. With the four settings unset nothing changes: a local clone
+fetches nothing.
+
+**Switching the demo** from the feature-011 archive: once both kinds are published, set `CARGOLINT_RELEASE_REPO` in
+the Community Cloud secrets and remove `CARGOLINT_DEMO_STORE_URL` and `CARGOLINT_DEMO_STORE_SHA256`, then reboot the
+app. With both set, the repository setting wins and the feature-011 settings are ignored (a note in the log). Until
+the switch, the demo keeps fetching the feature-011 archive.
+
+### What the clerk sees
+
+The Origin box reads `TARIC snapshot <date> · EBTI rulings <date>` (`EBTI rulings built <date>` for a store that
+records no extract date, such as `demo-store-v1`). A yellow warning names a part older than its limit: 40 days for the
+TARIC snapshot and 45 days for the rulings (`TARIC_STALE_DAYS` and `EBTI_STALE_DAYS` in `agent/config.py`), counted in
+whole days on the day the page renders; nothing shows at exactly the limit. Admin › Data shows each part's date and
+source version, the TARIC batch and the releases in use.
+
+### The schedule
+
+`.github/workflows/refresh.yml` runs the TARIC refresh daily (05:30 UTC) and the EBTI refresh monthly (06:00 UTC on
+the first), and can be run by hand from the Actions tab (`kind`: taric, ebti or both). The scheduled jobs run only
+while the repository variable `CARGOLINT_REFRESH` is `on`; until then the maintainer runs the scripts by hand. The
+`ebti` job needs the `OPENROUTER_API_KEY` repository secret; the releases are written with the job's token, which the
+checkout does not keep. Runs go one at a time and the `ebti` job waits for the `taric` job, so one release is
+published at a time. Run the scripts by hand only while the schedule is off, or after checking in the Actions tab
+that no job is running: two runs publishing at once can leave a stale pointer (the app then falls back to the
+listing). GitHub disables the schedules after 60 days without repository activity; the Actions tab shows the notice
+and the button that re-enables them.
+
+The evaluation that compares a refreshed store with `demo-store-v1` (`python tests/eval/e2e_eval.py --repeat 3
+--as-of <today>`) judges the rulings' validity on the run day instead of the set's build date, so the rulings issued
+since can vote; the author runs both stores in one session.
+
 ## Demo deployment
 
 A demo runs on Streamlit Community Cloud with a smaller knowledge base that the app downloads at its first start
 (feature 011). The measurements and platform limits behind it are in `docs/deploy/streamlit-cloud-assessment.md`.
+Since feature 013 the demo can fetch the knowledge base from the TARIC and EBTI releases instead of the one archive:
+set `CARGOLINT_RELEASE_REPO` and leave the two demo-store secrets out ("Knowledge base refresh" above). The steps
+below are the feature-011 way, which keeps working until the secrets are switched.
 
 1. **Cut the demo store** from the local full build, after `python -m rag.loader` and `python -m rag.loader --taric`. No
    API call is made:
@@ -565,7 +675,8 @@ line's version history; duty calculation from the TARIC measures; SQLite persist
 app.py          Streamlit entry point        ui/        main_page, table, expand, view, actions, shipper_email, upload, runner, jobs (worker turns), admin, chat, replies
 agent/          config, schemas, routing, prompts, llm (client factory + cost), agent (loop + guard), store
 tools/          the seven tools, parsers, ocr, common (context + per-line runner)
-rag/            loader (CLI), nomenclature (SKOS), bti (EBTI), rules (ICS2 PDFs), embeddings, retriever, translate, taric + taric_extract + pgp (TARIC snapshot), demo_store (hosted demo: cut and fetch)
+rag/            loader (CLI), nomenclature (SKOS), bti (EBTI), rules (ICS2 PDFs), embeddings, retriever, translate, taric + taric_extract + pgp (TARIC snapshot), demo_store (hosted demo: cut and fetch), refresh + refresh_taric + refresh_ebti (knowledge base releases: publish and fetch)
+scripts/        refresh_taric.py, refresh_ebti.py: the knowledge base refresh commands (feature 013)
 data/           processed knowledge base, rule lists, shipper history (synthetic), sample lists (xlsx, gbk csv, text pdf, photo), labelled set, SOURCES.md
 store/          Chroma vectors (nomenclature in chroma/, rulings in chroma-bti/), BM25 pickle, BTI document store (git-ignored; rebuilt by the loader)
 tests/          unit, integration, adversarial, live, eval (run_eval.py, make_big_list.py), fixtures

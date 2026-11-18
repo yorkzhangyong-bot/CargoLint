@@ -59,8 +59,11 @@ def _rules(store: Any) -> None:
 
 # --------------------------------------------------------------------------- Data, Cost, Quality
 def _data(kb: Any) -> None:
-    st.markdown(f"EBTI rulings: {len(kb.bti):,}")
+    st.markdown(view.rulings_statement(kb))
     st.markdown(view.taric_statement(kb))
+    releases = view.release_statement(kb)          # feature 013: only when the app fetched a release
+    if releases:
+        st.markdown(releases)
     st.markdown(f"Model: {get_settings().chat_model} via OpenRouter")
     st.markdown(view.kb_statement(kb))
     st.button("Refresh (later)", key="refresh_data", disabled=True, help="A later feature refreshes the data from here")

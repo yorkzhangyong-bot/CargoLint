@@ -279,13 +279,88 @@ def test_taric_statement_keeps_the_mismatch_count(count, text):         # replac
 
 def test_captions_without_a_snapshot():
     assert view.taric_statement(taric_kb(loaded=False)) == "TARIC not loaded"
-    assert view.snapshot_caption(taric_kb(loaded=False)) == "TARIC not loaded"
-    assert view.snapshot_caption(taric_kb()) == "TARIC snapshot 2026-10-01"
+    assert view.snapshot_caption(taric_kb(loaded=False)) == "TARIC not loaded · EBTI rulings: date unknown"
+    assert view.snapshot_caption(taric_kb()) == "TARIC snapshot 2026-10-01 · EBTI rulings: date unknown"
 
 
 def test_kb_statement(kb):
     text = view.kb_statement(kb)
     assert text.startswith("HS 2022 / CN ") and "BTI rulings" in text and text.endswith("updated 2026-10-15")
+    dated = view.kb_statement(h.make_kb(meta={"ebti_snapshot_date": "2026-11-01"}))      # feature 013: the extract date
+    assert dated.endswith("updated 2026-11-01")
+
+
+# --------------------------------------------------------------------------- feature 013: the dates and the warning (T026)
+from datetime import date as _date  # noqa: E402
+from types import SimpleNamespace as _NS  # noqa: E402
+
+TODAY = _date(2026, 11, 13)
+SOURCE = "full extract of 2026-11-01, chapters 39,42,61-64,73,84,85,94,95,96"
+
+
+def dated_kb(taric="2026-11-02", rulings=("2026-11-01", "extract"), batch=None, bti=2, source=SOURCE, releases=None):
+    """A small fake with the fields the captions read: the TARIC snapshot (a date), the rulings' date and how it was
+    found, the ruling count, the source version and the release files."""
+    snapshot = _NS(snapshot_date=_date.fromisoformat(taric), cn8_mismatches=105, batch_id=batch) if taric else None
+    return _NS(taric=_NS(snapshot=snapshot) if snapshot else None, rulings_date=rulings, bti=[0] * bti,
+               meta={"ebti_source_version": source} if source else {}, releases=releases or {"ebti": None, "taric": None})
+
+
+def test_snapshot_caption_shows_both_dates():
+    assert view.snapshot_caption(dated_kb()) == "TARIC snapshot 2026-11-02 · EBTI rulings 2026-11-01"
+    assert view.snapshot_caption(dated_kb(taric=None)) == "TARIC not loaded · EBTI rulings 2026-11-01"
+    assert view.snapshot_caption(dated_kb(rulings=("2026-10-16", "built"))) == "TARIC snapshot 2026-11-02 · EBTI rulings built 2026-10-16"
+    assert view.snapshot_caption(dated_kb(rulings=(None, "unknown"))) == "TARIC snapshot 2026-11-02 · EBTI rulings: date unknown"
+
+
+@pytest.mark.parametrize("taric, rulings, expected", [
+    ("2026-11-02", ("2026-11-01", "extract"), None),
+    ("2026-10-04", ("2026-09-29", "extract"), None),                                   # exactly 40 and 45 days: no warning
+    ("2026-10-03", ("2026-11-01", "extract"), "TARIC snapshot is 41 days old (limit 40 days)."),
+    ("2026-11-02", ("2026-09-28", "extract"), "EBTI rulings are 46 days old (limit 45 days)."),
+    ("2026-11-02", ("2026-09-28", "built"), "EBTI rulings are 46 days old (limit 45 days)."),   # the build date stands in
+    ("2026-10-03", ("2026-09-28", "extract"),
+     "TARIC snapshot is 41 days old (limit 40 days). EBTI rulings are 46 days old (limit 45 days)."),
+    (None, ("2026-09-28", "extract"), "EBTI rulings are 46 days old (limit 45 days)."),   # no TARIC part when not loaded
+    (None, ("2026-11-01", "extract"), None),
+    ("2026-11-02", (None, "unknown"), "EBTI rulings: age unknown (no date recorded)."),
+    ("2026-11-02", ("2026-13-01", "extract"), "EBTI rulings: age unknown (recorded date 2026-13-01 cannot be used)."),
+    ("2026-11-02", ("2027-01-01", "extract"), "EBTI rulings: age unknown (recorded date 2027-01-01 cannot be used)."),
+])
+def test_freshness_warning_at_and_past_the_limits(taric, rulings, expected):
+    assert view.freshness_warning(dated_kb(taric=taric, rulings=rulings), TODAY) == expected
+
+
+def test_freshness_warning_counts_from_today_by_default():
+    fresh = dated_kb(taric=_date.today().isoformat(), rulings=(_date.today().isoformat(), "extract"))
+    assert view.freshness_warning(fresh) is None
+    from agent.config import EBTI_STALE_DAYS, TARIC_STALE_DAYS
+
+    assert (TARIC_STALE_DAYS, EBTI_STALE_DAYS) == (40, 45)
+
+
+def test_rulings_statement():
+    assert view.rulings_statement(dated_kb(bti=5000)) == f"EBTI rulings: 5,000 · extract 2026-11-01 · {SOURCE}"
+    assert view.rulings_statement(dated_kb(bti=5000, source=None)) == "EBTI rulings: 5,000 · extract 2026-11-01"
+    assert view.rulings_statement(dated_kb(rulings=("2026-10-16", "built"))) == "EBTI rulings: 2 · built 2026-10-16"
+    assert view.rulings_statement(dated_kb(rulings=(None, "unknown"))) == "EBTI rulings: 2 · date unknown"
+
+
+def test_taric_statement_names_the_batch_when_present():
+    batch = "e14b8e06-f3f6-4ce1-ba9b-1423d07f6b83"
+    assert view.taric_statement(dated_kb(batch=batch)) == (
+        f"TARIC snapshot: 2026-11-02 · 105 CN-8 mismatches · Swedish Customs Tariff File Distribution · batch {batch}")
+    assert view.taric_statement(dated_kb()) == "TARIC snapshot: 2026-11-02 · 105 CN-8 mismatches · Swedish Customs Tariff File Distribution"
+
+
+def test_release_statement():
+    ebti = {"release": "ebti-2026-11-01", "fetched_at": "2026-11-13T08:00:00+00:00"}
+    taric = {"release": "taric-2026-11-02", "fetched_at": "2026-11-13T08:00:05+00:00"}
+    assert view.release_statement(dated_kb(releases={"ebti": ebti, "taric": taric})) == (
+        "Releases in use: ebti-2026-11-01 (fetched 2026-11-13), taric-2026-11-02 (fetched 2026-11-13)")
+    assert view.release_statement(dated_kb(releases={"ebti": ebti, "taric": None})) == (
+        "Releases in use: ebti-2026-11-01 (fetched 2026-11-13), taric local")
+    assert view.release_statement(dated_kb()) is None
 
 
 def test_button_labels():

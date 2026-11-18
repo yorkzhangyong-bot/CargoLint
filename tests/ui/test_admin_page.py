@@ -136,12 +136,27 @@ def test_the_rules_and_the_section_stay_across_pages(kb, recorder):
 def test_data(kb, recorder):
     store, _ = h.store_with("ready", kb=kb)
     page = texts(admin_app(store, kb, "Data"))
-    assert "EBTI rulings: 2" in page and view.taric_statement(kb) in page
+    assert "EBTI rulings: 2 · built 2026-10-15" in page and view.rulings_statement(kb) in page
+    assert view.taric_statement(kb) in page
     assert f"Model: {get_settings().chat_model} via OpenRouter" in page
     assert view.kb_statement(kb) in page and view.kb_statement(kb).endswith("updated 2026-10-15")
+    assert not any(t.startswith("Releases in use") for t in page)                      # a local build: no release line
     at = admin_app(store, kb, "Data")
     assert at.button(key="refresh_data").label == "Refresh (later)" and at.button(key="refresh_data").disabled
     assert "TARIC not loaded" in texts(admin_app(store, h.make_kb(taric=None), "Data"))
+
+
+def test_data_with_the_dates_and_the_releases_in_use(recorder):
+    """Feature 013 (contracts/ui.md): the extract date and source version, the batch, and the release files."""
+    source = "full extract of 2026-11-01, chapters 39,42,61-64,73,84,85,94,95,96"
+    kb = h.make_kb(meta={"ebti_snapshot_date": "2026-11-01", "ebti_source_version": source},
+                   releases={"ebti": {"release": "ebti-2026-11-01", "fetched_at": "2026-11-13T08:00:00+00:00"}, "taric": None})
+    store, _ = h.store_with("ready", kb=kb)
+    page = texts(admin_app(store, kb, "Data"))
+    assert f"EBTI rulings: 2 · extract 2026-11-01 · {source}" in page
+    assert "TARIC snapshot: 2026-10-01 · 0 CN-8 mismatches · Swedish Customs Tariff File Distribution · batch small" in page
+    assert "Releases in use: ebti-2026-11-01 (fetched 2026-11-13), taric local" in page
+    assert view.kb_statement(kb).endswith("updated 2026-11-01") and view.kb_statement(kb) in page
 
 
 def test_cost(kb, recorder):

@@ -10,9 +10,10 @@ import csv
 import io
 import re
 from dataclasses import dataclass
+from datetime import date
 from typing import Any
 
-from agent.config import MAX_DESC_CHARS
+from agent.config import EBTI_STALE_DAYS, MAX_DESC_CHARS, TARIC_STALE_DAYS
 from agent.routing import cn8_precedent_conflict, hs6_choice, hs6_gate
 from agent.schemas import (Actor, ChangeKind, ChosenHow, Cn8Gate, CreatedBy, DecisionRoute, FlagKind, Hs6Gate, TaricRule,
                            WrittenBy)
@@ -845,20 +846,102 @@ def origin_toast(message: str) -> str:
     return f"Origin {m.group(1)} — TARIC rules re-applied to {_plural(int(m.group(2)), 'line')}, no model call"
 
 
+def _rulings_date(kb: Any) -> tuple[str | None, str]:
+    """Feature 013: the rulings' date and how the store records it, (date, "extract" | "built" | "unknown")."""
+    found = getattr(kb, "rulings_date", None)
+    return tuple(found) if found else (None, "unknown")
+
+
+def _rulings_part(kb: Any) -> str:
+    when, how = _rulings_date(kb)
+    if when is None:
+        return "EBTI rulings: date unknown"
+    return f"EBTI rulings built {when}" if how == "built" else f"EBTI rulings {when}"
+
+
 def snapshot_caption(kb: Any) -> str:
+    """The Origin box's caption (feature 013, FR-019): the TARIC snapshot date and the rulings' date."""
     taric = getattr(kb, "taric", None)
-    return f"TARIC snapshot {taric.snapshot.snapshot_date}" if taric is not None else "TARIC not loaded"
+    first = f"TARIC snapshot {taric.snapshot.snapshot_date}" if taric is not None else "TARIC not loaded"
+    return f"{first} · {_rulings_part(kb)}"
+
+
+def _age(value: Any, today: date) -> int | None:
+    """Whole days from a recorded date to today; None when the date cannot be read or lies in the future."""
+    try:
+        when = date.fromisoformat(str(value)[:10])
+    except ValueError:
+        return None
+    age = (today - when).days
+    return None if age < 0 else age
+
+
+def freshness_warning(kb: Any, today: date | None = None) -> str | None:
+    """The Origin box's yellow warning (feature 013, FR-020): a part older than its limit, counted in whole days from
+    the day the page renders; nothing at exactly the limit; both parts in one text when both are old, TARIC first; a
+    date that cannot be used, or none at all, says the age is unknown. A TARIC snapshot that is not loaded has no part."""
+    today = today or date.today()
+    parts = []
+    taric = getattr(kb, "taric", None)
+    if taric is not None:
+        recorded = taric.snapshot.snapshot_date
+        age = _age(recorded, today)
+        if age is None:
+            parts.append(f"TARIC snapshot: age unknown (recorded date {recorded} cannot be used).")
+        elif age > TARIC_STALE_DAYS:
+            parts.append(f"TARIC snapshot is {age} days old (limit {TARIC_STALE_DAYS} days).")
+    when, _ = _rulings_date(kb)
+    if when is None:
+        parts.append("EBTI rulings: age unknown (no date recorded).")
+    else:
+        age = _age(when, today)
+        if age is None:
+            parts.append(f"EBTI rulings: age unknown (recorded date {when} cannot be used).")
+        elif age > EBTI_STALE_DAYS:
+            parts.append(f"EBTI rulings are {age} days old (limit {EBTI_STALE_DAYS} days).")
+    return " ".join(parts) or None
+
+
+def rulings_statement(kb: Any) -> str:
+    """Admin › Data (feature 013, FR-021): the ruling count, the extract date and the source version, or the build date
+    when the store records no extract."""
+    n = len(kb.bti)
+    when, how = _rulings_date(kb)
+    if when is None:
+        return f"EBTI rulings: {n:,} · date unknown"
+    if how == "built":
+        return f"EBTI rulings: {n:,} · built {when}"
+    source = (getattr(kb, "meta", None) or {}).get("ebti_source_version")
+    return f"EBTI rulings: {n:,} · extract {when}" + (f" · {source}" if source else "")
+
+
+def release_statement(kb: Any) -> str | None:
+    """Admin › Data (feature 013, FR-013): the releases the app fetched, with the day; a kind without a release file
+    reads local; None when no release file exists (a local build)."""
+    releases = getattr(kb, "releases", None) or {}
+    if not any(releases.get(kind) for kind in ("ebti", "taric")):
+        return None
+    parts = []
+    for kind in ("ebti", "taric"):
+        found = releases.get(kind)
+        if found:
+            parts.append(f"{found.get('release', '?')} (fetched {str(found.get('fetched_at', ''))[:10]})")
+        else:
+            parts.append(f"{kind} local")
+    return "Releases in use: " + ", ".join(parts)
 
 
 def taric_statement(kb: Any) -> str:
-    """Admin › Data: the snapshot date, its CN-8 mismatch count (feature 002 FR-024) and its source."""
+    """Admin › Data: the snapshot date, its CN-8 mismatch count (feature 002 FR-024), its source and, when the snapshot
+    records it, its batch (feature 013)."""
     taric = getattr(kb, "taric", None)
     if taric is None:
         return "TARIC not loaded"
     snap = taric.snapshot
     n = snap.cn8_mismatches
+    batch = getattr(snap, "batch_id", None)
     return (f"TARIC snapshot: {snap.snapshot_date} · {n:,} CN-8 mismatch{'' if n == 1 else 'es'} · "
-            "Swedish Customs Tariff File Distribution")
+            "Swedish Customs Tariff File Distribution" + (f" · batch {batch}" if batch else ""))
 
 
 def quality_rows(history: Any, results: Any) -> list[dict]:
@@ -897,5 +980,7 @@ def kb_statement(kb: Any) -> str:
     """What the knowledge base covers and when it was last updated (Principle IV); today's sidebar caption."""
     facts = kb.rules.caption_facts()
     year = kb.index.edition_year or ""
+    when, how = _rulings_date(kb)
+    updated = when if how == "extract" else kb.updated                  # feature 013: the rulings' extract date when known
     return (f"HS 2022 / CN {year} · {len(kb.index):,} subheadings · ICS2 {facts['ics2_terms']} terms · "
-            f"firm list {facts['firm_terms']} · {len(kb.bti):,} BTI rulings · updated {kb.updated or 'unknown'}")
+            f"firm list {facts['firm_terms']} · {len(kb.bti):,} BTI rulings · updated {updated or 'unknown'}")

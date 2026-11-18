@@ -7,8 +7,10 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import sys
 from dataclasses import dataclass, field
+from datetime import date
 from functools import lru_cache
 from pathlib import Path
 
@@ -66,6 +68,14 @@ TARIC_SCHEMA = 2
 TARIC_LOG_DIR = STORE_DIR / "logs"
 GPG_ENV = "CARGOLINT_GPG"            # optional full path to gpg
 
+# Knowledge base releases (feature 013): the two kinds and their release names, <kind>-YYYY-MM-DD (data-model §1)
+RELEASE_KINDS = ("ebti", "taric")
+RELEASE_NAME_RE = re.compile(r"^(?P<kind>ebti|taric)-(?P<date>\d{4}-\d{2}-\d{2})$")
+# Freshness of the knowledge base (feature 013, FR-020): a part is old when its age in whole days is greater than its
+# limit ("older than"); at exactly the limit there is no warning
+TARIC_STALE_DAYS = 40                # the TARIC snapshot date; the full extract is published about monthly
+EBTI_STALE_DAYS = 45                 # the EBTI rulings' extract date (or the build date of a store without one)
+
 
 @dataclass(frozen=True)
 class Settings:
@@ -90,10 +100,38 @@ class Settings:
     demo_store_sha256: str = ""     # feature 011: CARGOLINT_DEMO_STORE_SHA256, the archive's checksum, checked before
                                     # anything is unpacked
     demo_notice: bool = False       # feature 011: CARGOLINT_DEMO_NOTICE "on" shows the "Before you upload" notice
+    release_repo: str = ""          # feature 013: CARGOLINT_RELEASE_REPO, owner/name of the repository whose releases
+                                    # hold the knowledge base, fetched at a cold start; empty: no release fetch
+    ebti_release: str = ""          # feature 013: CARGOLINT_EBTI_RELEASE, a pinned EBTI release (a rollback); empty:
+                                    # the newest of the kind
+    taric_release: str = ""         # feature 013: CARGOLINT_TARIC_RELEASE, the same for the TARIC kind
+    ebti_rulings: str = "5000"      # feature 013: CARGOLINT_EBTI_RULINGS, the EBTI store size of a refresh: a positive
+                                    # integer, or "all" for every valid ruling; --rulings overrides it for one run
 
     @property
     def has_key(self) -> bool:
         return bool(self.api_key)
+
+
+def release_name_ok(name: str, kind: str | None = None) -> bool:
+    """True for a release name of the form <kind>-YYYY-MM-DD with a valid date, and of `kind` when one is given."""
+    m = RELEASE_NAME_RE.match(name or "")
+    if m is None or (kind is not None and m["kind"] != kind):
+        return False
+    try:
+        date.fromisoformat(m["date"])
+    except ValueError:
+        return False
+    return True
+
+
+def _release_pin(e: dict, kind: str) -> str:
+    """A pin names a release of its kind, or is empty; anything else is refused when the settings are read (FR-014)."""
+    variable = f"CARGOLINT_{kind.upper()}_RELEASE"
+    value = (e.get(variable) or "").strip()
+    if value and not release_name_ok(value, kind):
+        raise ValueError(f"{variable} must name a release of the form {kind}-YYYY-MM-DD, not {value!r}")
+    return value
 
 
 def load_settings(env: dict | None = None) -> Settings:
@@ -103,6 +141,9 @@ def load_settings(env: dict | None = None) -> Settings:
     expansion = (e.get("CARGOLINT_QUERY_EXPANSION") or "off").strip().lower()
     if expansion not in ("on", "off"):
         raise ValueError(f"CARGOLINT_QUERY_EXPANSION must be on or off, not {expansion!r}")
+    rulings = (e.get("CARGOLINT_EBTI_RULINGS") or "5000").strip().lower()
+    if rulings != "all" and not (re.fullmatch(r"[0-9]+", rulings) and int(rulings) > 0):
+        raise ValueError(f"CARGOLINT_EBTI_RULINGS must be a positive integer or all, not {rulings!r}")
     return Settings(
         api_key=e.get("OPENROUTER_API_KEY") or None,
         http_referer=e.get("OPENROUTER_HTTP_REFERER") or None,
@@ -120,6 +161,10 @@ def load_settings(env: dict | None = None) -> Settings:
         demo_store_url=(e.get("CARGOLINT_DEMO_STORE_URL") or "").strip(),
         demo_store_sha256=(e.get("CARGOLINT_DEMO_STORE_SHA256") or "").strip().lower(),
         demo_notice=(e.get("CARGOLINT_DEMO_NOTICE") or "off").strip().lower() == "on",
+        release_repo=(e.get("CARGOLINT_RELEASE_REPO") or "").strip(),
+        ebti_release=_release_pin(e, "ebti"),
+        taric_release=_release_pin(e, "taric"),
+        ebti_rulings=rulings,
     )
 
 

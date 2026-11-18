@@ -21,6 +21,8 @@ ALLOWED_HOSTS = {
     "distr.tullverket.se",                             # TARIC source in data/SOURCES.md; the operator downloads the files
     "www.arcticgroup.se",                              # TARIC export XML namespace, never fetched
     "auskunft.ezt-online.de",                          # feature 004: a link shown to the clerk, never fetched (research R-08)
+    "github.com", "api.github.com",                    # feature 013: the knowledge base releases, read at a cold start
+                                                       # (README, "Knowledge base refresh"); the scripts publish through gh
 }
 
 

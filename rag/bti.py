@@ -18,6 +18,7 @@ from agent.config import DATA_DIR, STORE_DIR
 from agent.schemas import Precedent
 
 TARGET_CHAPTERS = ["39", "42", "61", "62", "63", "64", "73", "84", "85", "94", "95", "96"]
+TARGET_CHAPTERS_SPEC = "39,42,61-64,73,84,85,94,95,96"   # the chapters as the loader's option and the source version name them
 DROP_FIELDS = ("NAME_AND_ADDRESS",)
 _INVALID = re.compile(r"invalid|withdraw|revok|annul|cancel", re.I)
 
@@ -84,6 +85,11 @@ def ruling_url(reference: str) -> str:
     from urllib.parse import quote
 
     return f"https://ec.europa.eu/taxation_customs/dds2/ebti/ebti_details.jsp?Lang=en&reference={quote(reference, safe='')}"
+
+
+def ruling_text(r: dict) -> str:
+    """The text a ruling is embedded with: description and reasoning (feature 013 compares it to find changed rulings)."""
+    return (r.get("description", "") + "\n" + r.get("reasoning", "")).strip()
 
 
 class BTIStore:
@@ -165,7 +171,7 @@ class BTIStore:
         """(id, text, metadata) for embedding: description + reasoning only."""
         out = []
         for r in self.records:
-            text = (r.get("description", "") + "\n" + r.get("reasoning", "")).strip()
+            text = ruling_text(r)
             if not text:
                 continue
             out.append((f"bti:{r['reference']}", text, {"code": r.get("code"), "cn_code": r.get("cn_code"), "chapter": r.get("chapter"),
@@ -184,6 +190,20 @@ def iter_extract(zip_path: Path | str, chapters: set[str] | None, today: date) -
                 text = io.TextIOWrapper(raw, encoding="utf-8-sig", newline="")
                 for row in filter_rows(csv.DictReader(text), chapters, today):
                     yield row_to_ruling(row)
+
+
+def extract_date(zip_path: Path | str) -> date | None:
+    """The date of the newest .csv entry's timestamp inside the full extract: the night the extract was produced
+    (feature 013, research R-02). None when the zip holds no csv entry."""
+    with zipfile.ZipFile(zip_path) as zf:
+        stamps = [info.date_time for info in zf.infolist() if info.filename.lower().endswith(".csv")]
+    return date(*max(stamps)[:3]) if stamps else None
+
+
+def chapters_spec(chapters: set[str] | list[str]) -> str:
+    """The chapters as a source version names them: the loader's spec for the twelve indexed chapters, else a list."""
+    wanted = set(chapters)
+    return TARGET_CHAPTERS_SPEC if wanted == set(TARGET_CHAPTERS) else ",".join(sorted(wanted))
 
 
 def write_jsonl(records: Iterable[dict], path: Path | str) -> int:
