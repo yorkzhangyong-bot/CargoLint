@@ -98,7 +98,7 @@ Principle IV is unchanged.
 
 Restart Streamlit after the change (the server does not reload `ui/*.py`), open a coolant line:
 
-- block 3 lists rulings of the candidates' chapters only, or one of the captions of contracts/ui.md §3;
+- block 3 lists the deciding vote's rulings (over every chapter, rule (a)) with the captions of contracts/ui.md §3;
 - on the twelve-chapter store (the baseline copy), a coolant line whose candidates are 2710.19, 3403.99 and 3820.00
   reads "No rulings indexed for chapters 27, 34 and 38.";
 - with the switch on, block 1 shows the customs wording; the CSV download is unchanged;

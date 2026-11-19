@@ -9,11 +9,11 @@ import re
 from datetime import date, datetime, timezone
 from decimal import Decimal
 from enum import Enum
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, ClassVar, Literal
 
 from pydantic import BaseModel, Field, StringConstraints, computed_field, field_validator, model_validator
 
-from agent.config import HS6_VOTE_K
+from agent.config import HS6_VOTE_K, WORDING_MAX_TOKENS
 
 CODE_PATTERN = r"^\d{4}\.\d{2}$"
 CODE_RE = re.compile(CODE_PATTERN)
@@ -180,6 +180,16 @@ class Source(BaseModel):
     excerpt: str = ""
 
 
+class CitationNote(BaseModel):
+    """Feature 014a (data-model §5): a ruling a candidate's reasoning cites that does not support it: one retrieved for
+    the line in that run whose stored HS-6 is not the candidate's code, or a reference not retrieved in that run. Written
+    by code after the reasoning; never a routing input, never exported."""
+
+    reference: str                                                    # as stored, or as written when the store lacks it
+    kind: Literal["other_code", "not_retrieved"]
+    ruling_hs6: str | None = Field(default=None, pattern=CODE_PATTERN)   # the stored HS-6, for "other_code"
+
+
 class Candidate(BaseModel):
     code: str = Field(pattern=CODE_PATTERN)
     subheading_text: str = ""
@@ -190,6 +200,7 @@ class Candidate(BaseModel):
     precedent: Precedent | None = None
     cn8: str | None = Field(default=None, pattern=CN8_PATTERN)              # feature 004: only on the decided HS-6 candidate
     taric10: str | None = Field(default=None, pattern=TARIC10_PATTERN)      # feature 004: the highlighted subdivision
+    citation_notes: list[CitationNote] = Field(default_factory=list)       # feature 014a: in the order the references occur
 
     @computed_field  # type: ignore[misc]
     @property
@@ -227,6 +238,16 @@ class RetrievalTrace(BaseModel):
     precedent_codes: list[str] = Field(default_factory=list)   # codes proposed by matching rulings (≤ 3)
     mode: RetrievalMode = RetrievalMode.hybrid
     expansion: bool = False                                    # feature 009: CARGOLINT_QUERY_EXPANSION for this line
+    customs_wording: str | None = None                         # feature 014a: the rewrite the rulings were also searched with
+
+
+class CustomsWording(BaseModel):
+    """Feature 014a (data-model §6): the line rewritten into customs wording in the store's main language, searched by
+    the HS-6 step's ruling searches beside the raw text; shown in block 1, never exported."""
+
+    text: str
+    language: str                                              # the store's main language when the call was made
+    glossary_terms: list[str] = Field(default_factory=list)    # the reviewed glossary terms applied, in glossary order
 
 
 class Decision(BaseModel):
@@ -268,6 +289,8 @@ class Hs6Gate(str, Enum):
                                                 # against the threshold
     vote_override = "vote_override"             # feature 008: the majority is the model's candidate 2 or 3 with at least the
                                                 # shipment's hs6_override_min rulings; that candidate is decided
+    scoped_veto = "scoped_veto"                 # feature 014a (rule (a), 2026-11-19): the gate passed, but the vote of the
+                                                # candidates' chapters has voters and does not agree on the decided code
 
 
 class Hs6Vote(BaseModel):
@@ -280,6 +303,14 @@ class Hs6Vote(BaseModel):
     model_is_majority: bool = False                                   # the model's top HS-6 is the majority
     agrees: bool = False                                              # ... and its share is at least the vote share
     candidate: int | None = None                                      # the majority is the model's candidate 2 or 3
+
+
+class RulingScope(BaseModel):
+    """Feature 014a (data-model §4): the chapters the second HS-6 vote searched (rule (a)), those of the model's
+    validated candidates, and those of them that held no ruling in the store when the HS-6 step ran."""
+
+    chapters: list[str] = Field(default_factory=list)      # two digits each, sorted, one to three
+    not_indexed: list[str] = Field(default_factory=list)   # the chapters above with no ruling in the store
 
 
 class VoteCode(BaseModel):
@@ -356,7 +387,13 @@ class LineVersion(BaseModel):
     cn8: Cn8Choice | None = None              # feature 004: the CN-8 step's result
     taric: TaricOutcome | None = None         # feature 004: the TARIC step's result for the shipment's origin
     hs6_vote: Hs6Vote | None = None           # feature 006: the nearest rulings' vote on the HS-6; None when none voted
+    hs6_scoped_vote: Hs6Vote | None = None    # feature 014a (rule (a)): the vote of the candidates' chapters, which can
+                                              # only send the line to review; None when none voted
     hs6_gate: Hs6Gate | None = None           # feature 006: the rule that decided the HS-6 auto-accept, set with the route
+    ruling_scope: RulingScope | None = None   # feature 014a: the chapters the second vote searched; None without a valid
+                                              # candidate (no vote) or when the step failed
+    customs_wording: CustomsWording | None = None   # feature 014a: None when the switch was off or the store has no
+                                                    # main language
 
     @property
     def top_confidence(self) -> int | None:
@@ -547,7 +584,10 @@ class Classification(BaseModel):
     sources: list[Source] = Field(default_factory=list)
     status: LineStatus = LineStatus.checked
     error_reason: str | None = None
-    hs6_vote: Hs6Vote | None = None           # feature 006: the nearest rulings' vote on the top HS-6
+    hs6_vote: Hs6Vote | None = None           # feature 006: the nearest rulings' vote on the top HS-6, over every chapter
+    hs6_scoped_vote: Hs6Vote | None = None    # feature 014a (rule (a)): the vote of the candidates' chapters (a veto)
+    ruling_scope: RulingScope | None = None   # feature 014a: the chapters the second vote searched, and those not indexed
+    customs_wording: CustomsWording | None = None   # feature 014a: the rewrite the rulings were also searched with
 
 
 class LookupPrecedentOutput(BaseModel):
@@ -619,6 +659,18 @@ class JudgementOut(BaseModel):
 class ExpandOut(BaseModel):
     queries: list[str] = Field(min_length=1, max_length=5)
     hyde: str | None = None
+
+
+class WordingOut(BaseModel):
+    """Feature 014a: the customs-wording rewrite, one sentence of 1 to WORDING_MAX_CHARS (300) characters after
+    stripping."""
+
+    # The docstring above is the response schema's description the model reads, kept as the evaluated switch-on
+    # after-runs sent it (review round 2, N3). The 300 characters are checked after the recorded call
+    # (rag/translate.customs_wording), not in this schema, so the SDK's own parse never refuses an over-long answer
+    # uncounted (review round 1, finding 2); the call's output is capped at `max_output_tokens`.
+    max_output_tokens: ClassVar[int] = WORDING_MAX_TOKENS     # read by OpenRouterRawClient: the only capped call
+    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
 
 class RankCandidate(BaseModel):

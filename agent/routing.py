@@ -50,6 +50,7 @@ def route_line(
     cn8_error: str | None = None,
     hs6_vote: Hs6Vote | None = None,
     hs6_override_min: int | None = None,
+    hs6_scoped_vote: Hs6Vote | None = None,
 ) -> tuple[Route, str]:
     """The routing table from data-model.md §9. Returns (route, plain-language reason).
 
@@ -57,7 +58,10 @@ def route_line(
     a failed check, and an open CN-8 question (`cn8_question`, the missing attribute) routes to ask the shipper.
     Feature 006: after those rules, the nearest rulings' vote (`hs6_vote`) decides the auto-accept through hs6_gate; only
     without an eligible ruling does the confidence meet the threshold, as before. Feature 008: with the switch on
-    (`hs6_override_min`, None when off), the precedent override is one more case of that gate."""
+    (`hs6_override_min`, None when off), the precedent override is one more case of that gate. Feature 014a (rule (a)):
+    the vote of the candidates' chapters (`hs6_scoped_vote`) can only send to review a line that gate would accept. A vague
+    line always goes to ask the shipper (the author's decision of 2026-11-19, feature 001 FR-020): `ask_floor` no longer
+    routes."""
     if not (THRESHOLD_MIN <= int(threshold) <= THRESHOLD_MAX):
         raise ValueError(f"threshold must be between {THRESHOLD_MIN} and {THRESHOLD_MAX}, got {threshold}")
     st = _status(status)
@@ -71,11 +75,8 @@ def route_line(
 
     if kind == FlagKind.stop_word:
         return Route.ask_shipper, "stop-word in the description — ask the shipper what the goods actually are"
-    if kind == FlagKind.vague:
-        if conf is None or conf < ask_floor:
-            shown = "no candidate" if conf is None else f"confidence {conf}"
-            return Route.ask_shipper, f"vague description and {shown} below the ask floor {ask_floor} — ask the shipper"
-        return Route.review, f"vague description; confidence {conf} at or above the ask floor {ask_floor} — needs a human look"
+    if kind == FlagKind.vague:   # the author's decision of 2026-11-19: whatever the confidence
+        return Route.ask_shipper, "vague description — ask the shipper"
 
     if kind == FlagKind.ok and cn8_error:
         return Route.review, f"CN-8 step failed: {cn8_error} — needs a human look"
@@ -85,7 +86,9 @@ def route_line(
     # flag ok (or no flag yet)
     if conf is None or conf <= 0:
         return Route.review, "no valid candidate — needs a human look"
-    passed, gate = hs6_gate(conf, threshold, hs6_vote, hs6_override_min)
+    passed, gate = hs6_gate(conf, threshold, hs6_vote, hs6_override_min, hs6_scoped_vote)
+    if gate == Hs6Gate.scoped_veto:
+        return Route.review, f"{_scoped_veto_reason(hs6_scoped_vote)} — needs a human look"
     if gate == Hs6Gate.no_rulings:
         if passed:
             if ever_flagged:
@@ -125,13 +128,25 @@ def _hs6_vote_reason(gate: Hs6Gate, vote: Hs6Vote) -> str:
     return f"only {len(at[1])} of {voted} nearest EBTI rulings at {at[0]}"
 
 
+def _scoped_veto_reason(vote: Hs6Vote) -> str:
+    """Feature 014a (rule (a)): the route reason, and the audit note, when the vote of the candidates' chapters stopped
+    an auto-accept: its majority with the rulings' countries, or that it is split."""
+    if vote.majority is None:
+        return f"the EBTI rulings of the candidates' chapters are split: {_votes_text(vote.competing)}"
+    voted = sum(len(countries) for _, countries in vote.competing)
+    at = next(countries for code, countries in vote.competing if code == vote.majority)
+    return (f"the EBTI rulings of the candidates' chapters do not agree: {len(at)} of {voted} at {vote.majority} "
+            f"({', '.join(c or '?' for c in at)})")
+
+
 def hs6_auto_decided(flag_kind: FlagKind | str | None, top_confidence: int | None, status: LineStatus | str,
                      ever_flagged: bool, threshold: int, ask_floor: int, hs6_vote: Hs6Vote | None = None,
-                     hs6_override_min: int | None = None) -> bool:
+                     hs6_override_min: int | None = None, hs6_scoped_vote: Hs6Vote | None = None) -> bool:
     """Feature 004: the HS-6 is decided by rule exactly where feature 001 auto-accepts, whatever the CN-8 step found;
-    feature 006: through the vote of the nearest rulings; feature 008: or the precedent override, when switched on."""
-    return route_line(flag_kind, top_confidence, status, ever_flagged, threshold, ask_floor,
-                      hs6_vote=hs6_vote, hs6_override_min=hs6_override_min)[0] == Route.auto_accept
+    feature 006: through the vote of the nearest rulings; feature 008: or the precedent override, when switched on;
+    feature 014a: unless the vote of the candidates' chapters sends the line to review."""
+    return route_line(flag_kind, top_confidence, status, ever_flagged, threshold, ask_floor, hs6_vote=hs6_vote,
+                      hs6_override_min=hs6_override_min, hs6_scoped_vote=hs6_scoped_vote)[0] == Route.auto_accept
 
 
 def hs6_choice(candidates: Sequence[Candidate], vote: Hs6Vote | None,
@@ -201,11 +216,27 @@ def hs6_ruling_vote(nearest: Sequence[tuple[str, str]], candidates: Sequence[str
 
 
 def hs6_gate(confidence: int, threshold: int, vote: Hs6Vote | None = None,
-             override_min: int | None = None) -> tuple[bool, Hs6Gate]:
+             override_min: int | None = None, scoped_vote: Hs6Vote | None = None) -> tuple[bool, Hs6Gate]:
     """Whether an HS-6 is auto-accepted, and the rule that decided it (feature 006): the ruling vote decides, as
     cn8_gate's. Only without an eligible ruling does the model estimate meet the threshold, as before (at the threshold
     counts). Feature 008, the precedent override: with the switch on (`override_min`, None when off), a majority at the
-    model's candidate 2 or 3 of at least `override_min` rulings decides that candidate (exactly the minimum counts)."""
+    model's candidate 2 or 3 of at least `override_min` rulings decides that candidate (exactly the minimum counts).
+    Feature 014a (rule (a), the author's decision of 2026-11-19): `vote` is the unfiltered vote of the 5 nearest eligible
+    rulings over every indexed chapter, constitution 1.5.0's rule; `scoped_vote`, the vote of the candidates' chapters,
+    can only stop an auto-accept: when it has voters and does not agree on the decided code (the override's candidate,
+    else the top one; its majority at the share or above), the gate does not pass. It never passes the gate on its own."""
+    passed, gate = _vote_gate(confidence, threshold, vote, override_min)
+    if passed and scoped_vote is not None:
+        decided = vote.majority if gate == Hs6Gate.vote_override else None
+        agrees = (scoped_vote.majority == decided and scoped_vote.majority_share >= HS6_VOTE_SHARE
+                  if decided else scoped_vote.agrees)
+        if not agrees:
+            return False, Hs6Gate.scoped_veto
+    return passed, gate
+
+
+def _vote_gate(confidence: int, threshold: int, vote: Hs6Vote | None, override_min: int | None) -> tuple[bool, Hs6Gate]:
+    """The gate of features 006 and 008 on one vote."""
     if vote is None:
         return int(confidence) >= int(threshold), Hs6Gate.no_rulings
     if vote.agrees:

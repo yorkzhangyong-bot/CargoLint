@@ -21,7 +21,7 @@ python -m venv .venv && .venv\Scripts\activate          # Windows; Python 3.11�
 pip install -e ".[dev]"
 set OPENROUTER_API_KEY=sk-or-...                           # or put it in .env (see .env.example)
 python -m rag.loader --demo                               # builds the knowledge base (≈ 10 min, ≈ $0.02)
-python -m rag.loader                                      # full EBTI rulings index for precedent-driven retrieval (74k rulings, ≈ 90 min, ≈ $0.3, 1.8 GB on disk)
+python -m rag.loader                                      # full EBTI rulings index for precedent-driven retrieval, every chapter (124k rulings, ≈ 2.5 h estimated, ≈ $0.5, 3.5 GB on disk)
 python -m rag.loader --taric                              # one-time TARIC snapshot for digits 9–10 and measures (needs gpg, see below)
 pytest -q                                                 # 950 offline tests, no key needed
 streamlit run app.py
@@ -30,9 +30,21 @@ streamlit run app.py
 The loader downloads the EU Combined Nomenclature 2026 (SKOS, 171 MB), the two ICS2 documents and
 — once, for the BTI subset — the EBTI full extract (397 MB), then embeds ≈ 5,600 nomenclature chunks
 and the 192-ruling demo subset through OpenRouter. `python -m rag.bti --make-demo` regenerates the demo
-subset; `python -m rag.loader --bti-chapters 39,42,61-64,73,84,85,94,95,96` builds the full
-73,899-ruling subset and its own vector index (`store/chroma-bti`), which the precedent leg of the classifier
-searches (see below). Data provenance and licences: `data/SOURCES.md`.
+subset; `python -m rag.loader` builds the full subset of the chapters in `CARGOLINT_EBTI_CHAPTERS` and its own vector
+index (`store/chroma-bti`), which the precedent leg of the classifier searches (see below). The setting is `all` by
+default (feature 014a): every chapter with a valid ruling, 123,531 rulings in 95 chapters on the extract of
+2026-11-18. A list of chapters and ascending ranges, such as `39,42,61-64,73,84,85,94,95,96` (the twelve chapters
+indexed before feature 014a, 74,044 rulings on that extract), keeps only those; `--bti-chapters` sets it for one run,
+and a value that is neither `all` nor such a list is refused with the setting's name. A `data/bti_subset.jsonl` that is
+already there is reused only when its sidecar, `data/bti_subset.meta.json`, records the same chapters. Otherwise the
+loader stops with exit 2 and asks for `--force`, which cuts it again: for a subset cut for other chapters (for example a
+twelve-chapter subset under the new `all` default) and for one whose sidecar is missing or records no chapters (a
+subset cut before feature 013). `--force` also deletes `store/chroma` and `store/chroma-bti` and embeds every
+nomenclature chunk and ruling afresh (about 2.5 h and $0.5 for all chapters), losing the vectors a refreshed store
+reused. `python scripts/refresh_ebti.py --no-publish --rulings all --previous store` keeps them: it builds the store in
+`build/ebti-<date>/store`, as the local store of every chapter was built ("Knowledge base refresh" below). Admin › Data
+names the chapters in the rulings' source version ("full extract of 2026-11-18, all chapters"). Data provenance and
+licences: `data/SOURCES.md`.
 
 ## TARIC snapshot (digits 9 to 10 and measures)
 
@@ -151,12 +163,18 @@ operator and the course evaluators.
   1. Description: the original and the stop-word check, said once (a red line whose reason is that result shows it
      as the reason); on a red line, the reason and the question to copy; the
      description field and "Re-check this line", which stores the clerk's edit as a new version and checks that line
-     again from the stop-word check.
+     again from the stop-word check. With the customs-wording switch on, a caption shows the wording the line's
+     rulings were also searched with ("Rulings also searched in customs wording (German): …").
   2. HS-6 candidates: the model's three, each with its confidence bar, and "Other HS-6 code…" for a typed code that
      the store checks against the nomenclature, with the reason for the chosen one. The choice changes only what is
-     shown until "Accept".
+     shown until "Accept". A ruling the reason cites is checked against the rulings retrieved for the line, and a
+     note follows the reason when it does not match: "Cited ruling … classifies under 3403.19, not 3403.99." or
+     "Cited ruling … was not retrieved for this line; it is not a source."
   3. Similar rulings: the HS-6 of the 5 nearest EBTI rulings with their issuing countries, how many agree with the
-     chosen code, and the candidates' precedents with "Open ruling ↗".
+     chosen code, and the candidates' precedents with "Open ruling ↗". "No relevant rulings found." when none
+     reaches the similarity floor; "Sent to review by the rulings of the candidates' chapters 34 and 38: 3 of 5 at
+     3403.19." when the rulings of the candidates' own chapters do not agree and stopped an auto-accept; "No rulings
+     indexed for chapter 38." for a candidate's chapter with no ruling in the store.
   4. Tariff for the origin: the CN-8 lines under a newly chosen code; the CN-8 or the subdivision to pick while that
      choice is open; or the decided CN-8 and TARIC-10 with the third-country duty, the requirements, "All measures"
      and "Open in EU TARIC ↗", and "Change the code at" CN-8 or TARIC-10.
@@ -194,6 +212,18 @@ model and its sections in a switch at the top:
    showed no gain from translating. Query expansion is one switch for all languages,
    `CARGOLINT_QUERY_EXPANSION` (off by default): when on, one structured call per line appends up to five
    English queries (synonyms, product category, material) and an optional HyDE-style sentence.
+   The customs-wording rewrite (`rag/translate.py:customs_wording`, feature 014a) has its own switch,
+   `CARGOLINT_CUSTOMS_WORDING`, off by default: when on, a second structured call per line rewrites the line, in any
+   language, into one sentence of customs wording of at most 300 characters in the store's main language (German for
+   the current store), in the style of EBTI goods descriptions, translating and normalising the line's own terms and
+   adding no use, material or composition. Only the HS-6 step's ruling searches (the precedent leg and the vote) use
+   it, beside the raw text; the nomenclature search, the ranking prompt and every other step read the raw text. The
+   rewrite is kept per line text, so a re-check makes no call, and stored on the line version for block 1 and the
+   chat's retrieval steps; a rewrite that fails after one retry fails the line's HS-6 step. An optional reviewed
+   glossary, `data/rules/customs_glossary.json` (absent by default), fixes the rendering of terms as shippers write
+   them: an entry with `reviewed_by`, a `reviewed_on` date and a rendering in the store's language reaches the prompt
+   as a fixed rendering, outside the line's data block; an unreviewed entry is ignored, and a malformed file is
+   refused with its path when the knowledge base opens.
 3. **Hybrid retrieval** (`rag/retriever.py`): BM25 over `rank_bm25` with a tokenizer that keeps HS
    codes in both `9617.00` and `961700` forms, plus cosine search in a persisted Chroma collection
    (`qwen/qwen3-embedding-8b`, 4096 dimensions), fused by **reciprocal rank fusion** (k = 60). When
@@ -201,29 +231,34 @@ model and its sections in a switch at the top:
    boost (the trace shows it as the metadata filter). The Admin › Rules switch turns BM25 off for the
    vector-only baseline.
 4. **Precedent leg** (`rag/retriever.py:precedent_codes`): the same query vectors are run against the index of
-   EBTI ruling texts (`store/chroma-bti`); the rulings nearest to the queries vote for their HS-6 code with their
-   RRF score, and up to three precedent codes join the candidate chunks, each tagged with its best-matching ruling
-   (reference, member state, goods description). This is how residual "Other" subheadings such as `3926.90`, whose
-   nomenclature text names no product, become reachable from a product description. Precedent codes are marked in
-   the retrieval trace and cited as BTI sources; only rulings valid on the day may vote.
+   EBTI ruling texts (`store/chroma-bti`), over every indexed chapter; the rulings nearest to the queries vote for
+   their HS-6 code with their RRF score, and up to three precedent codes join the candidate chunks, each tagged with
+   its best-matching ruling (reference, member state, goods description). This is how residual "Other" subheadings
+   such as `3926.90`, whose nomenclature text names no product, become reachable from a product description.
+   Precedent codes are marked in the retrieval trace and cited as BTI sources; only rulings valid on the day may vote.
 5. **Ranking** (`tools/classify_hs6.py`): the fused chunks, the fenced description, the flag result
    and the shipper's past codes go to the chat model, which returns up to three candidates with
    confidence and rationale as strict JSON.
 6. **Validation in code**: every returned code must match `^\d{4}\.\d{2}$` **and exist in the
    nomenclature index**; unknown codes are dropped, subheading text and chapter are filled from the
    index, never from the model. If nothing survives, the line is "no valid candidate".
-7. **Routing in code** (`agent/routing.py`): stop-word → ask the shipper; vague → ask the shipper below
-   the ask floor (50) else review; OK → auto-accept when the HS-6 gate passes, else review. The gate
-   (constitution 1.5.0) is the vote of the five nearest eligible EBTI rulings at or above a cosine
+7. **Routing in code** (`agent/routing.py`): stop-word → ask the shipper; vague → ask the shipper, whatever
+   the confidence; OK → auto-accept when the HS-6 gate passes, else review. The gate (constitution 1.5.0) is
+   the vote of the five nearest eligible EBTI rulings over every indexed chapter, at or above a cosine
    similarity of 0.40: the top candidate passes when it is their majority with a share of at least
-   0.5, and the review reason names the rulings, their countries and the candidate they support. The
+   0.5, and the review reason names the rulings, their countries and the candidate they support. Since feature
+   014a a second vote, among the rulings of the candidates' chapters only (the first two digits of the model's
+   validated codes, at most three chapters), searched with the line's query vectors and no new embedding call, can
+   only send to review a line the gate would accept, when it has voters and does not agree on the decided code. The
    precedent override (constitution 1.6.0, feature 008) adds one case: when at least `OVERRIDE_MIN` of
    the five (by default 5, all of them) sit at the model's second or third candidate, that candidate is
    decided and auto-accepted with the note "rulings overrode the model: N of M agree on <code>"; the
    same agreement on a code outside the three candidates is only shown as a hint. It is on by default;
    `CARGOLINT_HS6_OVERRIDE=off` turns it off. Only when no ruling votes does the confidence decide, at
-   or above the threshold. A line that was ever flagged, or updated by a shipper reply, is never
-   auto-accepted — it becomes "ready to accept" and needs the clerk's click.
+   or above the threshold. The similarity floor (`HS6_VOTE_MIN_SIMILARITY` in `agent/config.py`) is also block 3's
+   test of a relevant ruling, so its caption and the gate never disagree; it is tuned by replaying stored runs at
+   other floors (see "Tests and evaluation") and stays 0.40. A line that was ever flagged, or updated by a shipper
+   reply, is never auto-accepted — it becomes "ready to accept" and needs the clerk's click.
 
 ## The tool-calling loop
 
@@ -434,6 +469,42 @@ cars" alone does not (see the known weaknesses below). And a rule-list entry wit
 character is skipped, which drops two leftovers of the PDF extraction from the shipped ICS2 list, "1005" and a row of
 symbols ending in "12", so a bare number no longer counts as a listed term.
 
+**Retrieval and evidence** (feature 014a): the rulings index covers every chapter; the HS-6 auto-accept reads the 5
+nearest rulings over every chapter, and the rulings of the candidates' chapters can only send a line to review (rule
+(a), the author's decision of 2026-11-19); a vague line always asks the shipper; the customs-wording rewrite waits
+behind its switch. `tests/eval/hs6_eval.py` gained these options. `--set coolant` runs the coolant set instead of the
+120 lines: eight coolant lines in Chinese, English and German (`tests/eval/hs6_eval_coolant_set.json`), each expecting
+an HS-6 or "ask the shipper", with their own results, history and report files. `--set outside` runs 14 lines whose
+codes lie outside the twelve chapters of the old store (`tests/eval/hs6_eval_outside_set.json`), each taken from an
+EBTI ruling that the run keeps out. `--customs-wording on|off` sets the rewrite for the run over
+`CARGOLINT_CUSTOMS_WORDING`. `--replay <results file> --floor X` rebuilds a run's votes at a similarity floor at or
+above the run's own from the ruling hits its rows recorded, with no model call. `--proposal-scope nomenclature` limits
+the candidate proposal to the chapters of the nomenclature search's subheadings (option (c), evaluation only). Three
+runs each with Gemini 2.5 Flash and query expansion off, on 2026-11-18, on the store of the twelve chapters (74,044
+rulings) and on the rebuilt store of every chapter, with the vote within the candidates' chapters as first built:
+
+| HS-6 eval | Twelve chapters | Every chapter, rewrite off | Every chapter, rewrite on |
+|---|---|---|---|
+| 120 lines: majority top-1 | 84/120 | 77/120 | 74/120 |
+| 120 lines: wrong auto-accepts per run | 3 / 4 / 3 | 4 / 4 / 4 | 6 / 8 / 9 |
+| Coolant set: majority right | 6/8 | 7/8 | 8/8 |
+| Coolant set: wrong auto-accepts per run | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 |
+
+No coolant line meets a chapter-84 machinery ruling in its vote any more. On the 120 lines, wrong auto-accepts rose
+from 10 to 12 over the three runs, so the criterion of no more wrong auto-accepts failed: one line went wrong in every
+run through the chapter-scoped vote, where the old vote would have sent it to review. The majority top-1 fell by 7,
+5 of them through codes proposed by rulings of the newly indexed chapters. The rewrite missed its criterion for
+switching on (82 against 84 right on both sets together, and some long lines still failed their rewrite), so it stays
+off. Replays at floors 0.45, 0.50 and 0.55 left the 120 lines unchanged, and the floor stays 0.40. No fallback and no
+tuning were added; the author decides. The report, with each changed line and its cause, is
+`specs/014a-retrieval-evidence/eval-diff.md`.
+
+After the regression analysis the author chose rule (a) and the vague rule (2026-11-19). Replayed exactly on the
+after-runs' rows, they give the 120 lines a majority top-1 of 77 with 3 / 3 / 3 wrong auto-accepts, 9 against the
+baseline's 10, so the criterion now passes, and the coolant set 8/8 with none wrong. Option (c) was measured and is not
+in the app: 64/120 on the 120 lines, 7/8 on the coolant set and 11/14 on the outside set, against 77, 8 and 12 under
+rule (a). The analysis and these numbers are in `docs/reports/014a-regression-analysis.md`, section 5.
+
 **Eval-set notes**:
 - **Cleanup**: six Swedish rulings in `tests/eval/cn8_eval_set.json` are still labelled `en`: SEBTITV-2026-01096,
   SEBTITV-2024-01658, SEBTITV-2024-01665, SEBTITV-2024-01674, SEBTITV-2026-09785 and SEBTITV-2026-09764.
@@ -481,8 +552,8 @@ at a cold start. Two scripts publish them; the app never writes a release.
 
 ```bash
 python scripts/refresh_taric.py [--force] [--no-publish] [--repo OWNER/NAME]
-python scripts/refresh_ebti.py [--rulings N|all] [--out DIR] [--previous RELEASE|DIR] [--full-embed] [--extract ZIP]
-                               [--force] [--no-publish] [--repo OWNER/NAME]
+python scripts/refresh_ebti.py [--rulings N|all] [--chapters SPEC] [--out DIR] [--previous RELEASE|DIR] [--full-embed]
+                               [--extract ZIP] [--force] [--no-publish] [--repo OWNER/NAME]
 ```
 
 - **`refresh_taric.py`** (daily by design) reads the Swedish Customs `tot` folder, takes the newest batch whose six
@@ -491,7 +562,8 @@ python scripts/refresh_ebti.py [--rulings N|all] [--out DIR] [--previous RELEASE
   packs the snapshot and publishes `taric-<date>`. The full extract appears about monthly, so most days the command
   says "nothing new". No embedding and no model call.
 - **`refresh_ebti.py`** (monthly by design) downloads the EBTI full extract afresh into `build/`, keeps the valid
-  rulings of the twelve indexed chapters, chooses them with the demo store's rule up to `CARGOLINT_EBTI_RULINGS`
+  rulings of the chapters in `CARGOLINT_EBTI_CHAPTERS` (all by default; `--chapters` sets them for one run; the log
+  counts the valid rulings and chapters first), chooses them with the demo store's rule up to `CARGOLINT_EBTI_RULINGS`
   (5000 by default; `all` keeps every valid ruling for a production store; `--rulings` overrides it for one run) with
   the previous store's rulings first, copies the vectors of the unchanged rulings from the previous store (their code
   and validity rewritten from the new extract), embeds only the new and changed rulings, copies the nomenclature
@@ -506,6 +578,13 @@ python scripts/refresh_ebti.py [--rulings N|all] [--out DIR] [--previous RELEASE
   its previous store is a release); `--repo OWNER/NAME` names the repository (default: the checkout's remote);
   `CARGOLINT_GH` names the `gh` executable, as `CARGOLINT_GPG` names `gpg`. Both need `gh` signed in (`gh auth
   status`); the TARIC command needs `gpg` and the key copy, the EBTI command `OPENROUTER_API_KEY`.
+
+**The local store of every chapter** (feature 014a) was rebuilt with the EBTI command, published nowhere:
+`python scripts/refresh_ebti.py --no-publish --rulings all --previous store --extract build/DDS2-EBTI_Full.zip --out
+build/ebti-2026-11-18`, with a copy of the twelve-chapter store as `store/`. It kept the 123,531 valid rulings in 95
+chapters of the extract of 2026-11-18, reused the vectors of the 74,044 rulings of the twelve chapters and embedded
+only the 49,487 new ones, dropping none: 6,333 s, $0.194 for 17.6 million tokens, a store of 3.45 GB (the archive
+1.72 GB). The rebuilt `build/ebti-2026-11-18/store` then took the place of `store/`.
 
 ### Releases, completeness and retention
 
@@ -658,8 +737,13 @@ What to expect:
 - The chat model can skip `lookup_precedent` (gpt-4o-mini did, before Gemini 2.5 Flash became the default); the
   completeness guard runs it, so results are
   complete, but the progress block then shows the step as "run by the app".
-- BTI coverage: the twelve target chapters only (73,899 valid rulings with the full build, 192 with `--demo`). Rulings
-  must be refreshed as they expire, and the full rulings index costs about 1.2 GB of RAM in the app.
+- BTI coverage: every chapter with a valid ruling, 123,531 rulings in 95 chapters on the extract of 2026-11-18 with the
+  full build (192 with `--demo`). Chapter 50 (silk) has no valid ruling and chapters 01, 78 and 80 have five or fewer,
+  so their lines find few or no rulings (block 3: "No rulings indexed for chapter 50."). A refresh of the hosted demo
+  at 5,000 rulings now spreads the half not under the eval set's and the samples' codes over all 95 chapters, about 26
+  rulings each instead of about 200 each over twelve, so the demo finds agreeing rulings less often than the full
+  store. Rulings must be refreshed as they expire, and the full rulings index took about 1.2 GB of RAM in the app with
+  the twelve chapters; every chapter takes more (not measured).
 - OCR on phone photos is the weakest input path (RapidOCR, PP-OCR models); quantities and values are
   not read from photos.
 - State lives in the Streamlit session: nothing persists across restarts; one user, one shipment.

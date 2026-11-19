@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
-from agent.config import EBTI_STALE_DAYS, MAX_DESC_CHARS, TARIC_STALE_DAYS
+from agent.config import EBTI_STALE_DAYS, LANGUAGE_NAMES, MAX_DESC_CHARS, TARIC_STALE_DAYS
 from agent.routing import cn8_precedent_conflict, hs6_choice, hs6_gate
 from agent.schemas import (Actor, ChangeKind, ChosenHow, Cn8Gate, CreatedBy, DecisionRoute, FlagKind, Hs6Gate, TaricRule,
                            WrittenBy)
@@ -284,6 +284,7 @@ class CandidateRow:
     rationale: str | None = None
     history_only: bool = False
     precedent: Any = None
+    notes: tuple = ()                # feature 014a: an HS-6 candidate's citation notes, in stored order
 
 
 def _path(path: str) -> list[str]:
@@ -299,7 +300,7 @@ def hs6_rows(store: Any, line: Any) -> list[CandidateRow]:
         path = store.index.label_path(c.code) if store.index is not None else []
         rows.append(CandidateRow(spaced(lines[0][0] if len(lines) == 1 else c.code), c.code,
                                  " › ".join(path) or c.subheading_text, c.confidence, c.rationale or None,
-                                 c.history_only, c.precedent))
+                                 c.history_only, c.precedent, tuple(c.citation_notes)))
     return rows
 
 
@@ -432,7 +433,7 @@ def explain_a(store: Any, line: Any, kind: str) -> tuple[str, str]:
             return "", "No valid candidate was found. Type the HS-6 code, or ask the shipper what the goods are."
         top = v.candidates[0]
         first = cut(top.rationale, 200)
-        passed, gate = hs6_gate(top.confidence, threshold, v.hs6_vote, store.shipment.hs6_override_min)
+        passed, gate = hs6_gate(top.confidence, threshold, v.hs6_vote, store.shipment.hs6_override_min, v.hs6_scoped_vote)
         if passed:   # the vote or the threshold accepts it, review only because the line was updated (FR-022)
             why = "this line was flagged before its update" if line.ever_flagged else "this line was updated from the shipper's reply"
             if gate == Hs6Gate.vote_override:   # feature 008: the rulings chose the model's candidate 2 or 3
@@ -451,6 +452,9 @@ def explain_a(store: Any, line: Any, kind: str) -> tuple[str, str]:
             if override_min is not None and not v.hs6_vote.candidate and n >= override_min:
                 text += f" Hint: {n} of {m} nearest rulings agree on {spaced(v.hs6_vote.majority)}, which is not among the candidates."
             return first, text
+        if gate == Hs6Gate.scoped_veto:   # feature 014a (rule (a)): the vote of the candidates' chapters sent it to review
+            return first, (f"Rulings of the candidates' chapters disagree: model {spaced(top.code)}, their nearest rulings "
+                           f"{_hs6_rulings(v.hs6_scoped_vote)}. {after}")
         if gate == Hs6Gate.vote_tie:
             return first, f"Rulings split: model {spaced(top.code)}, nearest rulings {_hs6_rulings(v.hs6_vote)}. {after}"
         if gate == Hs6Gate.vote_share_low:
@@ -755,6 +759,35 @@ def candidate_label(r: CandidateRow) -> str:
     return f"{r.value} {cut(text, 55)} — {r.confidence}%"   # one line, so its confidence bar sits beside it
 
 
+def _language(code: str) -> str:
+    return LANGUAGE_NAMES.get(code, code)
+
+
+def wording_caption(line: Any) -> str | None:
+    """Block 1 (feature 014a, contracts/ui.md §1): the customs wording the line's rulings were also searched with, when
+    the switch was on for its HS-6 step; display only."""
+    w = line.current.customs_wording
+    return None if w is None else f"Rulings also searched in customs wording ({_language(w.language)}): {w.text}"
+
+
+def wording_queries_text(version: Any) -> str:
+    """Admin › Ask the agent, Retrieval steps (contracts/ui.md §4): the rewrite after the queries, when the line has one."""
+    w = version.customs_wording
+    return "" if w is None else f" · rulings only, in {_language(w.language)}: {w.text}"
+
+
+def citation_text(note: Any, code: str) -> str:
+    """Feature 014a (contracts/ui.md §2): a citation note on candidate `code`, written by code."""
+    if note.kind == "other_code":
+        return f"Cited ruling {note.reference} classifies under {note.ruling_hs6}, not {code}."
+    return f"Cited ruling {note.reference} was not retrieved for this line; it is not a source."
+
+
+def reasoning_text(rationale: str, notes: Any, code: str) -> str:
+    """Block 2's "Why: …" text: the model's reasoning as it wrote it, then its citation notes in stored order."""
+    return " ".join([rationale, *(citation_text(n, code) for n in notes)])
+
+
 def vote_lines(vote: Any, code: str | None) -> list[tuple[bool, str, str]]:
     """Block 3 (Q1): each HS-6 among the nearest rulings, whether it is the chosen code, and its rulings' countries."""
     return [(c == code, c, ", ".join(k or "?" for k in countries)) for c, countries in vote.competing]
@@ -763,6 +796,43 @@ def vote_lines(vote: Any, code: str | None) -> list[tuple[bool, str, str]]:
 def agree_text(vote: Any, code: str) -> str:
     n, m = _hs6_votes(vote, code)
     return f"{n} of {m} agree with {code}"
+
+
+def _not_indexed(chapters: list[str]) -> str:
+    """Feature 014a: "No rulings indexed for chapter 38." or "... for chapters 27, 34 and 38.", ascending."""
+    return f"No rulings indexed for chapter{'s' if len(chapters) > 1 else ''} {_and(sorted(chapters))}."
+
+
+def _veto_text(scope: Any, vote: Any) -> str:
+    """Feature 014a (rule (a)): the vote of the candidates' chapters that sent the line to review, with the chapters that
+    hold rulings, and its majority with its share, or how it split."""
+    chapters = [c for c in scope.chapters if c not in scope.not_indexed]
+    if vote.majority is None:
+        found = "split, " + _and([f"{len(countries)} at {c}" for c, countries in vote.competing])
+    else:
+        n, m = _hs6_votes(vote, vote.majority)
+        found = f"{n} of {m} at {vote.majority}"
+    return f"Sent to review by the rulings of the candidates' chapter{'s' if len(chapters) > 1 else ''} {_and(chapters)}: {found}."
+
+
+def rulings_captions(line: Any, chosen: str | None) -> list[str]:
+    """Block 3's captions (feature 014a, rule (a), contracts/ui.md §3), read from the line version: how many of the
+    deciding vote's rulings agree with the chosen code, or that the deciding vote has no voter; that the vote of the
+    candidates' chapters sent the line to review; and the candidates' chapters with no ruling in the store. None without
+    a candidate."""
+    v = line.current
+    vote, scope = v.hs6_vote, v.ruling_scope
+    captions = []
+    if vote is None:
+        if v.candidates:
+            captions.append("No relevant rulings found.")
+    elif chosen:
+        captions.append(agree_text(vote, chosen))
+    if v.hs6_gate == Hs6Gate.scoped_veto:
+        captions.append(_veto_text(scope, v.hs6_scoped_vote))
+    if scope is not None and scope.not_indexed:
+        captions.append(_not_indexed(scope.not_indexed))
+    return captions
 
 
 def cn8_lines(store: Any, line: Any, code: str) -> list[tuple[str, str]]:

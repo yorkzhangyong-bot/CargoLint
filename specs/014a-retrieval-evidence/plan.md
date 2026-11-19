@@ -4,8 +4,9 @@
 
 **Input**: Feature specification from `specs/014a-retrieval-evidence/spec.md`, with its clarifications of 2026-11-18
 (three from the coordinator, two from the author during clarify, and the author's answers to the plan's questions A
-and B). The facts about the store, its languages and the vote are in the spec's Background and in
-[research.md](research.md).
+and B) and the author's decisions of 2026-11-19 (rule (a), block 3, the vague rule, option (c) and the outside set).
+The facts about the store, its languages and the vote are in the spec's Background and in [research.md](research.md).
+
 
 ## Summary
 
@@ -15,14 +16,18 @@ The feature changes which rulings reach the HS-6 step and how they are shown; th
   `CARGOLINT_EBTI_CHAPTERS` (default `all`) drives the refresh, the loader and `rag.bti`; the source version says
   "all chapters". The local store is rebuilt with every chapter by one refresh run that reuses the current store's
   vectors.
-- **The vote within the candidates' chapters** (`tools/classify_hs6.py`): after the ranking, a second ruling search
-  per query vector with the candidates' chapters as its filter feeds the unchanged `hs6_voters`; the candidate proposal
-  keeps searching every chapter. The line records the chapters searched and those not indexed (`RulingScope`), from
-  the knowledge base's `indexed_chapters`, counted when it opens.
-- **Truthful captions** (`ui/view.py`, `ui/expand.py`): block 3 says "No rulings indexed for chapter NN." or "No
-  relevant rulings found." from the line store, in place of "No ruling was within the similarity floor." and the
-  misleading "0 of m agree". Relevant means eligible to vote; the floor stays 0.40 until the after-runs' replays say
-  otherwise.
+- **Rule (a), the two votes** (`tools/classify_hs6.py`, `agent/routing.py`, `agent/store.py`; the author's decision of
+  2026-11-19): the gate's vote is the unfiltered one of constitution 1.5.0, from the candidate proposal's hits over
+  every chapter; after the ranking, a second ruling search per query vector with the candidates' chapters as its
+  filter feeds the unchanged `hs6_voters` for `hs6_scoped_vote`, which `hs6_gate` uses only to stop an auto-accept
+  (`Hs6Gate.scoped_veto`). The line records both votes, the chapters searched and those not indexed (`RulingScope`),
+  from the knowledge base's `indexed_chapters`, counted when it opens.
+- **Truthful captions** (`ui/view.py`, `ui/expand.py`): block 3 lists the deciding vote as before this feature and
+  shows, from the line store, "n of m agree with <code>" or "No relevant rulings found.", the veto's caption, and "No
+  rulings indexed for chapter NN." (`rulings_captions`), in place of "No ruling was within the similarity floor.".
+  Relevant means eligible to vote in the deciding vote; the floor stays 0.40.
+- **The vague rule** (`agent/routing.py`; the author's decision of 2026-11-19): a line flagged vague always routes to
+  ask the shipper; feature 001's FR-020, its clarification of 2026-10-14 and its assumption follow.
 - **Citation notes** (`tools/classify_hs6.py`, `ui/view.py`): each candidate's reasoning is scanned for ruling
   references; a retrieved ruling at another HS-6, or a reference not retrieved, gets a note after "Why: …". No routing
   effect, no CSV change.
@@ -32,10 +37,13 @@ The feature changes which rulings reach the HS-6 step and how they are shown; th
   first; the rewrite joins the HS-6 step's two ruling searches only, merged with the raw text's hits; it is stored on
   the line version and shown in block 1. The nomenclature search and the CN-8 step's ruling search keep the raw text
   (research R-16).
-- **Measurement first** (`tests/eval/hs6_eval.py`, `tests/eval/hs6_eval_coolant.json`): the eight coolant lines and
+- **Measurement first** (`tests/eval/hs6_eval.py`, `tests/eval/hs6_eval_coolant_set.json`): the eight coolant lines and
   `--set coolant` come before any product change; the baseline runs; after the implementation and the rebuild, the
   after-runs compare the switch off and on; every run has query expansion off; `--replay --floor` tunes the floor
-  without model calls; the pull request reports the difference.
+  without model calls; the pull request reports the difference. After the regression analysis (2026-11-19): the
+  outside set (`--set outside`, 10 to 15 lines outside the twelve chapters, each with its source and near-duplicate
+  check) and the evaluation-only option (c), which limits the candidate proposal to the chapters of the nomenclature
+  search's top subheadings, compared with rule (a) within $1.10.
 - **Constitution**: one amendment in this pull request, through `/speckit-constitution`: "Knowledge-base sources"
   names all chapters and the chapter setting instead of the twelve (MINOR, 1.11.0, confirmed by the author).
   Principle IV is not amended.
@@ -51,7 +59,7 @@ The feature changes which rulings reach the HS-6 step and how they are shown; th
 
 **Storage**: unchanged layout. `store/` (the ruling index, `bti_docs.jsonl`, `index_meta.json` with the new source
 version text); `build/ebti-<date>/` for the rebuild (git-ignored); `data/rules/customs_glossary.json`, optional and
-absent by default; `tests/eval/hs6_eval_coolant.json` and the coolant set's results, history and report files. The
+absent by default; `tests/eval/hs6_eval_coolant_set.json` and the coolant set's results, history and report files. The
 line store (`st.session_state`) gains `ruling_scope`, `customs_wording` and per-candidate `citation_notes` on the line
 version (data-model.md).
 
@@ -79,7 +87,8 @@ about 360 tokens, $0.0000036 and 39 KB of index per ruling (research R-02); the 
 - the rewrite is its own call, prompt, cache and switch, never merged into query expansion; every evaluation run of
   this feature passes `--expansion off`, so that the rewrite's off/on difference is its effect alone (research R-10);
 - the rewrite's switch stays off by default when the feature merges (FR-026);
-- routing is unchanged (`route_line`, `hs6_gate`); the new fields are never routing inputs;
+- routing changes only by rule (a)'s veto and the vague rule (2026-11-19); the other new fields are never routing
+  inputs;
 - the vote's rules and named constants stay; `HS6_VOTE_MIN_SIMILARITY` changes value only on the after-runs' evidence
   with the author's approval, and exactly the floor counts at any value;
 - the main checkout `C:\ai\CargoLint` is never written by this feature's tasks (see "Store and environment");
@@ -106,14 +115,14 @@ none to any principle or guardrail.
 
 | Principle | Check | Status |
 |---|---|---|
-| I. Guardrails live in code | Routing is untouched: the same `route_line`, `hs6_gate`, override, flagged-line lock, code validation and schema validation. The HS-6 vote keeps its definition of an eligible ruling (valid on the day, coded to the loaded nomenclature, at or above the floor) and its named constants; what changes is where its k nearest are searched, the candidates' chapters, a search scope like the CN-8 vote's (searched only under the decided HS-6 since features 004 and 006), not a new eligibility rule. Caveat recorded: the scope comes from the model's own candidates, so rulings of other chapters can no longer stop a wrong chapter; SC-004 measures it, and a failure is reported, not worked around (clarification 1). Exactly the floor counts and is tested; a new floor value comes only from the after-runs with the author's approval. Block 3's captions read the vote and the recorded chapter facts from the line store. | Pass |
+| I. Guardrails live in code | Re-checked on 2026-11-19: under rule (a) the auto-accept is constitution 1.5.0's gate word for word; the vote of the candidates' chapters can only send a line to review (`Hs6Gate.scoped_veto`), so a line is still auto-accepted only when the gate passes; the vague rule routes every flagged vague line to ask the shipper, so a flagged line never auto-accepts and its confidence is no longer a routing input. Both are code in `route_line` and `hs6_gate`, with tests at the boundaries. As first planned: routing is untouched: the same `route_line`, `hs6_gate`, override, flagged-line lock, code validation and schema validation. The HS-6 vote keeps its definition of an eligible ruling (valid on the day, coded to the loaded nomenclature, at or above the floor) and its named constants; what changes is where its k nearest are searched, the candidates' chapters, a search scope like the CN-8 vote's (searched only under the decided HS-6 since features 004 and 006), not a new eligibility rule. Caveat recorded: the scope comes from the model's own candidates, so rulings of other chapters can no longer stop a wrong chapter; SC-004 measures it, and a failure is reported, not worked around (clarification 1). Exactly the floor counts and is tested; a new floor value comes only from the after-runs with the author's approval. Block 3's captions read the vote and the recorded chapter facts from the line store. | Pass |
 | II. Untrusted input | The line reaches the rewrite only inside `fence(...)`, and its system prompt declares instructions inside void; an injection fixture covers it. The rewrite's output is validated (`WordingOut`) and used only as a search query and a displayed, escaped caption: never an instruction, a path or a tool hint. The glossary is a reviewed project file, outside the data block. The key stays an environment variable. | Pass |
-| III. Grounded, cited | Every ruling shown still comes from that run's searches; the vote's rulings now come from the candidates' chapters. The citation note marks a reasoning's reference that was not retrieved in that run as "not a source", and one at another code with its real HS-6, so the model's text can no longer pass a ruling off as support. Each ruling's stored code is what votes (the vote never takes a code from the model). "When no ruling matches the UI must say so": the two new captions say why. | Pass |
+| III. Grounded, cited | Every ruling shown still comes from that run's searches; block 3 lists the deciding vote's rulings (over every chapter, rule (a)), and the veto's caption names the second vote's code and share. The citation note marks a reasoning's reference that was not retrieved in that run as "not a source", and one at another code with its real HS-6, so the model's text can no longer pass a ruling off as support. Each ruling's stored code is what votes (the vote never takes a code from the model). "When no ruling matches the UI must say so": the two new captions say why. | Pass |
 | IV. Hybrid retrieval | The nomenclature search is unchanged (raw text first, then what the shipper confirmed, expansion as before, hybrid, RRF). The rewrite fits as shipped: it is added after the raw text and only to the ruling searches, the same for every input language, under its own switch, off by default and off when this feature merges, as query expansion is. Turning its default on would put a model-written translation into every line's search by default, against "no … translation step" and "a switch to be measured, not a default"; that is the author's later decision on the after-runs' evidence (FR-026's criterion), with a Principle IV amendment if the change needs one (plan question B); FR-026 keeps the switch off here. The loader stays scripted and chapter-list driven, now with `all` as the default list; Admin › Data states the chapters covered through the source version. | Pass |
 | Knowledge-base sources | The text names the twelve chapters, which indexing all chapters makes untrue. Amended in this feature through `/speckit-constitution` (FR-031), as the governance procedure requires: version bump to 1.11.0 (MINOR, confirmed by the author), last-amended date, amendment-log entry, consistency review; the author approved the wording in plan question B. Done after the implementation, before the pull request. | Amendment in scope (FR-031) |
 | V. Typed tools | No tool added. `classify_hs6` changes (contracts/classify-hs6.md): the vote's search scope, the optional rewrite, the citation notes; justification: the backlog's retrieval and evidence items, all inside the one tool that retrieves for the HS-6. New pure functions (`parse_chapter_setting`, `ruling_scope`, `citation_notes`, `customs_wording`, `glossary_matches`) are testable without a model or Streamlit; a failed rewrite fails one line, not the shipment. | Pass |
-| VI. Native UI | Block 3's caption changes wording; block 2's "Why: …" caption carries the notes; block 1 gains one caption with the rewrite (the author's request, clarification 5); the Admin Retrieval steps' queries line lists the rewrite. All `st.caption`/`st.markdown`, no CSS, no HTML. The UI Design Contract's inventory is a minimum: nothing is removed or moved, so no amendment. Every text is read from the line store. | Pass |
-| VII. Test-first | Tests first, seen failing, for the guardrail-carrying and clerk-facing code (FR-030): the settings, the scoped vote and its floor and share boundaries with the leave-one-out exclusion, the relevance boundary, the indexed chapters, each caption state, the citation check, the rewrite's switch, scope, merge, language, cache, glossary and injection fixture, the coolant scoring and the floor replay. All offline. The live steps are the author's and marked as such. | Pass |
+| VI. Native UI | Block 3's captions change (one `st.caption` each, contracts/ui.md §3); block 2's "Why: …" caption carries the notes; block 1 gains one caption with the rewrite (the author's request, clarification 5); the Admin Retrieval steps' queries line lists the rewrite. All `st.caption`/`st.markdown`, no CSS, no HTML. The UI Design Contract's inventory is a minimum: nothing is removed or moved, so no amendment. Every text is read from the line store. | Pass |
+| VII. Test-first | Tests first, seen failing, for the guardrail-carrying and clerk-facing code (FR-030): the settings, rule (a) (the unfiltered gate, the veto, the override on the unfiltered vote) and the vague rule, the scoped vote and its floor and share boundaries with the leave-one-out exclusion, the relevance boundary, the indexed chapters, each caption state, the citation check, the rewrite's switch, scope, merge, language, cache, glossary and injection fixture, the coolant scoring and the floor replay. All offline. The live steps are the author's and marked as such. | Pass |
 | Architecture | Dependencies keep their direction (`ui` → `agent` → `tools` → `rag`); the rewrite lives beside query expansion in `rag/translate.py` and uses the one client factory; line data goes through `LineStore` only. | Pass |
 | Technology stack | No new package. | Pass |
 | Out of scope for the MVP | Nothing is sent to a shipper or customs; no accounts; no persistence beyond the session. | Pass |
@@ -121,6 +130,12 @@ none to any principle or guardrail.
 **Post-design re-check**: unchanged after Phase 1 (data-model.md, contracts/, quickstart.md). The design adds no
 dependency, no tool and no routing input; the only constitution change is FR-031's amendment of "Knowledge-base
 sources", made through the amendment procedure; Principle IV stays as it is because the rewrite ships off.
+
+**Re-check of 2026-11-19** (rule (a) and the vague rule): no amendment. Rule (a) restores constitution 1.5.0's gate as
+the auto-accept and adds a veto that only sends lines to review; the vague rule only sends flagged lines to ask the
+shipper, which Principle I ("a flagged line MUST NOT be routed to auto_accept", the model's confidence no routing
+input) and Principle III ("tell the clerk what to ask the shipper") support. Option (c) is evaluation-only and changes
+no product code.
 
 ## Store and environment for the live steps
 
@@ -160,7 +175,9 @@ specs/014a-retrieval-evidence/
 │   └── settings-and-scripts.md   # the two settings, the refresh/loader/bti options, the source version
 ├── checklists/
 │   └── requirements.md           # the spec quality checklist
-└── tasks.md                      # Phase 2 output (/speckit-tasks)
+├── tasks.md                      # Phase 2 output (/speckit-tasks)
+├── eval-diff.md                  # the evaluation report (T045, T046): before against after, floor replays
+└── traceability.md               # the requirements no test can check, with their evaluation files (docs/qa-platform.md)
 ```
 
 ### Source Code (repository root)
@@ -171,7 +188,9 @@ agent/
 ├── schemas.py           # RulingScope, CitationNote, CustomsWording, WordingOut; Candidate.citation_notes;
 │                        #   Classification and LineVersion: ruling_scope, customs_wording;
 │                        #   RetrievalTrace.customs_wording
-└── store.py             # update_classification copies ruling_scope and customs_wording
+├── routing.py           # rule (a): hs6_gate(..., scoped_vote), route_line(..., hs6_scoped_vote), the veto's reason;
+│                        #   the vague rule
+└── store.py             # update_classification copies ruling_scope, customs_wording and hs6_scoped_vote
 rag/
 ├── bti.py               # chapters_spec(None) = "all chapters"; indexed_chapters, main_language helpers;
 │                        #   main(): --chapters from the setting, "all" accepted
@@ -184,13 +203,15 @@ tools/
 └── classify_hs6.py      # rewrite in the ruling searches only; the scoped vote search; ruling_scope; citation_notes;
                          #   ClassifyContext.customs_wording
 ui/
-├── view.py              # rulings_caption (block 3), citation note texts (block 2), customs wording caption (block 1)
+├── view.py              # rulings_captions (block 3), citation note texts (block 2), customs wording caption (block 1)
 ├── expand.py            # block 1 caption, block 2 notes, block 3 caption
 └── chat.py              # Retrieval steps: the rewrite in the queries line
 scripts/refresh_ebti.py  # docstring: --chapters
 tests/
 ├── eval/hs6_eval.py             # --set coolant, --customs-wording, --replay --floor, row fields, coolant files
-├── eval/hs6_eval_coolant.json   # new: the eight coolant lines
+├── eval/hs6_eval_coolant_set.json # new: the eight coolant lines (results go to hs6_eval_coolant*.json)
+├── eval/hs6_eval_outside_set.json # new (2026-11-19): the outside set, 10 to 15 lines with their sources
+├── unit/test_hs6_scoped_veto.py  # new (rule (a)): the gate, the route and the store with both votes
 ├── unit/test_settings.py        # + the two settings
 ├── unit/test_ruling_scope.py    # new: indexed chapters, main language, RulingScope
 ├── unit/test_citation_notes.py  # new: match, other code, not retrieved, unknown, normal form, order

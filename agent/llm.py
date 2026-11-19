@@ -94,7 +94,8 @@ class StructuredCaller:
     def call(self, schema: type[BaseModel], system: str, user: str, max_retries: int | None = None) -> BaseModel:
         """`max_retries` overrides the caller's default for one call (feature 004: one retry for the CN-8 and subdivision
         calls). Feature 006: an answer that is not JSON at all (the raw client's {"_invalid": ...}) is an invalid answer,
-        never an empty one, and gets one retry; when the retry is invalid too, the call fails."""
+        never an empty one, and gets one retry; when the retry is invalid too, the call fails. Feature 014a: so is an
+        answer that reached its schema's output cap (finish reason "length")."""
         retries = self.max_retries if max_retries is None else max_retries
         feedback = ""
         last_error: Exception | None = None
@@ -105,9 +106,14 @@ class StructuredCaller:
             attempt += 1
             if isinstance(out, dict) and out.get("_invalid"):
                 attempts = min(attempts, attempt + 1)
-                last_error = ValueError("the answer was not valid JSON")
-                feedback = "\n\nYour previous answer was not valid JSON. Return only valid JSON that matches the schema."
-                log.info("structured output not JSON (attempt %s/%s) for %s", attempt, attempts, schema.__name__)
+                if out.get("finish_reason") == "length":
+                    last_error = ValueError("the answer reached the output limit")
+                    feedback = ("\n\nYour previous answer reached the output limit. Return only short, valid JSON that "
+                                "matches the schema.")
+                else:
+                    last_error = ValueError("the answer was not valid JSON")
+                    feedback = "\n\nYour previous answer was not valid JSON. Return only valid JSON that matches the schema."
+                log.info("structured output invalid, %s (attempt %s/%s) for %s", last_error, attempt, attempts, schema.__name__)
                 continue
             try:
                 if isinstance(out, schema):
@@ -144,13 +150,25 @@ class OpenRouterRawClient:
 
     def raw_structured(self, schema: type[BaseModel], system: str, user: str) -> Any:
         from langchain_core.messages import HumanMessage, SystemMessage
+        from openai import LengthFinishReasonError
 
+        cap = getattr(schema, "max_output_tokens", None)   # feature 014a: a schema's own output cap (the rewrite's only)
         runnable = self._structured.get(schema)
         if runnable is None:
             method = self.settings.structured_method or "json_schema"
-            runnable = self._model.with_structured_output(schema, method=method, include_raw=True)
+            # OpenRouter's own max_tokens, beside the model's extra body: ChatOpenAI would send max_completion_tokens
+            bind = {"extra_body": {**(getattr(self._model, "extra_body", None) or {}), "max_tokens": cap}} if cap else {}
+            runnable = self._model.with_structured_output(schema, method=method, include_raw=True, **bind)
             self._structured[schema] = runnable
-        result = runnable.invoke([SystemMessage(content=system), HumanMessage(content=user)])
+        try:
+            result = runnable.invoke([SystemMessage(content=system), HumanMessage(content=user)])
+        except LengthFinishReasonError as exc:   # the answer reached its cap: an invalid answer, its tokens counted
+            if cap is None:
+                raise
+            usage = exc.completion.usage
+            self.last_usage = {"input_tokens": int(getattr(usage, "prompt_tokens", 0) or 0),
+                               "output_tokens": int(getattr(usage, "completion_tokens", 0) or 0)}
+            return {"_invalid": True, "finish_reason": "length", "content": ""}
         raw_msg = result.get("raw") if isinstance(result, dict) else None
         meta = getattr(raw_msg, "usage_metadata", None) or {}
         self.last_usage = {"input_tokens": int(meta.get("input_tokens", 0)), "output_tokens": int(meta.get("output_tokens", 0))}

@@ -1,5 +1,5 @@
 {
-  "note": "The 12 lines of the design canvas (synthetic consolidation from Yiwu). expected_* values assume threshold 85 and ask floor 50; expected_confidence is illustrative.",
+  "note": "The 12 lines of the design canvas (synthetic consolidation from Yiwu). expected_* values assume threshold 85; a vague line always asks the shipper (the author's decision of 2026-11-19); expected_confidence is illustrative.",
   "shipment": {"reference": "HOL-2026-10-0472", "shipper": "Yiwu Hengfa Trading", "origin": "Shanghai", "destination": "Hamburg", "mode": "LCL", "sheet": "装箱单", "header_row": 3},
   "lines": [
     {"line_no": 1, "text_zh": "配件", "text_en": "Parts", "qty": "14 CTN", "weight_kg": 312.0, "value_usd": 4180.0, "expected_flag": "vague", "expected_top_code": "8452.90", "expected_confidence": 31, "expected_route": "ask_shipper"},
@@ -10,7 +10,7 @@
     {"line_no": 6, "text_zh": "塑料玩具车", "text_en": "Plastic toy cars", "qty": "22 CTN", "weight_kg": 264.0, "value_usd": 3300.0, "expected_flag": "ok", "expected_top_code": "9503.00", "expected_confidence": 93, "expected_route": "ask_shipper", "expected_cn8_attribute": "whether the toy cars incorporate a motor"},
     {"line_no": 7, "text_zh": "电子产品", "text_en": "Electronic products", "qty": "9 CTN", "weight_kg": 135.0, "value_usd": 2700.0, "expected_flag": "vague", "expected_top_code": "8543.70", "expected_confidence": 22, "expected_route": "ask_shipper"},
     {"line_no": 8, "text_zh": "无线蓝牙耳机", "text_en": "Wireless Bluetooth earphones", "qty": "30 CTN", "weight_kg": 360.0, "value_usd": 9000.0, "expected_flag": "ok", "expected_top_code": "8518.30", "expected_confidence": 91, "expected_route": "auto_accept"},
-    {"line_no": 9, "text_zh": "家具", "text_en": "Furniture", "qty": "4 CTN", "weight_kg": 220.0, "value_usd": 1800.0, "expected_flag": "vague", "expected_top_code": "9403.60", "expected_confidence": 58, "expected_route": "review"},
+    {"line_no": 9, "text_zh": "家具", "text_en": "Furniture", "qty": "4 CTN", "weight_kg": 220.0, "value_usd": 1800.0, "expected_flag": "vague", "expected_top_code": "9403.60", "expected_confidence": 58, "expected_route": "ask_shipper"},
     {"line_no": 10, "text_zh": "铝合金自行车架", "text_en": "Aluminium alloy bicycle frames", "qty": "12 CTN", "weight_kg": 300.0, "value_usd": 5400.0, "expected_flag": "ok", "expected_top_code": "8714.91", "expected_confidence": 95, "expected_route": "auto_accept", "expected_cn8": "87149110"},
     {"line_no": 11, "text_zh": "橡胶密封圈", "text_en": "Rubber O-ring gaskets, vulcanised", "qty": "18 CTN", "weight_kg": 270.0, "value_usd": 2160.0, "expected_flag": "ok", "expected_top_code": "4016.93", "expected_confidence": 92, "expected_route": "auto_accept"},
     {"line_no": 12, "text_zh": "硅胶手机壳", "text_en": "Silicone mobile phone cases", "qty": "25 CTN", "weight_kg": 250.0, "value_usd": 3750.0, "expected_flag": "ok", "expected_top_code": "3926.90", "expected_confidence": 88, "expected_route": "auto_accept", "expected_cn8": "39269097"}

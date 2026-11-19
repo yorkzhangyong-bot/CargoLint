@@ -189,6 +189,9 @@ def _block1(store: Any, kb: Any, line: Any, status: view.LineStatus) -> None:
         st.caption(original)
     else:
         st.caption(f"{original} · Stop-word check: {md_escape(view.stop_word_result(line))}")
+    wording = view.wording_caption(line)   # feature 014a: what the rulings were also searched with; display only
+    if wording:
+        st.caption(md_escape(wording))
     if status.colour == "red":
         _lines(view.reason_line(store, line) or "")
         if status.question:
@@ -236,8 +239,8 @@ def _block2(store: Any, line: Any) -> str | None:
                       label_visibility="collapsed")
         return selected_code(line)
     r = rows[picked]
-    if r.rationale:
-        st.caption(f"Why: {md_escape(r.rationale)}")
+    if r.rationale:   # feature 014a: the citation notes follow the reasoning in the same caption
+        st.caption(f"Why: {md_escape(view.reasoning_text(r.rationale, r.notes, r.value))}")
     st.caption(ESTIMATE)
     return picked
 
@@ -246,13 +249,11 @@ def _block2(store: Any, line: Any) -> str | None:
 def _block3(store: Any, line: Any, code: str | None, kind: str | None) -> None:
     st.markdown("**3 Similar rulings (5 nearest, EBTI)**")
     vote = line.current.hs6_vote
-    if vote is None or not vote.competing:
-        st.caption("No ruling was within the similarity floor.")
-    else:
+    if vote is not None:
         for same, c, countries in view.vote_lines(vote, code):
             st.markdown(f"{':green[✓]' if same else ':red[✗]'} {c} · {md_escape(countries)}")
-        if code:
-            st.caption(view.agree_text(vote, code))
+    for caption in view.rulings_captions(line, code):   # feature 014a (rule (a)): agreement, veto, chapters not indexed
+        st.caption(caption)
     if kind == "a_hs6":
         _lines(view.explain_a(store, line, kind)[1])      # why the line waits for the clerk
     for i, c in enumerate(line.current.candidates[:3]):

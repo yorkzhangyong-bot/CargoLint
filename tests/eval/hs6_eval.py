@@ -13,7 +13,8 @@ at 300 characters). Its correct HS-6 is the first six digits of the ruling's CN-
 Each line goes through what the app runs for a new line (agent.agent._finalize): check_descriptions, then
 classify_lines for a line that is neither failed nor a pure stop word, with the context context_for_shipment builds for
 an unknown shipper (hybrid search, BTI precedents, no history), then the route the store computes for it (route_line,
-threshold 85, ask floor 50, no CN-8 input: the HS-6 layer's route). Leakage guard: the line's own ruling is never a BTI
+threshold 85, a vague line to ask the shipper, before the vague rule of 2026-11-19 only below the ask floor of 50, no
+CN-8 input: the HS-6 layer's route). Leakage guard: the line's own ruling is never a BTI
 precedent and never votes (ClassifyContext.exclude_refs, one line at a time); without it the ruling under test would
 propose its own code with its own text. Ruling validity is judged on the set's build date, as in the CN-8 eval.
 
@@ -59,6 +60,36 @@ The line-by-line results go to tests/eval/hs6_eval.json, the latest run, and to 
 tests/eval/hs6_eval_<tag>_<lang>_expansion-<on|off>.json (iteration<N> in place of the tag without --tag), which a run
 with another tag leaves alone, as the CN-8 iteration files keep earlier CN-8 runs (feature 007).
 
+Feature 014a: `--set coolant` runs the eight coolant lines of tests/eval/hs6_eval_coolant_set.json (the six of the
+author's user test in docs/backlog.md item 10, a German line and the plain 冷却液) through the same path, each line as
+typed, with no leakage guard (no line is a ruling), no cross-layer table (no line has a CN-8 result) and ruling validity
+on the set's build date. A line with an expected HS-6 is right when its top-1 is that code; a line expecting "ask the
+shipper" when its route is ask_shipper, whatever codes it shows. Its results, history and report are its own:
+tests/eval/hs6_eval_coolant.json, hs6_eval_coolant_<tag>_<lang>_expansion-<on|off>.json, hs6_eval_coolant_history.json
+and hs6_eval_coolant.md; every new history entry names its set (`set`: cn8, coolant or outside). `--set outside` (the
+author's decision of 2026-11-19) runs the lines of tests/eval/hs6_eval_outside_set.json, whose expected HS-6 lies
+outside the twelve chapters of the old store, the same way, scored and reported as the coolant set, except that each
+line's id is its source ruling's reference, which the run keeps out (leave-one-out); its files are hs6_eval_outside*.
+A coolant or outside entry also keeps the precedent override's measures (`on`, at OVERRIDE_MIN), as the 120-line set's
+does. `--proposal-scope nomenclature` is option (c) of that decision, evaluation only: the candidate proposal reads the
+rulings of the chapters of the nomenclature search's subheadings only (each row keeps them as proposal_chapters), while
+the gate's vote still reads every chapter; the app has no such setting, and the entry keeps the option.
+`--vote-scope all`, the 014a regression ablation (evaluation only), runs the second vote's ruling search over every
+chapter instead of the candidates' (it then equals the gate's vote and never vetoes); the entry keeps vote_scope.
+
+Since feature 014a each row also keeps vote_chapters and not_indexed (the line's ruling scope), vote_hits (the rulings
+of the second vote's search, within the candidates' chapters, each once at its highest similarity, nearest first, with
+whether it was eligible whatever the floor), customs_wording (the rewrite searched with) and citation_notes (per
+candidate code). nearest_hits stay those of the precedent search over every chapter, which the gate's vote reads (rule
+(a)). `--customs-wording on|off` sets the switch for the run, over CARGOLINT_CUSTOMS_WORDING; the entry keeps it with
+the run's floor, and the run's own file name ends in _wording-<on|off>. `--replay FILE --floor X` rebuilds every row's
+votes at the floor X, the gate's from its nearest_hits and the second from its vote_hits, with the routing functions
+and no model call (`--override-min` combines with it): exact, and evidence for a new floor, only at or above the run's
+own floor and for a run with query expansion and customs wording off (one query vector per line, so the 12 nearest of
+nearest_hits are the gate's rulings); any other replay is marked not exact, with the reason. The replay belongs to the
+set its file names, keeps its own results file and adds
+an entry marked `replay` to that set's history and report.
+
 --model names another OpenRouter chat model for this run only (the default is the configured CARGOLINT_CHAT_MODEL,
 Gemini 2.5 Flash since feature 006; the entry keeps the model and the reasoning sent next to its tag), through
 tests/eval/cn8_eval.run_settings: thinking stays off ({"enabled": false}; "minimal" still thinks) unless the model has no
@@ -94,11 +125,12 @@ from agent.llm import get_client, set_client_factory  # noqa: E402
 from agent.routing import SchemaError, hs6_choice, hs6_gate, hs6_ruling_vote, route_line  # noqa: E402
 from agent.schemas import FlagKind, Hs6Vote, LineStatus, RankOut, SourceKind, Usage  # noqa: E402
 from rag.loader import open_knowledge_base  # noqa: E402
-from rag.retriever import DISTANCE_DECIMALS  # noqa: E402
+from rag.retriever import DISTANCE_DECIMALS, stable_order  # noqa: E402
 from rag.translate import clear_cache as clear_expansions  # noqa: E402
 from tests.eval.cn8_eval import (OverriddenClient, dump_results, expected_sent_share, majority, price_for_run,  # noqa: E402
                                  run_settings)
 from tools.check_description import check_descriptions  # noqa: E402
+import tools.classify_hs6 as classify_tool  # noqa: E402
 from tools.classify_hs6 import ClassifyContext, classify_lines  # noqa: E402
 from tools.common import LineText, run_per_line  # noqa: E402
 from tools.parsers import split_mixed  # noqa: E402
@@ -109,11 +141,20 @@ OUT = ROOT / "tests" / "eval" / "hs6_eval.json"
 HISTORY = ROOT / "tests" / "eval" / "hs6_eval_history.json"
 REPORT = ROOT / "tests" / "eval" / "hs6_eval.md"
 CN8_RESULTS = ROOT / "tests" / "eval" / "cn8_eval_iteration11.json"
+COOLANT_SET = ROOT / "tests" / "eval" / "hs6_eval_coolant_set.json"   # feature 014a: the eight coolant lines
+COOLANT_OUT = ROOT / "tests" / "eval" / "hs6_eval_coolant.json"
+COOLANT_HISTORY = ROOT / "tests" / "eval" / "hs6_eval_coolant_history.json"
+COOLANT_REPORT = ROOT / "tests" / "eval" / "hs6_eval_coolant.md"
+OUTSIDE_SET = ROOT / "tests" / "eval" / "hs6_eval_outside_set.json"   # feature 014a (2026-11-19): outside the twelve
+OUTSIDE_OUT = ROOT / "tests" / "eval" / "hs6_eval_outside.json"
+OUTSIDE_HISTORY = ROOT / "tests" / "eval" / "hs6_eval_outside_history.json"
+OUTSIDE_REPORT = ROOT / "tests" / "eval" / "hs6_eval_outside.md"
+TYPED_SETS = ("coolant", "outside")   # sets of typed lines, scored and reported as the coolant set
 HITS_LOGGED = 40
 SEARCHED = 2 * RETRIEVAL_K    # the rulings precedent_codes reads per query vector
 QUADRANTS = ("hs6_right_cn8_right", "hs6_right_cn8_wrong", "hs6_wrong_cn8_right", "hs6_wrong_cn8_wrong")
-GATES = ("vote_agrees", "vote_disagrees", "vote_tie", "vote_share_low", "no_rulings", "not_gated")   # not_gated: flagged,
-                                                                                                     # failed, no candidate
+GATES = ("vote_agrees", "vote_disagrees", "vote_tie", "vote_share_low", "scoped_veto", "no_rulings",   # not_gated:
+         "not_gated")   # flagged, failed, no candidate; scoped_veto: the second vote sent the line to review (014a, rule (a))
 OTHER_MODEL_RETRIES = 1        # a --model run retries an invalid answer once; the product retries MAX_SCHEMA_RETRIES times
 TAG_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")   # a tag names the run's own results file
 _rec = threading.local()       # per worker thread, for the line in hand: the logged ruling searches
@@ -124,21 +165,73 @@ def expected_hs6(ruling: dict) -> str:
     return f"{ruling['cn8'][:4]}.{ruling['cn8'][4:6]}"
 
 
+def expected_of(item: dict) -> str | None:
+    """A line's correct HS-6: a coolant line's expected_hs6, None for one that expects "ask the shipper" (feature 014a);
+    else the first six digits of its ruling's CN-8."""
+    if "expected_hs6" in item or "expected_route" in item:
+        return item.get("expected_hs6")
+    return expected_hs6(item)
+
+
+def coolant_items(data: dict) -> list[dict]:
+    """Feature 014a: the coolant set's lines as run_once takes them: the id as the reference, the text as the
+    description, and the expected HS-6 or route."""
+    return [{"reference": line["id"], "chapter": (line.get("expected_hs6") or "")[:2], "language": "",
+             "description": line["text"], **{k: line[k] for k in ("expected_hs6", "expected_route") if k in line}}
+            for line in data["lines"]]
+
+
+def coolant_score(row: dict, item: dict) -> dict:
+    """Feature 014a (spec User Story 1, scenario 1): a coolant row's expected route and whether it is right: a line with
+    an expected HS-6 on its top-1, a line expecting "ask the shipper" on its route, whatever codes it shows."""
+    route = item.get("expected_route")
+    return {"expected_route": route, "right": row["route"] == route if route else bool(row["hit"])}
+
+
 def line_text(line_no: int, ruling: dict) -> LineText:
     """The ruling's goods description as the app takes a typed line: split into Chinese and other text, not cut."""
     zh, en = split_mixed(ruling["description"])
     return LineText(line_no=line_no, text_zh=zh, text_en=en)
 
 
-def _logged(search: Any) -> Any:
+def _logged(search: Any, unscoped: bool = False) -> Any:
     """search_by_vector as the app calls it, unchanged; for the calling thread's line it also keeps the HITS_LOGGED
-    rulings nearest to the same vector, from a second search (the log only)."""
+    rulings nearest to the same vector, from a second search (the log only). Feature 014a: the vote's search within
+    the candidates' chapters (the one with a chapter filter) is kept as the product read it, apart, for vote_hits. With
+    `unscoped` (the 014a regression ablation, eval only) that search runs over every chapter, as the vote did before
+    feature 014a, and is still kept as the vote's rulings."""
     def wrapper(vector: list[float], k: int, chapter_filter: list[str] | None = None, where: dict | None = None) -> Any:
-        hits = search(vector, k, chapter_filter, where)
+        hits = search(vector, k, None if unscoped else chapter_filter, where)
         searches = getattr(_rec, "searches", None)
-        if searches is not None:
+        if searches is not None and chapter_filter:
+            _rec.vote_searches.append(hits)
+        elif searches is not None:
             searches.append(search(vector, HITS_LOGGED, chapter_filter, where))
         return hits
+    return wrapper
+
+
+def _nomenclature_logged(search: Any) -> Any:
+    """Option (c) (feature 014a, 2026-11-19, eval only): the nomenclature search as the app calls it, unchanged; for the
+    calling thread's line it keeps the chapters of the subheadings its first unfiltered search returned."""
+    def wrapper(queries: list[str], chapter_filter: list[str] | None = None, *args: Any, **kwargs: Any) -> Any:
+        chunks, trace = search(queries, chapter_filter, *args, **kwargs)
+        if chapter_filter is None and getattr(_rec, "proposal_chapters", ()) is None:
+            _rec.proposal_chapters = sorted({c.code[:2] for c in chunks})
+        return chunks, trace
+    return wrapper
+
+
+def _proposal_in(original: Any) -> Any:
+    """Option (c), eval only: precedent_codes over a ruling search within the chapters of the line's nomenclature
+    subheadings, by the index's own search (not the run's log), as deep as the app's proposal (2 × k per query vector),
+    in place of the hits over every chapter, which the gate's vote still reads."""
+    def wrapper(bti_vectors: Any, bti_store: Any, query_vectors: list[list[float]], *args: Any, hits: Any = None,
+                k: int = RETRIEVAL_K, **kwargs: Any) -> Any:
+        chapters = getattr(_rec, "proposal_chapters", None)
+        search = type(bti_vectors).search_by_vector
+        scoped = [search(bti_vectors, vec, k * 2, chapters) for vec in query_vectors] if chapters else []
+        return original(bti_vectors, bti_store, query_vectors, *args, hits=scoped, k=k, **kwargs)
     return wrapper
 
 
@@ -158,6 +251,32 @@ def nearest_hits(searches: list[list[tuple[str, float]]], own: str, kb: Any, as_
                     "eligible": (reference != own and bool(code) and kb.index.get(code) is not None
                                  and kb.bti.get(doc_id, as_of) is not None)})
     return out
+
+
+def vote_hits(searches: list[list[tuple[str, float]]], own: str | None, kb: Any, as_of: date) -> list[dict]:
+    """Feature 014a: the rulings the vote's search within the candidates' chapters returned, each once at its highest
+    similarity, nearest first as hs6_voters orders them (rag.retriever.stable_order), with whether it could vote
+    whatever the floor: valid on the day, coded to a subheading of the loaded nomenclature, not the line's own ruling. A
+    replay applies a floor to them (floor_fields)."""
+    best: dict[str, float] = {}
+    for hits in searches:
+        for doc_id, score in hits:
+            best[doc_id] = max(best.get(doc_id, float("-inf")), score)
+    out = []
+    for doc_id in stable_order(list(best.items())):
+        record = kb.bti.get(doc_id) or {}
+        reference, code = doc_id.removeprefix("bti:"), record.get("code") or ""
+        out.append({"reference": reference, "hs6": code, "similarity": round(best[doc_id], 6),
+                    "eligible": (reference != own and bool(code) and kb.index.get(code) is not None
+                                 and kb.bti.get(doc_id, as_of) is not None)})
+    return out
+
+
+def vote_fields(vote: Hs6Vote | None) -> dict | None:
+    """A row's vote: its majority, share, voters, the candidate it supports, and its counts ([[HS-6, rulings], ...])."""
+    return None if vote is None else {"majority": vote.majority, "share": vote.majority_share,
+                                      "voters": sum(len(c) for _, c in vote.competing), "candidate": vote.candidate,
+                                      "counts": [[code, len(c)] for code, c in vote.competing]}
 
 
 def count_invalid(client: Any) -> Counter:
@@ -237,18 +356,25 @@ def eval_rulings(data: dict, lang: str) -> list[dict]:
             for z in json.loads(ZH_SET.read_text(encoding="utf-8"))["lines"]]
 
 
-def results_name(base: str, lang: str, expansion: bool) -> str:
-    """Feature 009: a run's own results file names its language and its query expansion."""
-    return f"{base}_{lang}_expansion-{'on' if expansion else 'off'}"
+def results_name(base: str, lang: str, expansion: bool, wording: bool | None = None) -> str:
+    """Feature 009: a run's own results file names its language and its query expansion; feature 014a: and the
+    customs-wording switch, when given."""
+    name = f"{base}_{lang}_expansion-{'on' if expansion else 'off'}"
+    return name if wording is None else f"{name}_wording-{'on' if wording else 'off'}"
 
 
-def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: int,
-             expansion: bool = False) -> tuple[list[dict], float]:
-    """One pass of the app's HS-6 path over the set: one row per ruling, and the elapsed seconds."""
-    clear_expansions()   # an independent run: no query expansion carried over
+def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: int, expansion: bool = False,
+             leave_one_out: bool = True, customs_wording: bool = False,
+             vote_scope: str = "candidates", proposal_scope: str = "all") -> tuple[list[dict], float]:
+    """One pass of the app's HS-6 path over the set: one row per ruling, and the elapsed seconds. `leave_one_out` keeps
+    each line's own ruling out; the coolant set has none (feature 014a). `customs_wording` is the switch for the run.
+    `vote_scope` "all" runs the vote over every chapter instead of the candidates' (the 014a regression ablation, eval
+    only: the app is unchanged). `proposal_scope` "nomenclature" is option (c) (2026-11-19, eval only): the candidate
+    proposal reads the rulings of the chapters of the nomenclature search's subheadings only."""
+    clear_expansions()   # an independent run: no query expansion and no rewrite carried over
     lines = [line_text(i, r) for i, r in enumerate(rulings, start=1)]
-    base = ClassifyContext(hybrid=True, as_of=as_of, expansion=expansion)   # context_for_shipment for an unknown
-                                                                            # shipper, on the set's date
+    base = ClassifyContext(hybrid=True, as_of=as_of, expansion=expansion,   # context_for_shipment for an unknown
+                           customs_wording=customs_wording)                 # shipper, on the set's date
     t0 = time.perf_counter()
     checks = check_descriptions(lines, kb.rules, client, workers)
     todo = []
@@ -259,17 +385,26 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
 
     recorder = SimpleNamespace(call=_ranking(client.call))
 
-    def one(item: tuple[LineText, str]) -> tuple[Any, list, Any]:
+    def one(item: tuple[LineText, str]) -> tuple[Any, list, list, Any]:
         line, reference = item
-        _rec.searches, _rec.rank = [], None
-        ctx = replace(base, exclude_refs=frozenset({reference}))   # the leakage guard: never the line's own ruling
-        return classify_lines([line], ctx, kb, recorder, workers=1)[0], _rec.searches, _rec.rank
+        _rec.searches, _rec.vote_searches, _rec.rank, _rec.proposal_chapters = [], [], None, None
+        ctx = replace(base, exclude_refs=frozenset({reference}) if leave_one_out else None)   # the leakage guard: never
+                                                                                              # the line's own ruling
+        return (classify_lines([line], ctx, kb, recorder, workers=1)[0], _rec.searches, _rec.vote_searches, _rec.rank,
+                _rec.proposal_chapters)
 
     vectors = getattr(kb, "bti_vectors", None)
     own = vectors is not None and "search_by_vector" in vars(vectors)
     if vectors is not None:
         search = vectors.search_by_vector
-        vectors.search_by_vector = _logged(search)      # the instance only, for this run
+        vectors.search_by_vector = _logged(search, unscoped=vote_scope == "all")   # the instance only, for this run
+    scoped_proposal = proposal_scope == "nomenclature"                              # option (c), for this run only
+    if scoped_proposal:
+        retriever, proposal = kb.retriever, classify_tool.precedent_codes
+        own_search = "search" in vars(retriever)
+        nomenclature = retriever.search
+        retriever.search = _nomenclature_logged(nomenclature)
+        classify_tool.precedent_codes = _proposal_in(proposal)
     try:
         done = run_per_line(todo, one, lambda item, exc: None, workers=workers)
     finally:
@@ -278,12 +413,18 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
                 vectors.search_by_vector = search
             else:
                 del vectors.search_by_vector
+        if scoped_proposal:
+            classify_tool.precedent_codes = proposal
+            if own_search:
+                retriever.search = nomenclature
+            else:
+                del retriever.search
     elapsed = time.perf_counter() - t0
     classified = {line.line_no: res for (line, _), res in zip(todo, done)}
     rows = []
     for line, r, chk in zip(lines, rulings, checks):
         res = classified.get(line.line_no)
-        cls, searches, rank = res if res is not None else (None, [], None)
+        cls, searches, scoped, rank, proposal_chapters = res if res is not None else (None, [], [], None, None)
         if chk.status == LineStatus.failed:
             status, error = LineStatus.failed, chk.error_reason
         elif line.line_no not in classified:       # a pure stop word: checked, nothing to classify
@@ -292,14 +433,17 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
             status, error = LineStatus.failed, "timed out"
         else:
             status, error = cls.status, cls.error_reason
-        expected = expected_hs6(r)
+        expected = expected_of(r)
         candidates = cls.candidates if cls is not None else []
         codes = [c.code for c in candidates]
         conf = candidates[0].confidence if candidates else None
         kind = chk.flag.kind if chk.flag is not None else None
         flagged = kind is not None and kind != FlagKind.ok
-        vote = cls.hs6_vote if cls is not None else None
-        route, _ = route_line(kind, conf, status, flagged, DEFAULT_THRESHOLD, ASK_FLOOR, hs6_vote=vote)
+        vote = cls.hs6_vote if cls is not None else None                 # the gate's vote, over every chapter
+        second = cls.hs6_scoped_vote if cls is not None else None        # feature 014a (rule (a)): the second vote
+        scope = cls.ruling_scope if cls is not None else None
+        route, _ = route_line(kind, conf, status, flagged, DEFAULT_THRESHOLD, ASK_FLOOR, hs6_vote=vote,
+                              hs6_scoped_vote=second)
         by_confidence, _ = route_line(kind, conf, status, flagged, DEFAULT_THRESHOLD, ASK_FLOOR)   # before the vote gate
         gated = status == LineStatus.checked and kind == FlagKind.ok and (conf or 0) > 0          # as the store sets hs6_gate
         shown = {s.id for s in cls.sources if s.kind == SourceKind.nomenclature} if cls is not None else set()
@@ -313,23 +457,33 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
             "raw": [{"code": c.code, "confidence": c.confidence} for c in rank.candidates] if rank is not None else None,
             "hit": bool(codes) and codes[0] == expected, "in_top3": expected in codes[:3], "route": route.value,
             "route_by_confidence": by_confidence.value,
-            "gate": hs6_gate(conf, DEFAULT_THRESHOLD, vote)[1].value if gated else "not_gated",
-            "vote": None if vote is None else {"majority": vote.majority, "share": vote.majority_share,
-                                               "voters": sum(len(c) for _, c in vote.competing), "candidate": vote.candidate,
-                                               "counts": [[code, len(c)] for code, c in vote.competing]},
+            "gate": hs6_gate(conf, DEFAULT_THRESHOLD, vote, None, second)[1].value if gated else "not_gated",
+            "vote": vote_fields(vote), "scoped_vote": vote_fields(second),
             "status": status.value, "error": error,
             "precedent_codes": cls.retrieval_trace.precedent_codes if cls is not None and cls.retrieval_trace else [],
             "expected_sent": f"hs:{expected}" in shown,
             "own_rank": next((k for k, h in enumerate(hits, start=1) if h["reference"] == r["reference"]), None),
-            "nearest_hits": hits})
+            "nearest_hits": hits,
+            # feature 014a: the chapters the second vote searched and its rulings (for a replay at another floor), the
+            # rewrite searched with, and the citation notes per candidate
+            "vote_chapters": scope.chapters if scope is not None else [],
+            "not_indexed": scope.not_indexed if scope is not None else [],
+            "vote_hits": vote_hits(scoped, r["reference"] if leave_one_out else None, kb, as_of),
+            "customs_wording": cls.customs_wording.text if cls is not None and cls.customs_wording else None,
+            "proposal_chapters": proposal_chapters,   # option (c): the chapters the proposal read; None as the app runs
+            "citation_notes": [{"code": c.code, "notes": [n.model_dump() for n in c.citation_notes]}
+                               for c in candidates if c.citation_notes]})
         rows[-1].update(override_fields(rows[-1]))   # feature 008: the switch on, from the same answers
+        if "expected_hs6" in r or "expected_route" in r:
+            rows[-1].update(coolant_score(rows[-1], r))   # feature 014a: a coolant line, right on its code or its route
     return rows, elapsed
 
 
-def replay_vote(row: dict) -> Hs6Vote | None:
+def replay_vote(row: dict, field: str = "vote") -> Hs6Vote | None:
     """Feature 008: a row's vote as the routing functions take it, rebuilt from its counts by the product's own vote
-    (the rulings' countries do not route)."""
-    v = row["vote"]
+    (the rulings' countries do not route); `field` "scoped_vote" is the second vote of rule (a) (feature 014a), None in
+    a row from before it."""
+    v = row.get(field)
     if v is None:
         return None
     return hs6_ruling_vote([(code, "") for code, k in v["counts"] for _ in range(k)], row["top3"])
@@ -338,18 +492,44 @@ def replay_vote(row: dict) -> Hs6Vote | None:
 def override_fields(row: dict, override_min: int = OVERRIDE_MIN) -> dict:
     """Feature 008: a row's `supported` and `on` fields, from what it keeps (its flag, status, confidence, top 3 and vote
     counts) through the routing functions with the switch on at `override_min`; its other fields stay the switch off."""
-    vote = replay_vote(row)
+    vote, scoped = replay_vote(row), replay_vote(row, "scoped_vote")
     kind = None if row["flag"] == "failed" else FlagKind(row["flag"])
     conf = row["confidence"]
     route, _ = route_line(kind, conf, row["status"], kind not in (None, FlagKind.ok), DEFAULT_THRESHOLD, ASK_FLOOR,
-                          hs6_vote=vote, hs6_override_min=override_min)
+                          hs6_vote=vote, hs6_override_min=override_min, hs6_scoped_vote=scoped)
     gated = row["status"] == LineStatus.checked.value and kind == FlagKind.ok and (conf or 0) > 0   # as run_once
-    gate = hs6_gate(conf, DEFAULT_THRESHOLD, vote, override_min)[1] if gated else None
+    gate = hs6_gate(conf, DEFAULT_THRESHOLD, vote, override_min, scoped)[1] if gated else None
     rank, chosen = hs6_choice([SimpleNamespace(code=code) for code in row["top3"]], vote, gate)
     supported = vote.candidate if vote is not None else None
     return {"supported": {"rank": supported, "right": row["top3"][supported - 1] == row["expected"] if supported else None},
             "on": {"gate": gate.value if gate is not None else "not_gated", "route": route.value, "rank": rank,
                    "chosen": chosen, "hit": chosen is not None and chosen == row["expected"]}}
+
+
+def floor_fields(row: dict, floor: float, override_min: int = OVERRIDE_MIN) -> dict:
+    """Feature 014a: a row as the product would have routed it at the similarity floor `floor`, under rule (a): the
+    gate's vote rebuilt from its nearest_hits (the 5 nearest eligible ones at or above the floor among the 12 the
+    unfiltered search read) and the second vote from its vote_hits (the search within the candidates' chapters), each by
+    the product's vote, then the gate and the route, the switch on at `override_min` and, for the coolant set, the score;
+    its other fields are the run's. Exact for a floor at or above the run's, and for a run with one query vector per
+    line (query expansion and customs wording off): the product would have read the same rulings."""
+    nearest = [(h["hs6"], "") for h in row["nearest_hits"][:SEARCHED]
+               if h["eligible"] and 1 - h["distance"] >= floor][:HS6_VOTE_K]
+    voters = [(h["hs6"], "") for h in row["vote_hits"] if h["eligible"] and h["similarity"] >= floor]
+    vote = hs6_ruling_vote(nearest, row["top3"]) if row["top3"] else None
+    scoped = hs6_ruling_vote(voters, row["top3"]) if row["top3"] else None
+    kind = None if row["flag"] == "failed" else FlagKind(row["flag"])
+    conf = row["confidence"]
+    route, _ = route_line(kind, conf, row["status"], kind not in (None, FlagKind.ok), DEFAULT_THRESHOLD, ASK_FLOOR,
+                          hs6_vote=vote, hs6_scoped_vote=scoped)
+    gated = row["status"] == LineStatus.checked.value and kind == FlagKind.ok and (conf or 0) > 0   # as run_once
+    out = {**row, "vote": vote_fields(vote), "scoped_vote": vote_fields(scoped), "route": route.value,
+           "gate": hs6_gate(conf, DEFAULT_THRESHOLD, vote, None, scoped)[1].value if gated else "not_gated"}
+    out.update(override_fields(out, override_min))
+    if "right" in row:                                 # the coolant set
+        expected = {"expected_route": row["expected_route"]} if row.get("expected_route") else {"expected_hs6": row["expected"]}
+        out.update(coolant_score(out, expected))
+    return out
 
 
 def _seen(r: dict) -> dict:
@@ -389,9 +569,51 @@ def gate_measures(runs: list[list[dict]]) -> dict:
     and the right lines the confidence rule alone would have auto-accepted that the gate did not (lost)."""
     return {"gate_runs": [{g: sum(r["gate"] == g for r in run) for g in GATES} for run in runs],
             "no_rulings_review_runs": [sum(r["gate"] == "no_rulings" and r["route"] == "review" for r in run) for run in runs],
+            "no_voter_runs": [sum(r["top1"] is not None and r.get("vote") is None for r in run) for run in runs],   # 014a
             "right_auto_runs": [sum(r["hit"] and r["route"] == "auto_accept" for r in run) for run in runs],
             "lost_runs": [sum(r["hit"] and r["route_by_confidence"] == "auto_accept" and r["route"] != "auto_accept"
                               for r in run) for run in runs]}
+
+
+def coolant_measures(runs: list[list[dict]]) -> dict:
+    """Feature 014a: the coolant set over N runs (spec FR-004): right per run, the lines right on majority (a line's most
+    frequent top-1, or route for a line expecting "ask the shipper", a tie going to the earliest run), the expected
+    HS-6 in the top 3 per run (lines with one only), the routes, the wrong auto-accepts (auto-accepted and not right)
+    and each line's outcome per run and on majority."""
+    lines = []
+    for seen in zip(*runs):
+        first = seen[0]
+        expected = first["expected_route"] or first["expected"]
+        found = majority([r["route"] if first["expected_route"] else r["top1"] for r in seen])
+        lines.append({"id": first["reference"], "expected": expected, "majority": found, "right": found == expected,
+                      "seen": [{"top1": r["top1"], "route": r["route"]} for r in seen]})
+    return {"top1_runs": [sum(r["right"] for r in run) for run in runs],
+            "majority_top1": sum(line["right"] for line in lines),
+            "top3_runs": [sum(r["in_top3"] for r in run) for run in runs],
+            "routes_runs": [{route: sum(r["route"] == route for r in run) for route in ("auto_accept", "review", "ask_shipper")}
+                            for run in runs],
+            "wrong_auto_runs": [[{"reference": r["reference"], "expected": r["expected_route"] or r["expected"],
+                                  "top1": r["top1"], "confidence": r["confidence"]}
+                                 for r in run if r["route"] == "auto_accept" and not r["right"]] for run in runs],
+            "lines": lines}
+
+
+def typed_on_measures(runs: list[list[dict]]) -> dict:
+    """Feature 014a: a coolant or outside set's runs with the precedent override on: each row's `on` route and HS-6 in
+    place of its own, scored again (a coded line on its HS-6, an "ask the shipper" line on its route)."""
+    on = [[{**r, "right": r["route"] == r["expected_route"] if r["expected_route"] else r["hit"]} for r in on_rows(run)]
+          for run in runs]
+    m = coolant_measures(on)
+    return {key: m[key] for key in ("top1_runs", "majority_top1", "routes_runs", "wrong_auto_runs")}
+
+
+def typed_measures(runs: list[list[dict]], override_min: int = OVERRIDE_MIN) -> dict:
+    """Feature 014a: a coolant or outside entry's measures: the switch off, the vote gate's, and the switch on at
+    `override_min` when the rows keep it (every row since feature 008 does)."""
+    m = {**coolant_measures(runs), **gate_measures(runs), "override_min": override_min}
+    if all("on" in r for run in runs for r in run):
+        m["on"] = typed_on_measures(runs)
+    return m
 
 
 def own_ruling(runs: list[list[dict]]) -> dict:
@@ -440,6 +662,17 @@ def override_measures(runs: list[list[dict]], cn8: dict[str, dict], override_min
                                 for r in run if r["on"]["gate"] == "vote_override"] for run in runs],
             "supported_runs": [{"lines": sum(r["supported"]["rank"] is not None for r in run),
                                 "right": sum(r["supported"]["right"] is True for r in run)} for run in runs]}
+
+
+def set_files(name: str) -> tuple[Path, Path, Path]:
+    """Feature 014a: a set's results, history and report files; the coolant and the outside set keep their own."""
+    return {"coolant": (COOLANT_OUT, COOLANT_HISTORY, COOLANT_REPORT),
+            "outside": (OUTSIDE_OUT, OUTSIDE_HISTORY, OUTSIDE_REPORT)}.get(name, (OUT, HISTORY, REPORT))
+
+
+def set_file(name: str) -> Path:
+    """Feature 014a: the file of a set of typed lines."""
+    return OUTSIDE_SET if name == "outside" else COOLANT_SET
 
 
 def write_results(report: dict, out: Path, name: str) -> Path:
@@ -523,11 +756,15 @@ def _wrong_auto(wrong_auto_runs: list[list[dict]]) -> list[str]:
 def _entry_sections(h: dict, descriptions: dict[str, str]) -> list[str]:
     n, x = h["n"], h["cross_layer"]
     run = f", {h['lang']}, query expansion {h['expansion']}" if "lang" in h else ""   # feature 009
+    run += f", customs wording {h['customs_wording']}" if "customs_wording" in h else ""   # feature 014a
     out = ["", f"## Iteration {h['iteration']} ({h.get('tag', '-')}, {h['model']}{run}, {h['run_on']})"]
     if h.get("replay_of"):
-        r = h["replay_of"]
-        out += ["", f"Replay of iteration {r['iteration']} ({r.get('tag') or '-'}) at OVERRIDE_MIN {h['override_min']}, "
-                    "from its stored answers: no model call."]
+        r, floor = h["replay_of"], h.get("replay")   # feature 014a: a replay at another similarity floor
+        at = f"floor {floor['floor']} and OVERRIDE_MIN {h['override_min']}" if floor else f"OVERRIDE_MIN {h['override_min']}"
+        out += ["", f"Replay of iteration {r['iteration']} ({r.get('tag') or '-'}) at {at}, from its stored answers: no "
+                    "model call." + ("" if not floor or floor.get("exact", True)
+                                     else f" Not exact ({floor.get('why', 'below the run' + chr(39) + 's floor')}), so no "
+                                          "evidence for a new floor.")]
     if h.get("note"):
         out += ["", f"Note: {h['note']}"]
     if h.get("parse"):
@@ -545,14 +782,7 @@ def _entry_sections(h: dict, descriptions: dict[str, str]) -> list[str]:
         out.append(f"| {k + 1} | {h['top1_runs'][k]}/{n} | {h['top3_runs'][k]}/{n} | {routes['auto_accept']} | "
                    f"{routes['review']} | {routes['ask_shipper']} | {len(h['wrong_auto_runs'][k])} |")
     if "gate_runs" in h:
-        out += ["", "### Vote gate", "",
-                "Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 "
-                "results the confidence rule alone would have auto-accepted and the gate did not.", "",
-                "| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | "
-                "Right auto-accepts | Lost |", "|---|---|---|---|---|---|---|---|---|---|"]
-        out += [f"| {k + 1} | " + " | ".join(str(gates[g]) for g in GATES)
-                + f" | {h['no_rulings_review_runs'][k]} | {h['right_auto_runs'][k]} | {h['lost_runs'][k]} |"
-                for k, gates in enumerate(h["gate_runs"])]
+        out += _gate_table(h)
     m = x["majority"]
     out += ["", f"### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration {h['cn8_iteration']})", "",
             "The CN-8 eval starts from the correct HS-6, so a line is right end to end only when both are right. "
@@ -584,6 +814,25 @@ def _entry_sections(h: dict, descriptions: dict[str, str]) -> list[str]:
     if "on" in h:
         out += _override_section(h)
     return out
+
+
+def _gate_table(h: dict) -> list[str]:
+    """The vote gate's reasons per run (an entry from before rule (a) has no veto: 0)."""
+    out = ["", "### Vote gate", "",
+           "Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, "
+           "but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 "
+           "results the confidence rule alone would have auto-accepted and the gate did not.", "",
+           "| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | "
+           "Right auto-accepts | Lost |", "|---|---|---|---|---|---|---|---|---|---|---|"]
+    return out + [f"| {k + 1} | " + " | ".join(str(gates.get(g, 0)) for g in GATES)
+                  + f" | {h['no_rulings_review_runs'][k]} | {h['right_auto_runs'][k]} | {h['lost_runs'][k]} |"
+                  for k, gates in enumerate(h["gate_runs"])]
+
+
+def _latest_run(history: list[dict]) -> str:
+    """Which run the results file of the latest run holds: the last paid run of the history (a replay writes its own)."""
+    runs = [h for h in history if not h.get("replay_of")]
+    return f", iteration {runs[-1]['iteration']} ({runs[-1].get('tag', '-')})" if runs else ""
 
 
 def _override_section(h: dict) -> list[str]:
@@ -621,7 +870,8 @@ def render_report(history: list[dict], data: dict) -> str:
         f"{data['built_on']}); a line's correct HS-6 is the first six digits of its ruling's CN-8.",
         "- **Method**: each ruling's goods description, as given, is a new line through the app's path: the description "
         "check, the HS-6 step (hybrid search and BTI precedents, no shipper history) and the route the store computes "
-        f"(threshold {DEFAULT_THRESHOLD}, ask floor {ASK_FLOOR}). A line's own ruling is never a precedent (leave-one-out); "
+        f"(threshold {DEFAULT_THRESHOLD}; a vague line goes to ask the shipper, before the vague rule of 2026-11-19 only "
+        f"below the ask floor of {ASK_FLOOR}). A line's own ruling is never a precedent (leave-one-out); "
         "ruling validity on the set's build date. `python tests/eval/hs6_eval.py --repeat 3`.",
         "- **Top-1** is the first candidate; a line without one (a stop word, a failure) is a miss. **In top 3**: the "
         "correct HS-6 among the candidates the clerk picks from on review. **Majority**: the most frequent top-1 over the "
@@ -648,9 +898,69 @@ def render_report(history: list[dict], data: dict) -> str:
                    f"{h['elapsed_s']:.0f} s |")
     for h in history:
         out += _entry_sections(h, descriptions)
-    out += ["", f"Model: {history[-1]['model'] if history else '-'}. Line-by-line results of the latest run: "
-            "`tests/eval/hs6_eval.json`; since feature 007 each run also keeps its own, `tests/eval/hs6_eval_<tag>.json`; "
-            "earlier runs are in the git history of `hs6_eval.json`.", ""]
+    out += ["", f"Model: {history[-1]['model'] if history else '-'}. Line-by-line results of the latest run"
+            f"{_latest_run(history)}: `tests/eval/hs6_eval.json`; since feature 007 each run also keeps its own, "
+            "`tests/eval/hs6_eval_<tag>.json`; earlier runs are in the git history of `hs6_eval.json`.", ""]
+    return "\n".join(out)
+
+
+def render_coolant_report(history: list[dict], data: dict, set_name: str = "coolant") -> str:
+    """Feature 014a: tests/eval/hs6_eval_coolant.md, one row per entry and, per entry, each line's outcome per run and on
+    majority; the outside set's hs6_eval_outside.md the same way (`set_name`)."""
+    texts = {line["id"]: line["text"] for line in data["lines"]}
+    guard = ("each line's source ruling is kept out (leave-one-out), its id being that ruling's reference"
+             if set_name == "outside" else "no leakage guard, as no line is a ruling")
+    out = [
+        f"# HS-6 evaluation report: the {set_name} set (feature 014a)",
+        "",
+        f"- **Set**: `tests/eval/{set_file(set_name).name}`, {len(data['lines'])} lines (built {data['built_on']}): "
+        f"{data['source']}.",
+        "- **Method**: each line, as typed, goes through the 120-line set's path: the description check, the HS-6 step "
+        "(hybrid search and BTI precedents, no shipper history) and the route the store computes (threshold "
+        f"{DEFAULT_THRESHOLD}; a vague line goes to ask the shipper, before the vague rule of 2026-11-19 only below the "
+        f"ask floor of {ASK_FLOOR}); {guard}; ruling validity on the set's build date. "
+        f"`python tests/eval/hs6_eval.py --set {set_name} --repeat 3`.",
+        "- **Right**: a line with an expected HS-6 when its top-1 is that code; a line expecting \"ask the shipper\" when "
+        "its route is ask_shipper, whatever codes it shows. **Majority**: a line's most frequent top-1, or route for a "
+        "line expecting \"ask the shipper\" (a tie goes to the earliest run). **In top 3**: the lines with an expected "
+        "HS-6 only. **Wrong, auto-accepted**: auto-accepted and not right. **No ruling voted**: the vote gate's "
+        "no_rulings lines. **Vetoed**: the lines the vote of the candidates' chapters sent to review (rule (a)).",
+        "",
+        "| Iteration | Run on | Tag | Runs | Query expansion | Customs wording | Floor | Right per run | Majority right | "
+        "In top 3 per run | Auto-accepted per run | Wrong, auto-accepted per run | No ruling voted per run | "
+        "Vetoed per run | Cost |",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
+    ]
+    for h in history:
+        n = h["n"]
+        out.append(f"| {h['iteration']} | {h['run_on']} | {h.get('tag', '-')} | {h['repeat']} | {h.get('expansion', '-')} | "
+                   f"{h.get('customs_wording', '-')} | {h.get('floor', '-')} | "
+                   f"{_runs(h['top1_runs'])} of {n} | {h['majority_top1']}/{n} | {_runs(h['top3_runs'])} | "
+                   f"{_runs(routes['auto_accept'] for routes in h['routes_runs'])} | "
+                   f"{_runs(len(w) for w in h['wrong_auto_runs'])} | {_runs(g['no_rulings'] for g in h['gate_runs'])} | "
+                   f"{_runs(g.get('scoped_veto', 0) for g in h['gate_runs'])} | "
+                   f"${h['cost_usd']:.4f} (€{h['cost_eur']:.4f}), {h['elapsed_s']:.0f} s |")
+    for h in history:
+        k = len(h["top1_runs"])
+        out += ["", f"## Iteration {h['iteration']} ({h.get('tag', '-')}, {h['model']}, query expansion "
+                    f"{h.get('expansion', '-')}, customs wording {h.get('customs_wording', '-')}, {h['run_on']})"]
+        if h.get("replay"):
+            r = h["replay"]
+            out += ["", f"Replay of iteration {h['replay_of']['iteration']} ({h['replay_of'].get('tag') or '-'}) at floor "
+                        f"{r['floor']}, from its vote_hits: no model call"
+                        + ("." if r.get("exact", True) else f"; not exact ({r.get('why', 'below the run' + chr(39) + 's floor')}), "
+                                                             "so no evidence.")]
+        if h.get("note"):
+            out += ["", f"Note: {h['note']}"]
+        out += ["", "| Line | Text | Expected | " + " | ".join(f"Run {i + 1}" for i in range(k)) + " | Majority | Right |",
+                "|---|---|---|" + "---|" * k + "---|---|"]
+        for line in h["lines"]:
+            seen = " | ".join(f"{s['top1'] or 'no code'} ({s['route']})" for s in line["seen"])
+            out.append(f"| {line['id']} | {_md(texts.get(line['id'], ''), 60)} | {line['expected']} | {seen} | "
+                       f"{line['majority'] or 'no code'} | {'yes' if line['right'] else 'no'} |")
+    out += ["", f"Model: {history[-1]['model'] if history else '-'}. Line-by-line results of the latest run"
+            f"{_latest_run(history)}: `tests/eval/hs6_eval_{set_name}.json`; each run also keeps its own, "
+            f"`tests/eval/hs6_eval_{set_name}_<tag>_….json`.", ""]
     return "\n".join(out)
 
 
@@ -665,7 +975,7 @@ def replay_main(args: argparse.Namespace, data: dict, cn8: dict[str, dict], cn8_
     m, x = entry_measures(runs, cn8, cn8_data, args.cn8, override_min)
     entry = {"iteration": iteration, "run_on": date.today().isoformat(),
              "change": f"replay of iteration {s['iteration']} at OVERRIDE_MIN {override_min}; no model call",
-             **({"tag": args.tag} if args.tag else {}),
+             **({"tag": args.tag} if args.tag else {}), "set": "cn8",
              **{k: s[k] for k in ("model", "reasoning", "lang", "expansion", "threshold", "ask_floor", "temperature",
                                   "seed", "repeat", "n") if k in s},
              "replay_of": {"iteration": s["iteration"], "tag": s.get("tag")}, **m,
@@ -696,6 +1006,70 @@ def replay_main(args: argparse.Namespace, data: dict, cn8: dict[str, dict], cn8_
     return 0
 
 
+def replay_floor_main(ap: argparse.ArgumentParser, args: argparse.Namespace, override_min: int) -> int:
+    """Feature 014a: a stored run's votes rebuilt at the similarity floor --floor from each row's vote_hits, with the
+    routing functions and no model call (floor_fields); exact, and evidence for a new floor, only at or above the run's
+    own floor. The replay belongs to the set its file names: it keeps its own results file and an entry in that set's
+    history and report; a coolant replay reads no CN-8 results."""
+    source = json.loads(Path(args.replay).read_text(encoding="utf-8"))
+    s = source["summary"]
+    set_name = s.get("set", "cn8")
+    stored = source.get("runs") or [source["rows"]]
+    if not all("vote_hits" in r for run in stored for r in run):
+        ap.error(f"{args.replay} keeps no vote_hits: only a run made since feature 014a replays at another floor")
+    runs = [[floor_fields(r, args.floor, override_min) for r in run] for run in stored]
+    if set_name in TYPED_SETS:
+        data = json.loads(set_file(set_name).read_text(encoding="utf-8"))
+        m, x = typed_measures(runs, override_min), None
+    else:
+        data = json.loads(SET.read_text(encoding="utf-8"))
+        cn8_data = json.loads(Path(args.cn8).read_text(encoding="utf-8"))
+        cn8 = cn8_results(cn8_data)
+        missing = [r["reference"] for r in runs[0] if r["reference"] not in cn8]
+        if missing:
+            ap.error(f"{len(missing)} lines are missing from {args.cn8}, such as {missing[0]}")
+        m, x = entry_measures(runs, cn8, cn8_data, args.cn8, override_min)
+    out, history_file, report_file = set_files(set_name)
+    history = json.loads(history_file.read_text(encoding="utf-8")) if history_file.exists() else []
+    iteration = max((h["iteration"] for h in history), default=0) + 1
+    why = "; ".join(reason for reason, holds in (
+        ("below the run's floor", args.floor < s.get("floor", HS6_VOTE_MIN_SIMILARITY)),
+        ("several query vectors: query expansion or customs wording was on, and the gate's vote is rebuilt from one "
+         "merged list of nearest rulings", s.get("expansion") == "on" or s.get("customs_wording") == "on")) if holds)
+    exact = not why
+    entry = {"iteration": iteration, "run_on": date.today().isoformat(),
+             "change": (f"replay of iteration {s['iteration']} at floor {args.floor}"
+                        + ("" if exact else f", not exact: {why}") + "; no model call"),
+             **({"tag": args.tag} if args.tag else {}), "set": set_name,
+             **{k: s[k] for k in ("model", "reasoning", "lang", "expansion", "customs_wording", "threshold", "ask_floor",
+                                  "temperature", "seed", "repeat", "n") if k in s},
+             "floor": args.floor, "replay_of": {"iteration": s["iteration"], "tag": s.get("tag")},
+             "replay": {"of": Path(args.replay).name, "floor": args.floor, "exact": exact, **({} if exact else {"why": why})},
+             **m,
+             "elapsed_s": 0.0, "cost_usd": 0.0, "cost_eur": 0.0, "cost_eur_runs": [0.0] * len(runs)}
+    if args.note:
+        entry["note"] = args.note
+    report: dict = {"summary": {**entry, "set_built_on": data["built_on"], **({} if x is None else {"cn8_lines": x["lines"]})},
+                    "rows": runs[0]}
+    if len(runs) > 1:
+        report["runs"] = runs
+    history = sorted([h for h in history if h["iteration"] != iteration] + [entry], key=lambda h: h["iteration"])
+    render = (lambda h, d: render_coolant_report(h, d, set_name)) if set_name in TYPED_SETS else render_report
+    if args.dry_run:
+        print(f"\n== tests/eval/{report_file.name}:\n" + render(history, data))
+        print("dry run: nothing written")
+    else:
+        own = out.with_name(f"{out.stem}_{args.tag or f'iteration{iteration}'}{out.suffix}")
+        own.write_text(dump_results(report), encoding="utf-8", newline="\n")
+        history_file.write_text(json.dumps(history, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
+        report_file.write_text(render(history, data), encoding="utf-8", newline="\n")
+    print(f"HS-6 replay of iteration {s['iteration']} ({set_name}) at floor {args.floor}"
+          f"{'' if exact else f' (not exact: {why})'}, OVERRIDE_MIN {override_min}, no model call")
+    print(f"  per run: routes {m['routes_runs']}; wrong but auto-accepted {[len(w) for w in m['wrong_auto_runs']]}; no ruling "
+          f"voted {m['no_voter_runs']}; right auto-accepts {m['right_auto_runs']}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")   # German and Chinese text; a redirected Windows console is cp1252
@@ -718,7 +1092,33 @@ def main(argv: list[str] | None = None) -> int:
                     help="feature 009: en, the 120 lines as given (default); zh, the 30 lines of hs6_eval_zh.json in Chinese")
     ap.add_argument("--expansion", choices=("on", "off"),
                     help="feature 009: query expansion for this run (default: CARGOLINT_QUERY_EXPANSION)")
+    ap.add_argument("--set", choices=("cn8", *TYPED_SETS), default="cn8", dest="set_name",
+                    help="feature 014a: cn8, the 120 rulings of cn8_eval_set.json (default); coolant, the eight lines of "
+                         "hs6_eval_coolant_set.json; outside, the lines of hs6_eval_outside_set.json, each line's source "
+                         "ruling kept out")
+    ap.add_argument("--customs-wording", choices=("on", "off"),
+                    help="feature 014a: the customs-wording switch for this run (default: CARGOLINT_CUSTOMS_WORDING)")
+    ap.add_argument("--floor", type=float, help="feature 014a: the similarity floor a --replay rebuilds the votes at, from "
+                                                "the rows' nearest_hits and vote_hits (exact at or above the run's floor, "
+                                                "for a run with query expansion and customs wording off)")
+    ap.add_argument("--vote-scope", choices=("candidates", "all"), default="candidates",
+                    help="the 014a regression ablation, eval only: the second HS-6 vote's ruling search within the "
+                         "candidates' chapters (the app's, default) or over every chapter (then it equals the gate's vote "
+                         "and never vetoes)")
+    ap.add_argument("--proposal-scope", choices=("all", "nomenclature"), default="all",
+                    help="option (c) of the author's decision of 2026-11-19, eval only: the candidate proposal's ruling "
+                         "search over every chapter (the app's, default) or within the chapters of the nomenclature "
+                         "search's subheadings; the gate's vote reads every chapter either way")
     args = ap.parse_args(argv)
+    if args.replay and args.vote_scope != "candidates":
+        ap.error("--vote-scope is for a run: a replay searches no rulings")
+    if args.replay and args.proposal_scope != "all":
+        ap.error("--proposal-scope is for a run: a replay searches no rulings")
+    coolant = args.set_name in TYPED_SETS   # a set of typed lines: the coolant set's scoring, files and report
+    if args.floor is not None and not args.replay:
+        ap.error("--floor is for a --replay: a run uses HS6_VOTE_MIN_SIMILARITY")
+    if args.floor is not None and not 0.0 <= args.floor <= 1.0:
+        ap.error("--floor is a cosine similarity between 0 and 1")
     if args.repeat < 1:
         ap.error("--repeat must be 1 or more")
     if args.limit is not None and not args.dry_run:
@@ -729,16 +1129,31 @@ def main(argv: list[str] | None = None) -> int:
         ap.error("--override-min is for a --replay: a run computes the switch on at OVERRIDE_MIN")
     if args.replay and not 1 <= (args.override_min or OVERRIDE_MIN) <= HS6_VOTE_K:
         ap.error(f"--override-min must be between 1 and {HS6_VOTE_K}")
-    data = json.loads(SET.read_text(encoding="utf-8"))
-    rulings = eval_rulings(data, args.lang)
+    if args.replay and args.floor is not None:         # feature 014a: the set comes from the file
+        return replay_floor_main(ap, args, args.override_min or OVERRIDE_MIN)
+    if args.replay and json.loads(Path(args.replay).read_text(encoding="utf-8"))["summary"].get("set") in TYPED_SETS:
+        ap.error("a coolant or outside run replays at another floor only: give --floor")
+    if coolant and args.lang != "en":
+        ap.error(f"--lang is for the 120-line set: the {args.set_name} set's lines are run as typed")
+    if coolant and args.replay:
+        ap.error("--replay replays the 120-line set's results")
+    if coolant:
+        data = json.loads(set_file(args.set_name).read_text(encoding="utf-8"))
+        rulings = coolant_items(data)
+        cn8 = cn8_data = None
+    else:
+        data = json.loads(SET.read_text(encoding="utf-8"))
+        rulings = eval_rulings(data, args.lang)
     rulings = rulings[:args.limit] if args.limit else rulings
-    cn8_data = json.loads(Path(args.cn8).read_text(encoding="utf-8"))
-    cn8 = cn8_results(cn8_data)
-    missing = [r["reference"] for r in rulings if r["reference"] not in cn8]
-    if missing:
-        ap.error(f"{len(missing)} lines are missing from {args.cn8}, such as {missing[0]}")
-    if args.replay:
-        return replay_main(args, data, cn8, cn8_data, args.override_min or OVERRIDE_MIN)
+    if not coolant:
+        cn8_data = json.loads(Path(args.cn8).read_text(encoding="utf-8"))
+        cn8 = cn8_results(cn8_data)
+        missing = [r["reference"] for r in rulings if r["reference"] not in cn8]
+        if missing:
+            ap.error(f"{len(missing)} lines are missing from {args.cn8}, such as {missing[0]}")
+        if args.replay:
+            return replay_main(args, data, cn8, cn8_data, args.override_min or OVERRIDE_MIN)
+    out, history_file, report_file = set_files(args.set_name)
     as_of = date.fromisoformat(data["built_on"])
     settings, found = run_settings(get_settings(), args.model)
     reasoning = {"enabled": False} if settings.reasoning_off else None   # what the calls carry
@@ -754,40 +1169,53 @@ def main(argv: list[str] | None = None) -> int:
     invalid = count_invalid(client)
     model = client.raw._model
     temperature, seed = getattr(model, "temperature", None), getattr(model, "seed", None)   # what the calls carry
-    history = json.loads(HISTORY.read_text(encoding="utf-8")) if HISTORY.exists() else []
+    history = json.loads(history_file.read_text(encoding="utf-8")) if history_file.exists() else []
     iteration = args.iteration if args.iteration is not None else max((h["iteration"] for h in history), default=0) + 1
     change = args.change or (f"{args.repeat} independent run{'s' if args.repeat > 1 else ''}, temperature {temperature}, "
                              f"seed {seed if seed is not None else 'none'}")
     expansion = settings.query_expansion if args.expansion is None else args.expansion == "on"
-    print(f"HS-6 iteration {iteration}: {len(rulings)} lines ({args.lang}, query expansion "
-          f"{'on' if expansion else 'off'}) × {args.repeat} run(s); BTI vectors "
+    wording = settings.customs_wording if args.customs_wording is None else args.customs_wording == "on"   # feature 014a
+    print(f"HS-6 iteration {iteration}: {len(rulings)} lines ({f'the {args.set_name} set' if coolant else args.lang}, query "
+          f"expansion {'on' if expansion else 'off'}, customs wording {'on' if wording else 'off'}) × {args.repeat} run(s); "
+          f"BTI vectors "
           f"{'loaded' if getattr(kb, 'bti_vectors', None) is not None else 'not loaded'}; model {settings.chat_model}, "
-          f"temperature {temperature}, seed {seed}; CN-8 results: iteration {cn8_data['summary'].get('iteration')}")
+          f"temperature {temperature}, seed {seed}"
+          + ("" if coolant else f"; CN-8 results: iteration {cn8_data['summary'].get('iteration')}"))
 
     runs, elapsed, costs, parsed = [], 0.0, [], []
     for k in range(args.repeat):
         before = usage.cost_eur
         invalid.clear()
-        rows, seconds = run_once(rulings, kb, client, as_of, settings.workers, expansion)
+        rows, seconds = run_once(rulings, kb, client, as_of, settings.workers, expansion,
+                                 leave_one_out=args.set_name != "coolant",
+                                 customs_wording=wording, vote_scope=args.vote_scope, proposal_scope=args.proposal_scope)
         runs.append(rows)
         parsed.append(parse_counts(invalid, rows))
         elapsed += seconds
         costs.append(round(usage.cost_eur - before, 4))
-        print(f"  run {k + 1}: top-1 {sum(r['hit'] for r in rows)}/{len(rows)}, in top 3 {sum(r['in_top3'] for r in rows)}, "
+        scored = f"right {sum(r['right'] for r in rows)}" if coolant else f"top-1 {sum(r['hit'] for r in rows)}"
+        print(f"  run {k + 1}: {scored}/{len(rows)}, in top 3 {sum(r['in_top3'] for r in rows)}, "
               f"{seconds:.0f} s, €{costs[-1]:.4f}; invalid answers {parsed[-1]}")
-    m, x = entry_measures(runs, cn8, cn8_data, args.cn8)
+    if coolant:   # feature 014a: no cross-layer table, as no line has a CN-8 result
+        m, x = typed_measures(runs), None
+    else:
+        m, x = entry_measures(runs, cn8, cn8_data, args.cn8)
     entry = {
         "iteration": iteration, "run_on": date.today().isoformat(), "change": change,
-        **({"tag": args.tag} if args.tag else {}), "model": settings.chat_model, "reasoning": reasoning,
-        "lang": args.lang, "expansion": "on" if expansion else "off",
+        **({"tag": args.tag} if args.tag else {}), "set": args.set_name, "model": settings.chat_model,
+        "reasoning": reasoning, **({} if coolant else {"lang": args.lang}), "expansion": "on" if expansion else "off",
+        "customs_wording": "on" if wording else "off", "floor": HS6_VOTE_MIN_SIMILARITY,
+        **({} if args.vote_scope == "candidates" else {"vote_scope": args.vote_scope}),
+        **({} if args.proposal_scope == "all" else {"proposal_scope": args.proposal_scope}),
         "threshold": DEFAULT_THRESHOLD, "ask_floor": ASK_FLOOR, "temperature": temperature, "seed": seed,
         "repeat": args.repeat, "n": len(rulings), **m,
-        "parse": {"retry_limit": client.max_retries, "runs": parsed}, "confidence": confidence_table(runs),
+        "parse": {"retry_limit": client.max_retries, "runs": parsed},
+        **({} if coolant else {"confidence": confidence_table(runs)}),
         "elapsed_s": round(elapsed, 1), "cost_usd": round(usage.cost_usd, 4), "cost_eur": round(usage.cost_eur, 4),
         "cost_eur_runs": costs}
     if args.note:
         entry["note"] = args.note
-    summary = {**entry, "set_built_on": data["built_on"], "cn8_lines": x["lines"],
+    summary = {**entry, "set_built_on": data["built_on"], **({} if x is None else {"cn8_lines": x["lines"]}),
                "usage": {"total_tokens": usage.total_tokens, "prompt_tokens": usage.prompt_tokens,
                          "completion_tokens": usage.completion_tokens, "calls": usage.calls,
                          "cost_usd": round(usage.cost_usd, 4), "cost_eur": round(usage.cost_eur, 4)}}
@@ -796,20 +1224,35 @@ def main(argv: list[str] | None = None) -> int:
         report["runs"] = runs
     history = [h for h in history if h["iteration"] != iteration] + [entry]
     history.sort(key=lambda h: h["iteration"])
-    n, mx = len(rulings), x["majority"]
+    render = (lambda h, d: render_coolant_report(h, d, args.set_name)) if coolant else render_report
+    n = len(rulings)
     if args.dry_run:
         first = runs[0][0]
         print("\n== a row (run 1, line 1; nearest_hits: the first 3 of "
               f"{len(first['nearest_hits'])}):\n" + json.dumps({**first, "nearest_hits": first["nearest_hits"][:3]},
                                                                 ensure_ascii=False, indent=1))
-        print("\n== the summary in tests/eval/hs6_eval.json (the history entry plus cn8_lines and usage):\n"
-              + json.dumps(summary, ensure_ascii=False, indent=1))
-        print("\n== tests/eval/hs6_eval.md:\n" + render_report(history, data))
+        print(f"\n== the summary in tests/eval/{out.name} (the history entry plus "
+              f"{'' if coolant else 'cn8_lines and '}usage):\n" + json.dumps(summary, ensure_ascii=False, indent=1))
+        print(f"\n== tests/eval/{report_file.name}:\n" + render(history, data))
         print("dry run: nothing written")
     else:
-        write_results(report, OUT, results_name(args.tag or f"iteration{iteration}", args.lang, expansion))
-        HISTORY.write_text(json.dumps(history, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
-        REPORT.write_text(render_report(history, data), encoding="utf-8", newline="\n")
+        write_results(report, out, results_name(args.tag or f"iteration{iteration}", args.lang, expansion, wording))
+        history_file.write_text(json.dumps(history, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
+        report_file.write_text(render(history, data), encoding="utf-8", newline="\n")
+    if coolant:
+        print(f"HS-6, {args.set_name} set: right per run {m['top1_runs']} of {n}; majority right {m['majority_top1']}/{n}; in top 3 "
+              f"per run {m['top3_runs']}; auto-accepted per run {[routes['auto_accept'] for routes in m['routes_runs']]}; "
+              f"wrong but auto-accepted per run {[len(w) for w in m['wrong_auto_runs']]}; no ruling voted per run "
+              f"{[g['no_rulings'] for g in m['gate_runs']]}")
+        for line in m["lines"]:
+            print(f"  {line['id']}: expected {line['expected']}, majority {line['majority'] or 'no code'} "
+                  f"({'right' if line['right'] else 'wrong'})")
+        print(f"  model {settings.chat_model}, reasoning {reasoning}; invalid answers per run (retried at most "
+              f"{client.max_retries} times) {parsed}")
+        print(f"  {elapsed:.0f} s; usage {usage.total_tokens} tokens, {usage.calls} calls, ${usage.cost_usd:.4f} ≈ "
+              f"€{usage.cost_eur:.4f}")
+        return 0
+    mx = x["majority"]
     print(f"HS-6 top-1 per run {m['top1_runs']} of {n}; majority {m['majority_top1']}/{n}; in top 3 per run {m['top3_runs']}; "
           f"same top-1 in all runs {m['same_top1']}/{n}; same route {m['same_route']}/{n}")
     print(f"  auto-accepted per run {[routes['auto_accept'] for routes in m['routes_runs']]}; wrong but auto-accepted per "

@@ -198,7 +198,7 @@ class TestStore:
         assert (line.current.hs6_gate, line.current.route_reason) == (
             Hs6Gate.vote_override, "rulings overrode the model: 4 of 5 agree on 9405.21")
 
-    @pytest.mark.parametrize("text, route", [("Gift", Route.ask_shipper), ("Mixed household articles", Route.review)])
+    @pytest.mark.parametrize("text, route", [("Gift", Route.ask_shipper), ("Mixed household articles", Route.ask_shipper)])
     def test_a_flagged_line_is_never_auto_accepted(self, kb, text, route):
         store = h._store(hs6_override_min=4)
         line = store.get_line(add_voted(store, kb, lamp_vote(5), text=text))

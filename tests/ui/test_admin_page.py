@@ -198,3 +198,26 @@ def test_ask_the_agent(kb, recorder):
     block = [e for e in at.expander if e.label == "What I can and cannot do"]
     assert len(block) == 1
     assert any("draft the email to the shipper (you copy and send it)" in plain(m.value) for m in block[0].markdown)
+
+
+# --------------------------------------------------------------------------- feature 014a: the customs wording in the steps
+# 014a/FR-025
+def test_feature_014a_the_retrieval_steps_list_the_customs_wording(kb, recorder):
+    from agent.schemas import Classification, CustomsWording, LineStatus, RetrievalTrace
+
+    store, nos = h.store_with("review", kb=kb)
+    n = nos["review"]
+    v = store.get_line(n).current
+    rewrite = CustomsWording(text="LED-Schreibtischleuchte", language="de")
+    trace = RetrievalTrace(original=v.display_text, queries=[v.display_text], customs_wording=rewrite.text)
+    store.update_classification(n, Classification(line_no=n, candidates=v.candidates, status=LineStatus.checked,
+                                                  retrieval_trace=trace, ruling_scope=v.ruling_scope, customs_wording=rewrite))
+    at = h.app(store, kb, page="admin")
+    at.session_state["chat"] = [{"role": "user", "content": "check line"},
+                                {"role": "assistant", "content": "checked", "trace_from": n}]
+    at.run()
+    at.segmented_control(key="admin_section").set_value("Ask the agent").run()
+    steps = [e for e in at.expander if e.label == f"Retrieval steps · line {n}"]
+    assert len(steps) == 1
+    shown = " ".join(plain(m.value) for m in steps[0].markdown)
+    assert f"{v.display_text} · rulings only, in German: LED-Schreibtischleuchte" in shown

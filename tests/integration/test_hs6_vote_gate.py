@@ -1,6 +1,8 @@
-"""Feature 006: classify_one stores the HS-6 vote of the nearest eligible EBTI rulings, read from the same ruling search
-that proposes precedent codes: the rulings below the similarity floor and the line's own ruling (exclude_refs) do not
-vote, and a majority at the model's 2nd or 3rd candidate is recorded."""
+"""Feature 006: classify_one stores the HS-6 vote of the nearest eligible EBTI rulings: the rulings below the similarity
+floor and the line's own ruling (exclude_refs) do not vote, and a majority at the model's 2nd or 3rd candidate is
+recorded. Since feature 014a (rule (a)) the gate's vote reads the precedent search over every chapter, and a second
+vote its own search within the chapters of the model's candidates; the double below returns the same hits to both and
+records their filters."""
 from datetime import date
 
 import pytest
@@ -31,13 +33,14 @@ RULINGS = [ruling("IE-1", "3926.90", "IE"), ruling("DE-2", "3926.90", "DE"), rul
 
 
 class FixedHits:
-    """A ruling search that returns the given hits, nearest first, and counts its calls."""
+    """A ruling search that returns the given hits, nearest first, and counts its calls and records their filters."""
 
     def __init__(self, hits):
-        self.hits, self.calls = list(hits), 0
+        self.hits, self.calls, self.filters = list(hits), 0, []
 
     def search_by_vector(self, vector, k, chapter_filter=None, where=None):
         self.calls += 1
+        self.filters.append(chapter_filter)
         return self.hits[:k]
 
 
@@ -61,7 +64,8 @@ def test_the_vote_reads_the_rulings_the_precedent_search_found(kb):
     v = out.hs6_vote
     assert (v.majority, v.majority_share, v.agrees, v.candidate) == ("3926.90", 0.5, True, None)
     assert v.competing == [("3926.90", ["IE", "DE"]), ("4202.21", ["FR"]), ("3924.90", ["XI"])]
-    assert out.retrieval_trace.precedent_codes[0] == "3926.90" and kb.bti_vectors.calls == 1   # one search for both
+    assert out.retrieval_trace.precedent_codes[0] == "3926.90" and kb.bti_vectors.calls == 2
+    assert kb.bti_vectors.filters == [None, ["39", "42"]]     # the proposal over every chapter, the vote the candidates'
 
 
 def test_a_majority_at_the_second_candidate_is_recorded(kb):

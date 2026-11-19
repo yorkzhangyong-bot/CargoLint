@@ -1,11 +1,16 @@
 """Tool 3 — classify_hs6: queries (the raw text, optionally expanded) → (history-boosted) hybrid retrieval → ranking →
-code-existence validation (FR-012 … FR-018, constitution Principles III and IV)."""
+code-existence validation (FR-012 … FR-018, constitution Principles III and IV). Feature 014a (rule (a)): the gate's vote
+reads the precedent search over every chapter; a second vote, searched within the chapters of the model's validated
+candidates after the ranking, can only send the line to review."""
 from __future__ import annotations
 
 import json
 import logging
+import re
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import date
+from functools import lru_cache
 
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
@@ -14,10 +19,12 @@ from agent.config import HS6_VOTE_MIN_SIMILARITY, RETRIEVAL_K, get_settings
 from agent.llm import StructuredCaller
 from agent.prompts import fence
 from agent.routing import hs6_ruling_vote, validate_classification, validate_code
-from agent.schemas import Candidate, Classification, LineStatus, RankOut, RetrievalMode, RetrievalTrace, Source, SourceKind
+from agent.schemas import (Candidate, CitationNote, Classification, LineStatus, RankOut, RetrievalMode, RetrievalTrace,
+                           RulingScope, Source, SourceKind)
+from rag.bti import normal_reference
 from rag.retriever import rrf, precedent_codes, stable_order
 from rag.rules import find_shipper, load_shippers
-from rag.translate import build_queries
+from rag.translate import build_queries, customs_wording
 from tools import register
 from tools.common import LineText, get_context, run_per_line, select_lines
 
@@ -53,6 +60,11 @@ with at most three entries, best first."""
 VAGUE_CONFIDENCE_CAP = 59      # a vague-flagged line's candidates never exceed this (FR-016, FR-020)
 HISTORY_CHUNKS_MAX = 5         # shipper past codes injected as candidates
 PRECEDENT_CODES_MAX = 3        # codes proposed by matching BTI rulings (precedent-driven retrieval)
+# feature 014a (FR-020): a reference in a reasoning, two letters and BTI in any case, then letters, digits, "/", "." and
+# "-", a space only before a digit and only right after "BTI" or "-" (as in stored references), so neither a following
+# number nor a sentence end ("DEBTI21309/26-1. 3") joins it
+REF_TOKEN = re.compile(r"\b[a-z]{2}bti(?:[a-z0-9/.\-]|(?:(?<=bti)|(?<=-)) (?=\d))+", re.I)
+RUN_ON = re.compile(r"[/.\-]?[0-9a-z]", re.I)   # what continues a reference into a longer one
 
 
 @dataclass
@@ -64,6 +76,7 @@ class ClassifyContext:
     precedents: bool = True        # let matching BTI rulings propose candidate codes
     exclude_refs: frozenset[str] | None = None   # feature 006: rulings kept out of the precedents (an eval's own ruling)
     expansion: bool = field(default_factory=lambda: get_settings().query_expansion)   # feature 009: query expansion
+    customs_wording: bool = field(default_factory=lambda: get_settings().customs_wording)   # feature 014a: the rewrite
 
 
 def _history_chapters(codes: list[str]) -> list[str]:
@@ -91,12 +104,95 @@ def hs6_voters(hits: list[list[tuple[str, float]]], bti_store, index, as_of: dat
     return voters
 
 
+def ruling_scope(codes: list[str], indexed: frozenset[str] | set[str]) -> RulingScope | None:
+    """Feature 014a (spec FR-011, FR-014, FR-017): the chapters the second HS-6 vote searches (rule (a)), those of the
+    model's validated candidates (two digits each, sorted, one to three), with those of them that hold no ruling in the
+    store; None without a candidate, as then nothing votes."""
+    chapters = sorted({code[:2] for code in codes})
+    if not chapters:
+        return None
+    return RulingScope(chapters=chapters, not_indexed=[c for c in chapters if c not in indexed])
+
+
+@lru_cache(maxsize=8)
+def _off_pattern(store) -> tuple[str, ...]:
+    """The stored references REF_TOKEN does not fit whole (8 of the 123,531 of 2026-11-18, such as "NLBTI2025 - 0691"):
+    found only as written, so a reasoning citing one gets no note on its first part (review finding 5)."""
+    return tuple(r["reference"] for r in getattr(store, "records", ())
+                 if r.get("reference") and not REF_TOKEN.fullmatch(r["reference"]))
+
+
+def _cited(rationale: str, verbatim: Iterable[str]) -> list[str]:
+    """The references a reasoning cites, in order: each of the `verbatim` references (the retrieved ones and those off
+    the pattern) written in it as stored (in any case, not run on into a longer reference), and every other token of
+    REF_TOKEN that holds a digit, its trailing punctuation dropped."""
+    spans: list[tuple[int, int, str]] = []
+    for ref in verbatim:
+        for m in re.finditer(re.escape(ref), rationale, re.I):
+            if not (m.start() and rationale[m.start() - 1].isalnum()) and not RUN_ON.match(rationale, m.end()):
+                spans.append((m.start(), m.end(), ref))
+    for m in REF_TOKEN.finditer(rationale):
+        token = m.group().rstrip("/.- ")
+        end = m.start() + len(token)
+        if any(ch.isdigit() for ch in token) and not any(s < end and m.start() < e for s, e, _ in spans):
+            spans.append((m.start(), end, token))
+    return [ref for _, _, ref in sorted(spans)]
+
+
+def _rulings_meant(cited: str, retrieved: set[str], store) -> dict[str, str]:
+    """The rulings a cited reference can mean, one per reference case aside, a retrieved spelling first: those written
+    exactly so, else every one with its normal form, among the retrieved and the stored references (review finding 5)."""
+    upper = cited.upper()
+    found = [ref for ref in [*retrieved, *store.references_like(cited)] if ref.upper() == upper]
+    if not found:
+        form = normal_reference(cited)
+        found = [ref for ref in retrieved if normal_reference(ref) == form] + store.references_like(cited)
+    rulings: dict[str, str] = {}
+    for ref in found:
+        rulings.setdefault(ref.upper(), ref)
+    return rulings
+
+
+def citation_notes(rationale: str, code: str, retrieved: Iterable[str], store) -> list[CitationNote]:
+    """Feature 014a (spec FR-020 to FR-022): the notes on the rulings a candidate's reasoning cites: a ruling retrieved
+    for the line in that run whose stored HS-6 is not the candidate's `code` ("other_code", with that HS-6), or a
+    reference not retrieved in that run, known to the store or not ("not_retrieved"); in the order the references first
+    occur, each once. A reference written exactly, case aside, is the one meant; otherwise its normal form must name one
+    ruling: when several share it and one of them was retrieved, no note can say which is meant and none is made, and
+    when none was, the note names the reference as written (review finding 5). `retrieved` holds the references of the
+    run's ruling searches, less those an evaluation keeps out."""
+    retrieved = set(retrieved)
+    notes: list[CitationNote] = []
+    seen: set[str] = set()
+    for cited in _cited(rationale or "", {*retrieved, *_off_pattern(store)}):
+        rulings = _rulings_meant(cited, retrieved, store)
+        key = next(iter(rulings)) if len(rulings) == 1 else normal_reference(cited)
+        if key in seen:
+            continue
+        seen.add(key)
+        hit = [ref for ref in rulings.values() if ref in retrieved]
+        if len(rulings) == 1 and hit:
+            hs6 = (store.get(f"bti:{hit[0]}") or {}).get("code")
+            if hs6 and hs6 != code:
+                notes.append(CitationNote(reference=hit[0], kind="other_code", ruling_hs6=hs6))
+        elif not hit:
+            only = next(iter(rulings.values())) if len(rulings) == 1 else cited
+            notes.append(CitationNote(reference=only, kind="not_retrieved"))
+    return notes
+
+
 def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCaller | None) -> Classification:
     if line.pure_stop_word:
         return Classification(line_no=line.line_no, candidates=[], no_valid_candidate=False, status=LineStatus.checked)
     queries = build_queries(client, line, ctx.expansion)
+    # feature 014a: the customs wording in the store's main language, for the two ruling searches only
+    language = getattr(kb, "main_language", None)
+    wording = (customs_wording(client, line, language, getattr(kb, "glossary", None))
+               if ctx.customs_wording and language and client is not None else None)
     mode = "hybrid" if ctx.hybrid else "vector_only"
-    query_vectors = kb.retriever.embed_queries(queries)  # one embedding request per line
+    # one embedding request per line; the nomenclature search gets the queries' vectors, never the rewrite's
+    ruling_vectors = kb.retriever.embed_queries(queries + ([wording.text] if wording else []))
+    query_vectors = ruling_vectors[:-1] if wording else ruling_vectors
     chunks, trace = kb.retriever.search(queries, chapter_filter=None, mode=mode, k=ctx.k, query_vectors=query_vectors)
     chapter_filter = None
     filter_reason = "none"
@@ -122,10 +218,10 @@ def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCal
     precedents: list[dict] = []
     precedent_chunks = 0
     bti_vectors = getattr(kb, "bti_vectors", None)
-    hits = [bti_vectors.search_by_vector(vec, ctx.k * 2, None) for vec in query_vectors] if bti_vectors is not None else []
+    hits = [bti_vectors.search_by_vector(vec, ctx.k * 2, None) for vec in ruling_vectors] if bti_vectors is not None else []
     if ctx.precedents and hits:
         present = {c.id for c in chunks}
-        for p in precedent_codes(bti_vectors, kb.bti, query_vectors, k=ctx.k, as_of=ctx.as_of, exclude_refs=ctx.exclude_refs,
+        for p in precedent_codes(bti_vectors, kb.bti, ruling_vectors, k=ctx.k, as_of=ctx.as_of, exclude_refs=ctx.exclude_refs,
                                  hits=hits):
             if len(precedents) >= PRECEDENT_CODES_MAX:
                 break
@@ -187,11 +283,23 @@ def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCal
                         bm25_hits=trace["bm25_hits"], vector_hits=trace["vector_hits"], fused=trace["fused"],
                         sent_to_model=len(chunks), history_chunks=history_chunks, precedent_chunks=precedent_chunks,
                         precedent_codes=[p["code"] for p in precedents], mode=RetrievalMode(mode),
-                        expansion=ctx.expansion)
-    vote = (hs6_ruling_vote(hs6_voters(hits, kb.bti, kb.index, ctx.as_of, ctx.exclude_refs), [c.code for c in candidates])
-            if candidates else None)   # feature 006: the HS-6 auto-accept gate
+                        expansion=ctx.expansion, customs_wording=wording.text if wording else None)
+    codes = [c.code for c in candidates]
+    # feature 006, constitution 1.5.0 (rule (a), 2026-11-19): the auto-accept gate is the vote of the 5 nearest eligible
+    # rulings over every indexed chapter, read from the rulings the proposal searched
+    vote = (hs6_ruling_vote(hs6_voters(hits, kb.bti, kb.index, ctx.as_of, ctx.exclude_refs), codes)
+            if candidates else None)
+    scope = ruling_scope(codes, kb.indexed_chapters)   # feature 014a: a second vote within the candidates' chapters only,
+    vote_hits = ([bti_vectors.search_by_vector(vec, ctx.k * 2, scope.chapters) for vec in ruling_vectors]
+                 if scope is not None and bti_vectors is not None else [])   # with the line's vectors, embedded already
+    scoped_vote = (hs6_ruling_vote(hs6_voters(vote_hits, kb.bti, kb.index, ctx.as_of, ctx.exclude_refs), codes)
+                   if candidates else None)   # it can only send the line to review
+    retrieved = {doc_id.removeprefix("bti:") for found in (*hits, *vote_hits) for doc_id, _ in found} - set(ctx.exclude_refs or ())
+    candidates = [c.model_copy(update={"citation_notes": citation_notes(c.rationale, c.code, retrieved, kb.bti)})
+                  for c in candidates]   # feature 014a: notes written by code, after the reasoning; no routing input
     return Classification(line_no=line.line_no, candidates=candidates, no_valid_candidate=not candidates, retrieval_trace=rt,
-                          sources=sources, status=LineStatus.checked, hs6_vote=vote)
+                          sources=sources, status=LineStatus.checked, hs6_vote=vote, hs6_scoped_vote=scoped_vote,
+                          ruling_scope=scope, customs_wording=wording)
 
 
 def classify_lines(lines: list[LineText], ctx: ClassifyContext, kb, client: StructuredCaller | None, workers: int = 4) -> list[Classification]:

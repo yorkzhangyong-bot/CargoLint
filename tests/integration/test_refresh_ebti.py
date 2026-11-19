@@ -32,7 +32,8 @@ CHUNKS = len(NomenclatureIndex.from_jsonl(FIXTURES / "cn2026_excerpt.jsonl"))   
 DATE = "2026-11-12"
 NAME = f"ebti-{DATE}"
 ARCHIVE = f"cargolint-ebti-{DATE}.zip"
-SOURCE_VERSION = f"full extract of {DATE}, chapters 39,42,61-64,73,84,85,94,95,96"
+SOURCE_VERSION = f"full extract of {DATE}, all chapters"     # feature 014a: every chapter by default
+TWELVE_VERSION = f"full extract of {DATE}, chapters 39,42,61-64,73,84,85,94,95,96"
 COLUMNS = ["BTI_REFERENCE", "ISSUING_COUNTRY", "START_DATE_OF_VALIDITY", "END_DATE_OF_VALIDITY", "NOMENCLATURE_CODE",
            "CLASSIFICATION_JUSTIFICATION", "STATUS", "INVALIDATION_REASON", "INVALIDATION_JUSTIFICATION", "LANGUAGE",
            "PLACE_OF_ISSUE", "DATE_OF _ISSUE", "NAME_AND_ADDRESS", "DESCRIPTION_OF_GOODS", "KEYWORDS"]
@@ -144,6 +145,7 @@ def world(tmp_path, monkeypatch):
     monkeypatch.setattr(re_, "EXTRACT_ZIP", build / "DDS2-EBTI_Full.zip")
     monkeypatch.setenv("CARGOLINT_EMBED_MODEL", "fake-hash-8")
     monkeypatch.delenv("CARGOLINT_EBTI_RULINGS", raising=False)
+    monkeypatch.delenv("CARGOLINT_EBTI_CHAPTERS", raising=False)
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
     get_settings.cache_clear()
     previous, vectors = make_previous(tmp_path / "prev")
@@ -233,7 +235,7 @@ class TestBuild:
             "rulings": 7, "extract_rulings": 7, "reused": 3, "embedded": 4, "dropped": 2, "vectors_from": "folder"}
         assert metadata["current"] == {"ebti": [NAME], "taric": []}
         assert world.service.latest_name == NAME and world.service.releases[NAME]["assets"] == [ARCHIVE, "metadata.json"]
-        assert f"[refresh] extract extract.zip dated {DATE}, 7 valid rulings in 12 chapters" in out
+        assert f"[refresh] extract extract.zip dated {DATE}, 7 valid rulings in 2 chapters" in out   # 84 and 96
         assert "[refresh] chose 7 rulings: 4 kept, 3 new; 1 changed texts; 2 dropped from the previous store" in out
         assert "[refresh] copied the nomenclature index and 3 ruling vectors; embedded 4 rulings ($0.000)" in out
         assert f"[refresh] published {NAME} (2 assets), marked latest" in out
@@ -474,6 +476,93 @@ class TestOptions:
 
     def test_bad_options_exit_2(self, world):
         assert run(world, "--bogus") == 2 and world.service.calls == []
+
+
+# --------------------------------------------------------------------------- feature 014a: every chapter
+# 014a/FR-007, 014a/FR-008, 014a/FR-009 (the vectors the rebuild reuses)
+CHAPTER_ROWS = [row("DE-C27", code="2710199100************", description="Metal-working oil, mineral oil over 70 %"),
+                row("FR-C34", code="3403990000************", description="Cutting fluid without mineral oil"),
+                row("NL-C38", code="3820000000************", description="Antifreeze for engines"),
+                row("IT-C39", code="3926909790************", description="Phone case of silicone"),
+                row("ES-C84", code="8419890000************", description="Cooling tower")]
+
+
+def chapters_of(store: Path) -> list[str]:
+    docs = (store / "bti_docs.jsonl").read_text(encoding="utf-8").splitlines()
+    return sorted({json.loads(line)["chapter"] for line in docs})
+
+
+class TestChapters:
+    """Feature 014a (spec FR-007 to FR-009): the rulings of the chapters of CARGOLINT_EBTI_CHAPTERS, all by default,
+    on an extract with valid rulings in five chapters and a previous store of chapters 39 and 84."""
+
+    @pytest.fixture
+    def w(self, world, tmp_path):
+        world.extract = extract_zip(tmp_path / "chapters.zip", CHAPTER_ROWS)
+        shutil.rmtree(world.previous)
+        world.previous, world.vectors = make_previous(world.previous, rows=CHAPTER_ROWS[3:])
+        return world
+
+    def test_every_chapter_of_the_extract_by_default(self, w, capsys):
+        assert run(w, "--no-publish") == 0
+        store = w.out / "store"
+        assert chapters_of(store) == ["27", "34", "38", "39", "84"]
+        assert json.loads((store / "index_meta.json").read_text(encoding="utf-8"))["ebti_source_version"] == SOURCE_VERSION
+        assert read_metadata(w.out / "metadata.json")["source_version"] == SOURCE_VERSION
+        assert f"[refresh] extract chapters.zip dated {DATE}, 5 valid rulings in 5 chapters" in capsys.readouterr().out
+
+    def test_the_option_keeps_its_chapters_for_one_run(self, w):
+        assert run(w, "--no-publish", "--chapters", "39,84") == 0
+        assert chapters_of(w.out / "store") == ["39", "84"]
+        version = f"full extract of {DATE}, chapters 39,84"
+        assert json.loads((w.out / "store" / "index_meta.json").read_text(encoding="utf-8"))["ebti_source_version"] == version
+        assert read_metadata(w.out / "metadata.json")["source_version"] == version
+
+    def test_the_setting_of_the_twelve_keeps_todays_source_version(self, w, monkeypatch):
+        monkeypatch.setenv("CARGOLINT_EBTI_CHAPTERS", "39,42,61-64,73,84,85,94,95,96")
+        get_settings.cache_clear()
+        assert run(w, "--no-publish") == 0
+        assert chapters_of(w.out / "store") == ["39", "84"]
+        assert read_metadata(w.out / "metadata.json")["source_version"] == TWELVE_VERSION
+
+    def test_the_counts_are_logged_before_any_embedding(self, w, capsys):
+        class Refusing(RecordingEmbeddings):
+            def embed_documents(self, texts):
+                raise RuntimeError("no embedding in this test")
+
+        w.emb = Refusing()
+        with pytest.raises(RuntimeError, match="no embedding"):
+            run(w, "--no-publish")
+        out = capsys.readouterr().out
+        assert out.index("5 valid rulings in 5 chapters") < out.index("chose 5 rulings: 2 kept, 3 new")
+
+    def test_the_previous_chapters_reuse_their_vectors(self, w):
+        assert run(w, "--no-publish", "--rulings", "all") == 0
+        store = w.out / "store"
+        assert sorted(w.emb.seen) == sorted(ruling_text(row_to_ruling(r)) for r in CHAPTER_ROWS[:3])   # the new ones only
+        vectors = collection_of(store)
+        for ruling_id in ("bti:IT-C39", "bti:ES-C84"):
+            assert vectors[ruling_id][0] == pytest.approx(w.vectors[ruling_id])
+        meta = json.loads((store / "index_meta.json").read_text(encoding="utf-8"))
+        assert {k: meta["refresh"][k] for k in ("extract_rulings", "reused", "embedded", "dropped")} == {
+            "extract_rulings": 5, "reused": 2, "embedded": 3, "dropped": 0}
+
+    def test_a_narrowed_list_drops_the_previous_rulings_of_other_chapters(self, w):
+        assert run(w, "--no-publish", "--chapters", "27-39") == 0
+        assert chapters_of(w.out / "store") == ["27", "34", "38", "39"]
+        assert json.loads((w.out / "store" / "index_meta.json").read_text(encoding="utf-8"))["refresh"]["dropped"] == 1
+
+    @pytest.mark.parametrize("how", ["setting", "option"])
+    def test_a_bad_chapter_value_is_a_setup_error(self, w, monkeypatch, capsys, how):
+        if how == "setting":
+            monkeypatch.setenv("CARGOLINT_EBTI_CHAPTERS", "84,abc")
+            get_settings.cache_clear()
+            assert run(w, "--no-publish") == 2
+        else:
+            assert run(w, "--no-publish", "--chapters", "100") == 2
+        err = capsys.readouterr().err
+        assert err.startswith("EBTI refresh not started") and ("CARGOLINT_EBTI_CHAPTERS" in err or "--chapters" in err)
+        assert w.emb.seen == [] and not (w.out / "store").exists()
 
 
 # --------------------------------------------------------------------------- review fix F1

@@ -2,7 +2,7 @@
 
 Future work, in priority order. Each entry is a short sketch, not a spec; run it through Spec Kit when it is picked up.
 
-1. **013 Knowledge base refresh.** EBTI rulings and TARIC data are frozen in demo-store-v1. Add a script that downloads current EBTI and TARIC data, rebuilds the vector store, publishes a new release, and shows the snapshot date in the app with a warning when it is older than 30 days.
+1. **013 Knowledge base refresh.** Done, merged in PR #4. Two scripts download current TARIC and EBTI data, rebuild the store and publish a release per kind; the app shows both snapshot dates, with a warning when the TARIC snapshot is older than 40 days or the EBTI rulings older than 45 days.
 
 2. **014a Retrieval and evidence.** Does not change the prompt; changes the rulings fed into it.
 
@@ -54,3 +54,5 @@ Future work, in priority order. Each entry is a short sketch, not a spec; run it
 14. **Paid hosting on an EU server.** Hetzner with Docker and Caddy and an EU model endpoint, checking OpenRouter data privacy first.
 
 15. **Constitution wording.** The governance paragraph still names feature 005 wireframes; wording-only amendment.
+
+16. **Clear messages for permanent model errors.** A permanent OpenRouter error, such as a 404 "0 endpoints out of 1 requested are available matching your guardrail restrictions and data policy" or a 401, is shown to the clerk as "Temporary problem talking to the model; retrying.", and its message is cut off (`ui/jobs.py` keeps 160 characters); a 403 gets a generic refusal text without the provider's message. Classify the non-retryable provider errors (404, 401, 403, guardrail or data-policy refusals) as configuration errors in `agent/llm.py`'s `classify_error`, shown with their full message and no promise of a retry, and keep "temporary" for 429 and 5xx. Found on 2026-11-19 in PR #10's browser tests, where the CI key's guardrail refused the model.

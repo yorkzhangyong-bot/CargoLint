@@ -14,22 +14,25 @@ the seven tools (constitution V), and no tool is added. Below is `classify_one` 
 5. **Nomenclature search** (as today): hybrid, with the queries' vectors only (never the rewrite's), the shipper
    history's soft chapter boost, and the history chunks.
 6. **Candidate proposal** (changed input): per vector of the queries and the rewrite, the 12 nearest rulings over every
-   indexed chapter; fused by rank; up to three codes join the candidate chunks with their precedent tags.
+   indexed chapter; fused by rank; up to three codes join the candidate chunks with their precedent tags. These hits
+   also feed the gate's vote (step 9, rule (a)).
 7. **Ranking** (unchanged prompt, unchanged input: the raw description), schema validation, code-existence validation,
    the vague confidence cap.
-8. *New* — **vote search**: when there is at least one valid candidate, `chapters` = the candidates' chapters; per
-   vector of the queries and the rewrite, the 12 nearest rulings with `chapter_filter = chapters`; `RulingScope
-   (chapters, not_indexed = chapters − kb.indexed_chapters)`.
-9. **Vote** (changed input, same rules): `hs6_voters` over the vote search's hits (each ruling once at its best
-   similarity, floor `HS6_VOTE_MIN_SIMILARITY` inclusive, valid on the day, coded to a loaded subheading, not
-   excluded), then `hs6_ruling_vote` with the candidates (k 5, share 0.5).
+8. *New* — **search of the candidates' chapters**: when there is at least one valid candidate, `chapters` = the
+   candidates' chapters; per vector of the queries and the rewrite, the 12 nearest rulings with `chapter_filter =
+   chapters`; `RulingScope(chapters, not_indexed = chapters − kb.indexed_chapters)`.
+9. **Votes** (rule (a), the author's decision of 2026-11-19; same rules for both): `hs6_voters` (each ruling once at
+   its best similarity, floor `HS6_VOTE_MIN_SIMILARITY` inclusive, valid on the day, coded to a loaded subheading, not
+   excluded), then `hs6_ruling_vote` with the candidates (k 5, share 0.5): over the proposal's hits for the gate's vote
+   (`hs6_vote`, every chapter), and over step 8's hits for the second vote (`hs6_scoped_vote`).
 10. *New* — **citation check**: for each candidate, `citation_notes(rationale, code, retrieved, kb.bti)` where
     `retrieved` is the proposal's and the vote search's rulings, less `exclude_refs`; stored on the candidate.
-11. **Result**: `Classification` with, in addition to today's fields, `ruling_scope`, `customs_wording` and the
-    candidates' `citation_notes`; `RetrievalTrace.customs_wording` for the Retrieval steps.
+11. **Result**: `Classification` with, in addition to today's fields, `ruling_scope`, `hs6_scoped_vote`,
+    `customs_wording` and the candidates' `citation_notes`; `RetrievalTrace.customs_wording` for the Retrieval steps.
 
-Routing is computed afterwards by the store, exactly as today (`route_line`, `hs6_gate`); none of the new fields is a
-routing input.
+Routing is computed afterwards by the store (`route_line`, `hs6_gate`): the gate's vote decides the auto-accept as
+before this feature, and `hs6_scoped_vote` can only send a line the gate would accept to review (`Hs6Gate.scoped_veto`)
+when it has voters and does not agree on the decided code. None of the other new fields is a routing input.
 
 **With query expansion on**, its queries are among "the queries" of steps 2 to 9 as today: they search the nomenclature
 and the rulings. The rewrite is then one more vector in the two ruling searches, up to nine in all: one ranking among
@@ -52,10 +55,11 @@ HS-6, with no chapter filter and no rewrite (research R-16).
 | Function | Module | Contract |
 |---|---|---|
 | `parse_chapter_setting(value)` | `agent/config.py` | `None` for `all`; the set of two-digit chapters; `ValueError` otherwise |
-| `hs6_voters(hits, …)` | `tools/classify_hs6.py` | unchanged signature and rule; it receives the scoped hits |
+| `hs6_voters(hits, …)` | `tools/classify_hs6.py` | unchanged signature and rule; it receives the proposal's hits (the gate's vote) and the scoped hits (the second vote) |
+| `hs6_gate(confidence, threshold, vote, override_min, scoped_vote)` | `agent/routing.py` | rule (a): the unfiltered gate; `scoped_veto` when it passed and the second vote has voters and does not agree |
 | `ruling_scope(candidates, indexed)` | `tools/classify_hs6.py` | the sorted chapters and the unindexed ones |
 | `citation_notes(rationale, code, retrieved, store)` | `tools/classify_hs6.py` | the notes in order of first occurrence, each reference once |
 | `customs_wording(client, line, language, glossary)` | `rag/translate.py` | `CustomsWording`; cached; the line inside `fence(...)` |
 | `glossary_matches(text, glossary, language)` | `rag/translate.py` | the reviewed entries with a rendering for `language` whose term occurs (CJK anywhere; other terms as whole words, case and accents ignored); a reviewed entry with no rendering for `language` is not applied |
 | `main_language(records)`, `indexed_chapters(records)` | `rag/bti.py` | from the stored rulings |
-| `rulings_caption(line, chosen)` | `ui/view.py` | the caption of contracts/ui.md §3, or `None` |
+| `rulings_captions(line, chosen)` | `ui/view.py` | the captions of contracts/ui.md §3, in order (an empty list for none) |

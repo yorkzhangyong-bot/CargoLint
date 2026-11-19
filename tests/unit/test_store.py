@@ -52,7 +52,7 @@ def populated(memory_store):
     s = memory_store
     s.add_lines([_parsed(1, "不锈钢保温杯", "Stainless steel vacuum flask"),   # A: ok 88 -> auto
                  _parsed(2, "LED台灯", "LED desk lamp"),                       # B: ok 72 -> review
-                 _parsed(3, "家具", "Furniture"),                              # C: vague 58 -> review
+                 _parsed(3, "家具", "Furniture"),                              # C: vague 58 -> ask
                  _parsed(4, "礼品", "Gift"),                                   # E: stop -> ask
                  _parsed(5, "塑料玩具车", "Plastic toy cars")], CreatedBy.paste)  # D: ok 90, clerk decides review
     _checked_line(s, 1, FlagKind.ok, [("9617.00", 88)])
@@ -120,13 +120,13 @@ class TestThreshold:
     def test_recompute_touches_only_undecided_ok_lines(self, populated):
         populated.set_threshold(90)
         assert populated.get_line(1).current.computed_route == Route.review      # 88 < 90
-        assert populated.get_line(3).current.computed_route == Route.review      # vague unchanged
+        assert populated.get_line(3).current.computed_route == Route.ask_shipper  # vague unchanged
         assert populated.effective_route(populated.get_line(5)) == Route.review  # clerk decision kept
         assert not any(r.change == ChangeKind.threshold_recomputed and r.line_no == 5 for r in populated.shipment.audit)
         populated.set_threshold(60)
         assert populated.get_line(1).current.computed_route == Route.auto_accept
         assert populated.get_line(2).current.computed_route == Route.auto_accept  # 72 >= 60
-        assert populated.get_line(3).current.computed_route == Route.review
+        assert populated.get_line(3).current.computed_route == Route.ask_shipper
 
     @pytest.mark.parametrize("bad", [59, 100])
     def test_threshold_range_enforced(self, populated, bad):
@@ -141,7 +141,7 @@ class TestThreshold:
 class TestCountsAndDerived:
     def test_counts_and_needs_action(self, populated):
         c = populated.counts()
-        assert c["auto_accept"] == 1 and c["review"] == 3 and c["ask_shipper"] == 1
+        assert c["auto_accept"] == 1 and c["review"] == 2 and c["ask_shipper"] == 2
         assert c["needs_action"] == 4 and c["accepted"] == 1
         assert populated.needs_action(populated.get_line(2)) is True
         assert populated.needs_action(populated.get_line(1)) is False
@@ -176,6 +176,18 @@ class TestCountsAndDerived:
         v = memory_store.get_line(1).current
         assert v.status == LineStatus.failed and v.error_reason == "boom"
         assert v.computed_route == Route.review
+
+    # 014a/FR-017
+    def test_feature_014a_the_ruling_scope_is_copied_and_cleared_when_the_step_fails(self, memory_store):
+        from agent.schemas import RulingScope
+
+        memory_store.add_lines([_parsed(1, "冷却液", "coolant")], CreatedBy.paste)
+        memory_store.update_check(1, _check(1, FlagKind.ok))
+        scope = RulingScope(chapters=["27", "34", "38"], not_indexed=["38"])
+        memory_store.update_classification(1, _classify(1, [("3403.99", 90)]).model_copy(update={"ruling_scope": scope}))
+        assert memory_store.get_line(1).current.ruling_scope == scope            # read by block 3 from the line store
+        memory_store.update_classification(1, _classify(1, [], failed=True))
+        assert memory_store.get_line(1).current.ruling_scope is None
 
 
 class TestAuditAndRegistries:

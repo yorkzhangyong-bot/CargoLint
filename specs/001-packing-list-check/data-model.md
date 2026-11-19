@@ -18,7 +18,7 @@ description; replaced (after confirmation) by the next upload.
 | `shipper` | `ShipperRef` | `{name, known: bool, past_shipment_count: int}`; `known=False` → "New shipper" |
 | `filing_type` | enum | `ics2_house_ens` only (ATLAS out of scope) |
 | `threshold` | int | 60–99, default 85; the value in force for routing |
-| `ask_floor` | int | 0–100, default 50; configuration, not a sidebar control |
+| `ask_floor` | int | 0–100, default 50; configuration, not a sidebar control; no longer routes since the vague rule of 2026-11-19 |
 | `hybrid_search` | bool | default `True`; `False` = baseline (vector-only) retrieval for comparison |
 | `source` | `SourceFile \| None` | `{name, size_bytes, kind: xlsx\|csv\|pdf\|jpg\|png}`; `None` for pasted lines |
 | `origin`, `destination`, `mode` | str \| None | header line "Shanghai → Hamburg · LCL"; from file if detectable, else blank |
@@ -229,10 +229,10 @@ Rules enforced in code (`route_line`, FR-020; lock FR-022):
 | flag | top confidence | status | computed_route |
 |---|---|---|---|
 | stop_word | any | checked | ask_shipper |
-| vague | < ask_floor | checked | ask_shipper |
-| vague | ≥ ask_floor | checked | review |
+| vague | any (the author's decision of 2026-11-19; until then review at or above `ask_floor`) | checked | ask_shipper |
 | ok | HS-6 gate passes¹, `ever_flagged=False` | checked | auto_accept |
 | ok | HS-6 gate passes¹, `ever_flagged=True` | checked | review (`ready to accept`) |
+| ok | HS-6 gate passes¹, but the vote of the candidates' chapters has voters and does not agree on the decided code (feature 014a, rule (a)) | checked | review (the veto's reason), whatever `ever_flagged` |
 | ok | HS-6 gate does not pass¹ | checked | review |
 | any | — | no candidates / unreadable / failed | review |
 
@@ -246,6 +246,12 @@ also passes for the second or third candidate on which at least OVERRIDE_MIN (4)
 agree: that candidate becomes the decided code, with the reason "rulings overrode the model: N of M agree on <code>".
 With the switch on, at least OVERRIDE_MIN rulings at a code outside the top three leave the line in review, with that
 code shown as a hint, never chosen.
+Since feature 014a (rule (a), the author's decision of 2026-11-19) the gate's vote reads every indexed chapter, and a
+second vote of the five nearest eligible rulings within the chapters of the model's candidates can only stop an
+auto-accept: when it has voters and does not agree on the decided code (the override's candidate, else the top one; its
+majority at a share of at least 0.5), the gate does not pass (`Hs6Gate.scoped_veto`) and the line goes to review with
+the reason "the EBTI rulings of the candidates' chapters do not agree: n of m at <code> (<countries>)", or "… are
+split: …". The second vote never passes a line on its own.
 
 **Line version**: `v1` (file/paste/sample) → `v2…` (one per applied reply). A reply to an
 accepted line creates a new version and clears the decision (back to review). Versions are never

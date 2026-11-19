@@ -18,7 +18,7 @@ from typing import Any
 from langchain_core.messages import AIMessage
 
 from agent.schemas import (Candidate, Classification, Cn8Choice, CreatedBy, Decision, DecisionRoute, Hs6Vote, LineStatus,
-                           LineVersion, ParsedLine, Precedent, TaricOutcome, TaricRule, WrittenBy)
+                           LineVersion, ParsedLine, Precedent, RulingScope, TaricOutcome, TaricRule, WrittenBy)
 from agent.store import LineStore
 from tests.fakes import FakeRawClient, ScriptedChatModel, ai_tool_call
 
@@ -143,12 +143,14 @@ def fake_client_caller() -> Any:
 
 
 def _classify(store: LineStore, n: int, cands: list[tuple[str, int]], no_valid: bool = False,
-              rationale: str = "matches the subheading", hs6_vote: Hs6Vote | None = None) -> None:
+              rationale: str = "matches the subheading", hs6_vote: Hs6Vote | None = None,
+              ruling_scope: RulingScope | None = None, hs6_scoped_vote: Hs6Vote | None = None) -> None:
     index = store.index
     candidates = [Candidate(code=code, subheading_text=index.subheading_text(code), confidence=conf,
                             rationale=f"{rationale} {code}", history_only=(i == 2)) for i, (code, conf) in enumerate(cands)]
     store.update_classification(n, Classification(line_no=n, candidates=candidates, no_valid_candidate=no_valid,
-                                                  status=LineStatus.checked, hs6_vote=hs6_vote))
+                                                  status=LineStatus.checked, hs6_vote=hs6_vote, ruling_scope=ruling_scope,
+                                                  hs6_scoped_vote=hs6_scoped_vote))
     by_code = {}
     if cands:
         by_code[cands[0][0]] = [Precedent(reference=f"DE-{cands[0][0].replace('.', '')}-01", member_state="DE",
@@ -195,11 +197,11 @@ def build_state(store: LineStore, kb: Any, state: str) -> int:
         return n
     if state == "firm_stop_word":
         return _clear(store, kb, "Gift")
-    if state in ("vague_close", "vague_apart", "vague_review"):
-        text = {"vague_close": "Mixed household articles", "vague_apart": "Kitchen things", "vague_review": "Mixed metal articles"}[state]
+    if state in ("vague_close", "vague_apart", "vague_high"):   # vague_high: at or above the former ask floor of 50
+        text = {"vague_close": "Mixed household articles", "vague_apart": "Kitchen things", "vague_high": "Mixed metal articles"}[state]
         cands = {"vague_close": [("3924.90", 41), ("3924.10", 39), ("9403.60", 12)],
                  "vague_apart": [("3924.90", 40), ("3924.10", 10), ("9403.60", 5)],
-                 "vague_review": [("7318.15", 55), ("8708.99", 20)]}[state]
+                 "vague_high": [("7318.15", 55), ("8708.99", 20)]}[state]
         n = _clear(store, kb, text)
         _classify(store, n, cands)
         return n
@@ -227,7 +229,8 @@ def build_state(store: LineStore, kb: Any, state: str) -> int:
         return n
     if state == "review":
         n = _clear(store, kb, "LED desk lamp, USB powered", "LED台灯 USB供电")
-        _classify(store, n, [("9405.21", 58), ("8543.70", 20), ("9403.60", 10)])
+        _classify(store, n, [("9405.21", 58), ("8543.70", 20), ("9403.60", 10)],   # feature 014a: no ruling of the
+                  ruling_scope=RulingScope(chapters=["85", "94"], not_indexed=["85", "94"]))   # candidates' chapters
         return n
     if state == "ready_to_accept":
         n = _clear(store, kb, "Spare parts")
@@ -279,12 +282,22 @@ def build_state(store: LineStore, kb: Any, state: str) -> int:
         n = _clear(store, kb, "LED desk lamp, USB powered", "LED台灯 USB供电")   # store with the switch on
         vote = Hs6Vote(majority="9405.21", majority_share=0.8, candidate=2,
                        competing=[("9405.21", ["IE", "DE", "DE", "FR"]), ("8543.70", ["NL"])])
-        _classify(store, n, [("8543.70", 90), ("9405.21", 60), ("9403.60", 20)], hs6_vote=vote)
+        _classify(store, n, [("8543.70", 90), ("9405.21", 60), ("9403.60", 20)], hs6_vote=vote,
+                  ruling_scope=RulingScope(chapters=["85", "94"], not_indexed=[]))
         if state == "hs6_override_cn8":   # the CN-8 left to confirm: "Pick: CN-8"
             _cn8(store, n, "9405.21", "94052140", conf=70, written=False)
             return n
         _cn8(store, n, "9405.21", "94052140", conf=95)
         _taric(store, kb, n)
+        return n
+    if state == "hs6_veto":   # feature 014a (rule (a)): 4 of 5 nearest rulings agree, but those of the candidates'
+        n = _clear(store, kb, "LED desk lamp, USB powered", "LED台灯 USB供电")   # chapters sit at candidate 3
+        vote = Hs6Vote(majority="9405.21", majority_share=0.8, model_is_majority=True, agrees=True,
+                       competing=[("9405.21", ["IE", "DE", "DE", "FR"]), ("8543.70", ["NL"])])
+        scoped = Hs6Vote(majority="9403.60", majority_share=0.6, candidate=3,
+                         competing=[("9403.60", ["DE", "FR", "NL"]), ("9405.21", ["IE", "DE"])])
+        _classify(store, n, [("9405.21", 90), ("8543.70", 30), ("9403.60", 20)], hs6_vote=vote, hs6_scoped_vote=scoped,
+                  ruling_scope=RulingScope(chapters=["85", "94"], not_indexed=[]))
         return n
     if state in ("edited_ever_flagged", "edited_never_flagged"):   # T026: a clerk version, re-checked inline
         n = build_state(store, kb, "ics2_term" if state == "edited_ever_flagged" else "cn8_question")
@@ -295,7 +308,7 @@ def build_state(store: LineStore, kb: Any, state: str) -> int:
     raise ValueError(f"unknown state {state!r}")
 
 
-CN_STATES = ("pending", "failed", "ics2_term", "firm_stop_word", "vague_close", "vague_apart", "vague_review", "unreadable",
+CN_STATES = ("pending", "failed", "ics2_term", "firm_stop_word", "vague_close", "vague_apart", "vague_high", "unreadable",
              "cn8_question", "sent", "taric_question", "cn8_error", "review", "ready_to_accept", "no_candidate",
              "cn8_missing", "cn8_pending", "taric_missing", "taric_two", "taric_many", "taric_one_td", "ready",
              "ready_not_loaded", "accepted", "accepted_taric")

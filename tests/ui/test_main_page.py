@@ -486,7 +486,10 @@ def test_an_hs6_to_choose(kb, recorder):
     assert "Why: matches the subheading 9405.21" in page
     assert "Confidence is a model estimate, not a calibrated probability." in page
     assert [p.proto.value for p in at.get("progress")] == [r.confidence for r in rows]   # a bar beside each candidate
-    assert "No ruling was within the similarity floor." in page      # block 3: no ruling voted
+    assert "No relevant rulings found." in page                      # block 3: the deciding vote has no voter, and
+    assert "No rulings indexed for chapters 85 and 94." in page      # none of 85 or 94 is stored (feature 014a)
+    assert "No ruling was within the similarity floor." not in page
+    assert sum(t.startswith(("No rulings indexed", "No relevant rulings")) for t in page) == 2   # once each
     assert view.explain_a(store, line, "a_hs6")[1] in page           # why the clerk decides
     rulings = [plain(p.proto.popover.label) for p in at.get("popover") if p.proto.popover.label.startswith("BTI")]
     assert rulings == ["BTI DE DE-940521-01 · 9405.21"]
@@ -1154,6 +1157,64 @@ def test_an_overridden_line_shows_the_chosen_candidate_and_its_audit_entry(kb, r
     assert decided in texts(opened(store, kb, n))                                  # the open line says who decided
     assert [(r.previous, r.new, r.note) for r in store.shipment.audit if r.line_no == n and r.change == ChangeKind.code_decided] \
         == [("8543.70", "9405.21", "rulings overrode the model: 4 of 5 agree on 9405.21; candidate 2 chosen")]
+
+
+# 014a/FR-017, 014a/FR-018: block 3 reads both votes, the gate and the chapter facts from the line store
+def test_feature_014a_block3_lists_the_voters_and_how_many_agree(kb, recorder):
+    store, nos = h.store_with("hs6_override", kb=kb, hs6_override_min=4)
+    n = nos["hs6_override"]
+    page = texts(opened(store, kb, n))
+    assert any(t.endswith("9405.21 · IE, DE, DE, FR") for t in page) and any(t.endswith("8543.70 · NL") for t in page)
+    assert [t for t in page if "agree with" in t] == ["4 of 5 agree with 9405.21"]   # the caption as before, once
+    assert not any(t.startswith(("No rulings indexed", "No relevant rulings", "No ruling was within")) for t in page)
+    assert not any(t.startswith("Sent to review by the rulings") for t in page)
+
+
+def test_feature_014a_block3_shows_the_deciding_vote_and_the_chapters_veto(kb, recorder):
+    store, nos = h.store_with("hs6_veto", kb=kb)
+    n = nos["hs6_veto"]
+    line = store.get_line(n)
+    assert view.line_status(store, line).colour == "yellow"                        # rule (a): the veto sends it to review
+    page = texts(opened(store, kb, n))
+    assert any(t.endswith("9405.21 · IE, DE, DE, FR") for t in page) and any(t.endswith("8543.70 · NL") for t in page)
+    assert not any(t.endswith("9403.60 · DE, FR, NL") for t in page)               # block 3 lists the deciding vote only
+    assert [t for t in page if "agree with" in t] == ["4 of 5 agree with 9405.21"]
+    assert [t for t in page if t.startswith("Sent to review by the rulings")] == [
+        "Sent to review by the rulings of the candidates' chapters 85 and 94: 3 of 5 at 9403.60."]
+    assert view.explain_a(store, line, "a_hs6")[1] in page
+
+
+# 014a/FR-022
+def test_feature_014a_block2_shows_the_citation_notes_after_the_reasoning(kb, recorder):
+    from agent.schemas import CitationNote, Classification, LineStatus
+
+    store, nos = h.store_with("review", kb=kb)
+    n = nos["review"]
+    v = store.get_line(n).current
+    note = CitationNote(reference="DEBTI1234/22", kind="other_code", ruling_hs6="8419.89")
+    noted = v.candidates[0].model_copy(update={"citation_notes": [note]})
+    store.update_classification(n, Classification(line_no=n, candidates=[noted, *v.candidates[1:]], status=LineStatus.checked,
+                                                  ruling_scope=v.ruling_scope))
+    page = texts(opened(store, kb, n))
+    assert "Why: matches the subheading 9405.21 Cited ruling DEBTI1234/22 classifies under 8419.89, not 9405.21." in page
+
+
+# 014a/FR-025
+def test_feature_014a_block1_shows_the_customs_wording_only_when_the_line_has_one(kb, recorder):
+    from agent.schemas import Classification, CustomsWording, LineStatus
+
+    store, nos = h.store_with("review", "ready", kb=kb)
+    n = nos["review"]
+    v = store.get_line(n).current
+    before = view.export_csv(store)
+    rewrite = CustomsWording(text="LED-Schreibtischleuchte, über USB betrieben", language="de")
+    store.update_classification(n, Classification(line_no=n, candidates=v.candidates, status=LineStatus.checked,
+                                                  ruling_scope=v.ruling_scope, customs_wording=rewrite))
+    page = texts(opened(store, kb, n))
+    assert "Rulings also searched in customs wording (German): LED-Schreibtischleuchte, über USB betrieben" in page
+    assert f"Original: {v.display_text} · Stop-word check: none found" in page            # the raw text stays
+    assert not any(t.startswith("Rulings also searched") for t in texts(opened(store, kb, nos["ready"])))
+    assert view.export_csv(store) == before                                               # the CSV is unchanged
 
 
 def test_an_overridden_line_whose_cn8_is_to_pick_says_the_rulings_overrode_the_model(kb, recorder):
