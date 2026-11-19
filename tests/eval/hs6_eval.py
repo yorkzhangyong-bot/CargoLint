@@ -175,12 +175,14 @@ def line_text(line_no: int, ruling: dict) -> LineText:
     return LineText(line_no=line_no, text_zh=zh, text_en=en)
 
 
-def _logged(search: Any) -> Any:
+def _logged(search: Any, unscoped: bool = False) -> Any:
     """search_by_vector as the app calls it, unchanged; for the calling thread's line it also keeps the HITS_LOGGED
     rulings nearest to the same vector, from a second search (the log only). Feature 014a: the vote's search within
-    the candidates' chapters (the one with a chapter filter) is kept as the product read it, apart, for vote_hits."""
+    the candidates' chapters (the one with a chapter filter) is kept as the product read it, apart, for vote_hits. With
+    `unscoped` (the 014a regression ablation, eval only) that search runs over every chapter, as the vote did before
+    feature 014a, and is still kept as the vote's rulings."""
     def wrapper(vector: list[float], k: int, chapter_filter: list[str] | None = None, where: dict | None = None) -> Any:
-        hits = search(vector, k, chapter_filter, where)
+        hits = search(vector, k, None if unscoped else chapter_filter, where)
         searches = getattr(_rec, "searches", None)
         if searches is not None and chapter_filter:
             _rec.vote_searches.append(hits)
@@ -319,9 +321,12 @@ def results_name(base: str, lang: str, expansion: bool, wording: bool | None = N
 
 
 def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: int, expansion: bool = False,
-             leave_one_out: bool = True, customs_wording: bool = False) -> tuple[list[dict], float]:
+             leave_one_out: bool = True, customs_wording: bool = False,
+             vote_scope: str = "candidates") -> tuple[list[dict], float]:
     """One pass of the app's HS-6 path over the set: one row per ruling, and the elapsed seconds. `leave_one_out` keeps
-    each line's own ruling out; the coolant set has none (feature 014a). `customs_wording` is the switch for the run."""
+    each line's own ruling out; the coolant set has none (feature 014a). `customs_wording` is the switch for the run.
+    `vote_scope` "all" runs the vote over every chapter instead of the candidates' (the 014a regression ablation, eval
+    only: the app is unchanged)."""
     clear_expansions()   # an independent run: no query expansion and no rewrite carried over
     lines = [line_text(i, r) for i, r in enumerate(rulings, start=1)]
     base = ClassifyContext(hybrid=True, as_of=as_of, expansion=expansion,   # context_for_shipment for an unknown
@@ -347,7 +352,7 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
     own = vectors is not None and "search_by_vector" in vars(vectors)
     if vectors is not None:
         search = vectors.search_by_vector
-        vectors.search_by_vector = _logged(search)      # the instance only, for this run
+        vectors.search_by_vector = _logged(search, unscoped=vote_scope == "all")   # the instance only, for this run
     try:
         done = run_per_line(todo, one, lambda item, exc: None, workers=workers)
     finally:
@@ -977,7 +982,12 @@ def main(argv: list[str] | None = None) -> int:
                     help="feature 014a: the customs-wording switch for this run (default: CARGOLINT_CUSTOMS_WORDING)")
     ap.add_argument("--floor", type=float, help="feature 014a: the similarity floor a --replay rebuilds the votes at, from "
                                                 "the rows' vote_hits (exact at or above the run's floor)")
+    ap.add_argument("--vote-scope", choices=("candidates", "all"), default="candidates",
+                    help="the 014a regression ablation, eval only: the HS-6 vote's ruling search within the candidates' "
+                         "chapters (the app's, default) or over every chapter (the vote before feature 014a)")
     args = ap.parse_args(argv)
+    if args.replay and args.vote_scope != "candidates":
+        ap.error("--vote-scope is for a run: a replay searches no rulings")
     coolant = args.set_name == "coolant"
     if args.floor is not None and not args.replay:
         ap.error("--floor is for a --replay: a run uses HS6_VOTE_MIN_SIMILARITY")
@@ -1051,7 +1061,7 @@ def main(argv: list[str] | None = None) -> int:
         before = usage.cost_eur
         invalid.clear()
         rows, seconds = run_once(rulings, kb, client, as_of, settings.workers, expansion, leave_one_out=not coolant,
-                                 customs_wording=wording)
+                                 customs_wording=wording, vote_scope=args.vote_scope)
         runs.append(rows)
         parsed.append(parse_counts(invalid, rows))
         elapsed += seconds
@@ -1068,6 +1078,7 @@ def main(argv: list[str] | None = None) -> int:
         **({"tag": args.tag} if args.tag else {}), "set": args.set_name, "model": settings.chat_model,
         "reasoning": reasoning, **({} if coolant else {"lang": args.lang}), "expansion": "on" if expansion else "off",
         "customs_wording": "on" if wording else "off", "floor": HS6_VOTE_MIN_SIMILARITY,
+        **({} if args.vote_scope == "candidates" else {"vote_scope": args.vote_scope}),
         "threshold": DEFAULT_THRESHOLD, "ask_floor": ASK_FLOOR, "temperature": temperature, "seed": seed,
         "repeat": args.repeat, "n": len(rulings), **m,
         "parse": {"retry_limit": client.max_retries, "runs": parsed},

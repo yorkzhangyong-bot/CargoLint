@@ -473,9 +473,10 @@ def stub_live_run(monkeypatch, runs):
     calls = []
     queue = iter(runs)
 
-    def run_once(rulings, kb, client, as_of, workers, expansion=False, leave_one_out=True, customs_wording=False):
+    def run_once(rulings, kb, client, as_of, workers, expansion=False, leave_one_out=True, customs_wording=False,
+                 vote_scope="candidates"):
         calls.append({"references": [r["reference"] for r in rulings], "as_of": as_of, "leave_one_out": leave_one_out,
-                      "customs_wording": customs_wording})
+                      "customs_wording": customs_wording, "vote_scope": vote_scope})
         return next(queue), 1.0
 
     monkeypatch.setattr(ev, "run_once", run_once)
@@ -733,3 +734,72 @@ def test_feature_014a_a_file_without_vote_hits_is_refused(tmp_path, monkeypatch)
         ev.main(["--replay", source, "--floor", "0.45"])
     with pytest.raises(SystemExit):
         ev.main(["--floor", "0.45"])                                                       # a floor is for a replay
+
+
+# --------------------------------------------------------------------------- the 014a regression ablation (eval only)
+def test_the_unscoped_vote_drops_only_the_vote_searchs_chapter_filter():
+    calls = []
+
+    def search(vector, k, chapter_filter=None, where=None):
+        calls.append((k, chapter_filter))
+        return [(f"bti:R{i}", 1 - i / 100) for i in range(k)]
+
+    ev._rec.searches, ev._rec.vote_searches = [], []
+    try:
+        ev._logged(search, unscoped=True)([1.0], 12, ["61"])                 # the vote's search: over every chapter
+        ev._logged(search, unscoped=True)([1.0], 12, None)                   # the proposal's search, as before
+        assert calls == [(12, None), (12, None), (ev.HITS_LOGGED, None)]
+        assert [len(s) for s in ev._rec.vote_searches] == [12]               # still logged as the vote's rulings
+        ev._logged(search)([1.0], 12, ["61"])                                # the product's scope by default
+        assert calls[-1] == (12, ["61"])
+    finally:
+        del ev._rec.searches, ev._rec.vote_searches
+
+
+def test_a_run_with_the_unscoped_vote_lets_rulings_of_any_chapter_vote(small_index, fake_embeddings, rules, fake_llm):
+    from agent.llm import get_client
+    from rag.loader import KnowledgeBase
+    from rag.retriever import BM25Index, HybridRetriever, InMemoryVectorSearch
+
+    text = "Silicone mobile phone cases"
+    fake_llm.recorded.setdefault("JudgementOut", {})[text] = {"vague": False, "missing": [], "reason": "specific"}
+    fake_llm.recorded.setdefault("RankOut", {})[text] = {"candidates": [
+        {"code": "3926.90", "confidence": 90, "rationale": "a fitted cover", "history_only": False}]}
+    records = [{**ruling(ref, code), "chapter": code[:2], "language": "de"} for ref, code in
+               (("XIBTI4", "8452.90"), ("XIBTI5", "8452.90"), ("XIBTI6", "8452.90"), ("IEBTI1", "3926.90"))]
+    vectors = InMemoryVectorSearch([(c.id, c.text, c.metadata) for c in small_index.chunks], fake_embeddings)
+    kb = KnowledgeBase(small_index, HybridRetriever(bm25=BM25Index([(c.id, c.text) for c in small_index.chunks]),
+                                                    vectors=vectors, chunks=small_index), BTIStore(records), rules,
+                       {"embedding_model": "fake", "built_at": "2026-11-18T00:00:00"}, fake_embeddings)
+
+    class Scoped:
+        hits = [("bti:XIBTI4", 0.95), ("bti:XIBTI5", 0.94), ("bti:XIBTI6", 0.93), ("bti:IEBTI1", 0.80)]
+
+        def search_by_vector(self, vector, k, chapter_filter=None, where=None):
+            return [(i, s) for i, s in self.hits if not chapter_filter or kb.bti.get(i)["chapter"] in chapter_filter][:k]
+
+    kb.bti_vectors = Scoped()
+    item = {"reference": "coolant-x", "chapter": "39", "language": "", "description": text, "expected_hs6": "3926.90"}
+    scoped = ev.run_once([item], kb, get_client(), date(2026, 11, 18), workers=1, leave_one_out=False)[0][0]
+    unscoped = ev.run_once([item], kb, get_client(), date(2026, 11, 18), workers=1, leave_one_out=False,
+                           vote_scope="all")[0][0]
+    assert scoped["vote"]["counts"] == [["3926.90", 1]] and scoped["route"] == "auto_accept"
+    assert unscoped["vote"]["counts"] == [["8452.90", 3], ["3926.90", 1]] and unscoped["route"] == "review"
+    assert [h["reference"] for h in unscoped["vote_hits"]] == ["XIBTI4", "XIBTI5", "XIBTI6", "IEBTI1"]
+    assert unscoped["vote_chapters"] == ["39"]                                # the candidates' chapters, as computed
+
+
+def test_the_vote_scope_option_reaches_the_run_and_the_entry(tmp_path, monkeypatch):
+    coolant_set_copy(tmp_path, monkeypatch)
+    eval_files_in(tmp_path, monkeypatch)
+    items = ev.coolant_items(json.loads(ev.COOLANT_SET.read_text(encoding="utf-8")))
+    rows = [coolant_row(i["reference"], "3403.99", "review", expected=i.get("expected_hs6") or "3403.99",
+                        expected_route=i.get("expected_route")) for i in items]
+    calls = stub_live_run(monkeypatch, [rows, rows])
+    assert ev.main(["--set", "coolant", "--tag", "t5", "--expansion", "off", "--vote-scope", "all"]) == 0
+    assert ev.main(["--set", "coolant", "--tag", "t6", "--expansion", "off"]) == 0
+    assert [c["vote_scope"] for c in calls] == ["all", "candidates"]
+    history = json.loads(ev.COOLANT_HISTORY.read_text(encoding="utf-8"))
+    assert history[0]["vote_scope"] == "all" and "vote_scope" not in history[1]   # the product's scope keeps no field
+    with pytest.raises(SystemExit):
+        ev.main(["--replay", str(tmp_path / "any.json"), "--vote-scope", "all"])
