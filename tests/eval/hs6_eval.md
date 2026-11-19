@@ -1,7 +1,7 @@
 # HS-6 evaluation report (feature 006)
 
 - **Set**: `tests/eval/cn8_eval_set.json`, the CN-8 eval's 120 EBTI rulings (built 2026-10-23); a line's correct HS-6 is the first six digits of its ruling's CN-8.
-- **Method**: each ruling's goods description, as given, is a new line through the app's path: the description check, the HS-6 step (hybrid search and BTI precedents, no shipper history) and the route the store computes (threshold 85, ask floor 50). A line's own ruling is never a precedent (leave-one-out); ruling validity on the set's build date. `python tests/eval/hs6_eval.py --repeat 3`.
+- **Method**: each ruling's goods description, as given, is a new line through the app's path: the description check, the HS-6 step (hybrid search and BTI precedents, no shipper history) and the route the store computes (threshold 85; a vague line goes to ask the shipper, before the vague rule of 2026-11-19 only below the ask floor of 50). A line's own ruling is never a precedent (leave-one-out); ruling validity on the set's build date. `python tests/eval/hs6_eval.py --repeat 3`.
 - **Top-1** is the first candidate; a line without one (a stop word, a failure) is a miss. **In top 3**: the correct HS-6 among the candidates the clerk picks from on review. **Majority**: the most frequent top-1 over the runs (a tie goes to the earliest run). **Wrong, auto-accepted**: routed to auto-accept with a wrong top-1; the CN-8 step then runs on the wrong HS-6.
 - **Vote gate** (the entries with gate reasons): the 5 nearest eligible rulings at or above a cosine similarity of 0.4 vote on the first six digits, and the model's top-1 is auto-accepted when it is their majority with a share of at least 0.5; the threshold applies only when none votes. **Lost**: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
 
@@ -134,13 +134,13 @@ Per run: 43 / 48 / 46. In every run: 43 lines, each among the lines wrong in eve
 
 ### Vote gate
 
-Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
 
-| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | 54 | 41 | 12 | 1 | 0 | 12 | 0 | 51 | 10 |
-| 2 | 53 | 43 | 11 | 1 | 0 | 12 | 0 | 51 | 11 |
-| 3 | 53 | 42 | 11 | 2 | 0 | 12 | 0 | 51 | 12 |
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 54 | 41 | 12 | 1 | 0 | 0 | 12 | 0 | 51 | 10 |
+| 2 | 53 | 43 | 11 | 1 | 0 | 0 | 12 | 0 | 51 | 11 |
+| 3 | 53 | 42 | 11 | 2 | 0 | 0 | 12 | 0 | 51 | 12 |
 
 ### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
 
@@ -242,13 +242,13 @@ The model's own confidence of its top-1 (before the vague cap), all runs, right 
 
 ### Vote gate
 
-Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
 
-| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | 64 | 31 | 12 | 2 | 0 | 11 | 0 | 60 | 13 |
-| 2 | 60 | 35 | 9 | 3 | 0 | 13 | 0 | 54 | 12 |
-| 3 | 61 | 30 | 9 | 3 | 0 | 17 | 0 | 55 | 12 |
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 64 | 31 | 12 | 2 | 0 | 0 | 11 | 0 | 60 | 13 |
+| 2 | 60 | 35 | 9 | 3 | 0 | 0 | 13 | 0 | 54 | 12 |
+| 3 | 61 | 30 | 9 | 3 | 0 | 0 | 17 | 0 | 55 | 12 |
 
 ### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
 
@@ -343,13 +343,13 @@ The model's own confidence of its top-1 (before the vague cap), all runs, right 
 
 ### Vote gate
 
-Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
 
-| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | 64 | 32 | 10 | 3 | 0 | 11 | 0 | 59 | 15 |
-| 2 | 66 | 32 | 8 | 3 | 0 | 11 | 0 | 62 | 14 |
-| 3 | 62 | 35 | 8 | 4 | 0 | 11 | 0 | 58 | 16 |
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 64 | 32 | 10 | 3 | 0 | 0 | 11 | 0 | 59 | 15 |
+| 2 | 66 | 32 | 8 | 3 | 0 | 0 | 11 | 0 | 62 | 14 |
+| 3 | 62 | 35 | 8 | 4 | 0 | 0 | 11 | 0 | 58 | 16 |
 
 ### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
 
@@ -435,13 +435,13 @@ The model's own confidence of its top-1 (before the vague cap), all runs, right 
 
 ### Vote gate
 
-Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
 
-| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | 60 | 33 | 11 | 3 | 0 | 13 | 0 | 56 | 11 |
-| 2 | 61 | 33 | 11 | 2 | 0 | 13 | 0 | 56 | 10 |
-| 3 | 60 | 33 | 10 | 3 | 0 | 14 | 0 | 56 | 11 |
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 60 | 33 | 11 | 3 | 0 | 0 | 13 | 0 | 56 | 11 |
+| 2 | 61 | 33 | 11 | 2 | 0 | 0 | 13 | 0 | 56 | 10 |
+| 3 | 60 | 33 | 10 | 3 | 0 | 0 | 14 | 0 | 56 | 11 |
 
 ### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
 
@@ -535,11 +535,11 @@ The model's own confidence of its top-1 (before the vague cap), all runs, right 
 
 ### Vote gate
 
-Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
 
-| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | 69 | 29 | 12 | 2 | 0 | 8 | 0 | 64 | 10 |
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 69 | 29 | 12 | 2 | 0 | 0 | 8 | 0 | 64 | 10 |
 
 ### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
 
@@ -614,11 +614,11 @@ The model's own confidence of its top-1 (before the vague cap), all runs, right 
 
 ### Vote gate
 
-Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
 
-| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | 67 | 33 | 10 | 4 | 0 | 6 | 0 | 64 | 17 |
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 67 | 33 | 10 | 4 | 0 | 0 | 6 | 0 | 64 | 17 |
 
 ### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 12)
 
@@ -721,11 +721,11 @@ The model's own confidence of its top-1 (before the vague cap), all runs, right 
 
 ### Vote gate
 
-Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
 
-| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | 67 | 33 | 10 | 4 | 0 | 6 | 0 | 64 | 17 |
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 67 | 33 | 10 | 4 | 0 | 0 | 6 | 0 | 64 | 17 |
 
 ### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 12)
 
@@ -818,11 +818,11 @@ The model's own confidence of its top-1 (before the vague cap), all runs, right 
 
 ### Vote gate
 
-Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
 
-| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | 9 | 12 | 5 | 3 | 0 | 1 | 0 | 9 | 8 |
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 9 | 12 | 5 | 3 | 0 | 0 | 1 | 0 | 9 | 8 |
 
 ### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
 
@@ -890,11 +890,11 @@ The model's own confidence of its top-1 (before the vague cap), all runs, right 
 
 ### Vote gate
 
-Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
 
-| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | 15 | 11 | 3 | 0 | 0 | 1 | 0 | 13 | 4 |
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 15 | 11 | 3 | 0 | 0 | 0 | 1 | 0 | 13 | 4 |
 
 ### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
 
@@ -958,11 +958,11 @@ The model's own confidence of its top-1 (before the vague cap), all runs, right 
 
 ### Vote gate
 
-Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
 
-| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | 64 | 32 | 14 | 4 | 0 | 6 | 0 | 61 | 18 |
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 64 | 32 | 14 | 4 | 0 | 0 | 6 | 0 | 61 | 18 |
 
 ### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
 
@@ -1055,13 +1055,13 @@ The model's own confidence of its top-1 (before the vague cap), all runs, right 
 
 ### Vote gate
 
-Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
 
-| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | 68 | 34 | 12 | 1 | 0 | 5 | 0 | 65 | 16 |
-| 2 | 70 | 32 | 11 | 1 | 0 | 6 | 0 | 66 | 16 |
-| 3 | 67 | 34 | 11 | 2 | 0 | 6 | 0 | 64 | 17 |
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 68 | 34 | 12 | 1 | 0 | 0 | 5 | 0 | 65 | 16 |
+| 2 | 70 | 32 | 11 | 1 | 0 | 0 | 6 | 0 | 66 | 16 |
+| 3 | 67 | 34 | 11 | 2 | 0 | 0 | 6 | 0 | 64 | 17 |
 
 ### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
 
@@ -1176,13 +1176,13 @@ The model's own confidence of its top-1 (before the vague cap), all runs, right 
 
 ### Vote gate
 
-Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
 
-| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | 65 | 35 | 12 | 3 | 0 | 5 | 0 | 61 | 14 |
-| 2 | 65 | 34 | 13 | 3 | 0 | 5 | 0 | 61 | 15 |
-| 3 | 65 | 36 | 12 | 2 | 0 | 5 | 0 | 61 | 15 |
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 65 | 35 | 12 | 3 | 0 | 0 | 5 | 0 | 61 | 14 |
+| 2 | 65 | 34 | 13 | 3 | 0 | 0 | 5 | 0 | 61 | 15 |
+| 3 | 65 | 36 | 12 | 2 | 0 | 0 | 5 | 0 | 61 | 15 |
 
 ### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
 
@@ -1296,13 +1296,13 @@ The model's own confidence of its top-1 (before the vague cap), all runs, right 
 
 ### Vote gate
 
-Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
 
-| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | 70 | 33 | 4 | 2 | 0 | 11 | 0 | 61 | 12 |
-| 2 | 68 | 32 | 5 | 3 | 0 | 12 | 0 | 60 | 14 |
-| 3 | 68 | 34 | 5 | 2 | 0 | 11 | 0 | 60 | 13 |
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 70 | 33 | 4 | 2 | 0 | 0 | 11 | 0 | 61 | 12 |
+| 2 | 68 | 32 | 5 | 3 | 0 | 0 | 12 | 0 | 60 | 14 |
+| 3 | 68 | 34 | 5 | 2 | 0 | 0 | 11 | 0 | 60 | 13 |
 
 ### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
 
@@ -1444,13 +1444,13 @@ The model's own confidence of its top-1 (before the vague cap), all runs, right 
 
 ### Vote gate
 
-Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
 
-| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | 68 | 39 | 2 | 3 | 0 | 8 | 0 | 62 | 13 |
-| 2 | 68 | 34 | 6 | 2 | 0 | 10 | 0 | 60 | 13 |
-| 3 | 71 | 33 | 3 | 2 | 0 | 11 | 0 | 62 | 13 |
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 68 | 39 | 2 | 3 | 0 | 0 | 8 | 0 | 62 | 13 |
+| 2 | 68 | 34 | 6 | 2 | 0 | 0 | 10 | 0 | 60 | 13 |
+| 3 | 71 | 33 | 3 | 2 | 0 | 0 | 11 | 0 | 62 | 13 |
 
 ### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
 
@@ -1582,13 +1582,13 @@ Replay of iteration 13 (014a-after) at floor 0.45 and OVERRIDE_MIN 5, from its s
 
 ### Vote gate
 
-Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
 
-| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | 65 | 35 | 12 | 3 | 0 | 5 | 0 | 61 | 14 |
-| 2 | 65 | 34 | 13 | 3 | 0 | 5 | 0 | 61 | 15 |
-| 3 | 65 | 36 | 12 | 2 | 0 | 5 | 0 | 61 | 15 |
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 65 | 35 | 12 | 3 | 0 | 0 | 5 | 0 | 61 | 14 |
+| 2 | 65 | 34 | 13 | 3 | 0 | 0 | 5 | 0 | 61 | 15 |
+| 3 | 65 | 36 | 12 | 2 | 0 | 0 | 5 | 0 | 61 | 15 |
 
 ### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
 
@@ -1700,13 +1700,13 @@ Replay of iteration 13 (014a-after) at floor 0.5 and OVERRIDE_MIN 5, from its st
 
 ### Vote gate
 
-Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
 
-| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | 65 | 35 | 12 | 3 | 0 | 5 | 0 | 61 | 14 |
-| 2 | 65 | 34 | 13 | 3 | 0 | 5 | 0 | 61 | 15 |
-| 3 | 65 | 36 | 12 | 2 | 0 | 5 | 0 | 61 | 15 |
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 65 | 35 | 12 | 3 | 0 | 0 | 5 | 0 | 61 | 14 |
+| 2 | 65 | 34 | 13 | 3 | 0 | 0 | 5 | 0 | 61 | 15 |
+| 3 | 65 | 36 | 12 | 2 | 0 | 0 | 5 | 0 | 61 | 15 |
 
 ### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
 
@@ -1818,13 +1818,13 @@ Replay of iteration 13 (014a-after) at floor 0.55 and OVERRIDE_MIN 5, from its s
 
 ### Vote gate
 
-Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
 
-| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | 65 | 34 | 13 | 3 | 0 | 5 | 0 | 61 | 14 |
-| 2 | 65 | 32 | 15 | 3 | 0 | 5 | 0 | 61 | 15 |
-| 3 | 65 | 34 | 14 | 2 | 0 | 5 | 0 | 61 | 15 |
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 65 | 34 | 13 | 3 | 0 | 0 | 5 | 0 | 61 | 14 |
+| 2 | 65 | 32 | 15 | 3 | 0 | 0 | 5 | 0 | 61 | 15 |
+| 3 | 65 | 34 | 14 | 2 | 0 | 0 | 5 | 0 | 61 | 15 |
 
 ### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
 
@@ -1938,13 +1938,13 @@ The model's own confidence of its top-1 (before the vague cap), all runs, right 
 
 ### Vote gate
 
-Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
 
-| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | 63 | 34 | 14 | 4 | 0 | 5 | 0 | 60 | 16 |
-| 2 | 63 | 33 | 14 | 5 | 0 | 5 | 0 | 60 | 16 |
-| 3 | 62 | 34 | 14 | 5 | 0 | 5 | 0 | 59 | 16 |
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 63 | 34 | 14 | 4 | 0 | 0 | 5 | 0 | 60 | 16 |
+| 2 | 63 | 33 | 14 | 5 | 0 | 0 | 5 | 0 | 60 | 16 |
+| 3 | 62 | 34 | 14 | 5 | 0 | 0 | 5 | 0 | 59 | 16 |
 
 ### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
 
@@ -2056,13 +2056,13 @@ The model's own confidence of its top-1 (before the vague cap), all runs, right 
 
 ### Vote gate
 
-Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
 
-| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | 51 | 48 | 13 | 2 | 0 | 6 | 0 | 48 | 15 |
-| 2 | 50 | 49 | 13 | 2 | 0 | 6 | 0 | 47 | 15 |
-| 3 | 51 | 48 | 13 | 2 | 0 | 6 | 0 | 48 | 15 |
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 51 | 48 | 13 | 2 | 0 | 0 | 6 | 0 | 48 | 15 |
+| 2 | 50 | 49 | 13 | 2 | 0 | 0 | 6 | 0 | 47 | 15 |
+| 3 | 51 | 48 | 13 | 2 | 0 | 0 | 6 | 0 | 48 | 15 |
 
 ### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
 
@@ -2185,13 +2185,13 @@ Note: rule (a) and the vague rule (2026-11-19): the exact replay of iteration 13
 
 ### Vote gate
 
-Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
 
-| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | 63 | 34 | 14 | 4 | 0 | 5 | 0 | 60 | 15 |
-| 2 | 63 | 33 | 15 | 4 | 0 | 5 | 0 | 60 | 16 |
-| 3 | 62 | 34 | 14 | 5 | 0 | 5 | 0 | 59 | 17 |
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 63 | 34 | 14 | 4 | 0 | 0 | 5 | 0 | 60 | 15 |
+| 2 | 63 | 33 | 15 | 4 | 0 | 0 | 5 | 0 | 60 | 16 |
+| 3 | 62 | 34 | 14 | 5 | 0 | 0 | 5 | 0 | 59 | 17 |
 
 ### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
 
@@ -2291,4 +2291,4 @@ Overrides that fired per run: 3 / 3 / 3, of which chose the right HS-6: 3 / 3 / 
 - run 3: MTBTI2025-017 (expected 6307.90): candidate 2, 6307.90, instead of 6305.90; right
 - run 3: IEBTIIENEN004-2026-BTI71 (expected 9619.00): candidate 2, 9619.00, instead of 6108.21; right
 
-Model: google/gemini-2.5-flash. Line-by-line results of the latest run: `tests/eval/hs6_eval.json`; since feature 007 each run also keeps its own, `tests/eval/hs6_eval_<tag>.json`; earlier runs are in the git history of `hs6_eval.json`.
+Model: google/gemini-2.5-flash. Line-by-line results of the latest run, iteration 20 (014a-c): `tests/eval/hs6_eval.json`; since feature 007 each run also keeps its own, `tests/eval/hs6_eval_<tag>.json`; earlier runs are in the git history of `hs6_eval.json`.

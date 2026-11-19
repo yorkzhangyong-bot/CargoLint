@@ -1,13 +1,13 @@
 # HS-6 evaluation report: the outside set (feature 014a)
 
 - **Set**: `tests/eval/hs6_eval_outside_set.json`, 14 lines (built 2026-11-19): one EBTI ruling per line, valid on 2026-11-19 in the rebuilt store (extract of 2026-11-18), each outside the twelve chapters of the old store; the line's id is the ruling's reference, which the run keeps out; `original` renders the ruling's goods description closely in English, `text` is the rewrite in plain shipper wording after the near-duplicate check (feature 014a, 2026-11-19).
-- **Method**: each line, as typed, goes through the 120-line set's path: the description check, the HS-6 step (hybrid search and BTI precedents, no shipper history) and the route the store computes (threshold 85, ask floor 50); each line's source ruling is kept out (leave-one-out), its id being that ruling's reference; ruling validity on the set's build date. `python tests/eval/hs6_eval.py --set outside --repeat 3`.
-- **Right**: a line with an expected HS-6 when its top-1 is that code; a line expecting "ask the shipper" when its route is ask_shipper, whatever codes it shows. **Majority**: a line's most frequent top-1, or route for a line expecting "ask the shipper" (a tie goes to the earliest run). **In top 3**: the lines with an expected HS-6 only. **Wrong, auto-accepted**: auto-accepted and not right. **No ruling voted**: the vote gate's no_rulings lines.
+- **Method**: each line, as typed, goes through the 120-line set's path: the description check, the HS-6 step (hybrid search and BTI precedents, no shipper history) and the route the store computes (threshold 85; a vague line goes to ask the shipper, before the vague rule of 2026-11-19 only below the ask floor of 50); each line's source ruling is kept out (leave-one-out), its id being that ruling's reference; ruling validity on the set's build date. `python tests/eval/hs6_eval.py --set outside --repeat 3`.
+- **Right**: a line with an expected HS-6 when its top-1 is that code; a line expecting "ask the shipper" when its route is ask_shipper, whatever codes it shows. **Majority**: a line's most frequent top-1, or route for a line expecting "ask the shipper" (a tie goes to the earliest run). **In top 3**: the lines with an expected HS-6 only. **Wrong, auto-accepted**: auto-accepted and not right. **No ruling voted**: the vote gate's no_rulings lines. **Vetoed**: the lines the vote of the candidates' chapters sent to review (rule (a)).
 
-| Iteration | Run on | Tag | Runs | Query expansion | Customs wording | Floor | Right per run | Majority right | In top 3 per run | Auto-accepted per run | Wrong, auto-accepted per run | No ruling voted per run | Cost |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 2026-11-19 | 014a-a | 3 | off | off | 0.4 | 12 / 12 / 12 of 14 | 12/14 | 13 / 13 / 13 | 7 / 8 / 8 | 0 / 1 / 1 | 0 / 0 / 0 | $0.0524 (€0.0483), 38 s |
-| 2 | 2026-11-19 | 014a-c | 3 | off | off | 0.4 | 11 / 11 / 11 of 14 | 11/14 | 12 / 12 / 12 | 7 / 7 / 7 | 1 / 1 / 1 | 0 / 0 / 0 | $0.0521 (€0.0479), 40 s |
+| Iteration | Run on | Tag | Runs | Query expansion | Customs wording | Floor | Right per run | Majority right | In top 3 per run | Auto-accepted per run | Wrong, auto-accepted per run | No ruling voted per run | Vetoed per run | Cost |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 2026-11-19 | 014a-a | 3 | off | off | 0.4 | 12 / 12 / 12 of 14 | 12/14 | 13 / 13 / 13 | 7 / 8 / 8 | 0 / 1 / 1 | 0 / 0 / 0 | 0 / 0 / 0 | $0.0524 (€0.0483), 38 s |
+| 2 | 2026-11-19 | 014a-c | 3 | off | off | 0.4 | 11 / 11 / 11 of 14 | 11/14 | 12 / 12 / 12 | 7 / 7 / 7 | 1 / 1 / 1 | 0 / 0 / 0 | 0 / 0 / 0 | $0.0521 (€0.0479), 40 s |
 
 ## Iteration 1 (014a-a, google/gemini-2.5-flash, query expansion off, customs wording off, 2026-11-19)
 
@@ -47,4 +47,4 @@
 | FRBTIFR-BTI-2024-01963 | Sunglasses with plastic lenses, UV protection | 9004.10 | 9004.10 (auto_accept) | 9004.10 (auto_accept) | 9004.10 (auto_accept) | 9004.10 | yes |
 | DEBTI19155/25-1 | Quartz wrist watches, analogue dial, stainless steel or all… | 9102.11 | 9102.99 (review) | 9102.99 (review) | 9102.99 (review) | 9102.99 | no |
 
-Model: google/gemini-2.5-flash. Line-by-line results of the latest run: `tests/eval/hs6_eval_outside.json`; each run also keeps its own, `tests/eval/hs6_eval_outside_<tag>_….json`.
+Model: google/gemini-2.5-flash. Line-by-line results of the latest run, iteration 2 (014a-c): `tests/eval/hs6_eval_outside.json`; each run also keeps its own, `tests/eval/hs6_eval_outside_<tag>_….json`.

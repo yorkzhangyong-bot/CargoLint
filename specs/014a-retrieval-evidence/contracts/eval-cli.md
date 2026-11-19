@@ -10,7 +10,8 @@ history stay comparable with earlier iterations.
 |---|---|---|
 | `--set` | `cn8` (default), `coolant`, `outside` | `cn8`: the 120 rulings of `cn8_eval_set.json` (or the 30 Chinese lines with `--lang zh`), as today. `coolant`: the eight lines of `hs6_eval_coolant_set.json` (data-model §8). `outside` (2026-11-19, spec FR-032): the lines of `hs6_eval_outside_set.json` (data-model §8a), run and scored as the coolant set, but each line's source ruling kept out (its id is that ruling's reference); files `hs6_eval_outside.json`, `hs6_eval_outside_<tag>_…json`, `hs6_eval_outside_history.json`, `hs6_eval_outside.md`. `--lang` applies to `cn8` only |
 | `--customs-wording` | `on`, `off` | the customs-wording switch for this run, over `CARGOLINT_CUSTOMS_WORDING`; kept in the history entry and the per-run file name |
-| `--replay FILE --floor X` | a results file, a similarity | recompute every row's votes at floor `X` with the routing functions (since rule (a) the gate's from its `nearest_hits`, the second from its `vote_hits`), no model call; exact for `X` at or above the run's floor; refused for a file without `vote_hits`; the replay's entry goes to the history and report of the set its file names (its summary's `set`, `cn8` when absent), and a coolant replay reads no CN-8 results |
+| `--replay FILE --floor X` | a results file, a similarity | recompute every row's votes at floor `X` with the routing functions (since rule (a) the gate's from its `nearest_hits`, the second from its `vote_hits`), no model call; exact for `X` at or above the run's floor and for a run with query expansion and customs wording off (one query vector per line, so the gate's 12 rulings are the first 12 of `nearest_hits`), otherwise marked not exact with the reason in the entry's `replay.why` (review round 1, 2026-11-19); refused for a file without `vote_hits`; the replay's entry goes to the history and report of the set its file names (its summary's `set`, `cn8` when absent), and a coolant replay reads no CN-8 results |
+| `--vote-scope` | `candidates` (default), `all` | the 014a regression ablation, evaluation only: `all` runs the second vote's ruling search over every chapter instead of the candidates' (it then equals the gate's vote and never vetoes); the entry keeps `vote_scope`; refused with `--replay`; no product setting |
 | `--proposal-scope` | `all` (default), `nomenclature` | option (c) of 2026-11-19 (spec FR-033), evaluation only: `nomenclature` limits the candidate proposal to the rulings of the chapters of the nomenclature search's subheadings for the run (rows keep `proposal_chapters`; the entry keeps `proposal_scope`), while the gate's vote reads every chapter; refused with `--replay`; no product setting |
 
 `--replay FILE --override-min N` (feature 008) stays; `--floor` and `--override-min` can be combined in one replay.
@@ -20,7 +21,8 @@ history stay comparable with earlier iterations.
 - Each line is the set's text as typed, split as the app splits a typed line (`tools.parsers.split_mixed`); its own
   ruling is not excluded (it has none); ruling validity is judged on the set's `built_on` date.
 - It goes through the same path as the 120: the description check, the HS-6 step with the context of an unknown
-  shipper, the route the store computes (threshold 85, ask floor 50).
+  shipper, the route the store computes (threshold 85; a vague line asks the shipper, before the vague rule of
+  2026-11-19 only below the ask floor of 50).
 - Scoring per row: `right` = `hit` (top-1 is `expected_hs6`) for a coded line, `route == "ask_shipper"` for a line
   with `expected_route`; `in_top3` for coded lines only. Over the runs (spec FR-004): right per run counts `right`; a
   line is right on majority when its most frequent top-1 (a coded line) or route (an `expected_route` line), a tie
@@ -31,7 +33,8 @@ history stay comparable with earlier iterations.
   `tests/eval/hs6_eval_coolant_<tag>_<lang>_expansion-<on|off>_wording-<on|off>.json` (the `_wording-…` part only once
   `--customs-wording` exists, from tasks Phase 8 on; the baseline's files end in `_expansion-off.json`),
   `tests/eval/hs6_eval_coolant_history.json`, `tests/eval/hs6_eval_coolant.md` (one table: per entry, right per
-  run, majority right, each line's majority outcome, routes, wrong auto-accepts, cost).
+  run, majority right, each line's majority outcome, routes, wrong auto-accepts, the lines no ruling voted on and the
+  vetoed ones per run, cost). The report names the run the latest run's file holds.
 
 ## Rows (both sets)
 
@@ -43,9 +46,10 @@ the second vote, and `gate` rule (a)'s.
 
 ## History entries
 
-Existing fields plus `set`, `customs_wording` and `floor`; a replay adds `replay: {"of": FILE, "floor": X}` and
-reports per run the routes, the auto-accepted and wrong auto-accepted lines, the lines without a voting ruling and the
-right auto-accepts, at that floor.
+Existing fields plus `set`, `customs_wording` and `floor`; a replay adds `replay: {"of": FILE, "floor": X, "exact":
+true|false}` (with `why` when not exact) and reports per run the routes, the auto-accepted and wrong auto-accepted
+lines, the lines without a voting ruling and the right auto-accepts, at that floor. Since review round 1 (2026-11-19)
+the gate reasons per run (`gate_runs`) include `scoped_veto`, and a coolant or outside entry keeps the switch on (`on`).
 
 ## The runs this feature needs (quickstart.md)
 

@@ -123,8 +123,8 @@ def test_the_vote_gate_measures():
              gated("D", True, "review", "review", "no_rulings"),               # below the threshold, no ruling voted
              gated("E", False, "ask_shipper", "ask_shipper", "not_gated")]]    # flagged
     g = ev.gate_measures(runs)
-    assert g["gate_runs"] == [{"vote_agrees": 1, "vote_disagrees": 2, "vote_tie": 0, "vote_share_low": 0, "no_rulings": 1,
-                               "not_gated": 1}]
+    assert g["gate_runs"] == [{"vote_agrees": 1, "vote_disagrees": 2, "vote_tie": 0, "vote_share_low": 0, "scoped_veto": 0,
+                               "no_rulings": 1, "not_gated": 1}]
     assert (g["no_rulings_review_runs"], g["right_auto_runs"], g["lost_runs"]) == ([1], [1], [1])
 
 
@@ -254,7 +254,7 @@ def test_the_report_shows_the_vote_gate():
              "elapsed_s": 10.0, "cost_usd": 0.01, "cost_eur": 0.0093}
     text = ev.render_report([entry], {"built_on": "2026-10-23", "rulings": []})
     assert "| 1 / 2 / 0 of 4 | 0 / 0 / 0 | 0 / 0 / 0 | $0.0100" in text
-    assert "| 2 | 0 | 0 | 0 | 0 | 4 | 0 | 4 | 0 | 0 |" in text      # run 2: no ruling voted on any line, all to review
+    assert "| 2 | 0 | 0 | 0 | 0 | 0 | 4 | 0 | 4 | 0 | 0 |" in text      # run 2: no ruling voted on any line, all to review
 
 
 # --------------------------------------------------------------------------- feature 008: the precedent override
@@ -884,6 +884,18 @@ def test_feature_014a_a_replay_below_the_runs_floor_is_marked_not_exact(tmp_path
     assert entry["replay"]["exact"] is False and entry["override_min"] == 4                 # combined with --override-min
 
 
+@pytest.mark.parametrize("switch", [{"customs_wording": "on"}, {"expansion": "on"}])
+def test_feature_014a_a_replay_of_a_run_with_several_query_vectors_is_not_exact(tmp_path, monkeypatch, switch):
+    coolant_set_copy(tmp_path, monkeypatch)       # review round 1, finding 5: the gate's vote is rebuilt from one merged
+    eval_files_in(tmp_path, monkeypatch)          # list of nearest rulings, the product's only for one query vector
+    no_model(monkeypatch)
+    source = write_source(tmp_path, [replayable("A", [hit("R1", "3403.99", 0.60)])], **switch)
+    assert ev.main(["--replay", source, "--floor", "0.40"]) == 0
+    entry = json.loads(ev.COOLANT_HISTORY.read_text(encoding="utf-8"))[-1]
+    assert entry["replay"]["exact"] is False and "several query vectors" in entry["replay"]["why"]
+    assert "not exact" in entry["change"] and "not exact" in ev.COOLANT_REPORT.read_text(encoding="utf-8")
+
+
 def test_feature_014a_a_120_line_replay_writes_the_120_line_history(tmp_path, monkeypatch):
     eval_files_in(tmp_path, monkeypatch)
     no_model(monkeypatch)
@@ -907,6 +919,23 @@ def test_feature_014a_a_file_without_vote_hits_is_refused(tmp_path, monkeypatch)
         ev.main(["--replay", source, "--floor", "0.45"])
     with pytest.raises(SystemExit):
         ev.main(["--floor", "0.45"])                                                       # a floor is for a replay
+
+
+def test_feature_014a_a_vetoed_row_is_counted_and_shown_with_the_gate_reasons():
+    rows = [{**row(ref, "3926.90", route), "gate": gate, "route_by_confidence": "auto_accept", "vote": None}
+            for ref, route, gate in (("A", "auto_accept", "vote_agrees"), ("B", "review", "scoped_veto"),
+                                     ("C", "review", "not_gated"))]     # review round 1, finding 4
+    m = ev.gate_measures([rows])
+    gates = m["gate_runs"][0]
+    assert gates["scoped_veto"] == 1 and sum(gates.values()) == len(rows)   # every row has its reason
+    two = ev.gate_measures([rows, rows])
+    table = ev._gate_table({**two, "gate_runs": [gates, {g: n for g, n in gates.items() if g != "scoped_veto"}]})
+    assert "| Vetoed |" in table[5] and table[7].split(" | ")[5] == "1" and table[8].split(" | ")[5] == "0"   # an
+    entry = {"iteration": 1, "run_on": "2026-11-19", "tag": "t", "repeat": 1, "n": 3, "model": "m",   # older entry: 0
+             **ev.coolant_measures([[{**r, "expected_route": None, "right": r["hit"]} for r in rows]]), **m,
+             "elapsed_s": 1.0, "cost_usd": 0.0, "cost_eur": 0.0}
+    report = ev.render_coolant_report([entry], {"built_on": "2026-11-19", "source": "a test", "lines": []})
+    assert "Vetoed per run |" in report and "| 1 | $0.0000" in report
 
 
 # --------------------------------------------------------------------------- the 014a regression ablation (eval only)
