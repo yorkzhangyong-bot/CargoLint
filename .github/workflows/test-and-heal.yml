@@ -55,3 +55,18 @@ jobs:
       # secrets stored under a GitHub Environment aren't visible to reusable workflows.
       APP_ENV: |
         OPENROUTER_API_KEY=${{ secrets.CI_APP_OPENROUTER_API_KEY }}
+
+  # The check to require on main (docs/qa-platform.md, "Required checks"): green only when the browser tests ran and
+  # passed. The platform's "Run tests" step has continue-on-error, so "qa / Run playwright tests" is green even when a
+  # test fails; its `failed` output says so, and is "false" also when no test ran, hence the result check too.
+  browser-tests:
+    needs: qa
+    if: always()
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: The browser tests ran and passed
+        env:
+          RESULT: ${{ needs.qa.result }}
+          FAILED: ${{ needs.qa.outputs.failed }}
+        run: test "$RESULT" = success && test "$FAILED" = false

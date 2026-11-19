@@ -2,7 +2,7 @@
 well-formed, defined once in spec.md, examples in code ignored, another feature's requirements recognised when written
 with their feature, any other undefined reference a warning, and the feature folder from the branch's label. The
 regression cases are built from the wording of the existing specs 003, 004, 008 and 012. The samples use made-up
-features (997 to 998z) for this feature, so they never trace a real feature's requirements."""
+features (996 to 998z), so they never trace a real feature's requirements."""
 from __future__ import annotations
 
 import sys
@@ -60,13 +60,13 @@ def test_an_undefined_reference_is_a_warning_not_a_failure(tmp_path):
 
 
 @pytest.mark.parametrize("prose", [
-    "The 10 s figure in the description is feature 002's SC-007, which allows startup within 10 s.",   # 003
-    "Results are frozen; equal calls return equal results (feature 002, FR-020).",                     # 003
-    "The app offers no JSON download anywhere; feature 001's FR-041 and constitution 1.9.0 follow.",  # 012
-    "The constitution 1.6.0 amendment and the feature 001 FR-020 correction are tasks.",              # 008
-    "Feature 002's FR-018 is superseded.",
-    "As in feature 002’s SC-007.",                                                          # a curly apostrophe
-    "Cites 002/FR-020, 002-FR-021 and 014a/SC-004.",
+    "The 10 s figure in the description is feature 997's SC-007, which allows startup within 10 s.",   # 003
+    "Results are frozen; equal calls return equal results (feature 997, FR-020).",                     # 003
+    "The app offers no JSON download anywhere; feature 996's FR-041 and constitution 1.9.0 follow.",  # 012
+    "The constitution 1.6.0 amendment and the feature 996 FR-020 correction are tasks.",              # 008
+    "Feature 997's FR-018 is superseded.",
+    "As in feature 997’s SC-007.",                                                          # a curly apostrophe
+    "Cites 997/FR-020, 997-FR-021 and 998z/SC-004.",
 ])
 def test_another_features_requirement_written_with_its_feature_is_not_an_orphan(tmp_path, prose):
     folder = feature(tmp_path, CLEAN + "\n" + prose + "\n")
@@ -74,16 +74,17 @@ def test_another_features_requirement_written_with_its_feature_is_not_an_orphan(
 
 
 def test_a_scoped_token_needs_a_feature_label_of_its_own(tmp_path):
-    folder = feature(tmp_path, CLEAN + "\nSC-001/FR-404 joins two ids.\n")
-    assert check_spec.orphans(folder) == {"FR-404": ["spec.md"]}         # 001/FR-404 inside SC-001/FR-404 is no label
+    folder = feature(tmp_path, CLEAN + "\nSC-998/FR-404 joins two ids.\n")
+    # FR-404 is still reported: the 998 in SC-998/FR-404 is no feature label (SC-998 itself is undefined too)
+    assert check_spec.orphans(folder) == {"FR-404": ["spec.md"], "SC-998": ["spec.md"]}
 
 
 @pytest.mark.parametrize("name, spec, files, warnings", [
-    ("003-cites-002",
-     CLEAN + "This feature supersedes three parts of feature 002: the last sentence of its FR-018.\n"
-             "The 10 s figure in the description is feature 002's SC-007, which allows startup within 10 s.\n",
-     {"contracts/taric-store.md": "Equal calls return equal results (feature 002, FR-020).\n",
-      "plan.md": "| V | stays a plain function for Spec 2 (feature 002's FR-021 test stays) |\n",
+    ("003-cites-another",
+     CLEAN + "This feature supersedes three parts of feature 997: the last sentence of its FR-018.\n"
+             "The 10 s figure in the description is feature 997's SC-007, which allows startup within 10 s.\n",
+     {"contracts/taric-store.md": "Equal calls return equal results (feature 997, FR-020).\n",
+      "plan.md": "| V | stays a plain function for Spec 2 (feature 997's FR-021 test stays) |\n",
       "quickstart.md": "| C | FR-014 still holds | run B again |\n"},
      {"FR-014": ["quickstart.md"], "FR-018": ["spec.md"]}),
     ("004-its-limits",
@@ -94,11 +95,11 @@ def test_a_scoped_token_needs_a_feature_label_of_its_own(tmp_path):
     ("008-quickstart-restates",
      CLEAN + "- **SC-002**: a second outcome\n\nThe decided code is its top candidate (its vocabulary and FR-020).\n",
      {"quickstart.md": "- **SC-001**: a measurable outcome\n- **SC-002**: a second outcome\n",
-      "plan.md": "The constitution 1.6.0 amendment and the feature 001 FR-020 correction are tasks.\n"},
+      "plan.md": "The constitution 1.6.0 amendment and the feature 996 FR-020 correction are tasks.\n"},
      {"FR-020": ["spec.md"]}),
-    ("012-cites-001",
-     CLEAN + "The app offers no JSON download anywhere; feature 001's FR-041 and constitution 1.9.0 follow.\n",
-     {"tasks.md": "Update ui/main_page.py, the tests, feature 001's FR-041 and README.md.\n"},
+    ("012-cites-another",
+     CLEAN + "The app offers no JSON download anywhere; feature 996's FR-041 and constitution 1.9.0 follow.\n",
+     {"tasks.md": "Update ui/main_page.py, the tests, feature 996's FR-041 and README.md.\n"},
      {}),
 ])
 def test_the_wording_of_the_existing_specs_passes(tmp_path, name, spec, files, warnings):

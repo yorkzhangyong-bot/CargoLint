@@ -74,6 +74,22 @@ def test_a_test_traces_an_id_by_a_scoped_token_or_a_feature_marker(tmp_path):
     assert ct.traced_ids("996", [export]) == {"FR-003"}
 
 
+def test_a_scoped_token_needs_a_feature_label_of_its_own(tmp_path):
+    files = [write(tmp_path, "a.py", '"""SC-998/FR-404 joins two ids of one feature, as SC-997/FR-005 does."""\n'),
+             write(tmp_path, "b.spec.ts", "// Covers (998/FR-001) and [998-SC-002]\n")]
+    assert ct.traced_ids("998", files) == {"FR-001", "SC-002"}             # 998/FR-404 inside SC-998/FR-404 is no token
+    assert ct.traced_ids("997", files) == set()
+
+
+def test_the_samples_of_the_traceability_tests_trace_no_existing_feature():
+    root = Path(__file__).resolve().parents[2]
+    samples = [root / "tests" / "unit" / name for name in ("test_check_spec.py", "test_check_traceability.py",
+                                                         "test_qa_workflows.py")]
+    labels = sorted(ct.check_spec.feature_label(p.name) for p in (root / "specs").iterdir() if p.is_dir())
+    assert "014a" in labels and None not in labels
+    assert {label: ct.traced_ids(label, samples) for label in labels if ct.traced_ids(label, samples)} == {}
+
+
 def test_a_justification_names_the_feature(tmp_path):
     text = ("# Traceability\n\n- 998/FR-001: enforced by branch protection\n998-SC-001: a manual check in the "
             "quickstart\n- 997/FR-002: another feature\nFR-010: no feature, not counted\n- 998/FR-002:\nno reason\n")

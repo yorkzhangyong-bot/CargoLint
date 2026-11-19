@@ -31,7 +31,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "pytest-timeout>=2.3"]
+dev = ["pytest>=8", "pytest-timeout>=2.3", "pyyaml>=6"]
 eval = ["ragas"]
 
 [tool.setuptools]

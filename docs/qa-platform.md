@@ -16,6 +16,17 @@ request or an issue for review; they merge nothing.
 Both callers pin the platform to one commit of its `main`, so a push to the platform changes nothing here until the
 pin is bumped ([Updating the platform](#updating-the-platform)).
 
+## Required checks
+
+The checks to require on `main`, as GitHub names them: `offline-suite` (`tests.yml`), `traceability`
+(`traceability.yml`) and `browser-tests` (`test-and-heal.yml`). `browser-tests` is the check for the browser tests: a
+job of CargoLint's own after the platform's, green only when the tests ran and passed. The platform's checks are no
+substitute: `qa / Run playwright tests` stays green when a browser test fails, because the platform's "Run tests" step
+has `continue-on-error` so that triage and healing can follow, and `qa / Triage`, `qa / Heal selector drift` and
+`qa / Report defects` are skipped while the tests pass. The pull requests the platform opens (auto-heal, auto-generate)
+start no workflow, as GitHub starts none for the workflow token's events: close and reopen such a pull request to run
+its checks.
+
 ## Secrets
 
 Two repository secrets, under Settings › Secrets and variables › Actions › Repository secrets (secrets of a GitHub

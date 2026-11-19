@@ -75,7 +75,7 @@ def scanned_files(root: Path = ROOT) -> list[Path]:
 
 def traced_ids(label: str, files: list[Path]) -> set[str]:
     """The identifiers the files reference for the feature: scoped tokens, and bare ones in a file with its marker."""
-    scoped = re.compile(rf"\b{re.escape(label)}[-/]((?:FR|SC)-\d+)\b")
+    scoped = re.compile(rf"(?<![\w-]){re.escape(label)}[-/]((?:FR|SC)-\d+)\b")      # not the 013 in SC-013/FR-005
     marker = re.compile(rf"(?m)^\s*(?:export\s+)?(?:(?:const|let|var)\s+)?FEATURE\s*=\s*[\"']{re.escape(label)}[\"']")
     traced: set[str] = set()
     for path in files:

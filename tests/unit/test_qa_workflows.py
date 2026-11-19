@@ -25,7 +25,7 @@ def triggers(workflow: dict) -> dict:
 
 
 def caller(name: str) -> dict:
-    return next(iter(load(name)["jobs"].values()))
+    return next(job for job in load(name)["jobs"].values() if "uses" in job)
 
 
 def test_both_callers_pin_the_platform_to_the_same_full_commit_sha_with_its_date():
@@ -63,6 +63,19 @@ def test_the_app_key_reaches_only_app_env_and_the_app_listens_on_127_0_0_1(name)
     assert 'OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-ci-placeholder-not-a-key}"' in command
     assert "--server.address 127.0.0.1 --server.port 8501" in command
     assert job["with"]["app_url"] == "http://localhost:8501"
+
+
+def test_the_browser_tests_check_fails_unless_the_browser_tests_ran_and_passed():
+    # The platform's "Run tests" step has continue-on-error, so "qa / Run playwright tests" is green even when a test
+    # fails; the gate reads the call's result and its `failed` output, which is also "false" when no test ran
+    jobs = load("test-and-heal.yml")["jobs"]
+    assert list(jobs) == ["qa", "browser-tests"]
+    gate = jobs["browser-tests"]
+    assert gate["needs"] == "qa" and gate["if"] == "always()" and gate["permissions"] == {}
+    assert gate["runs-on"] == "ubuntu-latest" and "name" not in gate      # GitHub names the check browser-tests
+    (step,) = gate["steps"]
+    assert step["env"] == {"RESULT": "${{ needs.qa.result }}", "FAILED": "${{ needs.qa.outputs.failed }}"}
+    assert step["run"].strip() == 'test "$RESULT" = success && test "$FAILED" = false'
 
 
 def test_traceability_runs_again_when_the_description_is_edited():
