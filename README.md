@@ -39,8 +39,12 @@ and a value that is neither `all` nor such a list is refused with the setting's 
 already there is reused only when its sidecar, `data/bti_subset.meta.json`, records the same chapters. Otherwise the
 loader stops with exit 2 and asks for `--force`, which cuts it again: for a subset cut for other chapters (for example a
 twelve-chapter subset under the new `all` default) and for one whose sidecar is missing or records no chapters (a
-subset cut before feature 013). Admin › Data names the chapters in the rulings' source version ("full extract of
-2026-11-18, all chapters"). Data provenance and licences: `data/SOURCES.md`.
+subset cut before feature 013). `--force` also deletes `store/chroma` and `store/chroma-bti` and embeds every
+nomenclature chunk and ruling afresh (about 2.5 h and $0.5 for all chapters), losing the vectors a refreshed store
+reused. `python scripts/refresh_ebti.py --no-publish --rulings all --previous store` keeps them: it builds the store in
+`build/ebti-<date>/store`, as the local store of every chapter was built ("Knowledge base refresh" below). Admin › Data
+names the chapters in the rulings' source version ("full extract of 2026-11-18, all chapters"). Data provenance and
+licences: `data/SOURCES.md`.
 
 ## TARIC snapshot (digits 9 to 10 and measures)
 

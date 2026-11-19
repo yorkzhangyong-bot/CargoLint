@@ -188,6 +188,8 @@ class TestBuildBti:
             get_settings.cache_clear()
         err = capsys.readouterr().err
         assert "Knowledge base not built" in err and "records no chapters" in err and "rerun with --force" in err
+        assert "also deletes store/chroma and store/chroma-bti" in err and "about 2.5 h and $0.5" in err   # review round 3:
+        assert "refresh_ebti.py --no-publish --rulings all --previous store" in err     # what --force costs, what keeps
         assert not (loader_mod.STORE_DIR / "bti_docs.jsonl").exists()   # nothing written: the store keeps what it had
 
     def test_a_subset_cut_for_other_chapters_is_never_reused(self, loader_paths, monkeypatch):

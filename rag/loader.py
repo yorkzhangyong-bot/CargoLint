@@ -176,6 +176,14 @@ class SubsetMismatch(RuntimeError):
     chapters' name, nor cut again without --force (review finding 3)."""
 
 
+# The end of both SubsetMismatch messages (review round 3): what --force costs, as build_indexes(force=True) deletes
+# both vector collections, and the refresh that keeps the vectors instead (as the local store of every chapter was built)
+FORCE_HINT = ("rerun with --force to cut it again, which also deletes store/chroma and store/chroma-bti and embeds every "
+              "nomenclature chunk and ruling afresh (about 2.5 h and $0.5 for all chapters), losing the vectors a "
+              "refreshed store reused; to keep them, build the store with `python scripts/refresh_ebti.py --no-publish "
+              "--rulings all --previous store` instead, into build/ebti-<date>/store")
+
+
 def _write_subset_meta(extract_date: str | None, chapters: set[str] | frozenset[str] | None) -> None:
     """The sidecar of data/bti_subset.jsonl: the extract the subset was cut from (feature 013, FR-018)."""
     if extract_date is None:
@@ -226,11 +234,9 @@ def build_bti(demo: bool, chapters: set[str] | frozenset[str] | None, force: boo
             cut_for = sidecar.get("source_version")
             if not (extract_date and cut_for):   # a subset cut before feature 013: its chapters are unknown (review N1)
                 raise SubsetMismatch(f"{BTI_SUBSET.name} records no chapters it was cut for ({SUBSET_META.name} is "
-                                     "missing or names none, as for a subset cut before feature 013); rerun with --force "
-                                     "to cut it again")
+                                     f"missing or names none, as for a subset cut before feature 013); {FORCE_HINT}")
             if cut_for != ebti_source_version(extract_date, chapters):
-                raise SubsetMismatch(f"{BTI_SUBSET.name} holds the {cut_for}, not {chapters_text(chapters)}; rerun "
-                                     "with --force to cut it again")
+                raise SubsetMismatch(f"{BTI_SUBSET.name} holds the {cut_for}, not {chapters_text(chapters)}; {FORCE_HINT}")
         store = bti_mod.BTIStore.from_jsonl(BTI_SUBSET)
     store_dir = Path(store_dir or STORE_DIR)   # read when the step runs, so a patched STORE_DIR is followed (review N5)
     store_dir.mkdir(parents=True, exist_ok=True)
