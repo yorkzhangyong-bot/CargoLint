@@ -1713,5 +1713,301 @@
    0.0,
    0.0
   ]
+ },
+ {
+  "iteration": 7,
+  "run_on": "2026-11-19",
+  "change": "014a regression ablation: the HS-6 vote over every chapter (--vote-scope all, eval only) on the rebuilt store; customs wording off, query expansion off; 3 independent runs",
+  "tag": "014a-ablation",
+  "set": "coolant",
+  "model": "google/gemini-2.5-flash",
+  "reasoning": {
+   "enabled": false
+  },
+  "expansion": "off",
+  "customs_wording": "off",
+  "floor": 0.4,
+  "vote_scope": "all",
+  "threshold": 85,
+  "ask_floor": 50,
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 3,
+  "n": 8,
+  "top1_runs": [
+   7,
+   6,
+   6
+  ],
+  "majority_top1": 6,
+  "top3_runs": [
+   6,
+   6,
+   6
+  ],
+  "routes_runs": [
+   {
+    "auto_accept": 1,
+    "review": 6,
+    "ask_shipper": 1
+   },
+   {
+    "auto_accept": 1,
+    "review": 6,
+    "ask_shipper": 1
+   },
+   {
+    "auto_accept": 1,
+    "review": 6,
+    "ask_shipper": 1
+   }
+  ],
+  "wrong_auto_runs": [
+   [],
+   [],
+   []
+  ],
+  "lines": [
+   {
+    "id": "coolant-1",
+    "expected": "2710.19",
+    "majority": "2710.19",
+    "right": true,
+    "seen": [
+     {
+      "top1": "2710.19",
+      "route": "review"
+     },
+     {
+      "top1": "2710.19",
+      "route": "review"
+     },
+     {
+      "top1": "2710.19",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "coolant-2",
+    "expected": "ask_shipper",
+    "majority": "ask_shipper",
+    "right": true,
+    "seen": [
+     {
+      "top1": "3820.00",
+      "route": "ask_shipper"
+     },
+     {
+      "top1": "3820.00",
+      "route": "ask_shipper"
+     },
+     {
+      "top1": "3820.00",
+      "route": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "id": "coolant-3",
+    "expected": "3403.99",
+    "majority": "3403.99",
+    "right": true,
+    "seen": [
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.99",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "coolant-4",
+    "expected": "3403.99",
+    "majority": "3403.99",
+    "right": true,
+    "seen": [
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.99",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "coolant-5",
+    "expected": "2710.19",
+    "majority": "2710.19",
+    "right": true,
+    "seen": [
+     {
+      "top1": "2710.19",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "2710.19",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "2710.19",
+      "route": "auto_accept"
+     }
+    ]
+   },
+   {
+    "id": "coolant-6",
+    "expected": "3403.99",
+    "majority": "3403.19",
+    "right": false,
+    "seen": [
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.19",
+      "route": "review"
+     },
+     {
+      "top1": "3403.19",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "coolant-7",
+    "expected": "3403.99",
+    "majority": "3403.99",
+    "right": true,
+    "seen": [
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.99",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "coolant-8",
+    "expected": "ask_shipper",
+    "majority": "review",
+    "right": false,
+    "seen": [
+     {
+      "top1": "3820.00",
+      "route": "review"
+     },
+     {
+      "top1": "3820.00",
+      "route": "review"
+     },
+     {
+      "top1": "3820.00",
+      "route": "review"
+     }
+    ]
+   }
+  ],
+  "gate_runs": [
+   {
+    "vote_agrees": 1,
+    "vote_disagrees": 3,
+    "vote_tie": 0,
+    "vote_share_low": 0,
+    "no_rulings": 0,
+    "not_gated": 4
+   },
+   {
+    "vote_agrees": 1,
+    "vote_disagrees": 3,
+    "vote_tie": 0,
+    "vote_share_low": 0,
+    "no_rulings": 0,
+    "not_gated": 4
+   },
+   {
+    "vote_agrees": 1,
+    "vote_disagrees": 3,
+    "vote_tie": 0,
+    "vote_share_low": 0,
+    "no_rulings": 0,
+    "not_gated": 4
+   }
+  ],
+  "no_rulings_review_runs": [
+   0,
+   0,
+   0
+  ],
+  "no_voter_runs": [
+   0,
+   0,
+   0
+  ],
+  "right_auto_runs": [
+   1,
+   1,
+   1
+  ],
+  "lost_runs": [
+   3,
+   2,
+   2
+  ],
+  "parse": {
+   "retry_limit": 2,
+   "runs": [
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    },
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    },
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    }
+   ]
+  },
+  "elapsed_s": 43.2,
+  "cost_usd": 0.0348,
+  "cost_eur": 0.032,
+  "cost_eur_runs": [
+   0.0108,
+   0.0107,
+   0.0106
+  ]
  }
 ]
