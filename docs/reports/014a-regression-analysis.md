@@ -113,7 +113,7 @@ The column "Old vote's routes" of eval-diff.md replays the vote of before 014a f
 
 ## 2. The ablation: the vote over every chapter on the rebuilt store
 
-`--vote-scope all` (tests/eval/hs6_eval.py, eval only) runs the vote's ruling search without its chapter filter: the vote is the unscoped 5-nearest vote of before 014a, on the same store, prompt and candidate proposal as the after-run. It cost $0.4751 by the key's usage ($0.5608 by the evaluation's tallies: 120 lines $0.5260, coolant $0.0348; the tallies price tokens from the project's table and run high), within the approved $0.55.
+`--vote-scope all` (tests/eval/hs6_eval.py, eval only) runs the vote's ruling search without its chapter filter: the vote is the unscoped 5-nearest vote of before 014a, on the same store, prompt and candidate proposal as the after-run. It cost $0.5075 by the key's usage, read once OpenRouter had settled it ($0.4751 right after the runs), and $0.5608 by the evaluation's tallies (120 lines $0.5260, coolant $0.0348; they price tokens from the project's table and run high): within the approved $0.55.
 
 **The 120-line set**:
 
