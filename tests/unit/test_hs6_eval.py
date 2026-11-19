@@ -475,9 +475,9 @@ def stub_live_run(monkeypatch, runs):
     queue = iter(runs)
 
     def run_once(rulings, kb, client, as_of, workers, expansion=False, leave_one_out=True, customs_wording=False,
-                 vote_scope="candidates"):
+                 vote_scope="candidates", proposal_scope="all"):
         calls.append({"references": [r["reference"] for r in rulings], "as_of": as_of, "leave_one_out": leave_one_out,
-                      "customs_wording": customs_wording, "vote_scope": vote_scope})
+                      "customs_wording": customs_wording, "vote_scope": vote_scope, "proposal_scope": proposal_scope})
         return next(queue), 1.0
 
     monkeypatch.setattr(ev, "run_once", run_once)
@@ -631,6 +631,115 @@ def test_feature_014a_an_outside_run_keeps_each_source_ruling_out_and_writes_its
 def test_feature_014a_lang_is_not_for_the_outside_set():
     with pytest.raises(SystemExit):
         ev.main(["--set", "outside", "--lang", "zh", "--dry-run"])
+
+
+# --------------------------------------------------------------------------- feature 014a: option (c), evaluation only
+# 014a/FR-033: the candidate proposal limited to the chapters of the nomenclature search's subheadings; the gate's vote
+# reads every chapter (rule (a)); no product code or setting
+class FakeRetriever:
+    """The nomenclature search: the given subheadings for any query, and one vector per query."""
+
+    def __init__(self, chunks):
+        self.chunks = list(chunks)
+
+    def embed_queries(self, queries):
+        return [[1.0, 0.0] for _ in queries]
+
+    def search(self, queries, chapter_filter=None, mode="hybrid", k=6, query_vectors=None):
+        n = len(self.chunks)
+        return list(self.chunks), {"bm25_hits": n, "vector_hits": n, "fused": n}
+
+
+class ChapterHits:
+    """A ruling search over fixed (ruling id, similarity) hits, nearest first, that keeps the hits of the chapters in its
+    filter, from each ruling's chapter in the store, and records the filters it was given."""
+
+    def __init__(self, hits, store):
+        self.hits, self.store, self.filters = list(hits), store, []
+
+    def search_by_vector(self, vector, k, chapter_filter=None, where=None):
+        self.filters.append(chapter_filter)
+        return [(i, s) for i, s in self.hits if chapter_filter is None or self.store.get(i)["chapter"] in chapter_filter][:k]
+
+
+def test_feature_014a_option_c_proposes_from_the_nomenclature_chapters_and_the_gate_reads_every_chapter(rules, fake_llm):
+    import tools.classify_hs6 as tool
+    from agent.llm import get_client
+    from agent.schemas import NomenclatureChunk
+    from rag.nomenclature import NomenclatureIndex
+
+    text = "metal working coolant without mineral oil"
+    labels = {"3403.99": "Other lubricating preparations", "2710.19": "Other petroleum oils",
+              "8419.89": "Other machinery for cooling"}
+    chunks = [NomenclatureChunk(id=f"hs:{c}", text=f"Subheading {c} — {label}",
+                                metadata={"chapter": c[:2], "heading": c[:4], "subheading": c}) for c, label in labels.items()]
+    store = BTIStore([{"reference": ref, "code": code, "cn_code": code.replace(".", "") + "0000", "chapter": code[:2],
+                       "member_state": ref[:2], "description": f"goods {ref}", "reasoning": "", "valid_from": "2025-01-01",
+                       "valid_to": "2027-12-31", "language": "de"}
+                      for ref, code in (("XI-M1", "8419.89"), ("XI-M2", "8419.89"), ("XI-M3", "8419.89"),
+                                        ("DE-L1", "3403.99"), ("AT-L2", "3403.99"))])
+    rulings = ChapterHits([("bti:XI-M1", 0.95), ("bti:XI-M2", 0.94), ("bti:XI-M3", 0.93), ("bti:DE-L1", 0.90),
+                           ("bti:AT-L2", 0.88)], store)
+    retriever = FakeRetriever(chunks[:2])                    # the nomenclature's subheadings: chapters 34 and 27
+    kb = SimpleNamespace(retriever=retriever, bti_vectors=rulings, bti=store, index=NomenclatureIndex(chunks), rules=rules,
+                         indexed_chapters=frozenset({"34", "84"}))
+    fake_llm.recorded.setdefault("JudgementOut", {})[text] = {"vague": False, "missing": [], "reason": "specific"}
+    fake_llm.recorded.setdefault("RankOut", {})[text] = {"candidates": [
+        {"code": "3403.99", "confidence": 95, "rationale": "r", "history_only": False}]}
+    items = ev.coolant_items({"lines": [{"id": "c-1", "text": text, "expected_hs6": "3403.99"}]})
+    original = tool.precedent_codes
+    plain, _ = ev.run_once(items, kb, get_client(), date(2026, 11, 19), workers=1, leave_one_out=False)
+    scoped, _ = ev.run_once(items, kb, get_client(), date(2026, 11, 19), workers=1, leave_one_out=False,
+                            proposal_scope="nomenclature")
+    assert plain[0]["precedent_codes"] == ["8419.89", "3403.99"] and plain[0]["proposal_chapters"] is None
+    assert scoped[0]["proposal_chapters"] == ["27", "34"]
+    assert scoped[0]["precedent_codes"] == ["3403.99"]                     # (c): only those chapters' rulings propose
+    assert ["27", "34"] in rulings.filters                                  # the proposal's own search
+    assert scoped[0]["vote"] == plain[0]["vote"] and scoped[0]["vote"]["counts"][0] == ["8419.89", 3]   # the gate: every
+    assert scoped[0]["scoped_vote"]["counts"] == [["3403.99", 2]]                                       # chapter
+    assert tool.precedent_codes is original and "search" not in vars(retriever)   # nothing left patched after the run
+
+
+def test_feature_014a_the_proposal_scope_option_reaches_the_run_and_the_entry_only(tmp_path, monkeypatch):
+    import dataclasses
+
+    from agent.config import Settings
+
+    outside_set_copy(tmp_path, monkeypatch)
+    eval_files_in(tmp_path, monkeypatch)
+    items = ev.coolant_items(json.loads(ev.OUTSIDE_SET.read_text(encoding="utf-8")))
+    rows = [coolant_row(i["reference"], i["expected_hs6"], "review", expected=i["expected_hs6"]) for i in items]
+    calls = stub_live_run(monkeypatch, [rows, rows])
+    assert ev.main(["--set", "outside", "--tag", "t7", "--expansion", "off", "--proposal-scope", "nomenclature"]) == 0
+    assert ev.main(["--set", "outside", "--tag", "t8", "--expansion", "off"]) == 0
+    assert [c["proposal_scope"] for c in calls] == ["nomenclature", "all"]
+    history = json.loads(ev.OUTSIDE_HISTORY.read_text(encoding="utf-8"))
+    assert history[0]["proposal_scope"] == "nomenclature" and "proposal_scope" not in history[1]   # the app's keeps none
+    assert not [f.name for f in dataclasses.fields(Settings) if "proposal" in f.name]              # no product setting
+    with pytest.raises(SystemExit):
+        ev.main(["--replay", str(tmp_path / "any.json"), "--proposal-scope", "nomenclature"])
+
+
+def test_feature_014a_a_typed_sets_entry_has_the_override_on_measures(tmp_path, monkeypatch):
+    coolant_set_copy(tmp_path, monkeypatch)
+    eval_files_in(tmp_path, monkeypatch)
+    items = ev.coolant_items(json.loads(ev.COOLANT_SET.read_text(encoding="utf-8")))
+
+    def overridden(i):          # the switch on picks the expected code of a coded line, and auto-accepts every line
+        r = coolant_row(i["reference"], "2710.19", "review", expected=i.get("expected_hs6") or "2710.19",
+                        expected_route=i.get("expected_route"))
+        chosen = i.get("expected_hs6") or "3820.00"
+        return {**r, "on": {"gate": "vote_override", "route": "auto_accept", "rank": 2, "chosen": chosen,
+                            "hit": "expected_hs6" in i}}
+
+    stub_live_run(monkeypatch, [[overridden(i) for i in items]] * 3)
+    assert ev.main(["--set", "coolant", "--repeat", "3", "--tag", "t9", "--expansion", "off"]) == 0
+    entry = json.loads(ev.COOLANT_HISTORY.read_text(encoding="utf-8"))[-1]
+    assert entry["top1_runs"] == [2, 2, 2] and entry["override_min"] == ev.OVERRIDE_MIN    # the switch off, as before
+    on = entry["on"]
+    assert (on["top1_runs"], on["majority_top1"]) == ([6, 6, 6], 6)        # the six coded lines; the two "ask" lines are
+    assert [r["auto_accept"] for r in on["routes_runs"]] == [8, 8, 8]       # auto-accepted, so wrong
+    assert [len(w) for w in on["wrong_auto_runs"]] == [2, 2, 2]
 
 
 # --------------------------------------------------------------------------- feature 014a: the after-runs' fields and replays

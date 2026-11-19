@@ -505,15 +505,15 @@ approves the outside set's lines.
 - [X] T061 [US1] Tests in tests/unit/test_hs6_eval.py for the outside set: the set file's format (every line coded,
   with a source), `--set outside` with its own results and history files, and a line from a ruling excluded by its
   reference (leave-one-out) (spec FR-032)
-- [ ] T062 [US1] tests/eval/hs6_eval_outside_set.json and `--set outside` in tests/eval/hs6_eval.py; the
+- [X] T062 [US1] tests/eval/hs6_eval_outside_set.json and `--set outside` in tests/eval/hs6_eval.py; the
   near-duplicate check, embedding calls only: each line's 5 nearest rulings in the rebuilt store with no chapter
   filter, flagged above 0.85 or when its source ruling is in the store, rewritten in plain shipper wording and searched
   again; the list (final and original text, expected HS-6, chapter, source, top similarity with its reference before
   and after, flag) goes to the author, and nothing paid runs before the approval (spec FR-032)
-- [ ] T063 [US1] Tests in tests/unit/test_hs6_eval.py for option (c): off by default; on, the candidate proposal reads
+- [X] T063 [US1] Tests in tests/unit/test_hs6_eval.py for option (c): off by default; on, the candidate proposal reads
   only the rulings of the chapters of the nomenclature search's top subheadings, while the gate's vote stays
   unfiltered; no product setting reads it (spec FR-033)
-- [ ] T064 [US1] Option (c) in tests/eval/hs6_eval.py, evaluation only (spec FR-033)
+- [X] T064 [US1] Option (c) in tests/eval/hs6_eval.py, evaluation only (spec FR-033)
 - [ ] T065 [US1] LIVE (at most $1.10 in all, after the author's approval of T062): rule (a) on the outside set, three
   runs; option (c) with rule (a) on the 120-line set, the coolant set and the outside set, three runs each; stop and
   ask before the cost would pass $1.10 (spec FR-033)

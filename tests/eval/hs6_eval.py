@@ -69,6 +69,10 @@ and hs6_eval_coolant.md; every new history entry names its set (`set`: cn8, cool
 author's decision of 2026-11-19) runs the lines of tests/eval/hs6_eval_outside_set.json, whose expected HS-6 lies
 outside the twelve chapters of the old store, the same way, scored and reported as the coolant set, except that each
 line's id is its source ruling's reference, which the run keeps out (leave-one-out); its files are hs6_eval_outside*.
+A coolant or outside entry also keeps the precedent override's measures (`on`, at OVERRIDE_MIN), as the 120-line set's
+does. `--proposal-scope nomenclature` is option (c) of that decision, evaluation only: the candidate proposal reads the
+rulings of the chapters of the nomenclature search's subheadings only (each row keeps them as proposal_chapters), while
+the gate's vote still reads every chapter; the app has no such setting, and the entry keeps the option.
 
 Since feature 014a each row also keeps vote_chapters and not_indexed (the line's ruling scope), vote_hits (the rulings
 of the second vote's search, within the candidates' chapters, each once at its highest similarity, nearest first, with
@@ -121,6 +125,7 @@ from rag.translate import clear_cache as clear_expansions  # noqa: E402
 from tests.eval.cn8_eval import (OverriddenClient, dump_results, expected_sent_share, majority, price_for_run,  # noqa: E402
                                  run_settings)
 from tools.check_description import check_descriptions  # noqa: E402
+import tools.classify_hs6 as classify_tool  # noqa: E402
 from tools.classify_hs6 import ClassifyContext, classify_lines  # noqa: E402
 from tools.common import LineText, run_per_line  # noqa: E402
 from tools.parsers import split_mixed  # noqa: E402
@@ -198,6 +203,30 @@ def _logged(search: Any, unscoped: bool = False) -> Any:
         elif searches is not None:
             searches.append(search(vector, HITS_LOGGED, chapter_filter, where))
         return hits
+    return wrapper
+
+
+def _nomenclature_logged(search: Any) -> Any:
+    """Option (c) (feature 014a, 2026-11-19, eval only): the nomenclature search as the app calls it, unchanged; for the
+    calling thread's line it keeps the chapters of the subheadings its first unfiltered search returned."""
+    def wrapper(queries: list[str], chapter_filter: list[str] | None = None, *args: Any, **kwargs: Any) -> Any:
+        chunks, trace = search(queries, chapter_filter, *args, **kwargs)
+        if chapter_filter is None and getattr(_rec, "proposal_chapters", ()) is None:
+            _rec.proposal_chapters = sorted({c.code[:2] for c in chunks})
+        return chunks, trace
+    return wrapper
+
+
+def _proposal_in(original: Any) -> Any:
+    """Option (c), eval only: precedent_codes over a ruling search within the chapters of the line's nomenclature
+    subheadings, by the index's own search (not the run's log), as deep as the app's proposal (2 × k per query vector),
+    in place of the hits over every chapter, which the gate's vote still reads."""
+    def wrapper(bti_vectors: Any, bti_store: Any, query_vectors: list[list[float]], *args: Any, hits: Any = None,
+                k: int = RETRIEVAL_K, **kwargs: Any) -> Any:
+        chapters = getattr(_rec, "proposal_chapters", None)
+        search = type(bti_vectors).search_by_vector
+        scoped = [search(bti_vectors, vec, k * 2, chapters) for vec in query_vectors] if chapters else []
+        return original(bti_vectors, bti_store, query_vectors, *args, hits=scoped, k=k, **kwargs)
     return wrapper
 
 
@@ -331,11 +360,12 @@ def results_name(base: str, lang: str, expansion: bool, wording: bool | None = N
 
 def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: int, expansion: bool = False,
              leave_one_out: bool = True, customs_wording: bool = False,
-             vote_scope: str = "candidates") -> tuple[list[dict], float]:
+             vote_scope: str = "candidates", proposal_scope: str = "all") -> tuple[list[dict], float]:
     """One pass of the app's HS-6 path over the set: one row per ruling, and the elapsed seconds. `leave_one_out` keeps
     each line's own ruling out; the coolant set has none (feature 014a). `customs_wording` is the switch for the run.
     `vote_scope` "all" runs the vote over every chapter instead of the candidates' (the 014a regression ablation, eval
-    only: the app is unchanged)."""
+    only: the app is unchanged). `proposal_scope` "nomenclature" is option (c) (2026-11-19, eval only): the candidate
+    proposal reads the rulings of the chapters of the nomenclature search's subheadings only."""
     clear_expansions()   # an independent run: no query expansion and no rewrite carried over
     lines = [line_text(i, r) for i, r in enumerate(rulings, start=1)]
     base = ClassifyContext(hybrid=True, as_of=as_of, expansion=expansion,   # context_for_shipment for an unknown
@@ -352,16 +382,24 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
 
     def one(item: tuple[LineText, str]) -> tuple[Any, list, list, Any]:
         line, reference = item
-        _rec.searches, _rec.vote_searches, _rec.rank = [], [], None
+        _rec.searches, _rec.vote_searches, _rec.rank, _rec.proposal_chapters = [], [], None, None
         ctx = replace(base, exclude_refs=frozenset({reference}) if leave_one_out else None)   # the leakage guard: never
                                                                                               # the line's own ruling
-        return classify_lines([line], ctx, kb, recorder, workers=1)[0], _rec.searches, _rec.vote_searches, _rec.rank
+        return (classify_lines([line], ctx, kb, recorder, workers=1)[0], _rec.searches, _rec.vote_searches, _rec.rank,
+                _rec.proposal_chapters)
 
     vectors = getattr(kb, "bti_vectors", None)
     own = vectors is not None and "search_by_vector" in vars(vectors)
     if vectors is not None:
         search = vectors.search_by_vector
         vectors.search_by_vector = _logged(search, unscoped=vote_scope == "all")   # the instance only, for this run
+    scoped_proposal = proposal_scope == "nomenclature"                              # option (c), for this run only
+    if scoped_proposal:
+        retriever, proposal = kb.retriever, classify_tool.precedent_codes
+        own_search = "search" in vars(retriever)
+        nomenclature = retriever.search
+        retriever.search = _nomenclature_logged(nomenclature)
+        classify_tool.precedent_codes = _proposal_in(proposal)
     try:
         done = run_per_line(todo, one, lambda item, exc: None, workers=workers)
     finally:
@@ -370,12 +408,18 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
                 vectors.search_by_vector = search
             else:
                 del vectors.search_by_vector
+        if scoped_proposal:
+            classify_tool.precedent_codes = proposal
+            if own_search:
+                retriever.search = nomenclature
+            else:
+                del retriever.search
     elapsed = time.perf_counter() - t0
     classified = {line.line_no: res for (line, _), res in zip(todo, done)}
     rows = []
     for line, r, chk in zip(lines, rulings, checks):
         res = classified.get(line.line_no)
-        cls, searches, scoped, rank = res if res is not None else (None, [], [], None)
+        cls, searches, scoped, rank, proposal_chapters = res if res is not None else (None, [], [], None, None)
         if chk.status == LineStatus.failed:
             status, error = LineStatus.failed, chk.error_reason
         elif line.line_no not in classified:       # a pure stop word: checked, nothing to classify
@@ -421,6 +465,7 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
             "not_indexed": scope.not_indexed if scope is not None else [],
             "vote_hits": vote_hits(scoped, r["reference"] if leave_one_out else None, kb, as_of),
             "customs_wording": cls.customs_wording.text if cls is not None and cls.customs_wording else None,
+            "proposal_chapters": proposal_chapters,   # option (c): the chapters the proposal read; None as the app runs
             "citation_notes": [{"code": c.code, "notes": [n.model_dump() for n in c.citation_notes]}
                                for c in candidates if c.citation_notes]})
         rows[-1].update(override_fields(rows[-1]))   # feature 008: the switch on, from the same answers
@@ -546,6 +591,24 @@ def coolant_measures(runs: list[list[dict]]) -> dict:
                                   "top1": r["top1"], "confidence": r["confidence"]}
                                  for r in run if r["route"] == "auto_accept" and not r["right"]] for run in runs],
             "lines": lines}
+
+
+def typed_on_measures(runs: list[list[dict]]) -> dict:
+    """Feature 014a: a coolant or outside set's runs with the precedent override on: each row's `on` route and HS-6 in
+    place of its own, scored again (a coded line on its HS-6, an "ask the shipper" line on its route)."""
+    on = [[{**r, "right": r["route"] == r["expected_route"] if r["expected_route"] else r["hit"]} for r in on_rows(run)]
+          for run in runs]
+    m = coolant_measures(on)
+    return {key: m[key] for key in ("top1_runs", "majority_top1", "routes_runs", "wrong_auto_runs")}
+
+
+def typed_measures(runs: list[list[dict]], override_min: int = OVERRIDE_MIN) -> dict:
+    """Feature 014a: a coolant or outside entry's measures: the switch off, the vote gate's, and the switch on at
+    `override_min` when the rows keep it (every row since feature 008 does)."""
+    m = {**coolant_measures(runs), **gate_measures(runs), "override_min": override_min}
+    if all("on" in r for run in runs for r in run):
+        m["on"] = typed_on_measures(runs)
+    return m
 
 
 def own_ruling(runs: list[list[dict]]) -> dict:
@@ -934,7 +997,7 @@ def replay_floor_main(ap: argparse.ArgumentParser, args: argparse.Namespace, ove
     runs = [[floor_fields(r, args.floor, override_min) for r in run] for run in stored]
     if set_name in TYPED_SETS:
         data = json.loads(set_file(set_name).read_text(encoding="utf-8"))
-        m, x = {**coolant_measures(runs), **gate_measures(runs), "override_min": override_min}, None
+        m, x = typed_measures(runs, override_min), None
     else:
         data = json.loads(SET.read_text(encoding="utf-8"))
         cn8_data = json.loads(Path(args.cn8).read_text(encoding="utf-8"))
@@ -1013,9 +1076,15 @@ def main(argv: list[str] | None = None) -> int:
                     help="the 014a regression ablation, eval only: the second HS-6 vote's ruling search within the "
                          "candidates' chapters (the app's, default) or over every chapter (then it equals the gate's vote "
                          "and never vetoes)")
+    ap.add_argument("--proposal-scope", choices=("all", "nomenclature"), default="all",
+                    help="option (c) of the author's decision of 2026-11-19, eval only: the candidate proposal's ruling "
+                         "search over every chapter (the app's, default) or within the chapters of the nomenclature "
+                         "search's subheadings; the gate's vote reads every chapter either way")
     args = ap.parse_args(argv)
     if args.replay and args.vote_scope != "candidates":
         ap.error("--vote-scope is for a run: a replay searches no rulings")
+    if args.replay and args.proposal_scope != "all":
+        ap.error("--proposal-scope is for a run: a replay searches no rulings")
     coolant = args.set_name in TYPED_SETS   # a set of typed lines: the coolant set's scoring, files and report
     if args.floor is not None and not args.replay:
         ap.error("--floor is for a --replay: a run uses HS6_VOTE_MIN_SIMILARITY")
@@ -1090,7 +1159,7 @@ def main(argv: list[str] | None = None) -> int:
         invalid.clear()
         rows, seconds = run_once(rulings, kb, client, as_of, settings.workers, expansion,
                                  leave_one_out=args.set_name != "coolant",
-                                 customs_wording=wording, vote_scope=args.vote_scope)
+                                 customs_wording=wording, vote_scope=args.vote_scope, proposal_scope=args.proposal_scope)
         runs.append(rows)
         parsed.append(parse_counts(invalid, rows))
         elapsed += seconds
@@ -1099,7 +1168,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  run {k + 1}: {scored}/{len(rows)}, in top 3 {sum(r['in_top3'] for r in rows)}, "
               f"{seconds:.0f} s, €{costs[-1]:.4f}; invalid answers {parsed[-1]}")
     if coolant:   # feature 014a: no cross-layer table, as no line has a CN-8 result
-        m, x = {**coolant_measures(runs), **gate_measures(runs)}, None
+        m, x = typed_measures(runs), None
     else:
         m, x = entry_measures(runs, cn8, cn8_data, args.cn8)
     entry = {
@@ -1108,6 +1177,7 @@ def main(argv: list[str] | None = None) -> int:
         "reasoning": reasoning, **({} if coolant else {"lang": args.lang}), "expansion": "on" if expansion else "off",
         "customs_wording": "on" if wording else "off", "floor": HS6_VOTE_MIN_SIMILARITY,
         **({} if args.vote_scope == "candidates" else {"vote_scope": args.vote_scope}),
+        **({} if args.proposal_scope == "all" else {"proposal_scope": args.proposal_scope}),
         "threshold": DEFAULT_THRESHOLD, "ask_floor": ASK_FLOOR, "temperature": temperature, "seed": seed,
         "repeat": args.repeat, "n": len(rulings), **m,
         "parse": {"retry_limit": client.max_retries, "runs": parsed},
