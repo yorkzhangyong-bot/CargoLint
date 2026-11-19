@@ -502,7 +502,7 @@ approves the outside set's lines.
   requirement, and specs/014a-retrieval-evidence/traceability.md for those no test can check (an evaluation result
   names its evaluation file and report section); `scripts/check_traceability.py` passes with a pull-request body
   holding `Spec-PR: #7` and a `spec-change:` line, with no undefined or untraced id
-- [ ] T061 [US1] Tests in tests/unit/test_hs6_eval.py for the outside set: the set file's format (every line coded,
+- [X] T061 [US1] Tests in tests/unit/test_hs6_eval.py for the outside set: the set file's format (every line coded,
   with a source), `--set outside` with its own results and history files, and a line from a ruling excluded by its
   reference (leave-one-out) (spec FR-032)
 - [ ] T062 [US1] tests/eval/hs6_eval_outside_set.json and `--set outside` in tests/eval/hs6_eval.py; the

@@ -485,7 +485,8 @@ def stub_live_run(monkeypatch, runs):
 
 
 def eval_files_in(tmp_path, monkeypatch):
-    for name in ("OUT", "HISTORY", "REPORT", "COOLANT_OUT", "COOLANT_HISTORY", "COOLANT_REPORT"):
+    for name in ("OUT", "HISTORY", "REPORT", "COOLANT_OUT", "COOLANT_HISTORY", "COOLANT_REPORT", "OUTSIDE_OUT",
+                 "OUTSIDE_HISTORY", "OUTSIDE_REPORT"):
         monkeypatch.setattr(ev, name, tmp_path / getattr(ev, name).name)
 
 
@@ -573,6 +574,63 @@ def test_feature_014a_run_once_scores_coolant_lines_with_no_leakage_guard(small_
 def test_feature_014a_lang_is_for_the_120_line_set():
     with pytest.raises(SystemExit):
         ev.main(["--set", "coolant", "--lang", "zh", "--dry-run"])
+
+
+# --------------------------------------------------------------------------- feature 014a: the outside set (2026-11-19)
+# 014a/FR-032
+TWELVE = {"39", "42", "61", "62", "63", "64", "73", "84", "85", "94", "95", "96"}   # the old store's chapters
+
+
+def test_feature_014a_the_outside_set_is_coded_sourced_and_outside_the_twelve_chapters():
+    raw = ev.OUTSIDE_SET.read_bytes()
+    assert b"\r\n" not in raw and not raw.startswith(b"\xef\xbb\xbf")              # LF, UTF-8 without a byte-order mark
+    data = json.loads(raw.decode("utf-8"))
+    lines = data["lines"]
+    assert data["built_on"] == "2026-11-19" and 10 <= len(lines) <= 15
+    assert len({line["id"] for line in lines}) == len(lines)
+    for line in lines:
+        assert len(line["expected_hs6"]) == 7 and line["expected_hs6"][4] == "." and "expected_route" not in line
+        assert line["chapter"] == line["expected_hs6"][:2] and line["chapter"] not in TWELVE
+        assert line["text"].strip() and line["source"]
+        if "ebti" in line["source"]:                       # a line from a ruling: its id is the ruling's reference, which
+            assert line["source"]["ebti"] == line["id"]    # the run keeps out (leave-one-out)
+            assert line["source"]["valid_from"] <= data["built_on"] <= line["source"]["valid_to"]
+    assert len({line["chapter"] for line in lines}) >= 10                             # spread over chapters
+
+
+def outside_set_copy(tmp_path, monkeypatch):
+    """A temporary copy of the outside set that the eval reads instead of the repository's file."""
+    copy = tmp_path / "hs6_eval_outside_set.json"
+    copy.write_bytes(ev.OUTSIDE_SET.read_bytes())
+    monkeypatch.setattr(ev, "OUTSIDE_SET", copy)
+    return copy
+
+
+def test_feature_014a_an_outside_run_keeps_each_source_ruling_out_and_writes_its_own_files(tmp_path, monkeypatch):
+    copy = outside_set_copy(tmp_path, monkeypatch)
+    before = copy.read_bytes()
+    eval_files_in(tmp_path, monkeypatch)
+    items = ev.coolant_items(json.loads(before.decode("utf-8")))
+    runs = [[coolant_row(i["reference"], i["expected_hs6"], "review", expected=i["expected_hs6"]) for i in items]
+            for _ in range(3)]
+    calls = stub_live_run(monkeypatch, runs)
+    assert ev.main(["--set", "outside", "--repeat", "3", "--tag", "t3", "--expansion", "off"]) == 0
+    assert [c["leave_one_out"] for c in calls] == [True] * 3                  # each line's source ruling kept out
+    assert calls[0]["references"] == [i["reference"] for i in items] and calls[0]["as_of"] == date(2026, 11, 19)
+    assert ev.OUTSIDE_OUT.exists() and (tmp_path / "hs6_eval_outside_t3_en_expansion-off_wording-off.json").exists()
+    entry = json.loads(ev.OUTSIDE_HISTORY.read_text(encoding="utf-8"))[-1]
+    assert (entry["set"], entry["tag"], entry["n"], entry["majority_top1"]) == ("outside", "t3", len(items), len(items))
+    report = ev.OUTSIDE_REPORT.read_text(encoding="utf-8")
+    assert report.startswith("# HS-6 evaluation report: the outside set (feature 014a)")
+    assert "each line's source ruling is kept out (leave-one-out)" in report and "--set outside" in report
+    assert not any(p.exists() for p in (ev.OUT, ev.HISTORY, ev.REPORT, ev.COOLANT_OUT, ev.COOLANT_HISTORY,
+                                        ev.COOLANT_REPORT))                    # the other sets' files
+    assert copy.read_bytes() == before                                        # the set itself is never written
+
+
+def test_feature_014a_lang_is_not_for_the_outside_set():
+    with pytest.raises(SystemExit):
+        ev.main(["--set", "outside", "--lang", "zh", "--dry-run"])
 
 
 # --------------------------------------------------------------------------- feature 014a: the after-runs' fields and replays

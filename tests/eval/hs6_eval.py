@@ -65,16 +65,20 @@ typed, with no leakage guard (no line is a ruling), no cross-layer table (no lin
 on the set's build date. A line with an expected HS-6 is right when its top-1 is that code; a line expecting "ask the
 shipper" when its route is ask_shipper, whatever codes it shows. Its results, history and report are its own:
 tests/eval/hs6_eval_coolant.json, hs6_eval_coolant_<tag>_<lang>_expansion-<on|off>.json, hs6_eval_coolant_history.json
-and hs6_eval_coolant.md; every new history entry names its set (`set`: cn8 or coolant).
+and hs6_eval_coolant.md; every new history entry names its set (`set`: cn8, coolant or outside). `--set outside` (the
+author's decision of 2026-11-19) runs the lines of tests/eval/hs6_eval_outside_set.json, whose expected HS-6 lies
+outside the twelve chapters of the old store, the same way, scored and reported as the coolant set, except that each
+line's id is its source ruling's reference, which the run keeps out (leave-one-out); its files are hs6_eval_outside*.
 
-Since the vote searches the candidates' chapters only (feature 014a), each row also keeps vote_chapters and not_indexed
-(the line's ruling scope), vote_hits (the vote search's rulings, each once at its highest similarity, nearest first, with
+Since feature 014a each row also keeps vote_chapters and not_indexed (the line's ruling scope), vote_hits (the rulings
+of the second vote's search, within the candidates' chapters, each once at its highest similarity, nearest first, with
 whether it was eligible whatever the floor), customs_wording (the rewrite searched with) and citation_notes (per
-candidate code). nearest_hits stay those of the precedent search over every chapter. `--customs-wording on|off` sets
-the switch for the run, over CARGOLINT_CUSTOMS_WORDING; the entry keeps it with the run's floor, and the run's own file
-name ends in _wording-<on|off>. `--replay FILE --floor X` rebuilds every row's vote from its vote_hits at the floor X
-with the routing functions and no model call (`--override-min` combines with it): exact, and evidence for a new floor,
-only at or above the run's own floor. The replay belongs to the set its file names, keeps its own results file and adds
+candidate code). nearest_hits stay those of the precedent search over every chapter, which the gate's vote reads (rule
+(a)). `--customs-wording on|off` sets the switch for the run, over CARGOLINT_CUSTOMS_WORDING; the entry keeps it with
+the run's floor, and the run's own file name ends in _wording-<on|off>. `--replay FILE --floor X` rebuilds every row's
+votes at the floor X, the gate's from its nearest_hits and the second from its vote_hits, with the routing functions
+and no model call (`--override-min` combines with it): exact, and evidence for a new floor, only at or above the run's
+own floor. The replay belongs to the set its file names, keeps its own results file and adds
 an entry marked `replay` to that set's history and report.
 
 --model names another OpenRouter chat model for this run only (the default is the configured CARGOLINT_CHAT_MODEL,
@@ -131,6 +135,11 @@ COOLANT_SET = ROOT / "tests" / "eval" / "hs6_eval_coolant_set.json"   # feature 
 COOLANT_OUT = ROOT / "tests" / "eval" / "hs6_eval_coolant.json"
 COOLANT_HISTORY = ROOT / "tests" / "eval" / "hs6_eval_coolant_history.json"
 COOLANT_REPORT = ROOT / "tests" / "eval" / "hs6_eval_coolant.md"
+OUTSIDE_SET = ROOT / "tests" / "eval" / "hs6_eval_outside_set.json"   # feature 014a (2026-11-19): outside the twelve
+OUTSIDE_OUT = ROOT / "tests" / "eval" / "hs6_eval_outside.json"
+OUTSIDE_HISTORY = ROOT / "tests" / "eval" / "hs6_eval_outside_history.json"
+OUTSIDE_REPORT = ROOT / "tests" / "eval" / "hs6_eval_outside.md"
+TYPED_SETS = ("coolant", "outside")   # sets of typed lines, scored and reported as the coolant set
 HITS_LOGGED = 40
 SEARCHED = 2 * RETRIEVAL_K    # the rulings precedent_codes reads per query vector
 QUADRANTS = ("hs6_right_cn8_right", "hs6_right_cn8_wrong", "hs6_wrong_cn8_right", "hs6_wrong_cn8_wrong")
@@ -588,8 +597,14 @@ def override_measures(runs: list[list[dict]], cn8: dict[str, dict], override_min
 
 
 def set_files(name: str) -> tuple[Path, Path, Path]:
-    """Feature 014a: a set's results, history and report files; the coolant set keeps its own."""
-    return (COOLANT_OUT, COOLANT_HISTORY, COOLANT_REPORT) if name == "coolant" else (OUT, HISTORY, REPORT)
+    """Feature 014a: a set's results, history and report files; the coolant and the outside set keep their own."""
+    return {"coolant": (COOLANT_OUT, COOLANT_HISTORY, COOLANT_REPORT),
+            "outside": (OUTSIDE_OUT, OUTSIDE_HISTORY, OUTSIDE_REPORT)}.get(name, (OUT, HISTORY, REPORT))
+
+
+def set_file(name: str) -> Path:
+    """Feature 014a: the file of a set of typed lines."""
+    return OUTSIDE_SET if name == "outside" else COOLANT_SET
 
 
 def write_results(report: dict, out: Path, name: str) -> Path:
@@ -807,19 +822,21 @@ def render_report(history: list[dict], data: dict) -> str:
     return "\n".join(out)
 
 
-def render_coolant_report(history: list[dict], data: dict) -> str:
+def render_coolant_report(history: list[dict], data: dict, set_name: str = "coolant") -> str:
     """Feature 014a: tests/eval/hs6_eval_coolant.md, one row per entry and, per entry, each line's outcome per run and on
-    majority."""
+    majority; the outside set's hs6_eval_outside.md the same way (`set_name`)."""
     texts = {line["id"]: line["text"] for line in data["lines"]}
+    guard = ("each line's source ruling is kept out (leave-one-out), its id being that ruling's reference"
+             if set_name == "outside" else "no leakage guard, as no line is a ruling")
     out = [
-        "# HS-6 evaluation report: the coolant set (feature 014a)",
+        f"# HS-6 evaluation report: the {set_name} set (feature 014a)",
         "",
-        f"- **Set**: `tests/eval/hs6_eval_coolant_set.json`, {len(data['lines'])} lines (built {data['built_on']}): "
+        f"- **Set**: `tests/eval/{set_file(set_name).name}`, {len(data['lines'])} lines (built {data['built_on']}): "
         f"{data['source']}.",
         "- **Method**: each line, as typed, goes through the 120-line set's path: the description check, the HS-6 step "
         "(hybrid search and BTI precedents, no shipper history) and the route the store computes (threshold "
-        f"{DEFAULT_THRESHOLD}, ask floor {ASK_FLOOR}); no leakage guard, as no line is a ruling; ruling validity on the "
-        "set's build date. `python tests/eval/hs6_eval.py --set coolant --repeat 3`.",
+        f"{DEFAULT_THRESHOLD}, ask floor {ASK_FLOOR}); {guard}; ruling validity on the set's build date. "
+        f"`python tests/eval/hs6_eval.py --set {set_name} --repeat 3`.",
         "- **Right**: a line with an expected HS-6 when its top-1 is that code; a line expecting \"ask the shipper\" when "
         "its route is ask_shipper, whatever codes it shows. **Majority**: a line's most frequent top-1, or route for a "
         "line expecting \"ask the shipper\" (a tie goes to the earliest run). **In top 3**: the lines with an expected "
@@ -856,7 +873,8 @@ def render_coolant_report(history: list[dict], data: dict) -> str:
             out.append(f"| {line['id']} | {_md(texts.get(line['id'], ''), 60)} | {line['expected']} | {seen} | "
                        f"{line['majority'] or 'no code'} | {'yes' if line['right'] else 'no'} |")
     out += ["", f"Model: {history[-1]['model'] if history else '-'}. Line-by-line results of the latest run: "
-            "`tests/eval/hs6_eval_coolant.json`; each run also keeps its own, `tests/eval/hs6_eval_coolant_<tag>_….json`.", ""]
+            f"`tests/eval/hs6_eval_{set_name}.json`; each run also keeps its own, "
+            f"`tests/eval/hs6_eval_{set_name}_<tag>_….json`.", ""]
     return "\n".join(out)
 
 
@@ -914,8 +932,8 @@ def replay_floor_main(ap: argparse.ArgumentParser, args: argparse.Namespace, ove
     if not all("vote_hits" in r for run in stored for r in run):
         ap.error(f"{args.replay} keeps no vote_hits: only a run made since feature 014a replays at another floor")
     runs = [[floor_fields(r, args.floor, override_min) for r in run] for run in stored]
-    if set_name == "coolant":
-        data = json.loads(COOLANT_SET.read_text(encoding="utf-8"))
+    if set_name in TYPED_SETS:
+        data = json.loads(set_file(set_name).read_text(encoding="utf-8"))
         m, x = {**coolant_measures(runs), **gate_measures(runs), "override_min": override_min}, None
     else:
         data = json.loads(SET.read_text(encoding="utf-8"))
@@ -945,7 +963,7 @@ def replay_floor_main(ap: argparse.ArgumentParser, args: argparse.Namespace, ove
     if len(runs) > 1:
         report["runs"] = runs
     history = sorted([h for h in history if h["iteration"] != iteration] + [entry], key=lambda h: h["iteration"])
-    render = render_coolant_report if set_name == "coolant" else render_report
+    render = (lambda h, d: render_coolant_report(h, d, set_name)) if set_name in TYPED_SETS else render_report
     if args.dry_run:
         print(f"\n== tests/eval/{report_file.name}:\n" + render(history, data))
         print("dry run: nothing written")
@@ -983,9 +1001,10 @@ def main(argv: list[str] | None = None) -> int:
                     help="feature 009: en, the 120 lines as given (default); zh, the 30 lines of hs6_eval_zh.json in Chinese")
     ap.add_argument("--expansion", choices=("on", "off"),
                     help="feature 009: query expansion for this run (default: CARGOLINT_QUERY_EXPANSION)")
-    ap.add_argument("--set", choices=("cn8", "coolant"), default="cn8", dest="set_name",
+    ap.add_argument("--set", choices=("cn8", *TYPED_SETS), default="cn8", dest="set_name",
                     help="feature 014a: cn8, the 120 rulings of cn8_eval_set.json (default); coolant, the eight lines of "
-                         "hs6_eval_coolant_set.json")
+                         "hs6_eval_coolant_set.json; outside, the lines of hs6_eval_outside_set.json, each line's source "
+                         "ruling kept out")
     ap.add_argument("--customs-wording", choices=("on", "off"),
                     help="feature 014a: the customs-wording switch for this run (default: CARGOLINT_CUSTOMS_WORDING)")
     ap.add_argument("--floor", type=float, help="feature 014a: the similarity floor a --replay rebuilds the votes at, from "
@@ -997,7 +1016,7 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     if args.replay and args.vote_scope != "candidates":
         ap.error("--vote-scope is for a run: a replay searches no rulings")
-    coolant = args.set_name == "coolant"
+    coolant = args.set_name in TYPED_SETS   # a set of typed lines: the coolant set's scoring, files and report
     if args.floor is not None and not args.replay:
         ap.error("--floor is for a --replay: a run uses HS6_VOTE_MIN_SIMILARITY")
     if args.floor is not None and not 0.0 <= args.floor <= 1.0:
@@ -1014,14 +1033,14 @@ def main(argv: list[str] | None = None) -> int:
         ap.error(f"--override-min must be between 1 and {HS6_VOTE_K}")
     if args.replay and args.floor is not None:         # feature 014a: the set comes from the file
         return replay_floor_main(ap, args, args.override_min or OVERRIDE_MIN)
-    if args.replay and json.loads(Path(args.replay).read_text(encoding="utf-8"))["summary"].get("set") == "coolant":
-        ap.error("a coolant run replays at another floor only: give --floor")
+    if args.replay and json.loads(Path(args.replay).read_text(encoding="utf-8"))["summary"].get("set") in TYPED_SETS:
+        ap.error("a coolant or outside run replays at another floor only: give --floor")
     if coolant and args.lang != "en":
-        ap.error("--lang is for the 120-line set: the coolant set's lines are run as typed")
+        ap.error(f"--lang is for the 120-line set: the {args.set_name} set's lines are run as typed")
     if coolant and args.replay:
         ap.error("--replay replays the 120-line set's results")
     if coolant:
-        data = json.loads(COOLANT_SET.read_text(encoding="utf-8"))
+        data = json.loads(set_file(args.set_name).read_text(encoding="utf-8"))
         rulings = coolant_items(data)
         cn8 = cn8_data = None
     else:
@@ -1058,7 +1077,7 @@ def main(argv: list[str] | None = None) -> int:
                              f"seed {seed if seed is not None else 'none'}")
     expansion = settings.query_expansion if args.expansion is None else args.expansion == "on"
     wording = settings.customs_wording if args.customs_wording is None else args.customs_wording == "on"   # feature 014a
-    print(f"HS-6 iteration {iteration}: {len(rulings)} lines ({'the coolant set' if coolant else args.lang}, query "
+    print(f"HS-6 iteration {iteration}: {len(rulings)} lines ({f'the {args.set_name} set' if coolant else args.lang}, query "
           f"expansion {'on' if expansion else 'off'}, customs wording {'on' if wording else 'off'}) × {args.repeat} run(s); "
           f"BTI vectors "
           f"{'loaded' if getattr(kb, 'bti_vectors', None) is not None else 'not loaded'}; model {settings.chat_model}, "
@@ -1069,7 +1088,8 @@ def main(argv: list[str] | None = None) -> int:
     for k in range(args.repeat):
         before = usage.cost_eur
         invalid.clear()
-        rows, seconds = run_once(rulings, kb, client, as_of, settings.workers, expansion, leave_one_out=not coolant,
+        rows, seconds = run_once(rulings, kb, client, as_of, settings.workers, expansion,
+                                 leave_one_out=args.set_name != "coolant",
                                  customs_wording=wording, vote_scope=args.vote_scope)
         runs.append(rows)
         parsed.append(parse_counts(invalid, rows))
@@ -1105,7 +1125,7 @@ def main(argv: list[str] | None = None) -> int:
         report["runs"] = runs
     history = [h for h in history if h["iteration"] != iteration] + [entry]
     history.sort(key=lambda h: h["iteration"])
-    render = render_coolant_report if coolant else render_report
+    render = (lambda h, d: render_coolant_report(h, d, args.set_name)) if coolant else render_report
     n = len(rulings)
     if args.dry_run:
         first = runs[0][0]
@@ -1121,7 +1141,7 @@ def main(argv: list[str] | None = None) -> int:
         history_file.write_text(json.dumps(history, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
         report_file.write_text(render(history, data), encoding="utf-8", newline="\n")
     if coolant:
-        print(f"HS-6, coolant set: right per run {m['top1_runs']} of {n}; majority right {m['majority_top1']}/{n}; in top 3 "
+        print(f"HS-6, {args.set_name} set: right per run {m['top1_runs']} of {n}; majority right {m['majority_top1']}/{n}; in top 3 "
               f"per run {m['top3_runs']}; auto-accepted per run {[routes['auto_accept'] for routes in m['routes_runs']]}; "
               f"wrong but auto-accepted per run {[len(w) for w in m['wrong_auto_runs']]}; no ruling voted per run "
               f"{[g['no_rulings'] for g in m['gate_runs']]}")

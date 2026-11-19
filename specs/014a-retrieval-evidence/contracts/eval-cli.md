@@ -8,7 +8,7 @@ history stay comparable with earlier iterations.
 
 | Option | Values | Meaning |
 |---|---|---|
-| `--set` | `cn8` (default), `coolant` | `cn8`: the 120 rulings of `cn8_eval_set.json` (or the 30 Chinese lines with `--lang zh`), as today. `coolant`: the eight lines of `hs6_eval_coolant_set.json` (data-model §8); `--lang` does not apply |
+| `--set` | `cn8` (default), `coolant`, `outside` | `cn8`: the 120 rulings of `cn8_eval_set.json` (or the 30 Chinese lines with `--lang zh`), as today. `coolant`: the eight lines of `hs6_eval_coolant_set.json` (data-model §8). `outside` (2026-11-19, spec FR-032): the lines of `hs6_eval_outside_set.json` (data-model §8a), run and scored as the coolant set, but each line's source ruling kept out (its id is that ruling's reference); files `hs6_eval_outside.json`, `hs6_eval_outside_<tag>_…json`, `hs6_eval_outside_history.json`, `hs6_eval_outside.md`. `--lang` applies to `cn8` only |
 | `--customs-wording` | `on`, `off` | the customs-wording switch for this run, over `CARGOLINT_CUSTOMS_WORDING`; kept in the history entry and the per-run file name |
 | `--replay FILE --floor X` | a results file, a similarity | recompute every row's vote from its `vote_hits` at floor `X` with the routing functions, no model call; exact for `X` at or above the run's floor; refused for a file without `vote_hits`; the replay's entry goes to the history and report of the set its file names (its summary's `set`, `cn8` when absent), and a coolant replay reads no CN-8 results |
 
@@ -35,8 +35,10 @@ history stay comparable with earlier iterations.
 ## Rows (both sets)
 
 New fields, as data-model §9 lists: `vote_chapters`, `not_indexed`, `vote_hits`, `customs_wording`,
-`citation_notes`, and for the coolant set `expected_route` and `right`. Existing fields keep their meaning; on runs
-made after this feature, `vote` and `gate` are the chapter-scoped vote's.
+`citation_notes`, and for the coolant and outside sets `expected_route` and `right`. Existing fields keep their
+meaning; on the runs made between this feature's implementation and rule (a) (the after-runs), `vote` and `gate` are
+the chapter-scoped vote's; since rule (a) (2026-11-19), `vote` is the gate's vote over every chapter, `scoped_vote`
+the second vote, and `gate` rule (a)'s.
 
 ## History entries
 
