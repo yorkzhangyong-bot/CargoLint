@@ -433,7 +433,7 @@ def explain_a(store: Any, line: Any, kind: str) -> tuple[str, str]:
             return "", "No valid candidate was found. Type the HS-6 code, or ask the shipper what the goods are."
         top = v.candidates[0]
         first = cut(top.rationale, 200)
-        passed, gate = hs6_gate(top.confidence, threshold, v.hs6_vote, store.shipment.hs6_override_min)
+        passed, gate = hs6_gate(top.confidence, threshold, v.hs6_vote, store.shipment.hs6_override_min, v.hs6_scoped_vote)
         if passed:   # the vote or the threshold accepts it, review only because the line was updated (FR-022)
             why = "this line was flagged before its update" if line.ever_flagged else "this line was updated from the shipper's reply"
             if gate == Hs6Gate.vote_override:   # feature 008: the rulings chose the model's candidate 2 or 3
@@ -452,6 +452,9 @@ def explain_a(store: Any, line: Any, kind: str) -> tuple[str, str]:
             if override_min is not None and not v.hs6_vote.candidate and n >= override_min:
                 text += f" Hint: {n} of {m} nearest rulings agree on {spaced(v.hs6_vote.majority)}, which is not among the candidates."
             return first, text
+        if gate == Hs6Gate.scoped_veto:   # feature 014a (rule (a)): the vote of the candidates' chapters sent it to review
+            return first, (f"Rulings of the candidates' chapters disagree: model {spaced(top.code)}, their nearest rulings "
+                           f"{_hs6_rulings(v.hs6_scoped_vote)}. {after}")
         if gate == Hs6Gate.vote_tie:
             return first, f"Rulings split: model {spaced(top.code)}, nearest rulings {_hs6_rulings(v.hs6_vote)}. {after}"
         if gate == Hs6Gate.vote_share_low:

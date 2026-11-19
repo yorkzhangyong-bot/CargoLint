@@ -651,9 +651,12 @@ def hit(reference, hs6, similarity, eligible=True):
 
 
 def replayable(reference, hits, confidence=90, expected="3403.99"):
-    """A coolant row as an after-run writes it, its route the run's (floor 0.40), with its vote_hits."""
+    """A coolant row as an after-run writes it, its route the run's (floor 0.40), with its vote_hits and the same rulings
+    as its nearest_hits (rule (a): the gate's vote reads those)."""
+    nearest = [{"reference": h["reference"], "hs6": h["hs6"], "distance": round(1 - h["similarity"], 6), "country": "",
+                "eligible": h["eligible"]} for h in hits]
     r = {**coolant_row(reference, "3403.99", "review", expected=expected, top3=["3403.99", "2710.19"], confidence=confidence),
-         "flag": "ok", "vote_hits": hits, "vote": None}
+         "flag": "ok", "vote_hits": hits, "nearest_hits": nearest, "vote": None}
     return r
 
 
@@ -691,6 +694,7 @@ def test_feature_014a_a_floor_replay_rebuilds_each_vote_with_no_model_call(tmp_p
     replayed = json.loads((tmp_path / "hs6_eval_coolant_floor045.json").read_text(encoding="utf-8"))["rows"]
     assert [(r["route"], r["gate"]) for r in replayed] == [("auto_accept", "vote_agrees"), ("review", "no_rulings")]
     assert replayed[0]["vote"]["counts"] == [["3403.99", 1]] and replayed[1]["vote"] is None   # 0.44 and 0.42 dropped
+    assert replayed[0]["scoped_vote"]["counts"] == [["3403.99", 1]] and replayed[1]["scoped_vote"] is None
     entry = json.loads(ev.COOLANT_HISTORY.read_text(encoding="utf-8"))[-1]                     # the coolant set's history
     assert (entry["set"], entry["floor"], entry["replay"]) == ("coolant", 0.45, {"of": "source.json", "floor": 0.45,
                                                                                  "exact": True})
@@ -756,7 +760,8 @@ def test_the_unscoped_vote_drops_only_the_vote_searchs_chapter_filter():
         del ev._rec.searches, ev._rec.vote_searches
 
 
-def test_a_run_with_the_unscoped_vote_lets_rulings_of_any_chapter_vote(small_index, fake_embeddings, rules, fake_llm):
+def test_the_gate_votes_over_every_chapter_and_the_vote_scope_option_widens_the_second_vote(small_index, fake_embeddings,
+                                                                                            rules, fake_llm):
     from agent.llm import get_client
     from rag.loader import KnowledgeBase
     from rag.retriever import BM25Index, HybridRetriever, InMemoryVectorSearch
@@ -783,8 +788,9 @@ def test_a_run_with_the_unscoped_vote_lets_rulings_of_any_chapter_vote(small_ind
     scoped = ev.run_once([item], kb, get_client(), date(2026, 11, 18), workers=1, leave_one_out=False)[0][0]
     unscoped = ev.run_once([item], kb, get_client(), date(2026, 11, 18), workers=1, leave_one_out=False,
                            vote_scope="all")[0][0]
-    assert scoped["vote"]["counts"] == [["3926.90", 1]] and scoped["route"] == "auto_accept"
-    assert unscoped["vote"]["counts"] == [["8452.90", 3], ["3926.90", 1]] and unscoped["route"] == "review"
+    assert scoped["vote"]["counts"] == [["8452.90", 3], ["3926.90", 1]] and scoped["route"] == "review"   # rule (a)
+    assert scoped["scoped_vote"]["counts"] == [["3926.90", 1]]                       # the second vote, which cannot accept
+    assert unscoped["scoped_vote"]["counts"] == [["8452.90", 3], ["3926.90", 1]] and unscoped["route"] == "review"
     assert [h["reference"] for h in unscoped["vote_hits"]] == ["XIBTI4", "XIBTI5", "XIBTI6", "IEBTI1"]
     assert unscoped["vote_chapters"] == ["39"]                                # the candidates' chapters, as computed
 

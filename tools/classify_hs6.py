@@ -285,17 +285,21 @@ def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCal
                         precedent_codes=[p["code"] for p in precedents], mode=RetrievalMode(mode),
                         expansion=ctx.expansion, customs_wording=wording.text if wording else None)
     codes = [c.code for c in candidates]
-    scope = ruling_scope(codes, kb.indexed_chapters)   # feature 014a: the vote searches the candidates' chapters only,
+    # feature 006, constitution 1.5.0 (rule (a), 2026-11-19): the auto-accept gate is the vote of the 5 nearest eligible
+    # rulings over every indexed chapter, read from the rulings the proposal searched
+    vote = (hs6_ruling_vote(hs6_voters(hits, kb.bti, kb.index, ctx.as_of, ctx.exclude_refs), codes)
+            if candidates else None)
+    scope = ruling_scope(codes, kb.indexed_chapters)   # feature 014a: a second vote within the candidates' chapters only,
     vote_hits = ([bti_vectors.search_by_vector(vec, ctx.k * 2, scope.chapters) for vec in ruling_vectors]
                  if scope is not None and bti_vectors is not None else [])   # with the line's vectors, embedded already
-    vote = (hs6_ruling_vote(hs6_voters(vote_hits, kb.bti, kb.index, ctx.as_of, ctx.exclude_refs), codes)
-            if candidates else None)   # feature 006: the HS-6 auto-accept gate
+    scoped_vote = (hs6_ruling_vote(hs6_voters(vote_hits, kb.bti, kb.index, ctx.as_of, ctx.exclude_refs), codes)
+                   if candidates else None)   # it can only send the line to review
     retrieved = {doc_id.removeprefix("bti:") for found in (*hits, *vote_hits) for doc_id, _ in found} - set(ctx.exclude_refs or ())
     candidates = [c.model_copy(update={"citation_notes": citation_notes(c.rationale, c.code, retrieved, kb.bti)})
                   for c in candidates]   # feature 014a: notes written by code, after the reasoning; no routing input
     return Classification(line_no=line.line_no, candidates=candidates, no_valid_candidate=not candidates, retrieval_trace=rt,
-                          sources=sources, status=LineStatus.checked, hs6_vote=vote, ruling_scope=scope,
-                          customs_wording=wording)
+                          sources=sources, status=LineStatus.checked, hs6_vote=vote, hs6_scoped_vote=scoped_vote,
+                          ruling_scope=scope, customs_wording=wording)
 
 
 def classify_lines(lines: list[LineText], ctx: ClassifyContext, kb, client: StructuredCaller | None, workers: int = 4) -> list[Classification]:

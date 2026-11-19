@@ -289,6 +289,8 @@ class Hs6Gate(str, Enum):
                                                 # against the threshold
     vote_override = "vote_override"             # feature 008: the majority is the model's candidate 2 or 3 with at least the
                                                 # shipment's hs6_override_min rulings; that candidate is decided
+    scoped_veto = "scoped_veto"                 # feature 014a (rule (a), 2026-11-19): the gate passed, but the vote of the
+                                                # candidates' chapters has voters and does not agree on the decided code
 
 
 class Hs6Vote(BaseModel):
@@ -385,8 +387,10 @@ class LineVersion(BaseModel):
     cn8: Cn8Choice | None = None              # feature 004: the CN-8 step's result
     taric: TaricOutcome | None = None         # feature 004: the TARIC step's result for the shipment's origin
     hs6_vote: Hs6Vote | None = None           # feature 006: the nearest rulings' vote on the HS-6; None when none voted
+    hs6_scoped_vote: Hs6Vote | None = None    # feature 014a (rule (a)): the vote of the candidates' chapters, which can
+                                              # only send the line to review; None when none voted
     hs6_gate: Hs6Gate | None = None           # feature 006: the rule that decided the HS-6 auto-accept, set with the route
-    ruling_scope: RulingScope | None = None   # feature 014a: the chapters the vote searched; None without a valid
+    ruling_scope: RulingScope | None = None   # feature 014a: the chapters the second vote searched; None without a valid
                                               # candidate (no vote) or when the step failed
     customs_wording: CustomsWording | None = None   # feature 014a: None when the switch was off or the store has no
                                                     # main language
@@ -580,8 +584,9 @@ class Classification(BaseModel):
     sources: list[Source] = Field(default_factory=list)
     status: LineStatus = LineStatus.checked
     error_reason: str | None = None
-    hs6_vote: Hs6Vote | None = None           # feature 006: the nearest rulings' vote on the top HS-6
-    ruling_scope: RulingScope | None = None   # feature 014a: the chapters the vote searched, and those not indexed
+    hs6_vote: Hs6Vote | None = None           # feature 006: the nearest rulings' vote on the top HS-6, over every chapter
+    hs6_scoped_vote: Hs6Vote | None = None    # feature 014a (rule (a)): the vote of the candidates' chapters (a veto)
+    ruling_scope: RulingScope | None = None   # feature 014a: the chapters the second vote searched, and those not indexed
     customs_wording: CustomsWording | None = None   # feature 014a: the rewrite the rulings were also searched with
 
 

@@ -381,9 +381,11 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
         conf = candidates[0].confidence if candidates else None
         kind = chk.flag.kind if chk.flag is not None else None
         flagged = kind is not None and kind != FlagKind.ok
-        vote = cls.hs6_vote if cls is not None else None
+        vote = cls.hs6_vote if cls is not None else None                 # the gate's vote, over every chapter
+        second = cls.hs6_scoped_vote if cls is not None else None        # feature 014a (rule (a)): the second vote
         scope = cls.ruling_scope if cls is not None else None
-        route, _ = route_line(kind, conf, status, flagged, DEFAULT_THRESHOLD, ASK_FLOOR, hs6_vote=vote)
+        route, _ = route_line(kind, conf, status, flagged, DEFAULT_THRESHOLD, ASK_FLOOR, hs6_vote=vote,
+                              hs6_scoped_vote=second)
         by_confidence, _ = route_line(kind, conf, status, flagged, DEFAULT_THRESHOLD, ASK_FLOOR)   # before the vote gate
         gated = status == LineStatus.checked and kind == FlagKind.ok and (conf or 0) > 0          # as the store sets hs6_gate
         shown = {s.id for s in cls.sources if s.kind == SourceKind.nomenclature} if cls is not None else set()
@@ -397,15 +399,15 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
             "raw": [{"code": c.code, "confidence": c.confidence} for c in rank.candidates] if rank is not None else None,
             "hit": bool(codes) and codes[0] == expected, "in_top3": expected in codes[:3], "route": route.value,
             "route_by_confidence": by_confidence.value,
-            "gate": hs6_gate(conf, DEFAULT_THRESHOLD, vote)[1].value if gated else "not_gated",
-            "vote": vote_fields(vote),
+            "gate": hs6_gate(conf, DEFAULT_THRESHOLD, vote, None, second)[1].value if gated else "not_gated",
+            "vote": vote_fields(vote), "scoped_vote": vote_fields(second),
             "status": status.value, "error": error,
             "precedent_codes": cls.retrieval_trace.precedent_codes if cls is not None and cls.retrieval_trace else [],
             "expected_sent": f"hs:{expected}" in shown,
             "own_rank": next((k for k, h in enumerate(hits, start=1) if h["reference"] == r["reference"]), None),
             "nearest_hits": hits,
-            # feature 014a: the chapters the vote searched and its rulings (for a replay at another floor), the rewrite
-            # searched with, and the citation notes per candidate
+            # feature 014a: the chapters the second vote searched and its rulings (for a replay at another floor), the
+            # rewrite searched with, and the citation notes per candidate
             "vote_chapters": scope.chapters if scope is not None else [],
             "not_indexed": scope.not_indexed if scope is not None else [],
             "vote_hits": vote_hits(scoped, r["reference"] if leave_one_out else None, kb, as_of),
@@ -418,10 +420,11 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
     return rows, elapsed
 
 
-def replay_vote(row: dict) -> Hs6Vote | None:
+def replay_vote(row: dict, field: str = "vote") -> Hs6Vote | None:
     """Feature 008: a row's vote as the routing functions take it, rebuilt from its counts by the product's own vote
-    (the rulings' countries do not route)."""
-    v = row["vote"]
+    (the rulings' countries do not route); `field` "scoped_vote" is the second vote of rule (a) (feature 014a), None in
+    a row from before it."""
+    v = row.get(field)
     if v is None:
         return None
     return hs6_ruling_vote([(code, "") for code, k in v["counts"] for _ in range(k)], row["top3"])
@@ -430,13 +433,13 @@ def replay_vote(row: dict) -> Hs6Vote | None:
 def override_fields(row: dict, override_min: int = OVERRIDE_MIN) -> dict:
     """Feature 008: a row's `supported` and `on` fields, from what it keeps (its flag, status, confidence, top 3 and vote
     counts) through the routing functions with the switch on at `override_min`; its other fields stay the switch off."""
-    vote = replay_vote(row)
+    vote, scoped = replay_vote(row), replay_vote(row, "scoped_vote")
     kind = None if row["flag"] == "failed" else FlagKind(row["flag"])
     conf = row["confidence"]
     route, _ = route_line(kind, conf, row["status"], kind not in (None, FlagKind.ok), DEFAULT_THRESHOLD, ASK_FLOOR,
-                          hs6_vote=vote, hs6_override_min=override_min)
+                          hs6_vote=vote, hs6_override_min=override_min, hs6_scoped_vote=scoped)
     gated = row["status"] == LineStatus.checked.value and kind == FlagKind.ok and (conf or 0) > 0   # as run_once
-    gate = hs6_gate(conf, DEFAULT_THRESHOLD, vote, override_min)[1] if gated else None
+    gate = hs6_gate(conf, DEFAULT_THRESHOLD, vote, override_min, scoped)[1] if gated else None
     rank, chosen = hs6_choice([SimpleNamespace(code=code) for code in row["top3"]], vote, gate)
     supported = vote.candidate if vote is not None else None
     return {"supported": {"rank": supported, "right": row["top3"][supported - 1] == row["expected"] if supported else None},
@@ -445,19 +448,24 @@ def override_fields(row: dict, override_min: int = OVERRIDE_MIN) -> dict:
 
 
 def floor_fields(row: dict, floor: float, override_min: int = OVERRIDE_MIN) -> dict:
-    """Feature 014a: a row as the product would have routed it at the similarity floor `floor`: its vote rebuilt from its
-    vote_hits (the eligible ones at or above the floor, nearest first, as hs6_voters keeps them) by the product's vote,
-    then the gate and the route, the switch on at `override_min` and, for the coolant set, the score; its other fields
-    are the run's. Exact for a floor at or above the run's: the product would have read the same rulings."""
+    """Feature 014a: a row as the product would have routed it at the similarity floor `floor`, under rule (a): the
+    gate's vote rebuilt from its nearest_hits (the 5 nearest eligible ones at or above the floor among the 12 the
+    unfiltered search read) and the second vote from its vote_hits (the search within the candidates' chapters), each by
+    the product's vote, then the gate and the route, the switch on at `override_min` and, for the coolant set, the score;
+    its other fields are the run's. Exact for a floor at or above the run's: the product would have read the same
+    rulings."""
+    nearest = [(h["hs6"], "") for h in row["nearest_hits"][:SEARCHED]
+               if h["eligible"] and 1 - h["distance"] >= floor][:HS6_VOTE_K]
     voters = [(h["hs6"], "") for h in row["vote_hits"] if h["eligible"] and h["similarity"] >= floor]
-    vote = hs6_ruling_vote(voters, row["top3"]) if row["top3"] else None
+    vote = hs6_ruling_vote(nearest, row["top3"]) if row["top3"] else None
+    scoped = hs6_ruling_vote(voters, row["top3"]) if row["top3"] else None
     kind = None if row["flag"] == "failed" else FlagKind(row["flag"])
     conf = row["confidence"]
     route, _ = route_line(kind, conf, row["status"], kind not in (None, FlagKind.ok), DEFAULT_THRESHOLD, ASK_FLOOR,
-                          hs6_vote=vote)
+                          hs6_vote=vote, hs6_scoped_vote=scoped)
     gated = row["status"] == LineStatus.checked.value and kind == FlagKind.ok and (conf or 0) > 0   # as run_once
-    out = {**row, "vote": vote_fields(vote), "route": route.value,
-           "gate": hs6_gate(conf, DEFAULT_THRESHOLD, vote)[1].value if gated else "not_gated"}
+    out = {**row, "vote": vote_fields(vote), "scoped_vote": vote_fields(scoped), "route": route.value,
+           "gate": hs6_gate(conf, DEFAULT_THRESHOLD, vote, None, scoped)[1].value if gated else "not_gated"}
     out.update(override_fields(out, override_min))
     if "right" in row:                                 # the coolant set
         expected = {"expected_route": row["expected_route"]} if row.get("expected_route") else {"expected_hs6": row["expected"]}
@@ -983,8 +991,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--floor", type=float, help="feature 014a: the similarity floor a --replay rebuilds the votes at, from "
                                                 "the rows' vote_hits (exact at or above the run's floor)")
     ap.add_argument("--vote-scope", choices=("candidates", "all"), default="candidates",
-                    help="the 014a regression ablation, eval only: the HS-6 vote's ruling search within the candidates' "
-                         "chapters (the app's, default) or over every chapter (the vote before feature 014a)")
+                    help="the 014a regression ablation, eval only: the second HS-6 vote's ruling search within the "
+                         "candidates' chapters (the app's, default) or over every chapter (then it equals the gate's vote "
+                         "and never vetoes)")
     args = ap.parse_args(argv)
     if args.replay and args.vote_scope != "candidates":
         ap.error("--vote-scope is for a run: a replay searches no rulings")
