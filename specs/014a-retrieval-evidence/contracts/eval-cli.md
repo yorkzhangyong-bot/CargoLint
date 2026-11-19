@@ -10,7 +10,8 @@ history stay comparable with earlier iterations.
 |---|---|---|
 | `--set` | `cn8` (default), `coolant`, `outside` | `cn8`: the 120 rulings of `cn8_eval_set.json` (or the 30 Chinese lines with `--lang zh`), as today. `coolant`: the eight lines of `hs6_eval_coolant_set.json` (data-model §8). `outside` (2026-11-19, spec FR-032): the lines of `hs6_eval_outside_set.json` (data-model §8a), run and scored as the coolant set, but each line's source ruling kept out (its id is that ruling's reference); files `hs6_eval_outside.json`, `hs6_eval_outside_<tag>_…json`, `hs6_eval_outside_history.json`, `hs6_eval_outside.md`. `--lang` applies to `cn8` only |
 | `--customs-wording` | `on`, `off` | the customs-wording switch for this run, over `CARGOLINT_CUSTOMS_WORDING`; kept in the history entry and the per-run file name |
-| `--replay FILE --floor X` | a results file, a similarity | recompute every row's vote from its `vote_hits` at floor `X` with the routing functions, no model call; exact for `X` at or above the run's floor; refused for a file without `vote_hits`; the replay's entry goes to the history and report of the set its file names (its summary's `set`, `cn8` when absent), and a coolant replay reads no CN-8 results |
+| `--replay FILE --floor X` | a results file, a similarity | recompute every row's votes at floor `X` with the routing functions (since rule (a) the gate's from its `nearest_hits`, the second from its `vote_hits`), no model call; exact for `X` at or above the run's floor; refused for a file without `vote_hits`; the replay's entry goes to the history and report of the set its file names (its summary's `set`, `cn8` when absent), and a coolant replay reads no CN-8 results |
+| `--proposal-scope` | `all` (default), `nomenclature` | option (c) of 2026-11-19 (spec FR-033), evaluation only: `nomenclature` limits the candidate proposal to the rulings of the chapters of the nomenclature search's subheadings for the run (rows keep `proposal_chapters`; the entry keeps `proposal_scope`), while the gate's vote reads every chapter; refused with `--replay`; no product setting |
 
 `--replay FILE --override-min N` (feature 008) stays; `--floor` and `--override-min` can be combined in one replay.
 
@@ -57,3 +58,6 @@ Every run passes `--expansion off` (research R-10), whatever `CARGOLINT_QUERY_EX
 | after, switch off | the two commands above with `--tag 014a-after --customs-wording off` | yes |
 | after, switch on | the two commands above with `--tag 014a-after --customs-wording on` | yes |
 | floor replays | `python tests/eval/hs6_eval.py --replay <after-run file> --floor 0.45` (and other floors the author picks, at or above the run's floor) | no |
+| rule (a), 120 lines and coolant (2026-11-19) | `python tests/eval/hs6_eval.py --replay <after-run file, switch off> --floor 0.40 --tag 014a-rule-a`: the exact replay under rule (a) and the vague rule | no |
+| rule (a), outside set | `python tests/eval/hs6_eval.py --set outside --repeat 3 --tag 014a-a --expansion off --customs-wording off` | yes |
+| option (c), each set | the 120-line, coolant and outside commands with `--repeat 3 --tag 014a-c --expansion off --customs-wording off --proposal-scope nomenclature` | yes |

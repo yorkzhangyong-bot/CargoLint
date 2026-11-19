@@ -469,15 +469,19 @@ cars" alone does not (see the known weaknesses below). And a rule-list entry wit
 character is skipped, which drops two leftovers of the PDF extraction from the shipped ICS2 list, "1005" and a row of
 symbols ending in "12", so a bare number no longer counts as a listed term.
 
-**Retrieval and evidence** (feature 014a): the rulings index covers every chapter, the HS-6 vote reads only the
-rulings of the candidates' chapters, and the customs-wording rewrite waits behind its switch. `tests/eval/hs6_eval.py`
-gained three options. `--set coolant` runs the coolant set instead of the 120 lines: eight coolant lines in Chinese,
-English and German (`tests/eval/hs6_eval_coolant_set.json`), each expecting an HS-6 or "ask the shipper", with their
-own results, history and report files. `--customs-wording on|off` sets the rewrite for the run over
+**Retrieval and evidence** (feature 014a): the rulings index covers every chapter; the HS-6 auto-accept reads the 5
+nearest rulings over every chapter, and the rulings of the candidates' chapters can only send a line to review (rule
+(a), the author's decision of 2026-11-19); a vague line always asks the shipper; the customs-wording rewrite waits
+behind its switch. `tests/eval/hs6_eval.py` gained these options. `--set coolant` runs the coolant set instead of the
+120 lines: eight coolant lines in Chinese, English and German (`tests/eval/hs6_eval_coolant_set.json`), each expecting
+an HS-6 or "ask the shipper", with their own results, history and report files. `--set outside` runs 14 lines whose
+codes lie outside the twelve chapters of the old store (`tests/eval/hs6_eval_outside_set.json`), each taken from an
+EBTI ruling that the run keeps out. `--customs-wording on|off` sets the rewrite for the run over
 `CARGOLINT_CUSTOMS_WORDING`. `--replay <results file> --floor X` rebuilds a run's votes at a similarity floor at or
-above the run's own from the ruling hits its rows recorded, with no model call. Three runs each with Gemini 2.5 Flash
-and query expansion off, on 2026-11-18, on the store of the twelve chapters (74,044 rulings) and on the rebuilt store
-of every chapter:
+above the run's own from the ruling hits its rows recorded, with no model call. `--proposal-scope nomenclature` limits
+the candidate proposal to the chapters of the nomenclature search's subheadings (option (c), evaluation only). Three
+runs each with Gemini 2.5 Flash and query expansion off, on 2026-11-18, on the store of the twelve chapters (74,044
+rulings) and on the rebuilt store of every chapter, with the vote within the candidates' chapters as first built:
 
 | HS-6 eval | Twelve chapters | Every chapter, rewrite off | Every chapter, rewrite on |
 |---|---|---|---|
@@ -494,6 +498,12 @@ switching on (82 against 84 right on both sets together, and some long lines sti
 off. Replays at floors 0.45, 0.50 and 0.55 left the 120 lines unchanged, and the floor stays 0.40. No fallback and no
 tuning were added; the author decides. The report, with each changed line and its cause, is
 `specs/014a-retrieval-evidence/eval-diff.md`.
+
+After the regression analysis the author chose rule (a) and the vague rule (2026-11-19). Replayed exactly on the
+after-runs' rows, they give the 120 lines a majority top-1 of 77 with 3 / 3 / 3 wrong auto-accepts, 9 against the
+baseline's 10, so the criterion now passes, and the coolant set 8/8 with none wrong. Option (c) was measured and is not
+in the app: 64/120 on the 120 lines, 7/8 on the coolant set and 11/14 on the outside set, against 77, 8 and 12 under
+rule (a). The analysis and these numbers are in `docs/reports/014a-regression-analysis.md`, section 5.
 
 **Eval-set notes**:
 - **Cleanup**: six Swedish rulings in `tests/eval/cn8_eval_set.json` are still labelled `en`: SEBTITV-2026-01096,

@@ -1,6 +1,6 @@
 # Feature 014a: why the 120-line evaluation regressed
 
-The author is holding the feature: on the 120-line evaluation the majority top-1 fell from 84 to 77 and wrong auto-accepts rose from 10 to 12, so SC-004 failed. This report separates the causes. Everything is read from the logged rows and history entries of the runs, with no model call, except the ablation of section 2 (one paid run of both sets). The twelve chapters' rulings are the same in both stores (the rebuild reused all 74,044 and added none in those chapters). The tables are rendered by `tests/eval/regression_014a.py`, which first checks that its routes reproduce every history entry it uses; the product's routing functions recompute every route.
+The author is holding the feature: on the 120-line evaluation the majority top-1 fell from 84 to 77 and wrong auto-accepts rose from 10 to 12, so SC-004 failed. This report separates the causes. Everything is read from the logged rows and history entries of the runs, with no model call, except the ablation of section 2 (one paid run of both sets). The twelve chapters' rulings are the same in both stores (the rebuild reused all 74,044 and added none in those chapters). The tables are rendered by `tests/eval/regression_014a.py`, which first checks that its routes reproduce every history entry it uses; the product's routing functions recompute every route. Section 5, added after the author's decisions of 2026-11-19, measures rule (a), the vague rule and option (c): under rule (a) SC-004 passes.
 
 - **Baseline**: 120-line iteration 12, coolant iteration 1. The store of the twelve chapters (74,044 rulings); the vote over every chapter, as before 014a.
 - **After-run**: iterations 13 and 2. The rebuilt store of every chapter (123,531 rulings); the vote within the candidates' chapters, as 014a ships.
@@ -250,3 +250,88 @@ The effects at a glance (offline; (c) and (d2) need a paid run). Today's rule an
 | coolant | ablation | on | 6/8 | 7/8 | 9 | 0 |
 
 On the coolant set the rule makes the plain 冷却液 right in every run: majority after-run 7 → 8, ablation 6 → 7, baseline 6 (it asked already). On the 120 lines it moves the 5 vague lines' 15 rows per command from review to ask the shipper and changes no top-1 and no auto-accept. The trade-off: coolant-1 and coolant-3 are flagged vague but have a code the model gets right (2710.19 and 3403.99); the rule would ask the shipper about them too.
+
+## 5. Rule (a) and option (c): the measurement of 2026-11-19
+
+The author's decisions of 2026-11-19 (spec, clarifications of that day): the app now routes by **rule (a)**, the unfiltered 5-nearest vote of constitution 1.5.0 deciding the auto-accept while the vote within the candidates' chapters can only send a line to review, and by the **vague rule**, every vague line to ask the shipper. **Option (c)** limits the candidate proposal to the chapters of the nomenclature search's subheadings; it was measured with rule (a) through `--proposal-scope nomenclature` (tests/eval/hs6_eval.py, evaluation only, no product code or setting), against (a):
+
+- **(a) on the 120-line and coolant sets** is the exact replay of the after-runs' rows (iterations 13 and 2) by the product's routing functions under rule (a) and the vague rule: `hs6_eval.py --replay <after-run file> --floor 0.40`, no model call (history iterations 21 and 9). This script checks that its own replay of rule (a) (`rule_a_now`) gives the same measures, the override off and on.
+- **(a) on the outside set** is three runs of its own (iteration 1), the control of (c). The set: 14 lines approved by the author (tests/eval/hs6_eval_outside_set.json), whose expected HS-6 lies outside the twelve chapters of the old store, each from an EBTI ruling valid on 2026-11-19 and rewritten in plain shipper wording; each line's source ruling is kept out (leave-one-out).
+- **(c)**: three runs on each set (iterations 20, 8 and 2). Every run: Gemini 2.5 Flash with reasoning off, query expansion off, customs wording off, three runs, threshold 85, the rebuilt store of every chapter.
+- **Cost**: $0.5544 by the key's usage, read once OpenRouter had settled it; $0.6558 by the evaluation's tallies (120 lines (c) $0.5178, coolant (c) $0.0335, outside (a) $0.0524, outside (c) $0.0521): within the approved $1.10.
+
+**The 120-line set**:
+
+| Run | Override | Majority top-1 | Top-1 per run | Auto-accepted per run | Wrong auto-accepted per run |
+|---|---|---|---|---|---|
+| Baseline (it. 12): 12 chapters, unscoped vote, the runs' routing | off | 84/120 | 83 / 84 / 83 | 68 / 70 / 67 | 3 / 4 / 3 (10) |
+| Baseline (it. 12): 12 chapters, unscoped vote, the runs' routing | on | 87/120 | 87 / 87 / 87 | 72 / 73 / 71 | 3 / 4 / 3 (10) |
+| (a): replay of it. 13 (it. 21) | off | 77/120 | 76 / 77 / 77 | 63 / 63 / 62 | 3 / 3 / 3 (9) |
+| (a): replay of it. 13 (it. 21) | on | 80/120 | 79 / 80 / 80 | 66 / 66 / 65 | 3 / 3 / 3 (9) |
+| (c) with (a) (it. 20) | off | 64/120 | 64 / 63 / 64 | 51 / 50 / 51 | 3 / 3 / 3 (9) |
+| (c) with (a) (it. 20) | on | 65/120 | 65 / 65 / 65 | 52 / 52 / 52 | 3 / 3 / 3 (9) |
+
+**The coolant set**:
+
+| Run | Override | Majority right | Right per run | Auto-accepted per run | Wrong auto-accepted per run |
+|---|---|---|---|---|---|
+| Baseline (it. 1): 12 chapters, unscoped vote, the runs' routing | off | 6/8 | 6 / 6 / 6 | 0 / 0 / 0 | 0 / 0 / 0 (0) |
+| Baseline (it. 1): 12 chapters, unscoped vote, the runs' routing | on | 6/8 | 6 / 6 / 6 | 0 / 0 / 0 | 0 / 0 / 0 (0) |
+| (a): replay of it. 2 (it. 9) | off | 8/8 | 8 / 8 / 8 | 1 / 1 / 1 | 0 / 0 / 0 (0) |
+| (a): replay of it. 2 (it. 9) | on | 8/8 | 8 / 8 / 8 | 1 / 1 / 1 | 0 / 0 / 0 (0) |
+| (c) with (a) (it. 8) | off | 7/8 | 7 / 7 / 6 | 1 / 1 / 1 | 0 / 0 / 0 (0) |
+| (c) with (a) (it. 8) | on | 7/8 | 7 / 7 / 6 | 1 / 1 / 1 | 0 / 0 / 0 (0) |
+
+**The outside set**:
+
+| Run | Override | Majority right | Right per run | Auto-accepted per run | Wrong auto-accepted per run |
+|---|---|---|---|---|---|
+| (a) (it. 1) | off | 12/14 | 12 / 12 / 12 | 7 / 8 / 8 | 0 / 1 / 1 (2) |
+| (a) (it. 1) | on | 12/14 | 12 / 12 / 12 | 7 / 8 / 8 | 0 / 1 / 1 (2) |
+| (c) with (a) (it. 2) | off | 11/14 | 11 / 11 / 11 | 7 / 7 / 7 | 1 / 1 / 1 (3) |
+| (c) with (a) (it. 2) | on | 11/14 | 11 / 11 / 11 | 7 / 7 / 7 | 1 / 1 / 1 (3) |
+
+**SC-004 under rule (a)**: wrong auto-accepts summed over the three replayed after-runs, 9, against 10 over the three baseline runs: **passes** (override on: 9 against 10). Judged on the chapter-filtered vote as first built it failed, 12 against 10 (eval-diff.md, section 4); rule (a) keeps the after-run's top-1s (the vote never changes a top-1 with the override off: majority 77, as the after-run's) and removes the 3 wrong auto-accepts of IEBTIIENEN004-2024-BTI208.
+
+**(c) against (a)**: on the 120 lines (c) has a majority top-1 of 64 against 77 and the same wrong auto-accepts (9 against 9), with fewer auto-accepts (51 / 50 / 51 against 63 / 63 / 62 per run). It loses 16 lines that (a) gets right on majority and wins 3; in 15 of the lost lines the expected chapter is not among the chapters of the nomenclature search's subheadings, so (c)'s proposal could not bring the right code in, which is what the proposal does today (it lifted the labelled set's top-3 from 11 of 12 to 12 of 12). On the coolant set (c) loses coolant-1 (2710.19, proposed today by rulings of chapter 27); on the outside set it loses the chilli seasoning (2103.90 → 0904.22). The outside set's wrong auto-accepts are all the bike U-lock (FRBTIFR-BTI-2026-00308), 2 under (a) and 3 under (c): its source ruling gives 8301.10, while the model chose 8301.40, where 4 of its 5 nearest rulings sit. (c) is not in the app; nothing here recommends it.
+
+The 120-line set's lines whose majority outcome differs between (a) and (c):
+
+| Line | Expected | (a) majority | (c) majority | Expected chapter among (c)'s chapters | Proposed (a) → (c), run 1 |
+|---|---|---|---|---|---|
+| IEBTIIENEN004-2025-BTI245 | 3926.90 | 3926.90 | 9033.00 | no (63, 73, 90) | 9019.20, 8108.20, 3926.90 → 9033.00, 9019.20, 9021.31 |
+| IEBTIIENEN004-2025-BTI51 | 3926.90 | 3926.90 | 8538.90 | no (68, 84, 85, 87, 89) | 3926.90, 8547.20, 7326.90 → 8537.10, 8708.29, 8538.90 |
+| IEBTIIENEN004-2024-BTI284 | 4202.12 | 4202.92 | 4202.32 | yes (42, 87, 96) | 4202.92, 3926.90, 7616.99 → 4202.92, 4202.12, 4202.32 |
+| FRBTIFR-BTI-2025-02100 | 4203.29 | 6116.10 | 4203.29 | yes (42, 44, 61) | 4203.29 → 4203.29 |
+| IEBTIIENEN004-2024-BTI132 | 6102.30 | 6112.12 | 6110.30 | yes (22, 23, 61, 72) | 3926.20 → 6102.30, 6110.30, 6113.00 |
+| IEBTIIENEN004-2024-BTI208 | 6109.90 | 6114.30 | 6109.90 | yes (61, 62, 65) | 6114.30, 6212.10, 6212.90 → 6114.30, 6109.90, 6212.10 |
+| DEBTI52786/23-1 | 6113.00 | 6113.00 | 6210.20 | no (62, 69, 84) | 6210.30, 6113.00, 6202.40 → 6210.30, 6210.20, 6202.40 |
+| SEBTITV-2026-01096 | 6307.90 | 9503.00 | no code | no (05, 29, 41, 43, 44, 72) | 6307.90, 9503.00, 4205.00 → 4421.99, 4420.19, 4303.90 |
+| XIBTI505066180 | 6307.90 | 8708.21 | 9401.99 | no (84, 87, 94) | 9404.90, 9401.80, 6307.90 → 9404.90, 9401.80, 9401.99 |
+| IEBTIIENEN004-2024-BTI96 | 7326.90 | 7326.90 | 8207.70 | no (72, 82, 89) | 7326.90, 8209.00, 8207.30 → 8207.13, 8207.90, 8207.80 |
+| IEBTIIENEN004-2025-BTI173 | 7326.90 | 7326.90 | 8305.90 | no (23, 31, 39, 83, 84) | 7326.90, 4202.32, 7616.99 → 3919.90, 3926.90, 3926.10 |
+| IEBTIIENEN004-2025-BTI293 | 8424.90 | 9018.39 | 7304.41 | no (23, 72, 73, 89) | 9018.32, 9018.39, 7304.41 → 7326.90, 7304.41, 7307.29 |
+| XIBTI505059567 | 8504.40 | 8471.80 | 8504.40 | yes (85) | 8471.80, 8504.40, 8536.69 → 8504.40, 8536.69, 8525.89 |
+| XIBTI505070292 | 9403.20 | 9403.20 | 6306.90 | no (23, 63, 68, 72) | 9403.20, 6307.90, 6306.90 → 6307.90, 6306.90 |
+| SEBTITV-2024-01674 | 9401.99 | 9401.99 | 6304.99 | no (29, 63, 72, 85) | 9401.99 → 6307.90, 6304.92, 6304.93 |
+| SEBTITV-2024-01665 | 9401.99 | 9401.99 | 6304.99 | no (29, 63, 72, 85) | 9401.99 → 6307.90, 6304.92, 6304.93 |
+| IEBTIIENEN004-2024-BTI333 | 9403.60 | 9403.60 | 4420.90 | no (44, 48, 84, 96) | 9403.60, 9023.00, 9504.90 → 4420.90, 9610.00, 4421.99 |
+| SEBTITV-2024-01658 | 9401.99 | 9401.99 | 6304.99 | no (29, 63, 72, 85) | 9401.99 → 6307.90, 6304.92, 6304.93 |
+| SEBTITV-2024-01615 | 9401.99 | 9401.99 | 6304.99 | no (29, 63, 72, 85) | 9401.99 → 6307.90, 6304.92, 6304.93 |
+| IEBTIIENEN004-2025-BTI67 | 9503.00 | 9503.00 | 9403.60 | no (44, 72, 82, 84, 85, 94) | 9503.00, 9403.60, 4419.19 → 9403.60, 4419.19, 8215.20 |
+| IEBTIIENEN004-2026-BTI99 | 9503.00 | 9503.00 | 6301.40 | no (63, 65, 66, 68) | 9503.00, 4820.10, 9404.40 → 6307.90, 6301.40 |
+| IEBTIIENEN004-2026-BTI118 | 9503.00 | 9503.00 | 6306.22 | no (06, 63, 73, 74) | 9503.00, 6307.90, 9401.79 → 6307.90, 6306.22, 6304.93 |
+| IEBTIIENEN004-2026-BTI72 | 9619.00 | 9619.00 | 6108.22 | no (61, 68, 92) | 9619.00 → 6108.22, 6112.41 |
+| IEBTIIENEN004-2026-BTI222 | 9609.10 | 9609.10 | 9609.90 | yes (82, 96) | 9609.10, 4903.00, 9609.90 → 9609.10, 9609.90, 9608.10 |
+
+The coolant set's:
+
+| Line | Expected | (a) majority | (c) majority | Expected chapter among (c)'s chapters | Proposed (a) → (c), run 1 |
+|---|---|---|---|---|---|
+| coolant-1 | 2710.19 | 2710.19 | 3820.00 | no (38, 56, 84, 85) | 3824.99, 2710.19, 3402.50 → 3824.99, 3820.00, 3811.90 |
+
+The outside set's:
+
+| Line | Expected | (a) majority | (c) majority | Expected chapter among (c)'s chapters | Proposed (a) → (c), run 1 |
+|---|---|---|---|---|---|
+| IEBTIIENEN004-2026-BTI266 | 2103.90 | 2103.90 | 0904.22 | no (04, 09, 17, 20, 42) | 2103.90, 2004.10, 2106.90 → 0904.22, 2004.10, 0904.11 |

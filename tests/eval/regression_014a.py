@@ -7,7 +7,10 @@ coolant 2) and the ablation (the vote over every chapter, --vote-scope all: 19, 
 Every route is recomputed by the product's routing functions (route_line, hs6_gate, hs6_choice) from what a row keeps:
 its flag, status, confidence, top 3 and a vote. The vote is the row's own (replayed from its counts), the unscoped
 5-nearest vote rebuilt from its nearest_hits (the vote before feature 014a), or a proposal's rule. The logged votes'
-measures are checked against the history entries before anything is printed.
+measures are checked against the history entries before anything is printed. Sections 1 to 4 route as the runs did:
+until the vague rule of 2026-11-19 a vague line at or above the ask floor went to review. Section 5, the measurement
+of rule (a) and option (c) decided that day, routes by today's rules and reads its numbers from the history entries of
+the replays and runs it names, after checking the replays against its own (rule_a_now).
 """
 from __future__ import annotations
 
@@ -23,7 +26,7 @@ sys.path.insert(0, str(ROOT))
 from agent.config import (ASK_FLOOR, DEFAULT_THRESHOLD, HS6_VOTE_K, HS6_VOTE_MIN_SIMILARITY,  # noqa: E402
                           OVERRIDE_MIN)
 from agent.routing import hs6_choice, hs6_gate, hs6_ruling_vote, route_line  # noqa: E402
-from agent.schemas import FlagKind  # noqa: E402
+from agent.schemas import FlagKind, Route  # noqa: E402
 from rag.bti import TARGET_CHAPTERS  # noqa: E402
 
 EVAL = ROOT / "tests" / "eval"
@@ -87,12 +90,15 @@ def scoped_voters_from_nearest(row: dict) -> list[dict]:
 
 def decide(row: dict, vote, override: bool) -> tuple[str, str | None]:
     """(route, decided HS-6) of a row under `vote`, by the product's routing functions; the precedent override on or
-    off. Without an auto-accept the decided code is the top-1, as the clerk sees it."""
+    off. Without an auto-accept the decided code is the top-1, as the clerk sees it. A vague line at or above the ask
+    floor goes to review, as when the runs were made (the vague rule of 2026-11-19 sends it to ask the shipper)."""
     kind = None if row["flag"] == "failed" else FlagKind(row["flag"])
     conf = row["confidence"]
     omin = OVERRIDE_MIN if override else None
     route, _ = route_line(kind, conf, row["status"], kind not in (None, FlagKind.ok), DEFAULT_THRESHOLD, ASK_FLOOR,
                           hs6_vote=vote, hs6_override_min=omin)
+    if kind == FlagKind.vague and conf is not None and conf >= ASK_FLOOR:   # the runs' routing until 2026-11-19
+        route = Route.review
     gated = row["status"] == "checked" and kind == FlagKind.ok and (conf or 0) > 0
     gate = hs6_gate(conf, DEFAULT_THRESHOLD, vote, omin)[1] if gated else None
     _, chosen = hs6_choice([SimpleNamespace(code=c) for c in row["top3"]], vote, gate)
@@ -315,6 +321,71 @@ def rule_share(override: bool, share: float):
 def vague_rule(rule):
     """Section 4: a line flagged vague always goes to ask the shipper; anything else as `rule` routes it."""
     return lambda row: ("ask_shipper", row["top1"]) if row["flag"] == "vague" else rule(row)
+
+
+# --------------------------------------------------------------------------- section 5: rule (a) and option (c)
+NOW_SETS = ("cn8", "coolant", "outside")
+NOW_HISTORY = {**HISTORY, "outside": "hs6_eval_outside_history.json"}
+NOW_TAGS = {"cn8": ("014a-rule-a", "014a-c"), "coolant": ("014a-rule-a", "014a-c"), "outside": ("014a-a", "014a-c")}
+NOW_FILES = {"cn8": ("hs6_eval_014a-rule-a.json", "hs6_eval_014a-c_en_expansion-off_wording-off.json"),
+             "coolant": ("hs6_eval_coolant_014a-rule-a.json", "hs6_eval_coolant_014a-c_en_expansion-off_wording-off.json"),
+             "outside": ("hs6_eval_outside_014a-a_en_expansion-off_wording-off.json",
+                         "hs6_eval_outside_014a-c_en_expansion-off_wording-off.json")}
+KEY_USAGE = 0.5544   # the paid runs of section 5 by the key's usage, read once OpenRouter had settled it
+
+
+def rule_a_now(override: bool):
+    """Rule (a) and the vague rule as the product routes since 2026-11-19: the gate's vote rebuilt from a row's
+    nearest_hits (the unscoped vote), the second vote the row's own (the after-run's search within the candidates'
+    chapters), both through route_line, hs6_gate and hs6_choice."""
+    def rule(row):
+        kind = None if row["flag"] == "failed" else FlagKind(row["flag"])
+        conf, omin = row["confidence"], OVERRIDE_MIN if override else None
+        gate_vote, second = unscoped_vote(row), logged_vote(row)
+        route, _ = route_line(kind, conf, row["status"], kind not in (None, FlagKind.ok), DEFAULT_THRESHOLD, ASK_FLOOR,
+                              hs6_vote=gate_vote, hs6_override_min=omin, hs6_scoped_vote=second)
+        gated = row["status"] == "checked" and kind == FlagKind.ok and (conf or 0) > 0
+        gate = hs6_gate(conf, DEFAULT_THRESHOLD, gate_vote, omin, second)[1] if gated else None
+        _, chosen = hs6_choice([SimpleNamespace(code=c) for c in row["top3"]], gate_vote, gate)
+        return route.value, chosen
+    return rule
+
+
+def tagged(set_name: str, tag: str) -> dict:
+    history = json.loads((EVAL / NOW_HISTORY[set_name]).read_text(encoding="utf-8"))
+    return [h for h in history if h.get("tag") == tag][-1]
+
+
+def now_runs(set_name: str, k: int) -> list[list[dict]]:
+    """The rows of section 5's (a) (k = 0) or (c) (k = 1) for a set."""
+    data = json.loads((EVAL / NOW_FILES[set_name][k]).read_text(encoding="utf-8"))
+    return data.get("runs") or [data["rows"]]
+
+
+def from_entry(e: dict) -> dict:
+    """A history entry's measures, or those of its `on` block, as measures() gives them."""
+    return {"majority": e["majority_top1"], "right_runs": e["top1_runs"],
+            "auto_runs": [r["auto_accept"] for r in e["routes_runs"]], "wrong_runs": [len(w) for w in e["wrong_auto_runs"]]}
+
+
+def check_rule_a_replay() -> None:
+    """The replays of rule (a) in the history (hs6_eval.py --replay --floor 0.40, through floor_fields) are of the
+    after-runs and equal rule_a_now on their rows, the override off and on."""
+    for s in SETS:
+        e = tagged(s, NOW_TAGS[s][0])
+        assert e["replay_of"]["iteration"] == entry_of(s, "after")["iteration"] and e["replay"]["exact"], s
+        for override, block in ((False, e), (True, e["on"])):
+            assert measures(runs_of(s, "after"), rule_a_now(override)) == from_entry(block), (s, override)
+
+
+def line_majorities(runs: list[list[dict]]) -> dict[str, tuple]:
+    """Each line's expected outcome, majority outcome (top-1, or route for an "ask the shipper" line) and whether it is
+    right, with the override off."""
+    out = {}
+    for seen in zip(*runs):
+        found = majority([outcome(r, r["route"], r["top1"]) for r in seen])
+        out[seen[0]["reference"]] = (expected(seen[0]), found, found == expected(seen[0]))
+    return out
 
 
 # --------------------------------------------------------------------------- rendering
@@ -594,7 +665,9 @@ def _document(table: dict, m: dict, exact: dict, scoped_check: dict, proposals: 
            "the logged rows and history entries of the runs, with no model call, except the ablation of section 2 (one paid "
            "run of both sets). The twelve chapters' rulings are the same in both stores (the rebuild reused all 74,044 and "
            "added none in those chapters). The tables are rendered by `tests/eval/regression_014a.py`, which first checks that its "
-           "routes reproduce every history entry it uses; the product's routing functions recompute every route.", "",
+           "routes reproduce every history entry it uses; the product's routing functions recompute every route. Section 5, "
+           "added after the author's decisions of 2026-11-19, measures rule (a), the vague rule and option (c): under rule "
+           "(a) SC-004 passes.", "",
            f"- **Baseline**: 120-line iteration {it['cn8']['baseline']}, coolant iteration {it['coolant']['baseline']}. The "
            "store of the twelve chapters (74,044 rulings); the vote over every chapter, as before 014a.",
            f"- **After-run**: iterations {it['cn8']['after']} and {it['coolant']['after']}. The rebuilt store of every chapter "
@@ -770,8 +843,125 @@ def _document(table: dict, m: dict, exact: dict, scoped_check: dict, proposals: 
     return out
 
 
+def _now_table(set_name: str) -> list[str]:
+    n = len(now_runs(set_name, 0)[0])
+    label = "top-1" if set_name == "cn8" else "right"
+    out = [f"| Run | Override | Majority {label} | {label.capitalize()} per run | Auto-accepted per run | "
+           "Wrong auto-accepted per run |", "|---|---|---|---|---|---|"]
+    rows = []
+    if set_name in SETS:
+        b = entry_of(set_name, "baseline")
+        runs = runs_of(set_name, "baseline")
+        rows.append((f"Baseline (it. {b['iteration']}): 12 chapters, unscoped vote, the runs' routing",
+                     measures(runs, logged(False)), measures(runs, logged(True))))
+    a, c = (tagged(set_name, tag) for tag in NOW_TAGS[set_name])
+    a_name = (f"(a): replay of it. {a['replay_of']['iteration']} (it. {a['iteration']})" if set_name in SETS
+              else f"(a) (it. {a['iteration']})")
+    rows += [(a_name, from_entry(a), from_entry(a["on"])),
+             (f"(c) with (a) (it. {c['iteration']})", from_entry(c), from_entry(c["on"]))]
+    for name, off, on in rows:
+        for override, m in (("off", off), ("on", on)):
+            out.append(f"| {name} | {override} | {m['majority']}/{n} | {_runs(m['right_runs'])} | {_runs(m['auto_runs'])} | "
+                       f"{_runs(m['wrong_runs'])} ({sum(m['wrong_runs'])}) |")
+    return out
+
+
+def _now_lines(set_name: str) -> tuple[list[str], dict]:
+    """The lines whose majority outcome differs between (a) and (c), with whether the expected chapter was among the
+    chapters of the nomenclature search's subheadings that (c)'s proposal read (its first run)."""
+    a, c = line_majorities(now_runs(set_name, 0)), line_majorities(now_runs(set_name, 1))
+    first_a = {r["reference"]: r for r in now_runs(set_name, 0)[0]}
+    first_c = {r["reference"]: r for r in now_runs(set_name, 1)[0]}
+    out = ["| Line | Expected | (a) majority | (c) majority | Expected chapter among (c)'s chapters | Proposed (a) → (c), run 1 |",
+           "|---|---|---|---|---|---|"]
+    count = {"lost": 0, "won": 0, "lost_outside": 0}
+    for ref, (exp, found_a, right_a) in a.items():
+        _, found_c, right_c = c[ref]
+        if found_a == found_c:
+            continue
+        chapters = first_c[ref].get("proposal_chapters") or []
+        inside = exp[:2] in chapters if exp and exp[0].isdigit() else None
+        if right_a and not right_c:
+            count["lost"] += 1
+            count["lost_outside"] += inside is False
+        if right_c and not right_a:
+            count["won"] += 1
+        out.append(f"| {ref} | {exp} | {found_a or 'no code'} | {found_c or 'no code'} | "
+                   f"{'-' if inside is None else ('yes' if inside else 'no')} ({', '.join(chapters)}) | "
+                   f"{', '.join(first_a[ref]['precedent_codes']) or 'none'} → {', '.join(first_c[ref]['precedent_codes']) or 'none'} |")
+    return out, count
+
+
+def _section5() -> list[str]:
+    e = {s: [tagged(s, tag) for tag in NOW_TAGS[s]] for s in NOW_SETS}
+    label = {"cn8": "120 lines", "coolant": "coolant", "outside": "outside"}
+    paid = [(f"{label[s]} {name}", x["cost_usd"]) for s in NOW_SETS for name, x in zip(("(a)", "(c)"), e[s])
+            if not x.get("replay")]
+    lock = "FRBTIFR-BTI-2026-00308"     # the outside set's bike U-lock
+    wrong_lock = [sum(r["reference"] == lock and r["route"] == "auto_accept" and not r["right"] for run in now_runs("outside", k)
+                      for r in run) for k in (0, 1)]
+    wrong_out = [sum(r["route"] == "auto_accept" and not r["right"] for run in now_runs("outside", k) for r in run)
+                 for k in (0, 1)]
+    w = lambda m: sum(m["wrong_runs"])          # noqa: E731
+    base = {o: measures(runs_of("cn8", "baseline"), logged(o)) for o in (False, True)}
+    a120 = {False: from_entry(e["cn8"][0]), True: from_entry(e["cn8"][0]["on"])}
+    c120 = {False: from_entry(e["cn8"][1]), True: from_entry(e["cn8"][1]["on"])}
+    lines120, n120 = _now_lines("cn8")
+    lines_cool, _ = _now_lines("coolant")
+    lines_out, _ = _now_lines("outside")
+    passed = w(a120[False]) <= w(base[False])
+    return [
+        "## 5. Rule (a) and option (c): the measurement of 2026-11-19", "",
+        "The author's decisions of 2026-11-19 (spec, clarifications of that day): the app now routes by **rule (a)**, "
+        "the unfiltered 5-nearest vote of constitution 1.5.0 deciding the auto-accept while the vote within the "
+        "candidates' chapters can only send a line to review, and by the **vague rule**, every vague line to ask the "
+        "shipper. **Option (c)** limits the candidate proposal to the chapters of the nomenclature search's subheadings; "
+        "it was measured with rule (a) through `--proposal-scope nomenclature` (tests/eval/hs6_eval.py, evaluation only, "
+        "no product code or setting), against (a):", "",
+        f"- **(a) on the 120-line and coolant sets** is the exact replay of the after-runs' rows (iterations "
+        f"{e['cn8'][0]['replay_of']['iteration']} and {e['coolant'][0]['replay_of']['iteration']}) by the product's "
+        "routing functions under rule (a) and the vague rule: `hs6_eval.py --replay <after-run file> --floor 0.40`, no "
+        f"model call (history iterations {e['cn8'][0]['iteration']} and {e['coolant'][0]['iteration']}). This script "
+        "checks that its own replay of rule (a) (`rule_a_now`) gives the same measures, the override off and on.",
+        f"- **(a) on the outside set** is three runs of its own (iteration {e['outside'][0]['iteration']}), the control "
+        "of (c). The set: 14 lines approved by the author (tests/eval/hs6_eval_outside_set.json), whose expected HS-6 "
+        "lies outside the twelve chapters of the old store, each from an EBTI ruling valid on 2026-11-19 and rewritten in "
+        "plain shipper wording; each line's source ruling is kept out (leave-one-out).",
+        f"- **(c)**: three runs on each set (iterations {e['cn8'][1]['iteration']}, {e['coolant'][1]['iteration']} and "
+        f"{e['outside'][1]['iteration']}). Every run: Gemini 2.5 Flash with reasoning off, query expansion off, customs "
+        "wording off, three runs, threshold 85, the rebuilt store of every chapter.",
+        f"- **Cost**: ${KEY_USAGE:.4f} by the key's usage, read once OpenRouter had settled it; "
+        f"${sum(c for _, c in paid):.4f} by the evaluation's tallies ("
+        + ", ".join(f"{name} ${c:.4f}" for name, c in paid) + "): within the approved $1.10.", "",
+        "**The 120-line set**:", "", *_now_table("cn8"), "",
+        "**The coolant set**:", "", *_now_table("coolant"), "",
+        "**The outside set**:", "", *_now_table("outside"), "",
+        f"**SC-004 under rule (a)**: wrong auto-accepts summed over the three replayed after-runs, {w(a120[False])}, "
+        f"against {w(base[False])} over the three baseline runs: **{'passes' if passed else 'fails'}** (override on: "
+        f"{w(a120[True])} against {w(base[True])}). Judged on the chapter-filtered vote as first built it failed, 12 "
+        "against 10 (eval-diff.md, section 4); rule (a) keeps the after-run's top-1s (the vote never changes a top-1 with "
+        f"the override off: majority {a120[False]['majority']}, as the after-run's) and removes the 3 wrong auto-accepts "
+        "of IEBTIIENEN004-2024-BTI208.", "",
+        f"**(c) against (a)**: on the 120 lines (c) has a majority top-1 of {c120[False]['majority']} against "
+        f"{a120[False]['majority']} and the same wrong auto-accepts ({w(c120[False])} against {w(a120[False])}), with "
+        f"fewer auto-accepts ({_runs(c120[False]['auto_runs'])} against {_runs(a120[False]['auto_runs'])} per run). It "
+        f"loses {n120['lost']} lines that (a) gets right on majority and wins {n120['won']}; in {n120['lost_outside']} of "
+        "the lost lines the expected chapter is not among the chapters of the nomenclature search's subheadings, so "
+        "(c)'s proposal could not bring the right code in, which is what the proposal does today (it lifted the labelled "
+        "set's top-3 from 11 of 12 to 12 of 12). On the coolant set (c) loses coolant-1 (2710.19, proposed today by "
+        "rulings of chapter 27); on the outside set it loses the chilli seasoning (2103.90 → 0904.22). "
+        + (f"The outside set's wrong auto-accepts are all the bike U-lock ({lock}), {wrong_lock[0]} under (a) and "
+           f"{wrong_lock[1]} under (c): its source ruling gives 8301.10, while the model chose 8301.40, where 4 of its 5 "
+           "nearest rulings sit. " if wrong_lock == wrong_out else "")
+        + "(c) is not in the app; nothing here recommends it.", "",
+        "The 120-line set's lines whose majority outcome differs between (a) and (c):", "", *lines120, "",
+        "The coolant set's:", "", *lines_cool, "",
+        "The outside set's:", "", *lines_out]
+
+
 def render() -> str:
     check_against_history()
+    check_rule_a_replay()
     table = {s: _set_table(s) for s in SETS}
     m = {s: dict((name.split(":")[0], (off, on)) for name, off, on in _measure_rows(s)) for s in SETS}
     exact = {s: {w: replay_matches(runs_of(s, w)) for w in ("baseline", "ablation")} for s in SETS}
@@ -787,7 +977,7 @@ def render() -> str:
             proposals[(s, "ablation", override)] = {"(a)": own, "(b)": own}
     vague = {(s, w, o): (measures(runs_of(s, w), logged(o)), measures(runs_of(s, w), vague_rule(logged(o))))
              for s in SETS for w in WHICH for o in (False, True)}
-    return "\n".join(_document(table, m, exact, scoped_check, proposals, vague)) + "\n"
+    return "\n".join(_document(table, m, exact, scoped_check, proposals, vague) + ["", *_section5()]) + "\n"
 
 
 def main(argv: list[str] | None = None) -> int:

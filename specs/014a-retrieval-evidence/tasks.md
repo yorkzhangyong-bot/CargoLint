@@ -514,10 +514,10 @@ approves the outside set's lines.
   only the rulings of the chapters of the nomenclature search's top subheadings, while the gate's vote stays
   unfiltered; no product setting reads it (spec FR-033)
 - [X] T064 [US1] Option (c) in tests/eval/hs6_eval.py, evaluation only (spec FR-033)
-- [ ] T065 [US1] LIVE (at most $1.10 in all, after the author's approval of T062): rule (a) on the outside set, three
+- [X] T065 [US1] LIVE (at most $1.10 in all, after the author's approval of T062): rule (a) on the outside set, three
   runs; option (c) with rule (a) on the 120-line set, the coolant set and the outside set, three runs each; stop and
   ask before the cost would pass $1.10 (spec FR-033)
-- [ ] T066 [US1] The report, in docs/reports/014a-regression-analysis.md: (c) against (a) per set, the override off and
+- [X] T066 [US1] The report, in docs/reports/014a-regression-analysis.md: (c) against (a) per set, the override off and
   on (majority top-1, top-1 per run, auto-accepted and wrong auto-accepted per run); for the 120-line and coolant sets,
   (a) as the exact replay of the after-runs' rows under rule (a) and the vague rule, with the baseline; SC-004 under
   rule (a) stated as passed or failed with its lines (spec FR-033, SC-004)
