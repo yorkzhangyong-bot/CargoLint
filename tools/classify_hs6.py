@@ -1,7 +1,7 @@
 """Tool 3 — classify_hs6: queries (the raw text, optionally expanded) → (history-boosted) hybrid retrieval → ranking →
-code-existence validation (FR-012 … FR-018, constitution Principles III and IV). Feature 014a: the rulings that vote on
-the HS-6 are searched within the chapters of the model's validated candidates, after the ranking; the precedent search
-before it keeps every chapter."""
+code-existence validation (FR-012 … FR-018, constitution Principles III and IV). Feature 014a (rule (a)): the gate's vote
+reads the precedent search over every chapter; a second vote, searched within the chapters of the model's validated
+candidates after the ranking, can only send the line to review."""
 from __future__ import annotations
 
 import json
