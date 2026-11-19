@@ -242,13 +242,14 @@ model and its sections in a switch at the top:
 6. **Validation in code**: every returned code must match `^\d{4}\.\d{2}$` **and exist in the
    nomenclature index**; unknown codes are dropped, subheading text and chapter are filled from the
    index, never from the model. If nothing survives, the line is "no valid candidate".
-7. **Routing in code** (`agent/routing.py`): stop-word → ask the shipper; vague → ask the shipper below
-   the ask floor (50) else review; OK → auto-accept when the HS-6 gate passes, else review. The gate
-   (constitution 1.5.0) is the vote of the five nearest eligible EBTI rulings at or above a cosine
-   similarity of 0.40, searched since feature 014a among the rulings of the candidates' chapters only (the first two
-   digits of the model's validated codes, at most three chapters) with the line's query vectors and no new embedding
-   call: the top candidate passes when it is their majority with a share of at least
-   0.5, and the review reason names the rulings, their countries and the candidate they support. The
+7. **Routing in code** (`agent/routing.py`): stop-word → ask the shipper; vague → ask the shipper, whatever
+   the confidence; OK → auto-accept when the HS-6 gate passes, else review. The gate (constitution 1.5.0) is
+   the vote of the five nearest eligible EBTI rulings over every indexed chapter, at or above a cosine
+   similarity of 0.40: the top candidate passes when it is their majority with a share of at least
+   0.5, and the review reason names the rulings, their countries and the candidate they support. Since feature
+   014a a second vote, among the rulings of the candidates' chapters only (the first two digits of the model's
+   validated codes, at most three chapters), searched with the line's query vectors and no new embedding call, can
+   only send to review a line the gate would accept, when it has voters and does not agree on the decided code. The
    precedent override (constitution 1.6.0, feature 008) adds one case: when at least `OVERRIDE_MIN` of
    the five (by default 5, all of them) sit at the model's second or third candidate, that candidate is
    decided and auto-accepted with the note "rulings overrode the model: N of M agree on <code>"; the

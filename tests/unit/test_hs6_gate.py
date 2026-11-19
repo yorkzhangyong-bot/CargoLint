@@ -92,7 +92,7 @@ class TestGate:
 
     def test_flags_failures_and_the_cn8_step_come_before_the_vote(self):
         assert R.route_line(FlagKind.stop_word, 99, "checked", False, T, F, hs6_vote=AGREE)[0] == Route.ask_shipper
-        assert R.route_line(FlagKind.vague, 55, "checked", False, T, F, hs6_vote=AGREE)[0] == Route.review
+        assert R.route_line(FlagKind.vague, 55, "checked", False, T, F, hs6_vote=AGREE)[0] == Route.ask_shipper
         assert R.route_line(FlagKind.ok, 99, "checked", False, T, F, cn8_question="the material", hs6_vote=AGREE)[0] == \
             Route.ask_shipper
         assert R.route_line(FlagKind.ok, 99, "checked", False, T, F, cn8_error="boom", hs6_vote=AGREE)[0] == Route.review

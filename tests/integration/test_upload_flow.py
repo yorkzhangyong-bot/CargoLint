@@ -60,8 +60,9 @@ def test_upload_flow_end_to_end(fake_llm, kb, memory_store, scripted):
     assert len(store.lines) == 12 and all(l.current.status == LineStatus.checked for l in store.lines)
     assert store.shipment.shipper.name == "Yiwu Hengfa Trading" and store.shipment.shipper.known is True
     assert store.shipment.origin == "Shanghai" and store.shipment.mode == "LCL"
-    # feature 004, decision 3: "Plastic toy cars" (line 6) now asks the shipper whether a motor is fitted
-    assert result.counts == {"auto_accept": 6, "review": 2, "ask_shipper": 4, "needs_action": 6, "accepted": 6, "cn8_to_confirm": 0,
+    # feature 004, decision 3: "Plastic toy cars" (line 6) now asks the shipper whether a motor is fitted; the vague rule
+    # of 2026-11-19: "Furniture" (line 9, vague at 58) asks the shipper too
+    assert result.counts == {"auto_accept": 6, "review": 1, "ask_shipper": 5, "needs_action": 6, "accepted": 6, "cn8_to_confirm": 0,
                              "taric_to_confirm": 0}   # no snapshot in this knowledge base: every line is not_loaded
     toys = store.get_line(6)
     assert toys.current.cn8.question == "Ask the shipper for: whether the toy cars incorporate a motor"
@@ -78,7 +79,7 @@ def test_upload_flow_end_to_end(fake_llm, kb, memory_store, scripted):
 
     store.set_decision(2, Decision(route=DecisionRoute.accepted, decided_code="9405.21"))
     assert store.get_line(2).current.decision.chosen_how == ChosenHow.top
-    assert store.counts() == {"auto_accept": 6, "review": 1, "ask_shipper": 4, "needs_action": 5, "accepted": 7, "cn8_to_confirm": 0,
+    assert store.counts() == {"auto_accept": 6, "review": 0, "ask_shipper": 5, "needs_action": 5, "accepted": 7, "cn8_to_confirm": 0,
                               "taric_to_confirm": 0}
 
 

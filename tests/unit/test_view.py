@@ -43,7 +43,7 @@ LOCK_TAIL = " — update the description and re-check"
      "use."),
     ("vague_close", "Ask: material, product name, use?", "c", "Locked: vague description" + LOCK_TAIL,
      "The description is too general for customs. Please state the exact product name, the material and the intended use."),
-    ("vague_review", "Ask: material, product name, use?", "c", "Locked: vague description" + LOCK_TAIL,
+    ("vague_high", "Ask: material, product name, use?", "c", "Locked: vague description" + LOCK_TAIL,
      "The description is too general for customs. Please state the exact product name, the material and the intended use."),
     ("unreadable", "Ask: unreadable line", "c", "Locked: the description could not be read" + LOCK_TAIL,
      "We could not read this line of your document. Please state the exact product name, the material and the intended "
@@ -745,7 +745,7 @@ def test_taric_question(kb):
 
 
 # --------------------------------------------------------------------------- §2.1, §2.3 kind (c): reasons and candidates (US3, T024)
-RED = ("failed", "ics2_term", "firm_stop_word", "vague_close", "vague_apart", "vague_review", "unreadable", "cn8_question",
+RED = ("failed", "ics2_term", "firm_stop_word", "vague_close", "vague_apart", "vague_high", "unreadable", "cn8_question",
        "sent", "taric_question")
 
 

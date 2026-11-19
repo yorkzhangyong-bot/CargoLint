@@ -6,7 +6,7 @@ from agent.schemas import Candidate, FlagKind, LineStatus, Route
 
 pytestmark = pytest.mark.unit
 
-T, F = 85, 50  # threshold, ask floor
+T, F = 85, 50  # threshold, ask floor (which no longer routes since the vague rule of 2026-11-19)
 
 
 def _route(flag, conf, status="checked", ever_flagged=False, threshold=T, ask_floor=F):
@@ -19,14 +19,17 @@ class TestRoutingTable:
         assert _route(FlagKind.stop_word, 99)[0] == Route.ask_shipper
         assert _route(FlagKind.stop_word, 0)[0] == Route.ask_shipper
 
-    def test_vague_below_ask_floor_goes_to_ask_shipper(self):
-        assert _route(FlagKind.vague, 31)[0] == Route.ask_shipper
-        assert _route(FlagKind.vague, 49)[0] == Route.ask_shipper
+    @pytest.mark.parametrize("conf", [None, 0, 31, 49, 50, 58, 96])   # below, at and above the former ask floor of 50
+    def test_vague_always_goes_to_ask_shipper(self, conf):            # the author's decision of 2026-11-19
+        assert _route(FlagKind.vague, conf) == (Route.ask_shipper, "vague description — ask the shipper")
 
-    def test_vague_at_or_above_ask_floor_goes_to_review(self):
-        assert _route(FlagKind.vague, 50)[0] == Route.review
-        assert _route(FlagKind.vague, 58)[0] == Route.review
-        assert _route(FlagKind.vague, 96)[0] == Route.review  # flagged lines never auto-accept
+    @pytest.mark.parametrize("ever_flagged", [False, True])
+    def test_vague_never_auto_accepts_whatever_the_threshold_and_the_vote(self, ever_flagged):
+        from agent.schemas import Hs6Vote
+
+        vote = Hs6Vote(majority="9403.60", majority_share=1.0, model_is_majority=True, agrees=True,
+                       competing=[("9403.60", ["DE", "FR", "NL", "IE", "AT"])])
+        assert route_line(FlagKind.vague, 99, "checked", ever_flagged, 60, F, hs6_vote=vote)[0] == Route.ask_shipper
 
     def test_ok_at_or_above_threshold_auto_accepts(self):
         assert _route(FlagKind.ok, 96)[0] == Route.auto_accept

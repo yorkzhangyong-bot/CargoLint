@@ -197,11 +197,11 @@ def build_state(store: LineStore, kb: Any, state: str) -> int:
         return n
     if state == "firm_stop_word":
         return _clear(store, kb, "Gift")
-    if state in ("vague_close", "vague_apart", "vague_review"):
-        text = {"vague_close": "Mixed household articles", "vague_apart": "Kitchen things", "vague_review": "Mixed metal articles"}[state]
+    if state in ("vague_close", "vague_apart", "vague_high"):   # vague_high: at or above the former ask floor of 50
+        text = {"vague_close": "Mixed household articles", "vague_apart": "Kitchen things", "vague_high": "Mixed metal articles"}[state]
         cands = {"vague_close": [("3924.90", 41), ("3924.10", 39), ("9403.60", 12)],
                  "vague_apart": [("3924.90", 40), ("3924.10", 10), ("9403.60", 5)],
-                 "vague_review": [("7318.15", 55), ("8708.99", 20)]}[state]
+                 "vague_high": [("7318.15", 55), ("8708.99", 20)]}[state]
         n = _clear(store, kb, text)
         _classify(store, n, cands)
         return n
@@ -308,7 +308,7 @@ def build_state(store: LineStore, kb: Any, state: str) -> int:
     raise ValueError(f"unknown state {state!r}")
 
 
-CN_STATES = ("pending", "failed", "ics2_term", "firm_stop_word", "vague_close", "vague_apart", "vague_review", "unreadable",
+CN_STATES = ("pending", "failed", "ics2_term", "firm_stop_word", "vague_close", "vague_apart", "vague_high", "unreadable",
              "cn8_question", "sent", "taric_question", "cn8_error", "review", "ready_to_accept", "no_candidate",
              "cn8_missing", "cn8_pending", "taric_missing", "taric_two", "taric_many", "taric_one_td", "ready",
              "ready_not_loaded", "accepted", "accepted_taric")

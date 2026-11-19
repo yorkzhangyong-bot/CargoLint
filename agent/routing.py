@@ -59,7 +59,9 @@ def route_line(
     Feature 006: after those rules, the nearest rulings' vote (`hs6_vote`) decides the auto-accept through hs6_gate; only
     without an eligible ruling does the confidence meet the threshold, as before. Feature 008: with the switch on
     (`hs6_override_min`, None when off), the precedent override is one more case of that gate. Feature 014a (rule (a)):
-    the vote of the candidates' chapters (`hs6_scoped_vote`) can only send to review a line that gate would accept."""
+    the vote of the candidates' chapters (`hs6_scoped_vote`) can only send to review a line that gate would accept. A vague
+    line always goes to ask the shipper (the author's decision of 2026-11-19, feature 001 FR-020): `ask_floor` no longer
+    routes."""
     if not (THRESHOLD_MIN <= int(threshold) <= THRESHOLD_MAX):
         raise ValueError(f"threshold must be between {THRESHOLD_MIN} and {THRESHOLD_MAX}, got {threshold}")
     st = _status(status)
@@ -73,11 +75,8 @@ def route_line(
 
     if kind == FlagKind.stop_word:
         return Route.ask_shipper, "stop-word in the description — ask the shipper what the goods actually are"
-    if kind == FlagKind.vague:
-        if conf is None or conf < ask_floor:
-            shown = "no candidate" if conf is None else f"confidence {conf}"
-            return Route.ask_shipper, f"vague description and {shown} below the ask floor {ask_floor} — ask the shipper"
-        return Route.review, f"vague description; confidence {conf} at or above the ask floor {ask_floor} — needs a human look"
+    if kind == FlagKind.vague:   # the author's decision of 2026-11-19: whatever the confidence
+        return Route.ask_shipper, "vague description — ask the shipper"
 
     if kind == FlagKind.ok and cn8_error:
         return Route.review, f"CN-8 step failed: {cn8_error} — needs a human look"

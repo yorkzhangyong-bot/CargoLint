@@ -288,7 +288,7 @@ def voted(reference, counts, expected="3926.90", top3=TOP3, confidence=90, flag=
     ([], {"expected": "9503.00"}, {"rank": None, "right": None},                   # no ruling voted: the threshold
      {"gate": "no_rulings", "route": "auto_accept", "rank": 1, "chosen": "9503.00", "hit": True}),
     ([["3926.90", 4], ["9503.00", 1]], {"flag": "vague", "confidence": 55}, {"rank": 2, "right": True},
-     {"gate": "not_gated", "route": "review", "rank": 1, "chosen": "9503.00", "hit": False}),
+     {"gate": "not_gated", "route": "ask_shipper", "rank": 1, "chosen": "9503.00", "hit": False}),   # vague: always ask
     ([], {"top3": [], "confidence": None}, {"rank": None, "right": None},
      {"gate": "not_gated", "route": "review", "rank": None, "chosen": None, "hit": False})])
 def test_feature_008_the_switch_on_from_a_rows_own_fields(counts, kw, supported, on):
