@@ -26,6 +26,8 @@
 | 17 | 2026-11-18 | 014a-after-floor0.50 | 3 | 76 / 77 / 77 of 120 | 77/120 | 104 / 105 / 105 of 120 | 116/120 | 118/120 | 4 / 4 / 4 | 62 / 61 / 63 of 120 | 65 / 65 / 65 | 14 / 15 / 15 | $0.0000 (€0.0000), 0 s |
 | 18 | 2026-11-18 | 014a-after-floor0.55 | 3 | 76 / 77 / 77 of 120 | 77/120 | 104 / 105 / 105 of 120 | 116/120 | 118/120 | 4 / 4 / 4 | 62 / 61 / 63 of 120 | 65 / 65 / 65 | 14 / 15 / 15 | $0.0000 (€0.0000), 0 s |
 | 19 | 2026-11-19 | 014a-ablation | 3 | 77 / 77 / 76 of 120 | 76/120 | 103 / 104 / 104 of 120 | 117/120 | 118/120 | 3 / 3 / 3 | 63 / 61 / 62 of 120 | 63 / 63 / 62 | 16 / 16 / 16 | $0.5260 (€0.4839), 413 s |
+| 20 | 2026-11-19 | 014a-c | 3 | 64 / 63 / 64 of 120 | 64/120 | 82 / 80 / 80 of 120 | 116/120 | 119/120 | 3 / 3 / 3 | 49 / 48 / 50 of 120 | 51 / 50 / 51 | 15 / 15 / 15 | $0.5178 (€0.4764), 290 s |
+| 21 | 2026-11-19 | 014a-rule-a | 3 | 76 / 77 / 77 of 120 | 77/120 | 104 / 105 / 105 of 120 | 116/120 | 117/120 | 3 / 3 / 3 | 62 / 61 / 63 of 120 | 63 / 63 / 62 | 15 / 16 / 17 | $0.0000 (€0.0000), 0 s |
 
 ## Iteration 1 (hs6-baseline, openai/gpt-4o-mini, 2026-10-25)
 
@@ -2036,6 +2038,255 @@ Overrides that fired per run: 3 / 2 / 3, of which chose the right HS-6: 3 / 2 / 
 - run 1: IEBTIIENEN004-2026-BTI71 (expected 9619.00): candidate 2, 9619.00, instead of 6108.21; right
 - run 2: FRBTIFR-BTI-2025-02100 (expected 4203.29): candidate 2, 4203.29, instead of 6116.10; right
 - run 2: MTBTI2025-017 (expected 6307.90): candidate 2, 6307.90, instead of 6305.90; right
+- run 3: FRBTIFR-BTI-2025-02100 (expected 4203.29): candidate 2, 4203.29, instead of 6116.10; right
+- run 3: MTBTI2025-017 (expected 6307.90): candidate 2, 6307.90, instead of 6305.90; right
+- run 3: IEBTIIENEN004-2026-BTI71 (expected 9619.00): candidate 2, 9619.00, instead of 6108.21; right
+
+## Iteration 20 (014a-c, google/gemini-2.5-flash, en, query expansion off, customs wording off, 2026-11-19)
+
+Invalid answers (retried at most 2 times): run 1: 0 retried (0 not valid JSON, 0 not the schema), 0 calls still invalid, 0 lines failed; run 2: 0 retried (0 not valid JSON, 0 not the schema), 0 calls still invalid, 0 lines failed; run 3: 0 retried (0 not valid JSON, 0 not the schema), 0 calls still invalid, 0 lines failed.
+
+The model's own confidence of its top-1 (before the vague cap), all runs, right / wrong: 98: 54 / 3 · 95: 137 / 143 · 90: 0 / 16 · 85: 0 / 4.
+
+| Run | Top-1 | In top 3 | Auto-accept | Review | Ask the shipper | Wrong, auto-accepted |
+|---|---|---|---|---|---|---|
+| 1 | 64/120 | 82/120 | 51 | 64 | 5 | 3 |
+| 2 | 63/120 | 80/120 | 50 | 65 | 5 | 3 |
+| 3 | 64/120 | 80/120 | 51 | 64 | 5 | 3 |
+
+### Vote gate
+
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+
+| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | 51 | 48 | 13 | 2 | 0 | 6 | 0 | 48 | 15 |
+| 2 | 50 | 49 | 13 | 2 | 0 | 6 | 0 | 47 | 15 |
+| 3 | 51 | 48 | 13 | 2 | 0 | 6 | 0 | 48 | 15 |
+
+### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
+
+The CN-8 eval starts from the correct HS-6, so a line is right end to end only when both are right. Majority: the majority top-1 of each eval; run k: run k of both.
+
+| | HS-6 right, CN-8 right (end to end) | HS-6 right, CN-8 wrong | HS-6 wrong, CN-8 right | HS-6 wrong, CN-8 wrong |
+|---|---|---|---|---|
+| Majority | 50 | 14 | 47 | 9 |
+| Run 1 | 49 | 15 | 48 | 8 |
+| Run 2 | 48 | 15 | 47 | 10 |
+| Run 3 | 50 | 14 | 46 | 10 |
+
+On majority results 70 of 120 lines end wrong: 56 from the HS-6 step (the CN-8 step would have failed too on 9 of them), 14 from the CN-8 step alone. End-to-end estimate per run: 49 / 48 / 50 of 120.
+
+Wrong top-1 results (line × run): 169; the correct HS-6 was among the candidates shown to the model in 54 (31.9%).
+
+Leakage guard: each line's own ruling was its nearest ruling in 109 / 109 / 108 of 120 lines (per run), among the 12 the precedent search reads in 118 / 118 / 118; the guard kept it out of the precedents.
+
+### Lines wrong in every run (56)
+
+- IEBTIIENEN004-2025-BTI245 (chapter 39, expected 3926.90): 9033.00 (90, review) · 9033.00 (90, review) · 9033.00 (90, review); correct in the top 3 in 0 of 3 runs. "Perform Stem Masks They are used in the Thermal Spray process of coating Orthop…"
+- XIBTI505068468 (chapter 39, expected 3926.90): 7322.90 (95, review) · 7322.90 (95, review) · 7322.90 (95, review); correct in the top 3 in 0 of 3 runs. "A gas fuelled space heater It’s function is to provide heat by burning gas. Typ…"
+- IEBTIIENEN004-2025-BTI51 (chapter 39, expected 3926.90): 8538.90 (95, review) · 8538.90 (95, review) · 8538.90 (95, review); correct in the top 3 in 0 of 3 runs. "Part Number 2MM-01019AA Panel is a front housing on the central console in a ca…"
+- IEBTIIENEN004-2024-BTI133 (chapter 39, expected 3926.90): 4202.92 (95, review) · 4202.92 (95, review) · 4202.92 (95, review); correct in the top 3 in 3 of 3 runs. "This is a protection case for Apple Airpods. Designed to Keep product protected…"
+- IEBTIIENEN004-2025-BTI463 (chapter 39, expected 3926.90): 4016.99 (95, review) · 4016.99 (95, review) · 4016.99 (95, review); correct in the top 3 in 0 of 3 runs. "The product is an orange coloured cushion part used inside a gear shifter, unde…"
+- IEBTIIENEN004-2024-BTI141 (chapter 39, expected 3926.90): 9111.80 (95, review) · 9111.80 (95, review) · 9111.80 (95, review); correct in the top 3 in 0 of 3 runs. "The product is a snap on protective case for a smart watch. Its function is to …"
+- IEBTIIENEN004-2023-BTI572 (chapter 39, expected 3923.10): 8609.00 (59, ask_shipper) · 8609.00 (59, ask_shipper) · 8609.00 (59, ask_shipper); correct in the top 3 in 3 of 3 runs. "Celsius SSM Shipper It is used to ship Pharmaceutical Drug Substance on an inte…"
+- IEBTIIENEN004-2024-BTI284 (chapter 42, expected 4202.12): 4202.32 (95, review) · 4202.32 (95, review) · 4202.32 (95, review); correct in the top 3 in 3 of 3 runs. "Slim lightweight structured ipad sleeve with front zippered pocket for accessor…"
+- IEBTIIENEN004-2024-BTI145 (chapter 42, expected 4202.92): 4202.22 (95, review) · 4202.22 (95, review) · 4202.22 (95, review); correct in the top 3 in 3 of 3 runs. "Travel bag Outer surface is made of polyester, Made from 99.9& Polyester, 0.1% …"
+- IEBTIIENEN004-2025-BTI449 (chapter 42, expected 4202.92): 4202.12 (95, review) · 4202.12 (95, review) · 4202.12 (95, review); correct in the top 3 in 1 of 3 runs. "Multifunction pencil case with calculator and pencil sharpener. The predominant…"
+- IEBTIIENEN004-2025-BTI227 (chapter 42, expected 4202.92): 4202.22 (95, review) · 4202.22 (95, review) · 4202.22 (95, review); correct in the top 3 in 3 of 3 runs. "BACKPACK, NYLON 840D, DETACHABLE SHOULDER STRAPS, ZIPPERED POCKETS \[Hip PAck Ol…"
+- IEBTIIENEN004-2024-BTI261 (chapter 42, expected 4202.92): 4202.12 (95, review) · 4202.12 (95, review) · 4202.12 (95, review); correct in the top 3 in 3 of 3 runs. "PROTECTION CASE FOR MACBOOK PRO 13”. IT’S COMPOSED OF HARD PLASTIC AND COVERS T…"
+- IEBTIIENEN004-2024-BTI132 (chapter 61, expected 6102.30): 6110.30 (95, review) · 6110.30 (95, review) · 6110.30 (95, review); correct in the top 3 in 3 of 3 runs. "This garment is a full zip fleece. This is a knitted recycled 100% polyester tw…"
+- IEBTIIENEN004-2024-BTI90 (chapter 61, expected 6101.30): 6104.33 (95, review) · 6104.33 (95, review) · 6104.33 (95, review); correct in the top 3 in 0 of 3 runs. "This is a knitted jacket type garment. This is a knitted garment and is made of…"
+- DEBTI52786/23-1 (chapter 61, expected 6113.00): 6210.20 (95, review) · 6210.20 (98, review) · 6210.20 (98, review); correct in the top 3 in 0 of 3 runs. "Blouson, sog. PREVENT® Warnschutz-Softshelljacke, Artikel 8060O, Größe M, Foto …"
+- IEBTIIENEN004-2026-BTI106 (chapter 62, expected 6212.10): 6112.41 (95, review) · 6112.41 (95, review) · 6112.41 (95, review); correct in the top 3 in 0 of 3 runs. "Women's bikini top Consists of two separate fabric lined cups; Two vertical sel…"
+- IEBTIIENEN004-2026-BTI108 (chapter 62, expected 6212.10): 6112.41 (95, review) · 6112.41 (95, review) · 6112.41 (95, review); correct in the top 3 in 0 of 3 runs. "Women's bikini top Consists of two separate fabric lined cups; Two vertical sel…"
+- IEBTIIENEN004-2026-BTI107 (chapter 62, expected 6212.10): 6112.41 (95, review) · 6112.41 (95, review) · 6112.41 (95, review); correct in the top 3 in 0 of 3 runs. "A women's bandeau bikini top It consists of two removable foam cups inside whic…"
+- DEBTI7623/25-1 (chapter 62, expected 6202.40): 6204.33 (95, review) · 6204.33 (95, review) · 6204.33 (95, review); correct in the top 3 in 3 of 3 runs. "Blouson, sog. Jacke für Frauen, Größe M, Foto siehe Anlage, - aus ca. 0,3 mm di…"
+- IEBTIIENEN004-2026-BTI23 (chapter 63, expected 6307.90): 5808.90 (95, review) · 5808.90 (95, review) · 5808.90 (95, review); correct in the top 3 in 0 of 3 runs. "Two strips of grosgrain textile material cut to a specified length, then attach…"
+- IEBTIIENEN004-2026-BTI228 (chapter 63, expected 6307.90): 3304.99 (95, review) · 3304.99 (95, review) · 3304.99 (95, review); correct in the top 3 in 0 of 3 runs. "A comprehensive eyelid hygiene kit designed to cleanse, soothe, and support eye…"
+- SEBTITV-2026-01096 (chapter 63, expected 6307.90): no code (None, review) · no code (None, review) · no code (None, review); correct in the top 3 in 0 of 3 runs. "Varan är enligt uppgift en konfektionerad hundleksak i form av en gris. Varan ä…"
+- IEBTIIENEN004-2024-BTI7 (chapter 63, expected 6307.90): 4602.90 (95, review) · 4602.90 (95, review) · 4602.19 (95, review); correct in the top 3 in 0 of 3 runs. "SET OF 2 BASKETS; MADE OF 100% PAPER TWISTED INTO PAPER YARN THEN SEWED"
+- IEBTIIENEN004-2024-BTI5 (chapter 63, expected 6307.90): 4602.90 (95, review) · 4602.90 (95, review) · 4602.90 (95, review); correct in the top 3 in 0 of 3 runs. "SET OF 3 PAPER ROPE BASKETS; IT IS MADE OF 100% PAPER TWISTED. MANUFACTURE PROC…"
+- IEBTIIENEN004-2024-BTI8 (chapter 63, expected 6307.90): 4602.90 (95, review) · 4602.90 (95, review) · 4602.90 (95, review); correct in the top 3 in 0 of 3 runs. "OPEN WEAVE BASKET; MADE OF 100% PAPER TWISTED PAPER ROPE AND IRON FRAME. IT CON…"
+- XIBTI505066180 (chapter 63, expected 6307.90): 9401.99 (95, review) · 9401.99 (95, review) · 9401.99 (95, review); correct in the top 3 in 0 of 3 runs. "The product is a seat belt pad to be used in conjunction with the car booster s…"
+- MTBTI2025-017 (chapter 63, expected 6307.90): 6305.90 (95, review) · 6305.90 (95, review) · 6305.90 (95, review); correct in the top 3 in 3 of 3 runs. "Cylindrical woven finish textile article with a zip fastner or velcro at the to…"
+- CZBTI47/152108/2024-580000-04/01 (chapter 63, expected 6307.90): 9503.00 (95, review) · 9503.00 (95, review) · 9503.00 (95, review); correct in the top 3 in 0 of 3 runs. "Dle deklarovaných údajů se jedná o textilní vycpávaný výrobek - hračku pro kočk…"
+- IEBTIIENEN004-2024-BTI356 (chapter 64, expected 6405.20): 6404.19 (95, auto_accept) · 6404.19 (95, auto_accept) · 6404.19 (95, auto_accept); correct in the top 3 in 3 of 3 runs. "LADIES FAUX FUR MULE STYLE SLIPPER WITH A CLOSED IN TOE. UPPERS OF TEXTILE, OUT…"
+- XIBTI505060394 (chapter 73, expected 7326.90): 8303.00 (95, review) · 7310.10 (95, review) · 7310.10 (95, review); correct in the top 3 in 3 of 3 runs. "A metal box with a hinged lid measuring 625(D) x 1210(W) x 645mm(H). Weight is …"
+- IEBTIIENEN004-2024-BTI96 (chapter 73, expected 7326.90): 8207.70 (90, review) · 8207.70 (90, review) · 7224.90 (95, review); correct in the top 3 in 0 of 3 runs. "Alloy steel shank used in the production or Rotary Burs. The steel shank is wel…"
+- IEBTIIENEN004-2025-BTI173 (chapter 73, expected 7326.90): 8305.90 (90, review) · 8305.90 (90, review) · 8305.90 (90, review); correct in the top 3 in 0 of 3 runs. "Product is a non-magnetic Hexagonal Metal sticker (adhesive on one side) for st…"
+- IEBTIIENEN004-2025-BTI301 (chapter 73, expected 7325.99): 9026.90 (95, review) · 9026.90 (95, review) · 9026.90 (95, review); correct in the top 3 in 3 of 3 runs. "1. Stainless steel X5000 Housing 2. Circular Housing , with 4 Cable entries , U…"
+- IEBTIIENEN004-2026-BTI19 (chapter 84, expected 8415.10): 8415.82 (95, review) · 8415.82 (95, review) · 8415.82 (95, review); correct in the top 3 in 1 of 3 runs. "Railway HVAC Systems. These are self contained systems that regulate the interi…"
+- IEBTIIENEN004-2025-BTI293 (chapter 84, expected 8424.90): 7304.41 (95, review) · 7304.41 (95, review) · 7304.41 (95, review); correct in the top 3 in 0 of 3 runs. "Hypotube Tip. This is a stainless-steel component used in a spray nozzle assemb…"
+- IEBTIIENEN004-2026-BTI68 (chapter 84, expected 8479.89): 8419.89 (95, review) · 8419.89 (95, review) · 8419.89 (95, review); correct in the top 3 in 3 of 3 runs. "A buffer preparation skid assembly. This is a stainless-steel vessel with a hea…"
+- IEBTIIENEN004-2026-BTI124 (chapter 84, expected 8431.49): 7308.90 (59, ask_shipper) · 7308.90 (59, ask_shipper) · 7308.90 (59, ask_shipper); correct in the top 3 in 0 of 3 runs. "This is an assembly for use in a Straddle Carrier Product. It consists of a squ…"
+- IEBTIIENEN004-2026-BTI105 (chapter 84, expected 8474.90): 3926.90 (59, ask_shipper) · 3926.90 (59, ask_shipper) · 3926.90 (59, ask_shipper); correct in the top 3 in 0 of 3 runs. "Machine Parts. These are Polyethylene Plastic parts that are used as wear strip…"
+- MTBTI2024-002 (chapter 84, expected 8424.89): 8479.89 (95, auto_accept) · 8479.89 (95, auto_accept) · 8479.89 (95, auto_accept); correct in the top 3 in 0 of 3 runs. "A housing container made of plastic or steel which incorporates a simple suctio…"
+- IEBTIIENEN004-2026-BTI60 (chapter 85, expected 8538.90): 8536.30 (95, review) · 8536.30 (95, review) · 8536.30 (95, review); correct in the top 3 in 3 of 3 runs. "RESIDUAL CURRENT DETECTION MODULE CONSISTING OF A SENSOR PRINTED CIRCUIT BOARD …"
+- IEBTIIENEN004-2025-BTI336 (chapter 85, expected 8538.90): 3925.90 (95, review) · 3925.90 (95, review) · 3925.90 (95, review); correct in the top 3 in 0 of 3 runs. "IT IS MADE OF PLASTIC AND IS USED TO HOLD THE SENSOR ON THE CEILING SO THAT ONL…"
+- XIBTI505068566 (chapter 85, expected 8504.40): 8504.31 (59, ask_shipper) · 8504.31 (59, ask_shipper) · 8504.31 (59, ask_shipper); correct in the top 3 in 0 of 3 runs. "This product is a transformer Initiates the start up of a pump, regulates flow …"
+- IEBTIIENEN004-2023-BTI561 (chapter 85, expected 8537.10): 8536.30 (95, review) · 8536.30 (95, review) · 8536.30 (95, review); correct in the top 3 in 0 of 3 runs. "FUSEBOX WHICH CONTAINS AN RCD (RESIDUAL CURRENT DEVICE) AND 2 MINI CIRCUIT BREA…"
+- MTBTI2025-011 (chapter 94, expected 9405.42): 9405.11 (98, auto_accept) · 9405.11 (95, auto_accept) · 9405.11 (95, auto_accept); correct in the top 3 in 3 of 3 runs. "An emergency light fitting with LEDs, having an internal power source in the fo…"
+- XIBTI505070292 (chapter 94, expected 9403.20): 6306.90 (95, review) · 6306.90 (95, review) · 6306.90 (95, review); correct in the top 3 in 0 of 3 runs. "This is a pet camping bed with a canopy for protection from the sun. A camping …"
+- SEBTITV-2024-01674 (chapter 94, expected 9401.99): 6304.99 (95, review) · 6304.99 (95, review) · 6304.99 (95, review); correct in the top 3 in 0 of 3 runs. "Möbelklädsel för armstöd till en soffa. Klädseln är enligt uppgift avsedd att f…"
+- SEBTITV-2024-01665 (chapter 94, expected 9401.99): 6304.99 (95, review) · 6304.99 (95, review) · 6304.99 (95, review); correct in the top 3 in 0 of 3 runs. "Möbelklädsel för armstöd till en soffa. Klädseln är enligt uppgift avsedd att f…"
+- IEBTIIENEN004-2024-BTI333 (chapter 94, expected 9403.60): 4420.90 (95, review) · 4420.90 (95, review) · 4420.90 (95, review); correct in the top 3 in 0 of 3 runs. "Childrens storage table. A wooden unit with 6 storage compartments. Table top h…"
+- SEBTITV-2024-01658 (chapter 94, expected 9401.99): 6304.99 (95, review) · 6304.99 (95, review) · 6304.99 (95, review); correct in the top 3 in 0 of 3 runs. "Möbelklädsel för armstöd till en soffa. Klädseln är enligt uppgift avsedd att f…"
+- SEBTITV-2024-01615 (chapter 94, expected 9401.99): 6304.99 (95, review) · 6304.99 (95, review) · 6304.99 (95, review); correct in the top 3 in 0 of 3 runs. "Möbelklädsel för armstöd till en soffa. Klädseln är enligt uppgift avsedd att f…"
+- IEBTIIENEN004-2025-BTI67 (chapter 95, expected 9503.00): 9403.60 (95, review) · 9403.60 (95, review) · 9403.60 (95, review); correct in the top 3 in 0 of 3 runs. "Play Kitchen. It is a wooden play kitchen which includes 6 wooden utensils, the…"
+- IEBTIIENEN004-2026-BTI99 (chapter 95, expected 9503.00): 6301.40 (95, review) · 6301.40 (95, review) · 6301.40 (95, review); correct in the top 3 in 0 of 3 runs. "A PLUSH BABY DINOSAUR TOY AND COMFORT BLANKET. THE COMFORTER IS COMPOSED OF 100…"
+- IEBTIIENEN004-2026-BTI118 (chapter 95, expected 9503.00): 6306.22 (95, review) · 6306.22 (95, review) · 6306.22 (95, review); correct in the top 3 in 0 of 3 runs. "A Pop-Up Play Tunnel designed for children. Made from polyester fabric and iron…"
+- IEBTIIENEN004-2026-BTI72 (chapter 96, expected 9619.00): 6108.22 (95, review) · 6108.22 (95, review) · 6108.22 (95, review); correct in the top 3 in 0 of 3 runs. "Period Pants. They are made of knitted nylon fabric with an additional non-remo…"
+- IEBTIIENEN004-2026-BTI71 (chapter 96, expected 9619.00): 6108.21 (95, review) · 6108.21 (95, review) · 6108.21 (95, review); correct in the top 3 in 0 of 3 runs. "Period Pants. They are made of knitted cotton fabric with an additional non-rem…"
+- IEBTIIENEN004-2026-BTI222 (chapter 96, expected 9609.10): 9609.90 (95, review) · 9609.90 (95, review) · 9609.90 (95, review); correct in the top 3 in 3 of 3 runs. "Sketching and drawing set consisting of the following: • 44 pencils • 7 charcoa…"
+
+### Lines whose top-1 differed between runs (4)
+
+- FRBTIFR-BTI-2025-02100 (expected 4203.29): 4203.29 (95, auto_accept) · 6116.10 (95, review) · 4203.29 (95, auto_accept)
+- IEBTIIENEN004-2024-BTI7 (expected 6307.90): 4602.90 (95, review) · 4602.90 (95, review) · 4602.19 (95, review)
+- XIBTI505060394 (expected 7326.90): 8303.00 (95, review) · 7310.10 (95, review) · 7310.10 (95, review)
+- IEBTIIENEN004-2024-BTI96 (expected 7326.90): 8207.70 (90, review) · 8207.70 (90, review) · 7224.90 (95, review)
+
+### Wrong but auto-accepted (the HS-6 layer)
+
+Per run: 3 / 3 / 3. In every run: 3 lines, each among the lines wrong in every run above.
+
+### Precedent override (feature 008)
+
+With the switch on, at least 5 of the nearest rulings at the model's candidate 2 or 3 choose that candidate and auto-accept it. The entry above is the switch off; the switch on is replayed from the same model answers and rulings, so the two differ only where an override fired. HS-6 right: the HS-6 chosen, the top-1 when no override fired.
+
+| Run | Switch | HS-6 right | Auto-accepted | Wrong, auto-accepted | Right auto-accepts | End to end (estimate) |
+|---|---|---|---|---|---|---|
+| 1 | off | 64/120 | 51 | 3 | 48 | 49/120 |
+| 1 | on | 65/120 | 52 | 3 | 49 | 50/120 |
+| 2 | off | 63/120 | 50 | 3 | 47 | 48/120 |
+| 2 | on | 65/120 | 52 | 3 | 49 | 50/120 |
+| 3 | off | 64/120 | 51 | 3 | 48 | 50/120 |
+| 3 | on | 65/120 | 52 | 3 | 49 | 51/120 |
+
+Overrides that fired per run: 1 / 2 / 1, of which chose the right HS-6: 1 / 2 / 1. The rulings' majority supported the model's candidate 2 or 3 on 17 / 18 / 17 lines per run; that candidate was the right HS-6 on 8 / 8 / 7.
+
+- run 1: MTBTI2025-017 (expected 6307.90): candidate 3, 6307.90, instead of 6305.90; right
+- run 2: FRBTIFR-BTI-2025-02100 (expected 4203.29): candidate 2, 4203.29, instead of 6116.10; right
+- run 2: MTBTI2025-017 (expected 6307.90): candidate 3, 6307.90, instead of 6305.90; right
+- run 3: MTBTI2025-017 (expected 6307.90): candidate 3, 6307.90, instead of 6305.90; right
+
+## Iteration 21 (014a-rule-a, google/gemini-2.5-flash, en, query expansion off, customs wording off, 2026-11-19)
+
+Replay of iteration 13 (014a-after) at floor 0.4 and OVERRIDE_MIN 5, from its stored answers: no model call.
+
+Note: rule (a) and the vague rule (2026-11-19): the exact replay of iteration 13's rows by the product's routing functions
+
+| Run | Top-1 | In top 3 | Auto-accept | Review | Ask the shipper | Wrong, auto-accepted |
+|---|---|---|---|---|---|---|
+| 1 | 76/120 | 104/120 | 63 | 52 | 5 | 3 |
+| 2 | 77/120 | 105/120 | 63 | 52 | 5 | 3 |
+| 3 | 77/120 | 105/120 | 62 | 53 | 5 | 3 |
+
+### Vote gate
+
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+
+| Run | Vote agrees | Vote disagrees | Tie | Share low | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | 63 | 34 | 14 | 4 | 0 | 5 | 0 | 60 | 15 |
+| 2 | 63 | 33 | 15 | 4 | 0 | 5 | 0 | 60 | 16 |
+| 3 | 62 | 34 | 14 | 5 | 0 | 5 | 0 | 59 | 17 |
+
+### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
+
+The CN-8 eval starts from the correct HS-6, so a line is right end to end only when both are right. Majority: the majority top-1 of each eval; run k: run k of both.
+
+| | HS-6 right, CN-8 right (end to end) | HS-6 right, CN-8 wrong | HS-6 wrong, CN-8 right | HS-6 wrong, CN-8 wrong |
+|---|---|---|---|---|
+| Majority | 63 | 14 | 34 | 9 |
+| Run 1 | 62 | 14 | 35 | 9 |
+| Run 2 | 61 | 16 | 34 | 9 |
+| Run 3 | 63 | 14 | 33 | 10 |
+
+On majority results 57 of 120 lines end wrong: 43 from the HS-6 step (the CN-8 step would have failed too on 9 of them), 14 from the CN-8 step alone. End-to-end estimate per run: 62 / 61 / 63 of 120.
+
+Wrong top-1 results (line × run): 130; the correct HS-6 was among the candidates shown to the model in 89 (68.5%).
+
+Leakage guard: each line's own ruling was its nearest ruling in 109 / 109 / 108 of 120 lines (per run), among the 12 the precedent search reads in 118 / 118 / 118; the guard kept it out of the precedents.
+
+### Lines wrong in every run (42)
+
+- XIBTI505068468 (chapter 39, expected 3926.90): 7322.90 (95, review) · 7322.90 (95, review) · 7322.90 (95, review); correct in the top 3 in 0 of 3 runs. "A gas fuelled space heater It’s function is to provide heat by burning gas. Typ…"
+- IEBTIIENEN004-2024-BTI133 (chapter 39, expected 3926.90): 4202.92 (95, review) · 4202.92 (95, review) · 4202.92 (95, review); correct in the top 3 in 0 of 3 runs. "This is a protection case for Apple Airpods. Designed to Keep product protected…"
+- IEBTIIENEN004-2025-BTI463 (chapter 39, expected 3926.90): 4016.99 (95, review) · 4016.99 (95, review) · 4016.99 (95, review); correct in the top 3 in 3 of 3 runs. "The product is an orange coloured cushion part used inside a gear shifter, unde…"
+- IEBTIIENEN004-2024-BTI141 (chapter 39, expected 3926.90): 9111.80 (95, review) · 9111.80 (95, review) · 9111.80 (95, review); correct in the top 3 in 0 of 3 runs. "The product is a snap on protective case for a smart watch. Its function is to …"
+- IEBTIIENEN004-2023-BTI572 (chapter 39, expected 3923.10): 8609.00 (59, ask_shipper) · 8609.00 (59, ask_shipper) · 8609.00 (59, ask_shipper); correct in the top 3 in 3 of 3 runs. "Celsius SSM Shipper It is used to ship Pharmaceutical Drug Substance on an inte…"
+- IEBTIIENEN004-2024-BTI284 (chapter 42, expected 4202.12): 4202.92 (95, review) · 4202.92 (95, review) · 4202.92 (95, review); correct in the top 3 in 0 of 3 runs. "Slim lightweight structured ipad sleeve with front zippered pocket for accessor…"
+- IEBTIIENEN004-2024-BTI145 (chapter 42, expected 4202.92): 4202.22 (95, review) · 4202.22 (95, review) · 4202.22 (95, review); correct in the top 3 in 3 of 3 runs. "Travel bag Outer surface is made of polyester, Made from 99.9& Polyester, 0.1% …"
+- IEBTIIENEN004-2025-BTI449 (chapter 42, expected 4202.92): 4202.12 (95, review) · 4202.12 (95, review) · 4202.12 (95, review); correct in the top 3 in 3 of 3 runs. "Multifunction pencil case with calculator and pencil sharpener. The predominant…"
+- FRBTIFR-BTI-2025-02100 (chapter 42, expected 4203.29): 6116.10 (95, review) · 6116.10 (95, review) · 6116.10 (95, review); correct in the top 3 in 3 of 3 runs. "Accessoire du vêtement, de type gant de protection pour tous métiers, à cinq do…"
+- IEBTIIENEN004-2025-BTI227 (chapter 42, expected 4202.92): 4202.22 (95, review) · 4202.22 (95, review) · 4202.22 (95, review); correct in the top 3 in 3 of 3 runs. "BACKPACK, NYLON 840D, DETACHABLE SHOULDER STRAPS, ZIPPERED POCKETS \[Hip PAck Ol…"
+- IEBTIIENEN004-2024-BTI261 (chapter 42, expected 4202.92): 4202.12 (95, review) · 4202.12 (95, review) · 4202.12 (95, review); correct in the top 3 in 3 of 3 runs. "PROTECTION CASE FOR MACBOOK PRO 13”. IT’S COMPOSED OF HARD PLASTIC AND COVERS T…"
+- IEBTIIENEN004-2024-BTI132 (chapter 61, expected 6102.30): 6112.12 (95, review) · 6112.12 (95, review) · 6112.12 (95, review); correct in the top 3 in 0 of 3 runs. "This garment is a full zip fleece. This is a knitted recycled 100% polyester tw…"
+- IEBTIIENEN004-2024-BTI208 (chapter 61, expected 6109.90): 6114.30 (95, review) · 6114.30 (95, review) · 6114.30 (95, review); correct in the top 3 in 0 of 3 runs. "T-Shirt Type Garment for Unisex Undergarment for wear by a person who has a spi…"
+- IEBTIIENEN004-2024-BTI90 (chapter 61, expected 6101.30): 6104.33 (95, review) · 6104.33 (95, review) · 6104.33 (95, review); correct in the top 3 in 0 of 3 runs. "This is a knitted jacket type garment. This is a knitted garment and is made of…"
+- IEBTIIENEN004-2026-BTI106 (chapter 62, expected 6212.10): 6112.41 (95, review) · 6112.41 (95, review) · 6112.41 (95, review); correct in the top 3 in 3 of 3 runs. "Women's bikini top Consists of two separate fabric lined cups; Two vertical sel…"
+- IEBTIIENEN004-2026-BTI108 (chapter 62, expected 6212.10): 6112.41 (98, review) · 6112.41 (95, review) · 6112.41 (98, review); correct in the top 3 in 3 of 3 runs. "Women's bikini top Consists of two separate fabric lined cups; Two vertical sel…"
+- IEBTIIENEN004-2026-BTI107 (chapter 62, expected 6212.10): 6112.41 (95, review) · 6112.41 (95, review) · 6112.41 (95, review); correct in the top 3 in 3 of 3 runs. "A women's bandeau bikini top It consists of two removable foam cups inside whic…"
+- DEBTI7623/25-1 (chapter 62, expected 6202.40): 6204.33 (95, review) · 6204.33 (95, review) · 6204.33 (95, review); correct in the top 3 in 3 of 3 runs. "Blouson, sog. Jacke für Frauen, Größe M, Foto siehe Anlage, - aus ca. 0,3 mm di…"
+- IEBTIIENEN004-2026-BTI23 (chapter 63, expected 6307.90): 5808.90 (95, review) · 5808.90 (95, review) · 5808.90 (95, review); correct in the top 3 in 3 of 3 runs. "Two strips of grosgrain textile material cut to a specified length, then attach…"
+- IEBTIIENEN004-2026-BTI228 (chapter 63, expected 6307.90): 3304.99 (95, review) · 3304.99 (95, review) · 3304.99 (90, review); correct in the top 3 in 0 of 3 runs. "A comprehensive eyelid hygiene kit designed to cleanse, soothe, and support eye…"
+- SEBTITV-2026-01096 (chapter 63, expected 6307.90): 9503.00 (95, review) · 9503.00 (95, review) · 9503.00 (95, review); correct in the top 3 in 3 of 3 runs. "Varan är enligt uppgift en konfektionerad hundleksak i form av en gris. Varan ä…"
+- IEBTIIENEN004-2024-BTI7 (chapter 63, expected 6307.90): 4602.90 (95, review) · 4602.90 (95, review) · 4602.90 (95, review); correct in the top 3 in 3 of 3 runs. "SET OF 2 BASKETS; MADE OF 100% PAPER TWISTED INTO PAPER YARN THEN SEWED"
+- IEBTIIENEN004-2024-BTI5 (chapter 63, expected 6307.90): 4602.90 (95, review) · 4602.90 (95, review) · 4602.90 (95, review); correct in the top 3 in 3 of 3 runs. "SET OF 3 PAPER ROPE BASKETS; IT IS MADE OF 100% PAPER TWISTED. MANUFACTURE PROC…"
+- IEBTIIENEN004-2024-BTI8 (chapter 63, expected 6307.90): 4602.90 (95, review) · 4602.90 (95, review) · 4602.90 (95, review); correct in the top 3 in 3 of 3 runs. "OPEN WEAVE BASKET; MADE OF 100% PAPER TWISTED PAPER ROPE AND IRON FRAME. IT CON…"
+- XIBTI505066180 (chapter 63, expected 6307.90): 8708.21 (90, review) · 8708.21 (90, review) · 8708.21 (95, review); correct in the top 3 in 3 of 3 runs. "The product is a seat belt pad to be used in conjunction with the car booster s…"
+- MTBTI2025-017 (chapter 63, expected 6307.90): 6305.90 (95, review) · 6305.90 (95, review) · 6305.90 (95, review); correct in the top 3 in 3 of 3 runs. "Cylindrical woven finish textile article with a zip fastner or velcro at the to…"
+- CZBTI47/152108/2024-580000-04/01 (chapter 63, expected 6307.90): 9503.00 (95, review) · 9503.00 (95, review) · 9503.00 (95, review); correct in the top 3 in 3 of 3 runs. "Dle deklarovaných údajů se jedná o textilní vycpávaný výrobek - hračku pro kočk…"
+- IEBTIIENEN004-2024-BTI356 (chapter 64, expected 6405.20): 6404.19 (95, auto_accept) · 6404.19 (95, auto_accept) · 6404.19 (95, auto_accept); correct in the top 3 in 3 of 3 runs. "LADIES FAUX FUR MULE STYLE SLIPPER WITH A CLOSED IN TOE. UPPERS OF TEXTILE, OUT…"
+- XIBTI505060394 (chapter 73, expected 7326.90): 8303.00 (95, review) · 7310.10 (95, review) · 7310.10 (95, review); correct in the top 3 in 2 of 3 runs. "A metal box with a hinged lid measuring 625(D) x 1210(W) x 645mm(H). Weight is …"
+- IEBTIIENEN004-2025-BTI301 (chapter 73, expected 7325.99): 9026.90 (95, review) · 9026.90 (95, review) · 9026.90 (95, review); correct in the top 3 in 2 of 3 runs. "1. Stainless steel X5000 Housing 2. Circular Housing , with 4 Cable entries , U…"
+- IEBTIIENEN004-2026-BTI19 (chapter 84, expected 8415.10): 8415.82 (95, review) · 8415.82 (95, review) · 8415.82 (95, review); correct in the top 3 in 1 of 3 runs. "Railway HVAC Systems. These are self contained systems that regulate the interi…"
+- IEBTIIENEN004-2025-BTI293 (chapter 84, expected 8424.90): 9018.39 (95, review) · 9018.39 (95, review) · 9018.39 (95, review); correct in the top 3 in 0 of 3 runs. "Hypotube Tip. This is a stainless-steel component used in a spray nozzle assemb…"
+- IEBTIIENEN004-2026-BTI68 (chapter 84, expected 8479.89): 8419.89 (95, review) · 8419.89 (95, review) · 8419.89 (95, review); correct in the top 3 in 3 of 3 runs. "A buffer preparation skid assembly. This is a stainless-steel vessel with a hea…"
+- IEBTIIENEN004-2026-BTI124 (chapter 84, expected 8431.49): 7308.90 (59, ask_shipper) · 7308.90 (59, ask_shipper) · 7308.90 (59, ask_shipper); correct in the top 3 in 0 of 3 runs. "This is an assembly for use in a Straddle Carrier Product. It consists of a squ…"
+- IEBTIIENEN004-2026-BTI105 (chapter 84, expected 8474.90): 3926.90 (59, ask_shipper) · 3926.90 (59, ask_shipper) · 3926.90 (59, ask_shipper); correct in the top 3 in 0 of 3 runs. "Machine Parts. These are Polyethylene Plastic parts that are used as wear strip…"
+- MTBTI2024-002 (chapter 84, expected 8424.89): 8479.89 (95, auto_accept) · 8479.89 (95, auto_accept) · 8479.89 (95, auto_accept); correct in the top 3 in 0 of 3 runs. "A housing container made of plastic or steel which incorporates a simple suctio…"
+- IEBTIIENEN004-2026-BTI60 (chapter 85, expected 8538.90): 8536.30 (95, review) · 8536.30 (95, review) · 8536.30 (95, review); correct in the top 3 in 3 of 3 runs. "RESIDUAL CURRENT DETECTION MODULE CONSISTING OF A SENSOR PRINTED CIRCUIT BOARD …"
+- IEBTIIENEN004-2025-BTI336 (chapter 85, expected 8538.90): 3925.90 (95, review) · 3925.90 (95, review) · 3925.90 (95, review); correct in the top 3 in 3 of 3 runs. "IT IS MADE OF PLASTIC AND IS USED TO HOLD THE SENSOR ON THE CEILING SO THAT ONL…"
+- XIBTI505059567 (chapter 85, expected 8504.40): 8471.80 (95, review) · 8471.80 (95, review) · 8471.80 (95, review); correct in the top 3 in 3 of 3 runs. "Body Worn Camera Docking Station Black docking station with magnetic self-locat…"
+- XIBTI505068566 (chapter 85, expected 8504.40): 8504.31 (59, ask_shipper) · 8504.31 (50, ask_shipper) · 8504.31 (59, ask_shipper); correct in the top 3 in 0 of 3 runs. "This product is a transformer Initiates the start up of a pump, regulates flow …"
+- IEBTIIENEN004-2023-BTI561 (chapter 85, expected 8537.10): 8536.30 (95, review) · 8536.30 (95, review) · 8536.30 (95, review); correct in the top 3 in 0 of 3 runs. "FUSEBOX WHICH CONTAINS AN RCD (RESIDUAL CURRENT DEVICE) AND 2 MINI CIRCUIT BREA…"
+- MTBTI2025-011 (chapter 94, expected 9405.42): 9405.11 (95, auto_accept) · 9405.11 (95, auto_accept) · 9405.11 (95, auto_accept); correct in the top 3 in 3 of 3 runs. "An emergency light fitting with LEDs, having an internal power source in the fo…"
+
+### Lines whose top-1 differed between runs (4)
+
+- MTBTI2025-018 (expected 6307.90): 6306.12 (95, review) · 6307.90 (95, review) · 6307.90 (95, review)
+- XIBTI505060394 (expected 7326.90): 8303.00 (95, review) · 7310.10 (95, review) · 7310.10 (95, review)
+- IEBTIIENEN004-2026-BTI72 (expected 9619.00): 6108.22 (95, review) · 9619.00 (98, auto_accept) · 9619.00 (98, auto_accept)
+- IEBTIIENEN004-2026-BTI71 (expected 9619.00): 9619.00 (98, auto_accept) · 6108.21 (95, review) · 6108.21 (95, review)
+
+### Wrong but auto-accepted (the HS-6 layer)
+
+Per run: 3 / 3 / 3. In every run: 3 lines, each among the lines wrong in every run above.
+
+### Precedent override (feature 008)
+
+With the switch on, at least 5 of the nearest rulings at the model's candidate 2 or 3 choose that candidate and auto-accept it. The entry above is the switch off; the switch on is replayed from the same model answers and rulings, so the two differ only where an override fired. HS-6 right: the HS-6 chosen, the top-1 when no override fired.
+
+| Run | Switch | HS-6 right | Auto-accepted | Wrong, auto-accepted | Right auto-accepts | End to end (estimate) |
+|---|---|---|---|---|---|---|
+| 1 | off | 76/120 | 63 | 3 | 60 | 62/120 |
+| 1 | on | 79/120 | 66 | 3 | 63 | 65/120 |
+| 2 | off | 77/120 | 63 | 3 | 60 | 61/120 |
+| 2 | on | 80/120 | 66 | 3 | 63 | 64/120 |
+| 3 | off | 77/120 | 62 | 3 | 59 | 63/120 |
+| 3 | on | 80/120 | 65 | 3 | 62 | 66/120 |
+
+Overrides that fired per run: 3 / 3 / 3, of which chose the right HS-6: 3 / 3 / 3. The rulings' majority supported the model's candidate 2 or 3 on 28 / 29 / 28 lines per run; that candidate was the right HS-6 on 17 / 18 / 18.
+
+- run 1: FRBTIFR-BTI-2025-02100 (expected 4203.29): candidate 2, 4203.29, instead of 6116.10; right
+- run 1: MTBTI2025-017 (expected 6307.90): candidate 2, 6307.90, instead of 6305.90; right
+- run 1: IEBTIIENEN004-2026-BTI72 (expected 9619.00): candidate 2, 9619.00, instead of 6108.22; right
+- run 2: FRBTIFR-BTI-2025-02100 (expected 4203.29): candidate 2, 4203.29, instead of 6116.10; right
+- run 2: MTBTI2025-017 (expected 6307.90): candidate 2, 6307.90, instead of 6305.90; right
+- run 2: IEBTIIENEN004-2026-BTI71 (expected 9619.00): candidate 2, 9619.00, instead of 6108.21; right
 - run 3: FRBTIFR-BTI-2025-02100 (expected 4203.29): candidate 2, 4203.29, instead of 6116.10; right
 - run 3: MTBTI2025-017 (expected 6307.90): candidate 2, 6307.90, instead of 6305.90; right
 - run 3: IEBTIIENEN004-2026-BTI71 (expected 9619.00): candidate 2, 9619.00, instead of 6108.21; right

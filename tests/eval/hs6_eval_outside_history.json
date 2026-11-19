@@ -1,0 +1,965 @@
+[
+ {
+  "iteration": 1,
+  "run_on": "2026-11-19",
+  "change": "3 independent runs, temperature 0.0, seed none",
+  "tag": "014a-a",
+  "set": "outside",
+  "model": "google/gemini-2.5-flash",
+  "reasoning": {
+   "enabled": false
+  },
+  "expansion": "off",
+  "customs_wording": "off",
+  "floor": 0.4,
+  "threshold": 85,
+  "ask_floor": 50,
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 3,
+  "n": 14,
+  "top1_runs": [
+   12,
+   12,
+   12
+  ],
+  "majority_top1": 12,
+  "top3_runs": [
+   13,
+   13,
+   13
+  ],
+  "routes_runs": [
+   {
+    "auto_accept": 7,
+    "review": 7,
+    "ask_shipper": 0
+   },
+   {
+    "auto_accept": 8,
+    "review": 6,
+    "ask_shipper": 0
+   },
+   {
+    "auto_accept": 8,
+    "review": 6,
+    "ask_shipper": 0
+   }
+  ],
+  "wrong_auto_runs": [
+   [],
+   [
+    {
+     "reference": "FRBTIFR-BTI-2026-00308",
+     "expected": "8301.10",
+     "top1": "8301.40",
+     "confidence": 95
+    }
+   ],
+   [
+    {
+     "reference": "FRBTIFR-BTI-2026-00308",
+     "expected": "8301.10",
+     "top1": "8301.40",
+     "confidence": 95
+    }
+   ]
+  ],
+  "lines": [
+   {
+    "id": "FRBTIFR-BTI-2025-03111",
+    "expected": "0902.10",
+    "majority": "0902.10",
+    "right": true,
+    "seen": [
+     {
+      "top1": "0902.10",
+      "route": "review"
+     },
+     {
+      "top1": "0902.10",
+      "route": "review"
+     },
+     {
+      "top1": "0902.10",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "IEBTIIENEN004-2026-BTI266",
+    "expected": "2103.90",
+    "majority": "2103.90",
+    "right": true,
+    "seen": [
+     {
+      "top1": "2103.90",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "2103.90",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "2103.90",
+      "route": "auto_accept"
+     }
+    ]
+   },
+   {
+    "id": "FRBTIFR-BTI-2025-02159",
+    "expected": "3406.00",
+    "majority": "3406.00",
+    "right": true,
+    "seen": [
+     {
+      "top1": "3406.00",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "3406.00",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "3406.00",
+      "route": "auto_accept"
+     }
+    ]
+   },
+   {
+    "id": "FRBTIFR-BTI-2024-07964",
+    "expected": "4015.19",
+    "majority": "4015.19",
+    "right": true,
+    "seen": [
+     {
+      "top1": "4015.19",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "4015.19",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "4015.19",
+      "route": "auto_accept"
+     }
+    ]
+   },
+   {
+    "id": "FRBTIFR-BTI-2025-03050",
+    "expected": "4419.11",
+    "majority": "4419.11",
+    "right": true,
+    "seen": [
+     {
+      "top1": "4419.11",
+      "route": "review"
+     },
+     {
+      "top1": "4419.11",
+      "route": "review"
+     },
+     {
+      "top1": "4419.11",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "CZBTI47/137431/2026-300000-ZI/01",
+    "expected": "4823.69",
+    "majority": "4823.69",
+    "right": true,
+    "seen": [
+     {
+      "top1": "4823.69",
+      "route": "review"
+     },
+     {
+      "top1": "4823.69",
+      "route": "review"
+     },
+     {
+      "top1": "4823.69",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "FRBTIFR-BTI-2023-07744",
+    "expected": "6911.10",
+    "majority": "6911.10",
+    "right": true,
+    "seen": [
+     {
+      "top1": "6911.10",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "6911.10",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "6911.10",
+      "route": "auto_accept"
+     }
+    ]
+   },
+   {
+    "id": "ESBTIESBTI2024SOL802",
+    "expected": "7013.37",
+    "majority": "7013.37",
+    "right": true,
+    "seen": [
+     {
+      "top1": "7013.37",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "7013.37",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "7013.37",
+      "route": "auto_accept"
+     }
+    ]
+   },
+   {
+    "id": "FRBTIFR-BTI-2025-02298",
+    "expected": "7615.10",
+    "majority": "7615.10",
+    "right": true,
+    "seen": [
+     {
+      "top1": "7615.10",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "7615.10",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "7615.10",
+      "route": "auto_accept"
+     }
+    ]
+   },
+   {
+    "id": "FRBTIFR-BTI-2026-02793",
+    "expected": "8211.91",
+    "majority": "8211.91",
+    "right": true,
+    "seen": [
+     {
+      "top1": "8211.91",
+      "route": "review"
+     },
+     {
+      "top1": "8211.91",
+      "route": "review"
+     },
+     {
+      "top1": "8211.91",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "FRBTIFR-BTI-2026-00308",
+    "expected": "8301.10",
+    "majority": "8301.40",
+    "right": false,
+    "seen": [
+     {
+      "top1": "8301.50",
+      "route": "review"
+     },
+     {
+      "top1": "8301.40",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "8301.40",
+      "route": "auto_accept"
+     }
+    ]
+   },
+   {
+    "id": "DEBTI7642/26-2",
+    "expected": "8715.00",
+    "majority": "8715.00",
+    "right": true,
+    "seen": [
+     {
+      "top1": "8715.00",
+      "route": "review"
+     },
+     {
+      "top1": "8715.00",
+      "route": "review"
+     },
+     {
+      "top1": "8715.00",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "FRBTIFR-BTI-2024-01963",
+    "expected": "9004.10",
+    "majority": "9004.10",
+    "right": true,
+    "seen": [
+     {
+      "top1": "9004.10",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "9004.10",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "9004.10",
+      "route": "auto_accept"
+     }
+    ]
+   },
+   {
+    "id": "DEBTI19155/25-1",
+    "expected": "9102.11",
+    "majority": "9102.99",
+    "right": false,
+    "seen": [
+     {
+      "top1": "9102.99",
+      "route": "review"
+     },
+     {
+      "top1": "9102.99",
+      "route": "review"
+     },
+     {
+      "top1": "9102.99",
+      "route": "review"
+     }
+    ]
+   }
+  ],
+  "gate_runs": [
+   {
+    "vote_agrees": 7,
+    "vote_disagrees": 3,
+    "vote_tie": 4,
+    "vote_share_low": 0,
+    "no_rulings": 0,
+    "not_gated": 0
+   },
+   {
+    "vote_agrees": 8,
+    "vote_disagrees": 3,
+    "vote_tie": 3,
+    "vote_share_low": 0,
+    "no_rulings": 0,
+    "not_gated": 0
+   },
+   {
+    "vote_agrees": 8,
+    "vote_disagrees": 2,
+    "vote_tie": 4,
+    "vote_share_low": 0,
+    "no_rulings": 0,
+    "not_gated": 0
+   }
+  ],
+  "no_rulings_review_runs": [
+   0,
+   0,
+   0
+  ],
+  "no_voter_runs": [
+   0,
+   0,
+   0
+  ],
+  "right_auto_runs": [
+   7,
+   7,
+   7
+  ],
+  "lost_runs": [
+   5,
+   5,
+   5
+  ],
+  "override_min": 5,
+  "on": {
+   "top1_runs": [
+    12,
+    12,
+    12
+   ],
+   "majority_top1": 12,
+   "routes_runs": [
+    {
+     "auto_accept": 7,
+     "review": 7,
+     "ask_shipper": 0
+    },
+    {
+     "auto_accept": 8,
+     "review": 6,
+     "ask_shipper": 0
+    },
+    {
+     "auto_accept": 8,
+     "review": 6,
+     "ask_shipper": 0
+    }
+   ],
+   "wrong_auto_runs": [
+    [],
+    [
+     {
+      "reference": "FRBTIFR-BTI-2026-00308",
+      "expected": "8301.10",
+      "top1": "8301.40",
+      "confidence": 95
+     }
+    ],
+    [
+     {
+      "reference": "FRBTIFR-BTI-2026-00308",
+      "expected": "8301.10",
+      "top1": "8301.40",
+      "confidence": 95
+     }
+    ]
+   ]
+  },
+  "parse": {
+   "retry_limit": 2,
+   "runs": [
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    },
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    },
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    }
+   ]
+  },
+  "elapsed_s": 37.7,
+  "cost_usd": 0.0524,
+  "cost_eur": 0.0483,
+  "cost_eur_runs": [
+   0.0159,
+   0.0158,
+   0.0165
+  ]
+ },
+ {
+  "iteration": 2,
+  "run_on": "2026-11-19",
+  "change": "3 independent runs, temperature 0.0, seed none",
+  "tag": "014a-c",
+  "set": "outside",
+  "model": "google/gemini-2.5-flash",
+  "reasoning": {
+   "enabled": false
+  },
+  "expansion": "off",
+  "customs_wording": "off",
+  "floor": 0.4,
+  "proposal_scope": "nomenclature",
+  "threshold": 85,
+  "ask_floor": 50,
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 3,
+  "n": 14,
+  "top1_runs": [
+   11,
+   11,
+   11
+  ],
+  "majority_top1": 11,
+  "top3_runs": [
+   12,
+   12,
+   12
+  ],
+  "routes_runs": [
+   {
+    "auto_accept": 7,
+    "review": 7,
+    "ask_shipper": 0
+   },
+   {
+    "auto_accept": 7,
+    "review": 7,
+    "ask_shipper": 0
+   },
+   {
+    "auto_accept": 7,
+    "review": 7,
+    "ask_shipper": 0
+   }
+  ],
+  "wrong_auto_runs": [
+   [
+    {
+     "reference": "FRBTIFR-BTI-2026-00308",
+     "expected": "8301.10",
+     "top1": "8301.40",
+     "confidence": 95
+    }
+   ],
+   [
+    {
+     "reference": "FRBTIFR-BTI-2026-00308",
+     "expected": "8301.10",
+     "top1": "8301.40",
+     "confidence": 95
+    }
+   ],
+   [
+    {
+     "reference": "FRBTIFR-BTI-2026-00308",
+     "expected": "8301.10",
+     "top1": "8301.40",
+     "confidence": 95
+    }
+   ]
+  ],
+  "lines": [
+   {
+    "id": "FRBTIFR-BTI-2025-03111",
+    "expected": "0902.10",
+    "majority": "0902.10",
+    "right": true,
+    "seen": [
+     {
+      "top1": "0902.10",
+      "route": "review"
+     },
+     {
+      "top1": "0902.10",
+      "route": "review"
+     },
+     {
+      "top1": "0902.10",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "IEBTIIENEN004-2026-BTI266",
+    "expected": "2103.90",
+    "majority": "0904.22",
+    "right": false,
+    "seen": [
+     {
+      "top1": "0904.22",
+      "route": "review"
+     },
+     {
+      "top1": "0904.22",
+      "route": "review"
+     },
+     {
+      "top1": "0904.22",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "FRBTIFR-BTI-2025-02159",
+    "expected": "3406.00",
+    "majority": "3406.00",
+    "right": true,
+    "seen": [
+     {
+      "top1": "3406.00",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "3406.00",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "3406.00",
+      "route": "auto_accept"
+     }
+    ]
+   },
+   {
+    "id": "FRBTIFR-BTI-2024-07964",
+    "expected": "4015.19",
+    "majority": "4015.19",
+    "right": true,
+    "seen": [
+     {
+      "top1": "4015.19",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "4015.19",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "4015.19",
+      "route": "auto_accept"
+     }
+    ]
+   },
+   {
+    "id": "FRBTIFR-BTI-2025-03050",
+    "expected": "4419.11",
+    "majority": "4419.11",
+    "right": true,
+    "seen": [
+     {
+      "top1": "4419.11",
+      "route": "review"
+     },
+     {
+      "top1": "4419.11",
+      "route": "review"
+     },
+     {
+      "top1": "4419.11",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "CZBTI47/137431/2026-300000-ZI/01",
+    "expected": "4823.69",
+    "majority": "4823.69",
+    "right": true,
+    "seen": [
+     {
+      "top1": "4823.69",
+      "route": "review"
+     },
+     {
+      "top1": "4823.69",
+      "route": "review"
+     },
+     {
+      "top1": "4823.69",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "FRBTIFR-BTI-2023-07744",
+    "expected": "6911.10",
+    "majority": "6911.10",
+    "right": true,
+    "seen": [
+     {
+      "top1": "6911.10",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "6911.10",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "6911.10",
+      "route": "auto_accept"
+     }
+    ]
+   },
+   {
+    "id": "ESBTIESBTI2024SOL802",
+    "expected": "7013.37",
+    "majority": "7013.37",
+    "right": true,
+    "seen": [
+     {
+      "top1": "7013.37",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "7013.37",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "7013.37",
+      "route": "auto_accept"
+     }
+    ]
+   },
+   {
+    "id": "FRBTIFR-BTI-2025-02298",
+    "expected": "7615.10",
+    "majority": "7615.10",
+    "right": true,
+    "seen": [
+     {
+      "top1": "7615.10",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "7615.10",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "7615.10",
+      "route": "auto_accept"
+     }
+    ]
+   },
+   {
+    "id": "FRBTIFR-BTI-2026-02793",
+    "expected": "8211.91",
+    "majority": "8211.91",
+    "right": true,
+    "seen": [
+     {
+      "top1": "8211.91",
+      "route": "review"
+     },
+     {
+      "top1": "8211.91",
+      "route": "review"
+     },
+     {
+      "top1": "8211.91",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "FRBTIFR-BTI-2026-00308",
+    "expected": "8301.10",
+    "majority": "8301.40",
+    "right": false,
+    "seen": [
+     {
+      "top1": "8301.40",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "8301.40",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "8301.40",
+      "route": "auto_accept"
+     }
+    ]
+   },
+   {
+    "id": "DEBTI7642/26-2",
+    "expected": "8715.00",
+    "majority": "8715.00",
+    "right": true,
+    "seen": [
+     {
+      "top1": "8715.00",
+      "route": "review"
+     },
+     {
+      "top1": "8715.00",
+      "route": "review"
+     },
+     {
+      "top1": "8715.00",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "FRBTIFR-BTI-2024-01963",
+    "expected": "9004.10",
+    "majority": "9004.10",
+    "right": true,
+    "seen": [
+     {
+      "top1": "9004.10",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "9004.10",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "9004.10",
+      "route": "auto_accept"
+     }
+    ]
+   },
+   {
+    "id": "DEBTI19155/25-1",
+    "expected": "9102.11",
+    "majority": "9102.99",
+    "right": false,
+    "seen": [
+     {
+      "top1": "9102.99",
+      "route": "review"
+     },
+     {
+      "top1": "9102.99",
+      "route": "review"
+     },
+     {
+      "top1": "9102.99",
+      "route": "review"
+     }
+    ]
+   }
+  ],
+  "gate_runs": [
+   {
+    "vote_agrees": 7,
+    "vote_disagrees": 4,
+    "vote_tie": 3,
+    "vote_share_low": 0,
+    "no_rulings": 0,
+    "not_gated": 0
+   },
+   {
+    "vote_agrees": 7,
+    "vote_disagrees": 4,
+    "vote_tie": 3,
+    "vote_share_low": 0,
+    "no_rulings": 0,
+    "not_gated": 0
+   },
+   {
+    "vote_agrees": 7,
+    "vote_disagrees": 3,
+    "vote_tie": 4,
+    "vote_share_low": 0,
+    "no_rulings": 0,
+    "not_gated": 0
+   }
+  ],
+  "no_rulings_review_runs": [
+   0,
+   0,
+   0
+  ],
+  "no_voter_runs": [
+   0,
+   0,
+   0
+  ],
+  "right_auto_runs": [
+   6,
+   6,
+   6
+  ],
+  "lost_runs": [
+   5,
+   5,
+   5
+  ],
+  "override_min": 5,
+  "on": {
+   "top1_runs": [
+    11,
+    11,
+    11
+   ],
+   "majority_top1": 11,
+   "routes_runs": [
+    {
+     "auto_accept": 7,
+     "review": 7,
+     "ask_shipper": 0
+    },
+    {
+     "auto_accept": 7,
+     "review": 7,
+     "ask_shipper": 0
+    },
+    {
+     "auto_accept": 7,
+     "review": 7,
+     "ask_shipper": 0
+    }
+   ],
+   "wrong_auto_runs": [
+    [
+     {
+      "reference": "FRBTIFR-BTI-2026-00308",
+      "expected": "8301.10",
+      "top1": "8301.40",
+      "confidence": 95
+     }
+    ],
+    [
+     {
+      "reference": "FRBTIFR-BTI-2026-00308",
+      "expected": "8301.10",
+      "top1": "8301.40",
+      "confidence": 95
+     }
+    ],
+    [
+     {
+      "reference": "FRBTIFR-BTI-2026-00308",
+      "expected": "8301.10",
+      "top1": "8301.40",
+      "confidence": 95
+     }
+    ]
+   ]
+  },
+  "parse": {
+   "retry_limit": 2,
+   "runs": [
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    },
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    },
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    }
+   ]
+  },
+  "elapsed_s": 39.8,
+  "cost_usd": 0.0521,
+  "cost_eur": 0.0479,
+  "cost_eur_runs": [
+   0.0161,
+   0.0159,
+   0.016
+  ]
+ }
+]
