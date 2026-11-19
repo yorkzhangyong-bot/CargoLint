@@ -61,8 +61,9 @@ VAGUE_CONFIDENCE_CAP = 59      # a vague-flagged line's candidates never exceed 
 HISTORY_CHUNKS_MAX = 5         # shipper past codes injected as candidates
 PRECEDENT_CODES_MAX = 3        # codes proposed by matching BTI rulings (precedent-driven retrieval)
 # feature 014a (FR-020): a reference in a reasoning, two letters and BTI in any case, then letters, digits, "/", "." and
-# "-", a space only before a digit and only right after "BTI", "/", "." or "-", so a following number never joins it
-REF_TOKEN = re.compile(r"\b[a-z]{2}bti(?:[a-z0-9/.\-]|(?:(?<=bti)|(?<=[/.\-])) (?=\d))+", re.I)
+# "-", a space only before a digit and only right after "BTI" or "-" (as in stored references), so neither a following
+# number nor a sentence end ("DEBTI21309/26-1. 3") joins it
+REF_TOKEN = re.compile(r"\b[a-z]{2}bti(?:[a-z0-9/.\-]|(?:(?<=bti)|(?<=-)) (?=\d))+", re.I)
 RUN_ON = re.compile(r"[/.\-]?[0-9a-z]", re.I)   # what continues a reference into a longer one
 
 

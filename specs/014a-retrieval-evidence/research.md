@@ -172,8 +172,8 @@ different HS-6 (`GRBTIDEC-036-2025` at 2102.20 and `GRBTIDEC-036/2025` at 2304.0
 `ROBTI2025_005214`, `XIBTIXI BTI 505069073`, ...). A reference written exactly, case aside, is now the one meant, and
 every reference is kept per normal form: a form that names several rulings gives no note when one of them was
 retrieved, and a note with the reference as written when none was. The eight are also found as written, and a space
-joins a token only right after `BTI`, `/`, `.` or `-`, so a following number never runs into a reference
-(data-model §5).
+joins a token only right after `BTI` or `-` (round 2: no stored reference has one after `.` or `/`), so neither a
+following number nor a sentence end runs into a reference (data-model §5).
 
 **Alternatives considered**: a structured citation field in the ranking schema (changes the classification prompt,
 which this feature keeps); dropping the reference from the text (clarification 3 chose flagging).

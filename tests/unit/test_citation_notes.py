@@ -105,3 +105,5 @@ def test_a_reference_never_runs_on_into_a_following_number():
     assert citation_notes("DEBTI1234/22 2 rulings agree.", "8419.89", set(), TWINS) == [missing("DEBTI1234/22")]
     assert citation_notes("cf. debti 1234/22", "3403.99", set(), TWINS) == [missing("DEBTI1234/22")]   # a space after BTI
     assert citation_notes("SEBTITV-2025- 15834 too", "6307.90", set(), TWINS) == [missing("SEBTITV-2025- 15834")]
+    unlike = "Unlike DEBTI21309/26-1. 3 rulings place it elsewhere."                   # review round 2, N2: a sentence end
+    assert citation_notes(unlike, "3403.99", set(), TWINS) == [missing("DEBTI21309/26-1")]
