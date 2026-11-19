@@ -1,0 +1,8 @@
+{
+  "name": "cargolint-browser-tests",
+  "private": true,
+  "description": "Playwright browser tests for CargoLint, run by the agentic QA platform (docs/qa-platform.md). Test-only: the app itself is Python.",
+  "devDependencies": {
+    "@playwright/test": "1.65.1"
+  }
+}
