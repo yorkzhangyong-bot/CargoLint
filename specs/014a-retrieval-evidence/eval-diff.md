@@ -8,6 +8,7 @@ Rendered by `tests/eval/eval_diff_014a.py` from `tests/eval/hs6_eval_history.jso
 - Iteration 14 (120 lines, switch on) is not used: the German rewrite of the longest ruling descriptions exceeded its 300-character cap, refused inside the call before the retry, so 6 to 7 lines per run failed. Commit 290b3f5 retries such an answer once; iteration 15 is the re-run (see section 4).
 - In the baseline, runs 2 and 3 each lost one line to an OpenRouter rate-limit error (HS-6 step failed).
 - Spend: T006 $0.5576 (the evaluation's tally); T043 $0.194 (the refresh's own count, equal to the key's usage over the run); T044 $1.718 by the key's usage, the provider's charge for its five runs, the discarded iteration 14 among them. The evaluation's own tallies for those runs sum to $1.7767: they price tokens from the project's price table and miss one failed rewrite call of 65,521 output tokens.
+- Result files (review round 1): sections 1 to 3 read the history entries of the iterations above and of the floor replays; sections 4 and 5 also read the runs' own files, `tests/eval/hs6_eval_014a-baseline_en_expansion-off.json`, `tests/eval/hs6_eval_014a-after_en_expansion-off_wording-off.json`, `tests/eval/hs6_eval_014a-after-fix_en_expansion-off_wording-on.json`, `tests/eval/hs6_eval_coolant_014a-baseline_en_expansion-off.json`, `tests/eval/hs6_eval_coolant_014a-after_en_expansion-off_wording-off.json`, `tests/eval/hs6_eval_coolant_014a-after_en_expansion-off_wording-on.json`. The evaluation's "latest run" files (`tests/eval/hs6_eval.json`, `tests/eval/hs6_eval_coolant.json`) now hold the rejected option (c) runs (tag 014a-c); no table here reads them.
 
 ## 1. The 120-line set
 
@@ -71,6 +72,8 @@ No floor change is made: the 120-line set does not move at any of these floors, 
 
 ## 4. The success criteria
 
+**Note of 2026-11-19**: SC-004 passes under rule (a), the author's decision of that day: replayed exactly on the switch-off after-run's rows (iteration 21 in the history), 9 wrong auto-accepts against 10 in the baseline. The verdicts below are of the chapter-scoped vote as first built (docs/reports/014a-regression-analysis.md, section 5).
+
 - **SC-001** (T043): passed. The rebuild kept every valid ruling of the extract of 2026-11-18, 123,531 in 95 chapters; its counts show the 74,044 unchanged rulings of the twelve chapters reused and the 49,487 new ones embedded, none dropped; $0.194 (17,648,924 tokens), 6,333 s, the store 3,454,915,131 bytes.
 - **SC-002**: passed. In the coolant set's after-runs no row has a voting ruling outside its vote chapters (0 switch off, 0 switch on) and none lists a chapter 84 ruling (0 and 0).
 - **SC-003**: this report, every number from the history entries and rows above.
@@ -126,6 +129,8 @@ The majority top-1 fell from 84 to 77. New-chapter proposals account for 5 of it
 The plain 冷却液 (coolant-8) is flagged vague in every run, so no vote routes it: its route is the model's estimate against the ask floor of 50. In the baseline its top-1 3820.00 came at 40 / 40 / 40 (ask the shipper); after, with the rulings of chapter 38 now indexed, the proposal added 3824.99, 3402.50, 8708.99 and the same top-1 came at 50 / 50 / 50, exactly the floor, so the line went to review: a new-chapter proposal acting through the model's estimate, not the vote scope. With the switch on it routed to ask the shipper in every run.
 
 ## 6. Decisions left to the author
+
+**Note of 2026-11-19**: the author decided rule (a) (the unfiltered vote decides the auto-accept, the vote of the candidates' chapters can only send a line to review), block 3's captions and the vague rule (a vague line always asks the shipper), and rejected option (c); SC-004 passes under rule (a). See the spec's clarifications of 2026-11-19 and docs/reports/014a-regression-analysis.md, section 5. The list below is that of 2026-11-18.
 
 - SC-004 failed by two wrong auto-accepts: keep the chapter-scoped vote, or change it (the spec forbids a fallback without the author's decision).
 - The new chapters lowered the 120-line majority top-1 through the candidate proposal (section 5); the spec keeps the proposal over every chapter (clarification 1).

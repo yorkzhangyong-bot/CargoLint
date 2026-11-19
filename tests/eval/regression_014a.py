@@ -660,14 +660,18 @@ def _document(table: dict, m: dict, exact: dict, scoped_check: dict, proposals: 
     p_abl = proposals[("cn8", "ablation", False)]
     p_cool = proposals[("coolant", "after", False)]
     out = ["# Feature 014a: why the 120-line evaluation regressed", "",
+           f"**Note of 2026-11-19**: after this analysis the author decided rule (a) (the unfiltered vote decides the "
+           "auto-accept, the vote of the candidates' chapters can only send a line to review), block 3's captions and the "
+           "vague rule (a vague line always asks the shipper), and rejected option (c). Under rule (a) SC-004 passes, "
+           f"{sum(from_entry(tagged('cn8', NOW_TAGS['cn8'][0]))['wrong_runs'])} wrong auto-accepts against {w(base)}. "
+           "Section 5 measures them; sections 1 to 4 are the analysis as written before the decisions (their \"today\" "
+           "is the chapter-scoped vote).", "",
            "The author is holding the feature: on the 120-line evaluation the majority top-1 fell from 84 to 77 and wrong "
            "auto-accepts rose from 10 to 12, so SC-004 failed. This report separates the causes. Everything is read from "
            "the logged rows and history entries of the runs, with no model call, except the ablation of section 2 (one paid "
            "run of both sets). The twelve chapters' rulings are the same in both stores (the rebuild reused all 74,044 and "
            "added none in those chapters). The tables are rendered by `tests/eval/regression_014a.py`, which first checks that its "
-           "routes reproduce every history entry it uses; the product's routing functions recompute every route. Section 5, "
-           "added after the author's decisions of 2026-11-19, measures rule (a), the vague rule and option (c): under rule "
-           "(a) SC-004 passes.", "",
+           "routes reproduce every history entry it uses; the product's routing functions recompute every route.", "",
            f"- **Baseline**: 120-line iteration {it['cn8']['baseline']}, coolant iteration {it['coolant']['baseline']}. The "
            "store of the twelve chapters (74,044 rulings); the vote over every chapter, as before 014a.",
            f"- **After-run**: iterations {it['cn8']['after']} and {it['coolant']['after']}. The rebuilt store of every chapter "
@@ -676,7 +680,12 @@ def _document(table: dict, m: dict, exact: dict, scoped_check: dict, proposals: 
            "over every chapter (`--vote-scope all`, eval only).",
            "- All three: Gemini 2.5 Flash with reasoning off, query expansion off, customs wording off, three runs, "
            "threshold 85, ask floor 50. The eval's route has the precedent override off; the app ships with it on, so "
-           "section 2 shows both.", "",
+           "section 2 shows both.",
+           "- Result files (review round 1): every table of sections 1 to 4 reads these runs' own files, "
+           + "; ".join(f"{which}: " + " and ".join(f"`tests/eval/{FILES[s][which]}`" for s in SETS) for which in WHICH)
+           + ", and checks them against their history entries. The evaluation's \"latest run\" files "
+           "(`tests/eval/hs6_eval.json`, `hs6_eval_coolant.json`, `hs6_eval_outside.json`) now hold the rejected option (c) "
+           "runs (tag 014a-c); only section 5 reads those runs, from their own files.", "",
            "**Headline** (120 lines, precedent override off):", "",
            f"- **Store effect** (baseline → ablation, the same unscoped vote): majority top-1 {base['majority']} → "
            f"{abl['majority']}; wrong auto-accepts {w(base)} → {w(abl)}; auto-accepted per run {_runs(base['auto_runs'])} → "
@@ -892,6 +901,34 @@ def _now_lines(set_name: str) -> tuple[list[str], dict]:
     return out, count
 
 
+def _neardup_section() -> list[str]:
+    """Section 5.1: the outside set's near-duplicate check of 2026-11-19, from its committed record."""
+    rec = json.loads((EVAL / "hs6_eval_outside_neardup.json").read_text(encoding="utf-8"))
+
+    def hit(h: dict, own: str) -> str:
+        return f"{h['similarity']:.4f} {h['reference']} ({h['hs6']}){' = source' if h['reference'] == own else ''}"
+
+    out = ["### 5.1 The outside set's lines: the near-duplicate check of 2026-11-19", "",
+           f"Before the paid runs each line was checked ({rec['method']}). Limit {rec['limit']}: {rec['flags']}. "
+           f"Approval: {rec['approved']}. The record: `tests/eval/hs6_eval_outside_neardup.json`; the lines: "
+           "`tests/eval/hs6_eval_outside_set.json` (`original` and `text`).", "",
+           "| Line | Code | Original: top | Final: top | Final: top other than the source | Source rank, final | "
+           "Flags |", "|---|---|---|---|---|---|---|"]
+    for line in rec["lines"]:
+        o, f = line["original"], line["final"]
+        flags = ["source ruling in the store"] if line["source_in_store"] else []
+        flags += [f"over {rec['limit']} before" for _ in [0] if o["over_limit"]] + [f"over {rec['limit']} after" for _ in [0] if f["over_limit"]]
+        out.append(f"| {line['id']} | {line['expected_hs6']} | {hit(o['top'], line['id'])} | {hit(f['top'], line['id'])} | "
+                   f"{hit(f['top_other_than_source'], line['id'])} | {f['source_rank'] or 'not in the 6'} | "
+                   f"{'; '.join(flags)}; rewritten |")
+    tops = [line["final"]["top"]["similarity"] for line in rec["lines"]]
+    over = [line["id"] for line in rec["lines"] if line["original"]["over_limit"]]
+    return out + ["", f"Every source ruling is in the store, so all {len(rec['lines'])} lines were flagged and rewritten; "
+                      f"{len(over)} original was above the limit ({', '.join(over)}). The final texts' top similarities run "
+                      f"from {min(tops):.4f} to {max(tops):.4f}; no final text is above the limit, and a line's own source "
+                      "ruling is kept out of its runs (leave-one-out)."]
+
+
 def _section5() -> list[str]:
     e = {s: [tagged(s, tag) for tag in NOW_TAGS[s]] for s in NOW_SETS}
     label = {"cn8": "120 lines", "coolant": "coolant", "outside": "outside"}
@@ -930,6 +967,9 @@ def _section5() -> list[str]:
         f"- **(c)**: three runs on each set (iterations {e['cn8'][1]['iteration']}, {e['coolant'][1]['iteration']} and "
         f"{e['outside'][1]['iteration']}). Every run: Gemini 2.5 Flash with reasoning off, query expansion off, customs "
         "wording off, three runs, threshold 85, the rebuilt store of every chapter.",
+        "- **Result files**: the history entries named above, and the runs' own files for the line tables: "
+        + "; ".join(f"{label[s]}: (a) `tests/eval/{NOW_FILES[s][0]}`, (c) `tests/eval/{NOW_FILES[s][1]}`" for s in NOW_SETS)
+        + ". The near-duplicate check of the outside set's lines: `tests/eval/hs6_eval_outside_neardup.json` (5.1).",
         f"- **Cost**: ${KEY_USAGE:.4f} by the key's usage, read once OpenRouter had settled it; "
         f"${sum(c for _, c in paid):.4f} by the evaluation's tallies ("
         + ", ".join(f"{name} ${c:.4f}" for name, c in paid) + "): within the approved $1.10.", "",
@@ -957,7 +997,7 @@ def _section5() -> list[str]:
         "`--proposal-scope nomenclature` stays for later experiments.", "",
         "The 120-line set's lines whose majority outcome differs between (a) and (c):", "", *lines120, "",
         "The coolant set's:", "", *lines_cool, "",
-        "The outside set's:", "", *lines_out]
+        "The outside set's:", "", *lines_out, "", *_neardup_section()]
 
 
 def render() -> str:

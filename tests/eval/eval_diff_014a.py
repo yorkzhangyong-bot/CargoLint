@@ -8,7 +8,9 @@ Sections: before against after for the 120-line set and the coolant set (baselin
 switch off and on); the floor replays; the success criteria; and, for every line whose majority outcome or auto-accepts
 changed between the baseline and the switch-off after-run, the facts its cause is read from and the cause. The old,
 unscoped vote is rebuilt from each after-row's nearest_hits (the precedent search's nearest rulings over every chapter,
-the same query vector the vote used): the 5 nearest eligible rulings among the 12 it read, at or above the floor.
+the same query vector the vote used): the 5 nearest eligible rulings among the 12 it read, at or above the floor. Its
+routes follow the runs' routing: until the vague rule of 2026-11-19 a vague line at or above the ask floor went to
+review (review round 1). Sections 4 and 6 carry a note of 2026-11-19 on the author's decisions and rule (a)'s SC-004.
 """
 from __future__ import annotations
 
@@ -23,7 +25,7 @@ sys.path.insert(0, str(ROOT))
 
 from agent.config import ASK_FLOOR, DEFAULT_THRESHOLD, HS6_VOTE_K, HS6_VOTE_MIN_SIMILARITY, OVERRIDE_MIN  # noqa: E402
 from agent.routing import hs6_ruling_vote, route_line  # noqa: E402
-from agent.schemas import FlagKind  # noqa: E402
+from agent.schemas import FlagKind, Route  # noqa: E402
 from rag.bti import TARGET_CHAPTERS  # noqa: E402
 
 EVAL = ROOT / "tests" / "eval"
@@ -60,13 +62,18 @@ def entry(history: list[dict], tag: str, wording: str | None, replay: float | No
 
 def unscoped_route(row: dict) -> str:
     """The route the old vote, over every chapter, would give this row: the 5 nearest eligible rulings among the 12 the
-    ruling search read, at or above the floor, by the product's vote and routing functions."""
+    ruling search read, at or above the floor, by the product's vote and routing functions; a vague line at or above
+    the ask floor goes to review, as when the runs were made (the vague rule of 2026-11-19 sends it to ask the
+    shipper)."""
     voters = [(h["hs6"], "") for h in row["nearest_hits"][:SEARCHED]
               if h["eligible"] and 1 - h["distance"] >= HS6_VOTE_MIN_SIMILARITY]
     vote = hs6_ruling_vote(voters[:HS6_VOTE_K], row["top3"]) if row["top3"] else None
     kind = None if row["flag"] == "failed" else FlagKind(row["flag"])
-    return route_line(kind, row["confidence"], row["status"], kind not in (None, FlagKind.ok), DEFAULT_THRESHOLD,
-                      ASK_FLOOR, hs6_vote=vote)[0].value
+    route = route_line(kind, row["confidence"], row["status"], kind not in (None, FlagKind.ok), DEFAULT_THRESHOLD,
+                       ASK_FLOOR, hs6_vote=vote)[0]
+    if kind == FlagKind.vague and row["confidence"] is not None and row["confidence"] >= ASK_FLOOR:   # the runs' rule
+        route = Route.review
+    return route.value
 
 
 def outcome(row: dict) -> object:
@@ -142,6 +149,11 @@ def changed_lines(set_name: str) -> list[dict]:
 
 
 # --------------------------------------------------------------------------- rendering
+def wrong_base_now(h: dict) -> int:
+    """The wrong auto-accepts of an entry, summed over its runs."""
+    return sum(len(w) for w in h["wrong_auto_runs"])
+
+
 def _runs(values) -> str:
     return " / ".join(str(v) for v in values)
 
@@ -225,7 +237,13 @@ def render() -> str:
            "usage over the run); T044 $1.718 by the key's usage, the provider's charge for its five runs, the discarded "
            f"iteration {flawed['iteration']} among them. The evaluation's own tallies for those runs sum to "
            f"${sum(h['cost_usd'] for h in (off, coff, flawed, on, con)):.4f}: they price tokens from the project's price "
-           "table and miss one failed rewrite call of 65,521 output tokens.", ""]
+           "table and miss one failed rewrite call of 65,521 output tokens.",
+           "- Result files (review round 1): sections 1 to 3 read the history entries of the iterations above and of the "
+           "floor replays; sections 4 and 5 also read the runs' own files, "
+           + ", ".join(f"`tests/eval/{name}`" for set_name in ("cn8", "coolant") for which, name in FILES[set_name].items()
+                       if which != "flawed")
+           + ". The evaluation's \"latest run\" files (`tests/eval/hs6_eval.json`, `tests/eval/hs6_eval_coolant.json`) "
+           "now hold the rejected option (c) runs (tag 014a-c); no table here reads them.", ""]
     out += ["## 1. The 120-line set", ""] + _set_table(
         [(f"Baseline (it. {base['iteration']})", base), (f"After, switch off (it. {off['iteration']})", off),
          (f"After, switch on (it. {on['iteration']})", on)], 120, coolant=False, override=True)
@@ -266,7 +284,12 @@ def render() -> str:
     clean_off = [seen for seen in zip(*runs_of("cn8", "off")) if seen[0]["reference"] not in failed_on]
     right_on = sum(majority([r["top1"] for r in s]) == s[0]["expected"] for s in clean)
     right_off = sum(majority([r["top1"] for r in s]) == s[0]["expected"] for s in clean_off)
+    rule_a = entry(hist, "014a-rule-a", "off", HS6_VOTE_MIN_SIMILARITY)
     out += ["## 4. The success criteria", "",
+            f"**Note of 2026-11-19**: SC-004 passes under rule (a), the author's decision of that day: replayed exactly on "
+            f"the switch-off after-run's rows (iteration {rule_a['iteration']} in the history), {sum_wrong(rule_a)} wrong "
+            f"auto-accepts against {wrong_base_now(base)} in the baseline. The verdicts below are of the chapter-scoped "
+            "vote as first built (docs/reports/014a-regression-analysis.md, section 5).", "",
             f"- **SC-001** (T043): passed. The rebuild kept every valid ruling of the extract of 2026-11-18, 123,531 in 95 "
             "chapters; its counts show the 74,044 unchanged rulings of the twelve chapters reused and the 49,487 new ones "
             "embedded, none dropped; $0.194 (17,648,924 tokens), 6,333 s, the store 3,454,915,131 bytes.",
@@ -374,6 +397,10 @@ def render() -> str:
                 "went to review: a new-chapter proposal acting through the model's estimate, not the vote scope. With the "
                 "switch on it routed to ask the shipper in every run.", "",
             "## 6. Decisions left to the author", "",
+            "**Note of 2026-11-19**: the author decided rule (a) (the unfiltered vote decides the auto-accept, the vote of "
+            "the candidates' chapters can only send a line to review), block 3's captions and the vague rule (a vague line "
+            "always asks the shipper), and rejected option (c); SC-004 passes under rule (a). See the spec's clarifications "
+            "of 2026-11-19 and docs/reports/014a-regression-analysis.md, section 5. The list below is that of 2026-11-18.", "",
             "- SC-004 failed by two wrong auto-accepts: keep the chapter-scoped vote, or change it (the spec forbids a "
             "fallback without the author's decision).",
             "- The new chapters lowered the 120-line majority top-1 through the candidate proposal (section 5); the spec "
