@@ -117,7 +117,8 @@ nomenclature search's record, shown on the Admin page).
 ## R-07 Relevance, the floor and its tuning
 
 **Superseded in part on 2026-11-19 by rule (a)**: relevance is the eligibility of the deciding vote, over every indexed
-chapter (spec FR-015); the floor and its tuning below stand.
+chapter (spec FR-015); the floor and its tuning below stand, but a replay is exact only as contracts/eval-cli.md
+states: at or above the run's floor and with one query vector per line (query expansion and customs wording off).
 
 **Fact**: `hs6_voters` drops a ruling whose best similarity is below `min_similarity`
 (`best[doc_id] < min_similarity`), so exactly the floor votes. `HS6_VOTE_MIN_SIMILARITY = 0.40` was set below every

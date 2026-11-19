@@ -916,17 +916,33 @@ def _neardup_section() -> list[str]:
            "Flags |", "|---|---|---|---|---|---|---|"]
     for line in rec["lines"]:
         o, f = line["original"], line["final"]
-        flags = ["source ruling in the store"] if line["source_in_store"] else []
-        flags += [f"over {rec['limit']} before" for _ in [0] if o["over_limit"]] + [f"over {rec['limit']} after" for _ in [0] if f["over_limit"]]
+        flags = []
+        if line["source_in_store"]:
+            flags.append("source ruling in the store")
+        if o["over_limit"]:
+            flags.append(f"over {rec['limit']} before")
+        if f["over_limit"]:
+            flags.append(f"over {rec['limit']} after")
+        if line["rewritten"]:
+            flags.append("rewritten")
         out.append(f"| {line['id']} | {line['expected_hs6']} | {hit(o['top'], line['id'])} | {hit(f['top'], line['id'])} | "
                    f"{hit(f['top_other_than_source'], line['id'])} | {f['source_rank'] or 'not in the 6'} | "
-                   f"{'; '.join(flags)}; rewritten |")
+                   f"{'; '.join(flags)} |")
+    n = len(rec["lines"])
+    in_store = sum(line["source_in_store"] for line in rec["lines"])
+    rewritten = sum(line["rewritten"] for line in rec["lines"])
     tops = [line["final"]["top"]["similarity"] for line in rec["lines"]]
     over = [line["id"] for line in rec["lines"] if line["original"]["over_limit"]]
-    return out + ["", f"Every source ruling is in the store, so all {len(rec['lines'])} lines were flagged and rewritten; "
-                      f"{len(over)} original was above the limit ({', '.join(over)}). The final texts' top similarities run "
-                      f"from {min(tops):.4f} to {max(tops):.4f}; no final text is above the limit, and a line's own source "
-                      "ruling is kept out of its runs (leave-one-out)."]
+    after = [line["id"] for line in rec["lines"] if line["final"]["over_limit"]]
+    if in_store == rewritten == n:
+        lead = f"Every source ruling is in the store, so all {n} lines were flagged and rewritten"
+    else:
+        lead = f"{in_store} of {n} source rulings are in the store, and {rewritten} of {n} lines were rewritten"
+    originals = f"{len(over)} original{'' if len(over) == 1 else 's'} {'was' if len(over) == 1 else 'were'}"
+    return out + ["", f"{lead}; {originals} above the limit ({', '.join(over) or 'none'}). The final texts' top "
+                      f"similarities run from {min(tops):.4f} to {max(tops):.4f}; "
+                      + ("no final text is above the limit" if not after else f"above the limit: {', '.join(after)}")
+                      + ", and a line's own source ruling is kept out of its runs (leave-one-out)."]
 
 
 def _section5() -> list[str]:

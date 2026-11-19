@@ -49,7 +49,8 @@ the second vote, and `gate` rule (a)'s.
 Existing fields plus `set`, `customs_wording` and `floor`; a replay adds `replay: {"of": FILE, "floor": X, "exact":
 true|false}` (with `why` when not exact) and reports per run the routes, the auto-accepted and wrong auto-accepted
 lines, the lines without a voting ruling and the right auto-accepts, at that floor. Since review round 1 (2026-11-19)
-the gate reasons per run (`gate_runs`) include `scoped_veto`, and a coolant or outside entry keeps the switch on (`on`).
+the gate reasons per run (`gate_runs`) include `scoped_veto`; since 402a285 a coolant or outside entry keeps the switch
+on (`on`).
 
 ## The runs this feature needs (quickstart.md)
 

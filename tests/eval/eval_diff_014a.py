@@ -149,11 +149,6 @@ def changed_lines(set_name: str) -> list[dict]:
 
 
 # --------------------------------------------------------------------------- rendering
-def wrong_base_now(h: dict) -> int:
-    """The wrong auto-accepts of an entry, summed over its runs."""
-    return sum(len(w) for w in h["wrong_auto_runs"])
-
-
 def _runs(values) -> str:
     return " / ".join(str(v) for v in values)
 
@@ -288,7 +283,7 @@ def render() -> str:
     out += ["## 4. The success criteria", "",
             f"**Note of 2026-11-19**: SC-004 passes under rule (a), the author's decision of that day: replayed exactly on "
             f"the switch-off after-run's rows (iteration {rule_a['iteration']} in the history), {sum_wrong(rule_a)} wrong "
-            f"auto-accepts against {wrong_base_now(base)} in the baseline. The verdicts below are of the chapter-scoped "
+            f"auto-accepts against {wrong_base} in the baseline. The verdicts below are of the chapter-scoped "
             "vote as first built (docs/reports/014a-regression-analysis.md, section 5).", "",
             f"- **SC-001** (T043): passed. The rebuild kept every valid ruling of the extract of 2026-11-18, 123,531 in 95 "
             "chapters; its counts show the 74,044 unchanged rulings of the twelve chapters reused and the 49,487 new ones "

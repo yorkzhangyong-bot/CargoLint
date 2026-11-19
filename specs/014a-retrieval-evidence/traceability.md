@@ -6,8 +6,9 @@ as `014a/FR-###` or `014a/SC-###`. An evaluation result names its evaluation fil
 
 - 014a/FR-003: the order of the work is tasks.md's phases 2 to 9; the history entries show it (the 014a-baseline
   entries of tests/eval/hs6_eval_history.json and tests/eval/hs6_eval_coolant_history.json come before the
-  014a-after entries). The author's approval of each paid step (T006, T043, T044, the ablation and the step-6 runs of
-  2026-11-19, with their amounts) is listed by the coordinator in the feature pull request's description.
+  014a-after entries). The author's approval of each paid step (T006, T043, T044, the ablation of
+  docs/reports/014a-regression-analysis.md section 2, and T065), with their amounts, is listed by the coordinator in
+  the feature pull request's description.
 - 014a/FR-004: the evaluation report, specs/014a-retrieval-evidence/eval-diff.md sections 1 to 4, with its numbers
   from the history entries; its tables are rendered by tests/eval/eval_diff_014a.py (tested in
   tests/unit/test_eval_diff_014a.py).
