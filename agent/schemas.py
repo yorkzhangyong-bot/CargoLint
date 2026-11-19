@@ -657,10 +657,13 @@ class ExpandOut(BaseModel):
 
 
 class WordingOut(BaseModel):
-    """Feature 014a: the customs-wording rewrite, one non-empty sentence after stripping. Its WORDING_MAX_CHARS (300)
-    are checked after the recorded call (rag/translate.customs_wording), not here, so the SDK's own parse never refuses
-    an over-long answer uncounted (review finding 2); the call's output is capped at `max_output_tokens`."""
+    """Feature 014a: the customs-wording rewrite, one sentence of 1 to WORDING_MAX_CHARS (300) characters after
+    stripping."""
 
+    # The docstring above is the response schema's description the model reads, kept as the evaluated switch-on
+    # after-runs sent it (review round 2, N3). The 300 characters are checked after the recorded call
+    # (rag/translate.customs_wording), not in this schema, so the SDK's own parse never refuses an over-long answer
+    # uncounted (review round 1, finding 2); the call's output is capped at `max_output_tokens`.
     max_output_tokens: ClassVar[int] = WORDING_MAX_TOKENS     # read by OpenRouterRawClient: the only capped call
     text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 

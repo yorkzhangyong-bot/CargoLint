@@ -11,6 +11,7 @@ from types import SimpleNamespace
 import pytest
 from langchain_core.messages import AIMessage
 from openai import LengthFinishReasonError
+from openai.lib._parsing._completions import type_to_response_format_param   # how the SDK sends a response schema
 from openai.types.chat import ChatCompletion
 from openai.types.completion_usage import CompletionUsage
 from pydantic import ValidationError
@@ -121,6 +122,14 @@ def test_the_rewrite_is_kept_after_stripping(text, kept):
 def test_an_empty_rewrite_is_invalid(text):
     with pytest.raises(ValidationError):
         WordingOut(text=text)
+
+
+def test_the_schema_description_the_model_reads_is_the_evaluated_one():
+    """Review round 2, N3: WordingOut's docstring reaches the model as its response schema's description. It stays the
+    text the evaluated switch-on after-runs sent (commit 290b3f5); developer notes live in comments."""
+    sent = type_to_response_format_param(WordingOut)["json_schema"]["schema"]
+    assert sent["description"] == ("Feature 014a: the customs-wording rewrite, one sentence of 1 to WORDING_MAX_CHARS "
+                                   "(300) characters after\nstripping.")
 
 
 def test_the_schema_the_provider_sees_has_no_length_cap():
