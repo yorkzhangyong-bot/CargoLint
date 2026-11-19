@@ -520,7 +520,8 @@ approves the outside set's lines.
 - [X] T066 [US1] The report, in docs/reports/014a-regression-analysis.md: (c) against (a) per set, the override off and
   on (majority top-1, top-1 per run, auto-accepted and wrong auto-accepted per run); for the 120-line and coolant sets,
   (a) as the exact replay of the after-runs' rows under rule (a) and the vague rule, with the baseline; SC-004 under
-  rule (a) stated as passed or failed with its lines (spec FR-033, SC-004)
+  rule (a) stated as passed or failed with its lines (spec FR-033, SC-004). On these numbers the author rejected (c)
+  on 2026-11-19: it is not implemented; the evaluation-only option of T064 stays for later experiments
 
 ---
 

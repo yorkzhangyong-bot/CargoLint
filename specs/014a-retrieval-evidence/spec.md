@@ -167,6 +167,12 @@ top-1 (84 to 77) and rise in wrong auto-accepts (10 to 12, SC-004 failed):
   source ruling is in the store, is rewritten in plain shipper wording that keeps the facts its code depends on
   (material, composition, use, form), searched again, and still runs leave-one-out. Nothing paid runs before the
   author's approval.
+- Q: Is option (c) adopted, after its measurement? → A: No. The author rejected it on 2026-11-19, on the numbers of
+  docs/reports/014a-regression-analysis.md section 5: against rule (a), three runs each, the 120-line set's majority
+  top-1 is 64 against 77, the coolant set's 7/8 against 8/8 and the outside set's 11/14 against 12/14, and its wrong
+  auto-accepts are not lower (9 against 9 on the 120 lines, none against none on the coolant set, 3 against 2 on the
+  outside set). Option (c) is not implemented in the app. The evaluation-only option `--proposal-scope nomenclature`
+  of tests/eval/hs6_eval.py stays for later experiments.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -696,6 +702,8 @@ and shown in block 1, and with the switch off nothing changes.
   run, and the auto-accepted and wrong auto-accepted lines per run. For the 120-line and coolant sets, (a) is the exact
   replay of the after-runs' rows under rule (a) and the vague rule, shown with the baseline; on the outside set, (a) is
   three runs of its own. These runs spend at most $1.10 in all; the author is asked before that would be passed.
+  Measured on 2026-11-19 and rejected by the author (clarification of that day): option (c) is not implemented in the
+  app; the evaluation-only option stays for later experiments.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -727,7 +735,8 @@ and shown in block 1, and with the switch off nothing changes.
 - **Outside set**: 10 to 15 lines whose expected HS-6 lies outside the twelve chapters of the old store, each with its
   source and its near-duplicate check (FR-032).
 - **Option (c)**: an evaluation-only limit of the candidate proposal to the chapters of the nomenclature search's top
-  subheadings (FR-033); no product setting.
+  subheadings (FR-033); no product setting. Measured and rejected (2026-11-19): not in the app; the evaluation-only
+  option is kept for later experiments.
 
 ## Success Criteria *(mandatory)*
 

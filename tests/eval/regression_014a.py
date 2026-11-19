@@ -953,7 +953,8 @@ def _section5() -> list[str]:
         + (f"The outside set's wrong auto-accepts are all the bike U-lock ({lock}), {wrong_lock[0]} under (a) and "
            f"{wrong_lock[1]} under (c): its source ruling gives 8301.10, while the model chose 8301.40, where 4 of its 5 "
            "nearest rulings sit. " if wrong_lock == wrong_out else "")
-        + "(c) is not in the app; nothing here recommends it.", "",
+        + "The author rejected (c) on 2026-11-19: it is not implemented in the app, and the evaluation-only "
+        "`--proposal-scope nomenclature` stays for later experiments.", "",
         "The 120-line set's lines whose majority outcome differs between (a) and (c):", "", *lines120, "",
         "The coolant set's:", "", *lines_cool, "",
         "The outside set's:", "", *lines_out]
