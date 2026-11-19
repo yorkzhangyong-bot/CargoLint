@@ -35,7 +35,7 @@ SUPPORTED_FILE_KINDS = ("xlsx", "csv", "pdf", "jpg", "jpeg", "png")
 DEFAULT_THRESHOLD = 85              # auto-accept at either layer, only when no eligible ruling votes (feature 006)
 THRESHOLD_MIN = 60
 THRESHOLD_MAX = 99
-ASK_FLOOR = 50
+ASK_FLOOR = 50                      # kept, but no longer routes: a vague line always asks the shipper (2026-11-19)
 
 # CN-8 gate (feature 006, constitution 1.4.0): the vote of the nearest eligible EBTI rulings, each counted once. It is
 # unweighted by design: the product is not tied to one entry country.

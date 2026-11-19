@@ -232,6 +232,7 @@ Rules enforced in code (`route_line`, FR-020; lock FR-022):
 | vague | any (the author's decision of 2026-11-19; until then review at or above `ask_floor`) | checked | ask_shipper |
 | ok | HS-6 gate passes¹, `ever_flagged=False` | checked | auto_accept |
 | ok | HS-6 gate passes¹, `ever_flagged=True` | checked | review (`ready to accept`) |
+| ok | HS-6 gate passes¹, but the vote of the candidates' chapters has voters and does not agree on the decided code (feature 014a, rule (a)) | checked | review (the veto's reason), whatever `ever_flagged` |
 | ok | HS-6 gate does not pass¹ | checked | review |
 | any | — | no candidates / unreadable / failed | review |
 
@@ -245,6 +246,12 @@ also passes for the second or third candidate on which at least OVERRIDE_MIN (4)
 agree: that candidate becomes the decided code, with the reason "rulings overrode the model: N of M agree on <code>".
 With the switch on, at least OVERRIDE_MIN rulings at a code outside the top three leave the line in review, with that
 code shown as a hint, never chosen.
+Since feature 014a (rule (a), the author's decision of 2026-11-19) the gate's vote reads every indexed chapter, and a
+second vote of the five nearest eligible rulings within the chapters of the model's candidates can only stop an
+auto-accept: when it has voters and does not agree on the decided code (the override's candidate, else the top one; its
+majority at a share of at least 0.5), the gate does not pass (`Hs6Gate.scoped_veto`) and the line goes to review with
+the reason "the EBTI rulings of the candidates' chapters do not agree: n of m at <code> (<countries>)", or "… are
+split: …". The second vote never passes a line on its own.
 
 **Line version**: `v1` (file/paste/sample) → `v2…` (one per applied reply). A reply to an
 accepted line creates a new version and clears the decision (back to review). Versions are never

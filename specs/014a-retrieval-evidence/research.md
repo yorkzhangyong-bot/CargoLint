@@ -78,6 +78,9 @@ coolant codes to the preferred codes (tunes the demo to the eval).
 
 ## R-05 Searching the voters within the candidates' chapters
 
+**Superseded on 2026-11-19 by rule (a)** (spec, clarifications of that day): the gate's vote reads the unfiltered hits
+again; the search below feeds a second vote that can only send a line to review.
+
 **Fact**: `tools/classify_hs6.classify_one` searches the ruling index once per query vector, over every chapter
 (`bti_vectors.search_by_vector(vec, ctx.k * 2, None)`, 12 nearest), before the ranking. The same `hits` propose up to
 three codes (`precedent_codes`) and, after the ranking, feed `hs6_voters` and `hs6_ruling_vote`.
@@ -113,6 +116,9 @@ nomenclature search's record, shown on the Admin page).
 
 ## R-07 Relevance, the floor and its tuning
 
+**Superseded in part on 2026-11-19 by rule (a)**: relevance is the eligibility of the deciding vote, over every indexed
+chapter (spec FR-015); the floor and its tuning below stand.
+
 **Fact**: `hs6_voters` drops a ruling whose best similarity is below `min_similarity`
 (`best[doc_id] < min_similarity`), so exactly the floor votes. `HS6_VOTE_MIN_SIMILARITY = 0.40` was set below every
 nearest eligible ruling in the HS-6 eval set (lowest 0.436); no line of the 120 has ever lacked a voter. The
@@ -131,6 +137,9 @@ boundary uses the constant.
 about 0.82 against their neighbours, packing-list lines 0.51–0.73, so such a floor would switch the gate off).
 
 ## R-08 The block 3 captions
+
+**Superseded on 2026-11-19 by rule (a)**: block 3 lists the deciding vote and shows the captions of spec FR-018 and
+contracts/ui.md §3 (`view.rulings_captions`), one `st.caption` each.
 
 **Fact**: `ui/expand._block3` shows "No ruling was within the similarity floor." when the vote is `None` or has no
 competing code, else one line per code and `view.agree_text` ("n of m agree with <code>") for the chosen code;
