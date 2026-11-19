@@ -214,6 +214,15 @@ def test_the_chapters_vote_sends_an_agreeing_line_to_review(kb):
     assert hs6_gate(95, 85, out.hs6_vote, None, out.hs6_scoped_vote) == (False, Hs6Gate.scoped_veto)
 
 
+@pytest.mark.parametrize("below, votes", [(0.0, True), (1e-4, False)])
+def test_exactly_the_floor_votes_in_the_second_vote(kb, below, votes):
+    kb.bti_vectors = TwoSearches([("bti:XI-M1", 0.95)],                                   # FR-L4: the filtered search's only
+                                 [("bti:FR-L4", HS6_VOTE_MIN_SIMILARITY - below)])        # ruling, at or just below the floor
+    out = classify(kb)
+    assert out.hs6_vote.competing == [("8419.89", ["XI"])]                               # not among the gate's rulings
+    assert (out.hs6_scoped_vote.competing if out.hs6_scoped_vote else None) == ([("3403.19", ["FR"])] if votes else None)
+
+
 def test_with_no_voter_in_the_candidates_chapters_the_unfiltered_gate_decides(kb):
     kb.bti_vectors = TwoSearches([("bti:DE-L1", 0.90), ("bti:AT-L2", 0.88), ("bti:XI-M1", 0.86)], [])
     out = classify(kb)

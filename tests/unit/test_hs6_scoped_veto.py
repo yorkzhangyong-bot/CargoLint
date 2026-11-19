@@ -11,8 +11,10 @@ import pytest
 
 import agent.routing as R
 from agent.config import OVERRIDE_MIN
-from agent.schemas import Candidate, ChangeKind, Classification, Hs6Gate, LineStatus, Route
+from agent.schemas import (Candidate, ChangeKind, Classification, CreatedBy, Flag, FlagKind, Hs6Gate, LineStatus,
+                           LineVersion, Route)
 from tests.ui import harness as h
+from ui import view
 
 pytestmark = pytest.mark.unit
 
@@ -33,6 +35,12 @@ IN_CHAPTER_LOW = vote(("3403.99", "DE"), ("3403.99", "AT"), ("3403.19", "FR"), (
 FOR_2ND = vote(*[("2710.19", "NL")] * OVERRIDE_MIN)                                         # all five at candidate 2
 IN_CHAPTER_FOR_2ND = vote(*[("2710.19", "NL")] * 3, ("3403.99", "DE"), ("3403.99", "AT"))
 IN_CHAPTER_FOR_TOP = vote(*[("3403.99", "DE")] * 3, ("2710.19", "NL"), ("2710.19", "NL"))
+# review round 1 (finding 1): the second vote at exactly the share (2 of 4) and just below it (2 of 5)
+IN_CHAPTER_2ND_AT_SHARE = vote(("2710.19", "NL"), ("2710.19", "DE"), ("3403.99", "AT"), ("3403.19", "FR"))
+IN_CHAPTER_2ND_BELOW = vote(("2710.19", "NL"), ("2710.19", "DE"), ("3403.99", "AT"), ("3403.19", "FR"), ("3820.00", "IT"))
+IN_CHAPTER_TOP_AT_SHARE = vote(("3403.99", "DE"), ("3403.99", "AT"), ("3403.19", "FR"), ("2710.19", "NL"))
+VETO_REASON = ("the EBTI rulings of the candidates' chapters do not agree: 3 of 5 at 3403.19 (FR, LU, NL) — needs a "
+               "human look")
 
 
 class TestGate:
@@ -59,6 +67,16 @@ class TestGate:
         assert R.hs6_gate(95, T, FOR_2ND, OVERRIDE_MIN, IN_CHAPTER_FOR_TOP) == (False, Hs6Gate.scoped_veto)
         assert R.hs6_gate(95, T, FOR_2ND, None, IN_CHAPTER_FOR_2ND) == (False, Hs6Gate.vote_disagrees)   # switch off
 
+    # 014a/FR-012: the second vote's share boundary, exactly the share passes
+    def test_the_overrides_candidate_passes_at_exactly_the_share_of_the_second_vote_and_not_below(self):
+        assert IN_CHAPTER_2ND_AT_SHARE.majority_share == 0.5 and IN_CHAPTER_2ND_BELOW.majority_share == 0.4
+        assert R.hs6_gate(95, T, FOR_2ND, OVERRIDE_MIN, IN_CHAPTER_2ND_AT_SHARE) == (True, Hs6Gate.vote_override)
+        assert R.hs6_gate(95, T, FOR_2ND, OVERRIDE_MIN, IN_CHAPTER_2ND_BELOW) == (False, Hs6Gate.scoped_veto)
+
+    def test_the_top_candidate_passes_at_exactly_the_share_of_the_second_vote(self):
+        assert (IN_CHAPTER_TOP_AT_SHARE.majority, IN_CHAPTER_TOP_AT_SHARE.majority_share) == ("3403.99", 0.5)
+        assert R.hs6_gate(95, T, AGREE, None, IN_CHAPTER_TOP_AT_SHARE) == (True, Hs6Gate.vote_agrees)
+
 
 class TestRoute:
     def test_a_veto_routes_to_review_and_names_the_chapters_vote(self):
@@ -78,6 +96,12 @@ class TestRoute:
                             hs6_scoped_vote=IN_CHAPTER_AGREE)[0] == Route.auto_accept
         assert R.route_line("ok", 95, "checked", False, T, F, hs6_vote=MACHINES,
                             hs6_scoped_vote=IN_CHAPTER_AGREE)[0] == Route.review
+
+    def test_a_line_flagged_before_goes_to_review_with_the_vetos_reason_not_ready_to_accept(self):
+        assert R.route_line("ok", 95, "checked", True, T, F, hs6_vote=AGREE,
+                            hs6_scoped_vote=IN_CHAPTER_OTHER) == (Route.review, VETO_REASON)
+        route, reason = R.route_line("ok", 95, "checked", True, T, F, hs6_vote=AGREE, hs6_scoped_vote=None)
+        assert route == Route.review and reason.startswith("ready to accept — ")   # without the veto: one click
 
     def test_the_hs6_is_not_decided_by_rule_after_a_veto(self):
         assert R.hs6_auto_decided("ok", 95, "checked", False, T, F, hs6_vote=AGREE, hs6_scoped_vote=IN_CHAPTER_OTHER) is False
@@ -106,6 +130,17 @@ def add_voted(store, kb, hs6_vote, scoped_vote, confidences=(95, 40, 20)):
     return n
 
 
+def updated(store, kb, n, scoped_vote):
+    """Line `n` updated by a shipper reply into a clear, checked line whose candidates are TOYS, the gate's vote agreeing
+    with the top one, and the given vote of the candidates' chapters."""
+    cands = [Candidate(code=code, subheading_text=store.index.subheading_text(code), confidence=conf,
+                       rationale=f"matches {code}") for code, conf in zip(TOYS, (95, 40, 20))]
+    store.add_version(n, LineVersion(created_by=CreatedBy.shipper_reply, text_en="Plastic toy figures, PVC",
+                                     flag=Flag(kind=FlagKind.ok), status=LineStatus.checked, candidates=cands,
+                                     hs6_vote=TOYS_AGREE, hs6_scoped_vote=scoped_vote))
+    return n
+
+
 class TestStore:
     def test_the_store_keeps_both_votes_and_routes_a_veto_to_review(self, kb):
         store = h._store()
@@ -122,7 +157,29 @@ class TestStore:
     def test_an_agreeing_chapters_vote_leaves_the_auto_accept(self, kb):
         store = h._store()
         n = add_voted(store, kb, TOYS_AGREE, TOYS_AGREE)
-        assert (store.get_line(n).current.computed_route, store.get_line(n).current.hs6_gate) ==             (Route.auto_accept, Hs6Gate.vote_agrees)
+        v = store.get_line(n).current
+        assert (v.computed_route, v.hs6_gate) == (Route.auto_accept, Hs6Gate.vote_agrees)
+
+    @pytest.mark.parametrize("scoped, ready, text", [(None, True, "Confirm: 9503 00"),
+                                                     (TOYS_IN_CHAPTER_OTHER, False, "Pick: 3 candidates")])
+    def test_a_line_flagged_before_is_ready_to_accept_only_without_a_veto(self, kb, scoped, ready, text):
+        store = h._store()
+        n = updated(store, kb, h._clear(store, kb, "Gift"), scoped)            # a firm stop word: flagged before
+        line = store.get_line(n)
+        assert line.ever_flagged and line.current.computed_route == Route.review
+        assert line.current.hs6_gate == (Hs6Gate.scoped_veto if scoped else Hs6Gate.vote_agrees)
+        assert store.ready_to_accept(line) is ready and store.decided_code(line) == (None, None)
+        assert view.line_status(store, line).text == text
+
+    def test_a_shipper_reply_with_a_veto_asks_to_pick_with_the_vetos_reason(self, kb):
+        store = h._store()
+        n = updated(store, kb, h._clear(store, kb, "Plastic toy figures"), TOYS_IN_CHAPTER_OTHER)   # never flagged
+        line = store.get_line(n)
+        assert not line.ever_flagged and line.current.created_by == CreatedBy.shipper_reply
+        assert (line.current.computed_route, line.current.hs6_gate) == (Route.review, Hs6Gate.scoped_veto)
+        assert line.current.route_reason == ("the EBTI rulings of the candidates' chapters do not agree: 3 of 5 at "
+                                             "9405.21 (DE, FR, NL) — needs a human look")
+        assert store.decided_code(line) == (None, None) and view.line_status(store, line).text == "Pick: 3 candidates"
 
     def test_a_failed_classification_drops_both_votes(self, kb):
         store = h._store()
