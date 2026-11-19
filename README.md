@@ -36,10 +36,11 @@ default (feature 014a): every chapter with a valid ruling, 123,531 rulings in 95
 2026-11-18. A list of chapters and ascending ranges, such as `39,42,61-64,73,84,85,94,95,96` (the twelve chapters
 indexed before feature 014a, 74,044 rulings on that extract), keeps only those; `--bti-chapters` sets it for one run,
 and a value that is neither `all` nor such a list is refused with the setting's name. A `data/bti_subset.jsonl` that is
-already there is reused only when it was cut for the same chapters: otherwise the loader stops and asks for `--force`,
-which cuts it again (for example a twelve-chapter subset from before feature 014a under the new `all` default).
-Admin › Data names the chapters in the rulings' source version ("full extract of 2026-11-18, all chapters"). Data
-provenance and licences: `data/SOURCES.md`.
+already there is reused only when its sidecar, `data/bti_subset.meta.json`, records the same chapters. Otherwise the
+loader stops with exit 2 and asks for `--force`, which cuts it again: for a subset cut for other chapters (for example a
+twelve-chapter subset under the new `all` default) and for one whose sidecar is missing or records no chapters (a
+subset cut before feature 013). Admin › Data names the chapters in the rulings' source version ("full extract of
+2026-11-18, all chapters"). Data provenance and licences: `data/SOURCES.md`.
 
 ## TARIC snapshot (digits 9 to 10 and measures)
 

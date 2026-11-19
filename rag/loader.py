@@ -197,10 +197,12 @@ def _read_subset_meta() -> dict[str, Any]:
 
 
 def build_bti(demo: bool, chapters: set[str] | frozenset[str] | None, force: bool = False,
-              store_dir: Path = STORE_DIR) -> tuple[bti_mod.BTIStore, str | None]:
-    """The ruling document store, written as bti_docs.jsonl into `store_dir`, and the date of the extract the rulings
-    came from: read from the zip when the subset is cut and kept beside it, read back when the subset is reused; None
-    for --demo and for a subset cut before feature 013 recorded it. `chapters` None keeps every chapter (feature 014a)."""
+              store_dir: Path | None = None) -> tuple[bti_mod.BTIStore, str | None]:
+    """The ruling document store, written as bti_docs.jsonl into `store_dir` (STORE_DIR when the step runs), and the
+    date of the extract the rulings came from: read from the zip when the subset is cut and kept beside it, read back
+    when the subset is reused; None for --demo. `chapters` None keeps every chapter (feature 014a). A subset is reused
+    only when its sidecar records the same chapters; otherwise, or when it records none (a subset cut before feature
+    013), SubsetMismatch."""
     extract_date: str | None = None
     if demo:
         if not BTI_DEMO.exists():
@@ -222,11 +224,15 @@ def build_bti(demo: bool, chapters: set[str] | frozenset[str] | None, force: boo
             sidecar = _read_subset_meta()
             extract_date = sidecar.get("extract_date") or None
             cut_for = sidecar.get("source_version")
-            if extract_date and cut_for and cut_for != ebti_source_version(extract_date, chapters):
+            if not (extract_date and cut_for):   # a subset cut before feature 013: its chapters are unknown (review N1)
+                raise SubsetMismatch(f"{BTI_SUBSET.name} records no chapters it was cut for ({SUBSET_META.name} is "
+                                     "missing or names none, as for a subset cut before feature 013); rerun with --force "
+                                     "to cut it again")
+            if cut_for != ebti_source_version(extract_date, chapters):
                 raise SubsetMismatch(f"{BTI_SUBSET.name} holds the {cut_for}, not {chapters_text(chapters)}; rerun "
                                      "with --force to cut it again")
         store = bti_mod.BTIStore.from_jsonl(BTI_SUBSET)
-    store_dir = Path(store_dir)
+    store_dir = Path(store_dir or STORE_DIR)   # read when the step runs, so a patched STORE_DIR is followed (review N5)
     store_dir.mkdir(parents=True, exist_ok=True)
     bti_mod.write_jsonl(store.records, store_dir / "bti_docs.jsonl")
     log(f"bti: {len(store)} rulings in the document store")
@@ -242,12 +248,13 @@ def _forget_release(release_file: Path) -> None:
 
 
 def build_indexes(index: NomenclatureIndex, bti_store: bti_mod.BTIStore, settings: Settings, force: bool = False,
-                  embed: bool = True, store_dir: Path = STORE_DIR, embeddings: Any = None) -> dict[str, Any]:
-    """The BM25 file, the two Chroma collections and index_meta.json in `store_dir` (feature 013: a refresh builds
-    in a work folder and injects its embeddings; the OpenRouter embeddings are built only when none is given)."""
+                  embed: bool = True, store_dir: Path | None = None, embeddings: Any = None) -> dict[str, Any]:
+    """The BM25 file, the two Chroma collections and index_meta.json in `store_dir`, STORE_DIR when the step runs
+    (feature 013: a refresh builds in a work folder and injects its embeddings; the OpenRouter embeddings are built only
+    when none is given)."""
     from rag.embeddings import OpenRouterEmbeddings
 
-    store_dir = Path(store_dir)
+    store_dir = Path(store_dir or STORE_DIR)
     store_dir.mkdir(parents=True, exist_ok=True)
     usage = Usage()
     bm25 = BM25Index([(c.id, c.text) for c in index.chunks])

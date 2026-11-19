@@ -15,7 +15,7 @@
 | Command | Change |
 |---|---|
 | `python scripts/refresh_ebti.py` | new `--chapters SPEC` (over the setting, for one run); the extract's rulings are filtered by the chapters (all by default); the log names the count of valid rulings and of chapters before anything is embedded; everything else as feature 013 (`--rulings`, `--previous`, `--no-publish`, `--out`, `--extract`, `--force`, `--full-embed`, exit codes) |
-| `python -m rag.loader` | `--bti-chapters` defaults to the setting (all) instead of the twelve chapters; `all` is accepted; an existing `data/bti_subset.jsonl` is reused only when its sidecar names the same chapters, and its source version is taken from the sidecar; one cut for other chapters stops the loader with exit 2 and "rerun with --force" (review round 1) |
+| `python -m rag.loader` | `--bti-chapters` defaults to the setting (all) instead of the twelve chapters; `all` is accepted; an existing `data/bti_subset.jsonl` is reused only when its sidecar names the same chapters, and its source version is taken from the sidecar; one cut for other chapters, or one whose sidecar is missing or names no chapters (cut before feature 013), stops the loader with exit 2 and "rerun with --force" (review rounds 1 and 2) |
 | `python -m rag.bti` | `--chapters` defaults to the setting and accepts `all` and ranges |
 
 The rebuild of the local store (FR-009) is one refresh run:
