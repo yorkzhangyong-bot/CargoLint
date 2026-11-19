@@ -381,8 +381,9 @@ def render() -> str:
             "- FR-026's criterion is not met; the customs-wording switch stays off.",
             "- A rewrite still over its 300 characters after its one retry fails the line's HS-6 step, as FR-025 says; "
             "the alternative is a cut at the last word boundary before the switch is ever turned on. Since review round 1 "
-            "the rewrite's output is capped at 512 tokens, so a runaway answer (65,521 output tokens once) can no longer "
-            "happen, and every attempt counts in the shipment's cost. Both matter only with the switch on.", ""]
+            "a runaway answer (65,521 output tokens once) is capped at 512 tokens (tested offline; confirm on the first "
+            "live run with the switch on), and every attempt counts in the shipment's cost. Both matter only with the "
+            "switch on.", ""]
     return "\n".join(out)
 
 
