@@ -10,10 +10,11 @@ request or an issue for review; they merge nothing.
 | Workflow | Runs on | What it does |
 |---|---|---|
 | `.github/workflows/test-and-heal.yml` | every push to a pull request, every push to `main` | Runs the Playwright tests in `tests/e2e-browser` against the app started on the runner. No agent runs while they pass. When a test fails, the triage agent classifies each failure; selector drift goes to the healer, which opens an `auto-heal` pull request, and a real bug becomes an issue labelled `bug` and `agentic-qa`. |
-| `.github/workflows/generate-tests.yml` | a manual run with `spec_path`, or an issue labelled `ready-for-tests` | The planner and generator agents turn the spec into tests, checked against the running app; the tests run once more and come back as an `auto-generate` pull request, a draft when they fail. |
-| `traceability` job in `.github/workflows/tests.yml` | every pull request to `main` | No agent and no model: the spec check, or the tests-traceability check and the description rules ([Traceability](#traceability)). |
+| `.github/workflows/generate-tests.yml` | a manual run with `spec_path`, nothing else | The planner and generator agents turn the spec into tests, checked against the running app; the tests run once more and come back as an `auto-generate` pull request, a draft when they fail. |
+| `.github/workflows/traceability.yml` | every pull request to `main`: opened, pushed to, reopened, or its description edited | No agent and no model: the spec check, or the tests-traceability check and the description rules ([Traceability](#traceability)). |
 
-Both callers take the platform's workflows at `@main`, so a change to the platform applies from its next run.
+Both callers pin the platform to one commit of its `main`, so a push to the platform changes nothing here until the
+pin is bumped ([Updating the platform](#updating-the-platform)).
 
 ## Secrets
 
@@ -23,7 +24,7 @@ Environment never reach the platform's reusable workflows):
 | Secret | What it is for |
 |---|---|
 | `DEEPSEEK_API_KEY` | The agents' model: OpenCode with the platform's default model, `deepseek/deepseek-flash`. A dedicated key with a low spending limit, because within an agent step it sits in the agent's environment. |
-| `CI_APP_OPENROUTER_API_KEY` | CargoLint's own key in CI, separate from the demo's and the refresh workflow's. The callers pass it to the app as `OPENROUTER_API_KEY` inside the `APP_ENV` secret, which the platform loads only into the test runs and masks in the logs, never into an agent step. Never pass it as the platform's top-level `OPENROUTER_API_KEY` secret: that one goes to the OpenCode agents. Give it a low credit limit at OpenRouter. |
+| `CI_APP_OPENROUTER_API_KEY` | CargoLint's own key in CI, separate from the demo's and the refresh workflow's. The callers pass it to the app as `OPENROUTER_API_KEY` inside the `APP_ENV` secret, which the platform loads only into the test runs and masks in the logs, never into an agent step. Never pass it as the platform's top-level `OPENROUTER_API_KEY` secret: that one goes to the OpenCode agents. The test runs execute the generated and healed tests, code an agent wrote, with this key in their environment, so such code can read and spend it: its credit limit at OpenRouter is the real cap. A test must never log its environment, because the JUnit report and the `test-results` artifact are public. |
 
 Repository settings the platform needs: Settings › Actions › General › "Allow GitHub Actions to create and approve pull
 requests" is on (the auto-heal and auto-generate pull requests). The default workflow permissions stay read-only; the
@@ -32,10 +33,10 @@ callers grant what their jobs need.
 ## The app in CI
 
 The workflows start the app themselves (`app_start_command`): `uv` installs the locked dependencies (`uv.lock`, Python
-3.13, as the cloud demo runs), then Streamlit listens on `http://localhost:8501` (`app_url`). The command is printed in
-the log, so it holds settings only: the demo knowledge base, release `demo-store-v1`, with its checksum
-(`CARGOLINT_DEMO_STORE_URL`, `CARGOLINT_DEMO_STORE_SHA256`), and the two telemetry switches. `app_ready_timeout` (600 s)
-covers the install.
+3.13, as the cloud demo runs), then Streamlit listens on 127.0.0.1:8501 only (`--server.address 127.0.0.1`), which the
+tests and agents reach as `http://localhost:8501` (`app_url`). The command is printed in the log, so it holds settings
+only: the demo knowledge base, release `demo-store-v1`, with its checksum (`CARGOLINT_DEMO_STORE_URL`,
+`CARGOLINT_DEMO_STORE_SHA256`), and the two telemetry switches. `app_ready_timeout` (600 s) covers the install.
 
 A fresh runner has no `store/`, so the first page load downloads the 150 MB demo store and opens it, about half a
 minute. `playwright.global-setup.ts` makes that load before the tests start and waits for it, up to five minutes; the
@@ -79,16 +80,31 @@ Run "Generate tests" from the Actions tab with `spec_path`, a Spec Kit feature f
 gh workflow run generate-tests.yml -f spec_path=specs/014a-retrieval-evidence
 ```
 
-GitHub runs a workflow by hand only once it is on `main`. An issue labelled `ready-for-tests` works too: its title and
-body become the spec. The tests come back as an `auto-generate` pull request into the branch the run started from.
-They cite requirements as bare ids (`/** Covers FR-003 */`); add the feature marker of [Traceability](#traceability)
-when you take them into a feature.
+GitHub runs a workflow by hand only once it is on `main`. The tests come back as an `auto-generate` pull request into
+the branch the run started from. They cite requirements as bare ids (`/** Covers FR-003 */`); add the feature marker of
+[Traceability](#traceability) when you take them into a feature.
+
+The platform template's other trigger, an issue labelled `ready-for-tests`, is left out: the platform reads the issue
+when the job runs, so its raw text, hidden HTML comments and edits made after the label included, would become agent
+input in a job that holds a write token and both keys. CargoLint's specs are Spec Kit folders, which `spec_path`
+covers. The caller still grants `issues: read`, although it passes no issue and nothing reads one: the platform's
+generate job declares that permission, and GitHub refuses to start a reusable workflow whose job asks for more than its
+caller grants.
+
+## Reviewing the platform's pull requests
+
+The platform's anti-cheat check forbids changes to `src/` and its built-in paths (`.github/`, `*.config.*`,
+`playwright.config.*`, `package*.json`, `.env*` and the like), but not to `app.py`, `agent/`, `tools/`, `rag/`, `ui/`,
+`data/`, `scripts/`, `pyproject.toml`, `uv.lock` or `playwright.global-setup.ts`. OpenCode's own edits stay in
+`tests/e2e-browser`, but test code it writes runs in the job and can change any file, and the pull request commits every
+change. Until the platform offers a caller input for forbidden or allowed paths, check every `auto-heal` and
+`auto-generate` pull request for files outside `tests/e2e-browser` before you merge it.
 
 ## Labels
 
 | Label | Meaning |
 |---|---|
-| `ready-for-tests` | On an issue: generate tests from it. Only maintainers should apply it, because the issue text becomes agent input. |
+| `ready-for-tests` | Not used by CargoLint: `generate-tests.yml` has no issue trigger ([Generating tests](#generating-tests)). |
 | `auto-generate` | Set by the platform on a pull request of generated tests. |
 | `auto-heal` | Set by the platform on a pull request of healed tests. A later heal for the same base branch updates the open one. |
 | `bug`, `agentic-qa` | Set by the platform on the issue of a real bug; it finds the open issue for the same failure again by `agentic-qa`. |
@@ -104,22 +120,46 @@ when you take them into a feature.
   `heal_max_turns` 40 and `defect_max_turns` 20 by default; `plan_max_turns` 20 and `generate_max_turns` 80 for
   generation; on OpenCode a turn is emulated as 30 s).
 - A generate run costs a planner, a generator and a pull-request writer.
-- The app's key is spent only by tests that check lines: about $0.002 a line, from the end-to-end evaluation's $0.27
-  for 120 lines. The smoke test checks none; a generated test that checks lines spends on every run of
-  `test-and-heal.yml`.
+- The app's key is spent by tests that check lines: about $0.002 a line, from the end-to-end evaluation's $0.27 for 120
+  lines. The smoke test checks none; a generated test that checks lines spends on every run of `test-and-heal.yml`.
 - The spending limits on the two keys are the hard cap.
+
+## Updating the platform
+
+Both callers name the platform by a full commit SHA, with the date of that commit on the platform's `main` as a comment
+(`@e07861991797b0b36ea95a3ce1bbf42c1c1e0227 # main 2026-11-16`); the platform's scripts, agents and settings come from
+the same commit. `@main` would run whatever is pushed there next, with this repository's write token and both keys,
+before anyone reviews it. Bump the pin deliberately, in a pull request of its own:
+
+1. Read what changed since the pinned commit, above all in `.github/workflows/`, `scripts/`, `agents/` and `settings/`:
+   `gh api repos/yorkzhangyong-bot/agentic-qa-platform/compare/<pinned SHA>...main --jq '.files[].filename'`, then the
+   diffs themselves.
+2. Take the new commit and its date:
+   `gh api repos/yorkzhangyong-bot/agentic-qa-platform/commits/main --jq '.sha + " " + .commit.committer.date'`.
+3. Put the full SHA and the date into both `test-and-heal.yml` and `generate-tests.yml`
+   (`tests/unit/test_qa_workflows.py` checks that the two pins are one full SHA), and merge only after the pull
+   request's Test & heal run passes.
 
 ## Traceability
 
-The `traceability` job runs `scripts/check_traceability.py`, which uses `scripts/check_spec.py` (unit tests in
-`tests/unit/test_check_spec.py` and `tests/unit/test_check_traceability.py`). The changed files decide a pull
-request's kind:
+The `traceability` workflow (`.github/workflows/traceability.yml`) runs `scripts/check_traceability.py`, which uses
+`scripts/check_spec.py` (unit tests in `tests/unit/test_check_spec.py` and `tests/unit/test_check_traceability.py`). It
+runs on every pull request to `main`, and again when the description is edited, so adding a missing line clears a
+failure without a push. The changed files decide a pull request's kind:
 
 - **Spec-only**, when it changes none of `app.py`, `agent/`, `tools/`, `rag/`, `ui/`, `tests/`, `scripts/` and `data/`:
   the spec check of the branch's feature folder, `specs/<label>-*` (branch `014a-retrieval-evidence`: label `014a`).
-  Across the folder's markdown files every `FR-###` and `SC-###` is well-formed, defined once (`- **FR-001**`), and
-  none is referenced without a definition; ids in code spans are ignored. A branch without a feature label has
-  nothing to check.
+  - It fails when `spec.md` defines an `FR-###` or `SC-###` more than once, or when an id in the folder's markdown
+    files is malformed. Only `spec.md` defines (`- **FR-001**`): the same line in another file, such as a success
+    criterion restated in `quickstart.md`, defines nothing. Gaps in the numbering are allowed, and ids in code spans
+    are ignored.
+  - Another feature's requirement written with its feature is no reference of this one: `002/FR-020` (or
+    `002-FR-020`), "feature 002's FR-020", "(feature 002, FR-020)" and "feature 002 FR-020". Each id needs its own
+    feature: in "feature 002's FR-014 and FR-018" only FR-014 counts as feature 002's.
+  - Any other id that `spec.md` does not define is a warning, an annotation on the run, not a failure: another
+    feature's requirement written without its feature ("its FR-018"), or a typo. The specs 003, 004 and 008 have such
+    warnings and pass.
+  - A branch without a feature label has nothing to check.
 - **Implementation**, otherwise:
   - **Tests-traceability** for the branch's feature: every `FR-###` and `SC-###` that `specs/<label>-*/spec.md`
     defines is referenced by a test that names the feature, either as a scoped token `014a/FR-001` (or

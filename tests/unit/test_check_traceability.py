@@ -1,7 +1,7 @@
-"""The traceability job of a pull request (scripts/check_traceability.py, tests.yml): spec-only against implementation
-pull requests, the tests-traceability of the branch's feature in Python and Playwright tests, and the pull-request body
-rules (Spec-PR, spec-change). The samples use made-up features (996 to 998z), so they never trace a real feature's
-requirements."""
+"""The traceability check of a pull request (scripts/check_traceability.py, traceability.yml): spec-only against
+implementation pull requests, the tests-traceability of the branch's feature in Python and Playwright tests, and the
+pull-request body rules (Spec-PR, spec-change). The samples use made-up features (996 to 998z), so they never trace a
+real feature's requirements."""
 from __future__ import annotations
 
 import sys

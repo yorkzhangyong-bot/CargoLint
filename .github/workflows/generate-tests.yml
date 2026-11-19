@@ -1,37 +1,38 @@
 # The agentic QA platform's generate-tests workflow (docs/qa-platform.md), from its templates/caller-generate.yml: a
 # spec becomes Playwright browser tests in tests/e2e-browser, explored against the app the workflow starts on the
-# runner, and comes back as an auto-generate pull request. Run it from the Actions tab with spec_path (a Spec Kit
-# feature folder, e.g. specs/014a-retrieval-evidence), or label an issue ready-for-tests: only maintainers should apply
-# that label, because the issue text becomes agent input. GitHub dispatches a workflow only once it is on main.
+# runner, and comes back as an auto-generate pull request. It runs only by hand, with spec_path: a Spec Kit feature
+# folder such as specs/014a-retrieval-evidence, or one markdown file. The template's issue trigger is left out: an
+# issue's live text, hidden comments and later edits included, would become agent input in a job that holds a write
+# token and both keys. GitHub runs a workflow by hand only once it is on main.
 name: Generate tests
 on:
-  issues:
-    types: [labeled]
   workflow_dispatch:
     inputs:
-      spec_path: { description: "Spec markdown file or Spec Kit folder (e.g. specs/014a-retrieval-evidence)", required: false }
+      spec_path: { description: "Spec Kit feature folder or spec markdown file (e.g. specs/014a-retrieval-evidence)", required: true }
 jobs:
   generate:
-    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'ready-for-tests'
-    uses: yorkzhangyong-bot/agentic-qa-platform/.github/workflows/generate-tests.yml@main
+    # The platform at the same commit as in test-and-heal.yml (docs/qa-platform.md, "Updating the platform").
+    uses: yorkzhangyong-bot/agentic-qa-platform/.github/workflows/generate-tests.yml@e07861991797b0b36ea95a3ce1bbf42c1c1e0227 # main 2026-11-16
+    # issues: read reads no issue here (no issue_number); the platform's generate job declares it, and GitHub refuses to
+    # start a reusable workflow whose job asks for more than its caller grants.
     permissions: { contents: write, pull-requests: write, issues: read }
     with:
       framework: playwright
       test_dir: tests/e2e-browser
       app_url: http://localhost:8501
-      issue_number: ${{ github.event.issue.number }}
       spec_path: ${{ inputs.spec_path }}
-      # The app, as in test-and-heal.yml: the locked dependencies through uv, Streamlit on 8501, and the published demo
-      # knowledge base fetched at the first page load. Started once without APP_ENV for the agents, whose app gets the
-      # placeholder key (no model: a line check fails with 401), and once with it for the test run. No secret here:
-      # the command is printed in the log as written.
+      # The app, as in test-and-heal.yml: the locked dependencies through uv, Streamlit on 127.0.0.1:8501 only, and the
+      # published demo knowledge base fetched at the first page load. Started once without APP_ENV for the agents,
+      # whose app gets the placeholder key (no model: a line check fails with 401), and once with it for the test run.
+      # No secret here: the command is printed in the log as written.
       app_start_command: >-
         CARGOLINT_DEMO_STORE_URL=https://github.com/yorkzhangyong-bot/CargoLint/releases/download/demo-store-v1/cargolint-demo-store-v1.zip
         CARGOLINT_DEMO_STORE_SHA256=be92f0f446dd39326175abd81f417578c37d1799f714271ec8f9dab2c59b05d4
         ANONYMIZED_TELEMETRY=False
         OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-ci-placeholder-not-a-key}"
         pipx run --spec uv==0.13.9 uv run --frozen --python 3.13
-        streamlit run app.py --server.headless true --server.port 8501 --browser.gatherUsageStats false
+        streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501
+        --browser.gatherUsageStats false
       app_ready_timeout: 600
       engine: opencode
     secrets:

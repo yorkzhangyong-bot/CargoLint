@@ -1,5 +1,5 @@
-"""The traceability job of a pull request (.github/workflows/tests.yml; docs/qa-platform.md). Adapted from the Kestrel
-project's scripts/check_traceability.py.
+"""The traceability check of a pull request (.github/workflows/traceability.yml; docs/qa-platform.md). Adapted from
+the Kestrel project's scripts/check_traceability.py.
 
     python scripts/check_traceability.py
 
@@ -13,8 +13,8 @@ tests, scripts and data, gets the spec check of scripts/check_spec.py. An implem
    line "014a/FR-001: <reason>". The tests are tests/**/*.py and the Playwright tests, tests/e2e-browser/**/*.ts. A
    branch without a feature label skips this check.
 2. The pull-request body rules: a pull request that changes the app (app.py, agent/, tools/, rag/, ui/) carries a
-   "Spec-PR: #<n>" line, whatever its branch; one that also changes a file under specs/ carries a "spec-change: <reason>"
-   line.
+   "Spec-PR: #<n>" line, whatever its branch; one that also changes a file under specs/ carries a
+   "spec-change: <reason>" line.
 
 The base branch comes from GITHUB_BASE_REF, the branch from GITHUB_HEAD_REF and the description from PR_BODY. Outside a
 pull request (no GITHUB_BASE_REF) nothing has changed, and only tests-traceability runs, for the current branch.

@@ -454,10 +454,10 @@ symbols ending in "12", so a bare number no longer counts as a listed term.
 `.github/workflows/tests.yml` runs the offline suite, `pytest -q`, on GitHub Actions on every push to any branch and on
 every pull request to main (Ubuntu, Python 3.13). It needs no API key: the suite runs on fakes, and the four live tests
 stay deselected. The paid evals are not part of CI: `tests/eval/hs6_eval.py` and `tests/eval/e2e_eval.py` are run
-locally by hand, at about $0.20 (HS-6) and $0.27 (end to end) per run of the 120 lines. On pull requests its
-`traceability` job checks a spec-only pull request's spec, or an implementation pull request's test references to its
-feature's requirements and the `Spec-PR:` and `spec-change:` lines of its description
-([docs/qa-platform.md](docs/qa-platform.md#traceability)).
+locally by hand, at about $0.20 (HS-6) and $0.27 (end to end) per run of the 120 lines.
+`.github/workflows/traceability.yml` checks every pull request to main, and again when its description is edited: a
+spec-only pull request's spec, or an implementation pull request's test references to its feature's requirements and
+the `Spec-PR:` and `spec-change:` lines of its description ([docs/qa-platform.md](docs/qa-platform.md#traceability)).
 
 ## QA platform
 

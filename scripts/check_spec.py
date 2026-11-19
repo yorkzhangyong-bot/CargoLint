@@ -1,14 +1,17 @@
-"""The spec check of a spec-only pull request (the traceability job in .github/workflows/tests.yml; docs/qa-platform.md).
+"""The spec check of a spec-only pull request (.github/workflows/traceability.yml; docs/qa-platform.md, "Traceability").
 Adapted from the Kestrel project's scripts/check_spec.py.
 
     python scripts/check_spec.py [specs/<feature folder>]
 
-Checks the FR-### and SC-### identifiers of a feature folder across all its markdown files (spec.md, plan.md, tasks.md,
-contracts/, checklists/ …): each is well-formed (FR or SC, a hyphen and three digits), each is defined at most once (a
-"- **FR-001**" line), and each one referenced is defined somewhere in the folder. Gaps in the numbering are allowed.
-Identifiers in code spans and fenced code blocks are ignored, so examples there never count. Without an argument the
-folder is the one of the branch's feature label (branch 014a-retrieval-evidence: specs/014a-*); a branch without a
-label, or without a folder for it, has nothing to check.
+Checks the FR-### and SC-### identifiers of a feature folder. spec.md defines them, one "- **FR-001**" line each; the
+same line in another file (a success criterion restated in quickstart.md) defines nothing. The check fails when an
+identifier in the folder's markdown files is malformed (FR or SC, a hyphen and three digits) or spec.md defines one
+more than once; gaps in the numbering are allowed. Another feature's requirement written with its feature is no
+reference of this one: 002/FR-020 (or 002-FR-020), "feature 002's FR-020", "(feature 002, FR-020)" and "feature 002
+FR-020". Any other identifier that spec.md does not define is a warning, not a failure: another feature's requirement
+written without its feature ("its FR-018"), or a typo. Identifiers in code spans and fenced code blocks are ignored,
+so examples there never count. Without an argument the folder is the one of the branch's feature label (branch
+014a-retrieval-evidence: specs/014a-*); a branch without a label, or without a folder for it, has nothing to check.
 """
 from __future__ import annotations
 
@@ -16,6 +19,7 @@ import os
 import re
 import subprocess
 import sys
+from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,6 +27,8 @@ LABEL_RE = re.compile(r"(\d{3}[a-z]?)-")                # a feature label at the
 DEF_RE = re.compile(r"^- \*\*((?:FR|SC)-\d+)\*\*", re.MULTILINE)
 TOKEN_RE = re.compile(r"\b(?:FR|SC)-\d+\b")
 WELL_FORMED_RE = re.compile(r"^(?:FR|SC)-\d{3}$")
+EXTERNAL_RE = re.compile(r"(?<![\w-])\d{3}[a-z]?[-/](?:FR|SC)-\d+\b"                    # 002/FR-020, 002-FR-020
+                         r"|\b[Ff]eature\s+\d{3}[a-z]?(?:['’]s|,)?\s+(?:FR|SC)-\d+\b")  # feature 002's FR-020, …
 FENCED_RE = re.compile(r"```.*?```", re.DOTALL)
 INLINE_RE = re.compile(r"`[^`]*`")
 
@@ -32,27 +38,37 @@ def strip_code(text: str) -> str:
     return INLINE_RE.sub(" ", FENCED_RE.sub(" ", text))
 
 
-def scan(feature_dir: Path) -> tuple[dict[str, int], set[str]]:
-    """How often each identifier is defined, and every identifier mentioned, in the folder's markdown files."""
-    definitions: dict[str, int] = {}
-    references: set[str] = set()
+def definitions(feature_dir: Path) -> Counter[str]:
+    """How often spec.md defines each identifier; nothing without a spec.md."""
+    spec = feature_dir / "spec.md"
+    return Counter(DEF_RE.findall(strip_code(spec.read_text(encoding="utf-8")))) if spec.exists() else Counter()
+
+
+def references(feature_dir: Path) -> dict[str, list[str]]:
+    """Each identifier the folder's markdown files mention, with those files; another feature's requirements written
+    with their feature left out."""
+    found: dict[str, set[str]] = {}
     for md in sorted(feature_dir.rglob("*.md")):
-        prose = strip_code(md.read_text(encoding="utf-8"))
-        for match in DEF_RE.finditer(prose):
-            definitions[match.group(1)] = definitions.get(match.group(1), 0) + 1
-        references.update(TOKEN_RE.findall(prose))
-    return definitions, references
+        prose = EXTERNAL_RE.sub(" ", strip_code(md.read_text(encoding="utf-8")))
+        for identifier in TOKEN_RE.findall(prose):
+            found.setdefault(identifier, set()).add(md.relative_to(feature_dir).as_posix())
+    return {identifier: sorted(files) for identifier, files in sorted(found.items())}
 
 
 def check(feature_dir: Path) -> list[str]:
-    """The problems with a feature folder's identifiers; [] means valid."""
-    definitions, references = scan(feature_dir)
+    """The problems that fail the check: malformed identifiers, and identifiers spec.md defines more than once."""
+    defined, mentioned = definitions(feature_dir), references(feature_dir)
     problems = [f"malformed identifier: {i} (expected FR-### or SC-### with three digits)"
-                for i in sorted(set(definitions) | references) if not WELL_FORMED_RE.match(i)]
-    problems += [f"duplicate definition: {i} is defined {n} times" for i, n in sorted(definitions.items()) if n > 1]
-    problems += [f"orphan reference: {i} is referenced but never defined"
-                 for i in sorted(references) if WELL_FORMED_RE.match(i) and i not in definitions]
+                for i in sorted(set(defined) | set(mentioned)) if not WELL_FORMED_RE.match(i)]
+    problems += [f"duplicate definition: {i} is defined {n} times in spec.md"
+                 for i, n in sorted(defined.items()) if n > 1]
     return problems
+
+
+def orphans(feature_dir: Path) -> dict[str, list[str]]:
+    """The warnings: each well-formed identifier that spec.md does not define, with the files that mention it."""
+    defined = definitions(feature_dir)
+    return {i: files for i, files in references(feature_dir).items() if WELL_FORMED_RE.match(i) and i not in defined}
 
 
 def branch_name() -> str:
@@ -96,9 +112,15 @@ def main(argv: list[str] | None = None) -> int:
         for problem in problems:
             print(f"  - {problem}")
         return 1
-    definitions, _ = scan(folder)
-    fr = sum(1 for i in definitions if i.startswith("FR"))
-    print(f"{rel}: {fr} FR and {len(definitions) - fr} SC defined; all well-formed, unique, no orphan references.")
+    warnings = orphans(folder)
+    prefix = "::warning title=Spec check::" if os.environ.get("GITHUB_ACTIONS") == "true" else "warning: "
+    for i, files in warnings.items():
+        print(f"{prefix}{i} is referenced in {', '.join(files)} but not defined in spec.md; write another feature's "
+              f"requirement with its feature, as <feature>/{i} or \"feature <feature>'s {i}\"")
+    defined = definitions(folder)
+    fr = sum(1 for i in defined if i.startswith("FR"))
+    note = f"; {len(warnings)} undefined reference(s), see the warnings" if warnings else ""
+    print(f"{rel}: {fr} FR and {len(defined) - fr} SC defined in spec.md; all well-formed and unique{note}.")
     return 0
 
 
