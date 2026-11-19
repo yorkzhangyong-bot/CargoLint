@@ -291,6 +291,7 @@ dependencies = [
 dev = [
     { name = "pytest" },
     { name = "pytest-timeout" },
+    { name = "pyyaml" },
 ]
 eval = [
     { name = "ragas" },
@@ -315,6 +316,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "pytest-timeout", marker = "extra == 'dev'", specifier = ">=2.3" },
     { name = "python-dotenv", specifier = ">=1" },
+    { name = "pyyaml", marker = "extra == 'dev'", specifier = ">=6" },
     { name = "ragas", marker = "extra == 'eval'" },
     { name = "rank-bm25", specifier = "==0.2.2" },
     { name = "rapidocr", specifier = "==3.10.0" },

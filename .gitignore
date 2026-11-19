@@ -35,3 +35,9 @@ Thumbs.db
 
 # Playwright MCP browser snapshots
 .playwright-mcp/
+
+# Playwright browser tests (test-only Node tooling) and the JUnit report the QA platform reads
+node_modules/
+test-results/
+playwright-report/
+/results/

@@ -1,0 +1,29 @@
+# The traceability check of a pull request to main (docs/qa-platform.md, "Traceability"): the spec check of a spec-only
+# pull request, or the tests-traceability of the branch's feature and the description's Spec-PR and spec-change lines.
+# It runs again when the description is edited, so adding a missing line clears a failure without a new push.
+name: traceability
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  traceability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0             # the base branch, for the changed files
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - name: Spec check or tests-traceability and the description rules
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: python scripts/check_traceability.py

@@ -1,0 +1,72 @@
+# The agentic QA platform's test-and-heal workflow (docs/qa-platform.md), from its templates/caller-test-and-heal.yml:
+# the Playwright browser tests in tests/e2e-browser run on every pull request and on every push to main, against the
+# app the workflow starts on the runner. When a test fails, the platform's agents (OpenCode with DeepSeek) triage it,
+# repair selector drift in an auto-heal pull request and report real bugs as issues. No agent runs while the tests pass.
+#
+# Cost: the `pull_request` trigger runs this for every push to every pull request. Each time a PR's tests fail, the
+# triage agent runs, then the healer and the defect reporter, and they spend API budget. To heal pull requests only
+# on request, use the label-gated variant: replace `pull_request:` with the two commented lines below it, uncomment
+# the `if:` on the job, and add the `heal-tests` label to a PR when you want it healed.
+#
+# Permissions: contents + pull-requests for auto-heal PRs, issues for defect reports (one issue per REAL_BUG
+# failure). GitHub won't start the workflow if one of them is missing, even with report_defects: false.
+name: Test & heal
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # pull_request:
+  #   types: [labeled]
+jobs:
+  qa:
+    # if: github.event_name == 'push' || github.event.label.name == 'heal-tests'
+    # The platform at one commit of its main, not @main, which a push there would change: bump the pin deliberately
+    # (docs/qa-platform.md, "Updating the platform").
+    uses: yorkzhangyong-bot/agentic-qa-platform/.github/workflows/test-and-heal.yml@e07861991797b0b36ea95a3ce1bbf42c1c1e0227 # main 2026-11-16
+    permissions: { contents: write, pull-requests: write, issues: write }
+    with:
+      framework: playwright
+      test_dir: tests/e2e-browser
+      app_url: http://localhost:8501
+      # The app, started by the workflow in each job that needs it: uv installs the locked dependencies (uv.lock on
+      # Python 3.13, as the cloud demo runs), then Streamlit listens on 127.0.0.1:8501 only. A fresh runner has no
+      # store/, so the app fetches the published demo knowledge base (release demo-store-v1, checked against its
+      # SHA-256) at its first page load, which playwright.global-setup.ts waits for. The ready timeout covers the
+      # install. The test runs get OPENROUTER_API_KEY from APP_ENV; the agents' app, started without it, gets a
+      # placeholder that is no key, so its pages load and a line check fails with 401. The command is printed in the
+      # log as written, so it holds no secret: bash expands the key into the app's environment only.
+      app_start_command: >-
+        CARGOLINT_DEMO_STORE_URL=https://github.com/yorkzhangyong-bot/CargoLint/releases/download/demo-store-v1/cargolint-demo-store-v1.zip
+        CARGOLINT_DEMO_STORE_SHA256=be92f0f446dd39326175abd81f417578c37d1799f714271ec8f9dab2c59b05d4
+        ANONYMIZED_TELEMETRY=False
+        OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-ci-placeholder-not-a-key}"
+        pipx run --spec uv==0.13.9 uv run --frozen --python 3.13
+        streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501
+        --browser.gatherUsageStats false
+      app_ready_timeout: 600
+      engine: opencode
+      # report_defects: false             # default true: a GitHub issue per REAL_BUG failure
+      # defect_assignees: your-github-login  # comma-separated logins for new defect issues
+    secrets:
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      # The app's own key, one KEY=value per line, for the test runs only: the platform never gives APP_ENV to an agent
+      # step, and the agents' app starts without it. A dedicated low-quota key, never passed as the top-level
+      # OPENROUTER_API_KEY secret, which the platform would hand to the OpenCode agents. Use repository secrets:
+      # secrets stored under a GitHub Environment aren't visible to reusable workflows.
+      APP_ENV: |
+        OPENROUTER_API_KEY=${{ secrets.CI_APP_OPENROUTER_API_KEY }}
+
+  # The check to require on main (docs/qa-platform.md, "Required checks"): green only when the browser tests ran and
+  # passed. The platform's "Run tests" step has continue-on-error, so "qa / Run playwright tests" is green even when a
+  # test fails; its `failed` output says so, and is "false" also when no test ran, hence the result check too.
+  browser-tests:
+    needs: qa
+    if: always()
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: The browser tests ran and passed
+        env:
+          RESULT: ${{ needs.qa.result }}
+          FAILED: ${{ needs.qa.outputs.failed }}
+        run: test "$RESULT" = success && test "$FAILED" = false
