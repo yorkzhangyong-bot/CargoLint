@@ -22,12 +22,14 @@ jobs:
       issue_number: ${{ github.event.issue.number }}
       spec_path: ${{ inputs.spec_path }}
       # The app, as in test-and-heal.yml: the locked dependencies through uv, Streamlit on 8501, and the published demo
-      # knowledge base fetched at the first page load. Started once without APP_ENV for the agents and once with it for
-      # the test run. No secret here: the command is printed in the log.
+      # knowledge base fetched at the first page load. Started once without APP_ENV for the agents, whose app gets the
+      # placeholder key (no model: a line check fails with 401), and once with it for the test run. No secret here:
+      # the command is printed in the log as written.
       app_start_command: >-
         CARGOLINT_DEMO_STORE_URL=https://github.com/yorkzhangyong-bot/CargoLint/releases/download/demo-store-v1/cargolint-demo-store-v1.zip
         CARGOLINT_DEMO_STORE_SHA256=be92f0f446dd39326175abd81f417578c37d1799f714271ec8f9dab2c59b05d4
         ANONYMIZED_TELEMETRY=False
+        OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-ci-placeholder-not-a-key}"
         pipx run --spec uv==0.13.9 uv run --frozen --python 3.13
         streamlit run app.py --server.headless true --server.port 8501 --browser.gatherUsageStats false
       app_ready_timeout: 600

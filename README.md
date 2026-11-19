@@ -466,8 +466,10 @@ The [agentic QA platform](https://github.com/yorkzhangyong-bot/agentic-qa-platfo
 with DeepSeek) triage it, repair selector drift in an `auto-heal` pull request and report real bugs as issues.
 `.github/workflows/generate-tests.yml` writes tests from a spec (`spec_path`, e.g. `specs/014a-retrieval-evidence`)
 into an `auto-generate` pull request. Both start the app on the runner with the published demo knowledge base. The
-secrets (`DEEPSEEK_API_KEY` for the agents, `CI_APP_OPENROUTER_API_KEY` for the app's test runs only), the labels, the
-cost and how to run the tests locally are in [docs/qa-platform.md](docs/qa-platform.md).
+agents explore it without a model: their copy of the app gets a placeholder instead of the key, so a line check fails
+with 401 there, and only the workflow's own test runs classify lines. The secrets (`DEEPSEEK_API_KEY` for the agents,
+`CI_APP_OPENROUTER_API_KEY` for the app's test runs only), the labels, the cost and how to run the tests locally are in
+[docs/qa-platform.md](docs/qa-platform.md).
 
 ## Knowledge base refresh
 

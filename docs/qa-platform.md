@@ -42,9 +42,14 @@ minute. `playwright.global-setup.ts` makes that load before the tests start and 
 tests then load the page in a few seconds.
 
 In a job that runs agents the platform starts the app twice: without `APP_ENV` for the agents, and with it for the test
-run, so no agent can read the key from the app's process. The agents' app therefore has no `OPENROUTER_API_KEY` and
-stops at "OPENROUTER_API_KEY is not set": the triage, healer and generator agents see that page, not the main page,
-and say so. Only the workflow's own test runs reach the main page.
+run, so no agent can read the key from the app's process. The start command sets
+`OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-ci-placeholder-not-a-key}"`: the test runs keep the key from `APP_ENV`, and
+the agents' app gets a placeholder that is no key. The agents therefore explore the app without a model: the pages and
+the knowledge base load, and a line check fails with 401 there ("check failed", routed to ask shipper). Only the
+workflow's own test runs classify lines. The key's value never appears on a command line or in the log: the platform
+prints the command as written, and bash expands the key into the app's environment only. Without the
+`CI_APP_OPENROUTER_API_KEY` secret the test runs get the placeholder too (the platform warns about the empty `APP_ENV`
+value), and a test that checks lines fails.
 
 ## Browser tests
 

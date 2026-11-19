@@ -29,12 +29,15 @@ jobs:
       # The app, started by the workflow in each job that needs it: uv installs the locked dependencies (uv.lock on
       # Python 3.13, as the cloud demo runs), then Streamlit listens on 8501. A fresh runner has no store/, so the app
       # fetches the published demo knowledge base (release demo-store-v1, checked against its SHA-256) at its first
-      # page load, which playwright.global-setup.ts waits for. The ready timeout covers the install. No secret here:
-      # the command is printed in the log.
+      # page load, which playwright.global-setup.ts waits for. The ready timeout covers the install. The test runs get
+      # OPENROUTER_API_KEY from APP_ENV; the agents' app, started without it, gets a placeholder that is no key, so its
+      # pages load and a line check fails with 401. The command is printed in the log as written, so it holds no
+      # secret: bash expands the key into the app's environment only.
       app_start_command: >-
         CARGOLINT_DEMO_STORE_URL=https://github.com/yorkzhangyong-bot/CargoLint/releases/download/demo-store-v1/cargolint-demo-store-v1.zip
         CARGOLINT_DEMO_STORE_SHA256=be92f0f446dd39326175abd81f417578c37d1799f714271ec8f9dab2c59b05d4
         ANONYMIZED_TELEMETRY=False
+        OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-ci-placeholder-not-a-key}"
         pipx run --spec uv==0.13.9 uv run --frozen --python 3.13
         streamlit run app.py --server.headless true --server.port 8501 --browser.gatherUsageStats false
       app_ready_timeout: 600
