@@ -144,12 +144,13 @@ def fake_client_caller() -> Any:
 
 def _classify(store: LineStore, n: int, cands: list[tuple[str, int]], no_valid: bool = False,
               rationale: str = "matches the subheading", hs6_vote: Hs6Vote | None = None,
-              ruling_scope: RulingScope | None = None) -> None:
+              ruling_scope: RulingScope | None = None, hs6_scoped_vote: Hs6Vote | None = None) -> None:
     index = store.index
     candidates = [Candidate(code=code, subheading_text=index.subheading_text(code), confidence=conf,
                             rationale=f"{rationale} {code}", history_only=(i == 2)) for i, (code, conf) in enumerate(cands)]
     store.update_classification(n, Classification(line_no=n, candidates=candidates, no_valid_candidate=no_valid,
-                                                  status=LineStatus.checked, hs6_vote=hs6_vote, ruling_scope=ruling_scope))
+                                                  status=LineStatus.checked, hs6_vote=hs6_vote, ruling_scope=ruling_scope,
+                                                  hs6_scoped_vote=hs6_scoped_vote))
     by_code = {}
     if cands:
         by_code[cands[0][0]] = [Precedent(reference=f"DE-{cands[0][0].replace('.', '')}-01", member_state="DE",
@@ -288,6 +289,15 @@ def build_state(store: LineStore, kb: Any, state: str) -> int:
             return n
         _cn8(store, n, "9405.21", "94052140", conf=95)
         _taric(store, kb, n)
+        return n
+    if state == "hs6_veto":   # feature 014a (rule (a)): 4 of 5 nearest rulings agree, but those of the candidates'
+        n = _clear(store, kb, "LED desk lamp, USB powered", "LED台灯 USB供电")   # chapters sit at candidate 3
+        vote = Hs6Vote(majority="9405.21", majority_share=0.8, model_is_majority=True, agrees=True,
+                       competing=[("9405.21", ["IE", "DE", "DE", "FR"]), ("8543.70", ["NL"])])
+        scoped = Hs6Vote(majority="9403.60", majority_share=0.6, candidate=3,
+                         competing=[("9403.60", ["DE", "FR", "NL"]), ("9405.21", ["IE", "DE"])])
+        _classify(store, n, [("9405.21", 90), ("8543.70", 30), ("9403.60", 20)], hs6_vote=vote, hs6_scoped_vote=scoped,
+                  ruling_scope=RulingScope(chapters=["85", "94"], not_indexed=[]))
         return n
     if state in ("edited_ever_flagged", "edited_never_flagged"):   # T026: a clerk version, re-checked inline
         n = build_state(store, kb, "ics2_term" if state == "edited_ever_flagged" else "cn8_question")

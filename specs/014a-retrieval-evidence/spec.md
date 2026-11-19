@@ -492,13 +492,16 @@ and shown in block 1, and with the switch off nothing changes.
   call.
 - **FR-017**: When the HS-6 step runs, the line's result MUST record which of its candidates' chapters are not indexed.
   Block 3 MUST read the vote and these chapter facts from the line store, never from model text.
-- **FR-018**: Block 3's caption MUST read, in the place of today's caption: (a) with no voting ruling and no candidate
-  chapter indexed, "No rulings indexed for chapter NN." ("chapters NN, MM and LL." for several); (b) with no voting
-  ruling and at least one candidate chapter indexed, "No relevant rulings found.", followed by "No rulings indexed for
-  chapter NN." naming the candidate chapters that are not indexed, if any; (c) with voting rulings and the chosen code's
-  chapter not indexed, "No rulings indexed for chapter NN." in place of "0 of m agree with <code>"; (d) otherwise "n of
-  m agree with <code>" as today. "No ruling was within the similarity floor." MUST no longer be shown. A code typed
-  under "Other HS-6 code…" outside the searched chapters gets no agreement caption. No element is added to the page.
+- **FR-018** (rule (a), clarification of 2026-11-19): Block 3 MUST list the deciding vote, the 5 nearest eligible
+  rulings over every indexed chapter with their issuing countries, as before this feature, and show under the list one
+  caption each, in this order: (1) with the deciding vote and a chosen code, "n of m agree with <code>" as before this
+  feature, a typed code included; with no voter in the deciding vote, on a line with a candidate, "No relevant rulings
+  found."; (2) when the vote of the candidates' chapters sent the line to review, "Sent to review by the rulings of the
+  candidates' chapter NN: n of m at <code>." ("chapters NN and MM" for several: the candidates' chapters that hold
+  rulings), or on a tie "Sent to review by the rulings of the candidates' chapters NN and MM: split, n at <code>, n at
+  <code> and n at <code>."; (3) "No rulings indexed for chapter NN." ("chapters NN, MM and LL." for several) naming the
+  candidates' chapters with no ruling in the store. "No ruling was within the similarity floor." MUST no longer be
+  shown. A line without a candidate shows no caption. No element other than these captions is added to the page.
 - **FR-019**: Routing MUST NOT change: with no relevant ruling, the gate's existing rule for "no ruling votes" decides
   (the model estimate against the threshold, at the threshold counts), and the route reasons keep their wording.
 

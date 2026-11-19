@@ -803,27 +803,36 @@ def _not_indexed(chapters: list[str]) -> str:
     return f"No rulings indexed for chapter{'s' if len(chapters) > 1 else ''} {_and(sorted(chapters))}."
 
 
-def rulings_caption(line: Any, chosen: str | None) -> str | None:
-    """Block 3's caption (feature 014a, contracts/ui.md §3), read from the line version's vote and the chapters its vote
-    searched: with no ruling voting, that no candidate's chapter holds a ruling (a) or that none was relevant (b); with a
-    vote, that the chosen code's chapter holds no ruling (c), or how many agree with it (d); None for a code typed
-    outside the chapters searched (e), before a code is chosen, and without a scope and a vote (f)."""
+def _veto_text(scope: Any, vote: Any) -> str:
+    """Feature 014a (rule (a)): the vote of the candidates' chapters that sent the line to review, with the chapters that
+    hold rulings, and its majority with its share, or how it split."""
+    chapters = [c for c in scope.chapters if c not in scope.not_indexed]
+    if vote.majority is None:
+        found = "split, " + _and([f"{len(countries)} at {c}" for c, countries in vote.competing])
+    else:
+        n, m = _hs6_votes(vote, vote.majority)
+        found = f"{n} of {m} at {vote.majority}"
+    return f"Sent to review by the rulings of the candidates' chapter{'s' if len(chapters) > 1 else ''} {_and(chapters)}: {found}."
+
+
+def rulings_captions(line: Any, chosen: str | None) -> list[str]:
+    """Block 3's captions (feature 014a, rule (a), contracts/ui.md §3), read from the line version: how many of the
+    deciding vote's rulings agree with the chosen code, or that the deciding vote has no voter; that the vote of the
+    candidates' chapters sent the line to review; and the candidates' chapters with no ruling in the store. None without
+    a candidate."""
     v = line.current
     vote, scope = v.hs6_vote, v.ruling_scope
+    captions = []
     if vote is None:
-        if scope is None:
-            return None
-        if len(scope.not_indexed) == len(scope.chapters):
-            return _not_indexed(scope.not_indexed)
-        return "No relevant rulings found." + (f" {_not_indexed(scope.not_indexed)}" if scope.not_indexed else "")
-    if not chosen:
-        return None
-    if scope is not None:                    # a vote stored before feature 014a has no scope: as before
-        if chosen[:2] in scope.not_indexed:
-            return _not_indexed([chosen[:2]])
-        if chosen[:2] not in scope.chapters:
-            return None
-    return agree_text(vote, chosen)
+        if v.candidates:
+            captions.append("No relevant rulings found.")
+    elif chosen:
+        captions.append(agree_text(vote, chosen))
+    if v.hs6_gate == Hs6Gate.scoped_veto:
+        captions.append(_veto_text(scope, v.hs6_scoped_vote))
+    if scope is not None and scope.not_indexed:
+        captions.append(_not_indexed(scope.not_indexed))
+    return captions
 
 
 def cn8_lines(store: Any, line: Any, code: str) -> list[tuple[str, str]]:

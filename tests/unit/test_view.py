@@ -1028,42 +1028,72 @@ def test_clerk_changed_at_the_cn8_and_the_taric10(kb):  # FR-013: another code t
     assert changed(t) == "true"                                      # another subdivision
 
 
-# --------------------------------------------------------------------------- feature 014a: block 3's caption
-from agent.schemas import Hs6Vote, Line, LineVersion, RulingScope  # noqa: E402
+# --------------------------------------------------------------------------- feature 014a: block 3's captions (rule (a))
+from agent.schemas import Candidate, Hs6Gate, Hs6Vote, Line, LineVersion, RulingScope  # noqa: E402
 
 FLOOR_TEXT = "No ruling was within the similarity floor."
 COOLANT_VOTE = Hs6Vote(majority="3403.99", majority_share=0.6, model_is_majority=True, agrees=True,
                        competing=[("3403.99", ["DE", "AT", "BE"]), ("3403.19", ["FR", "LU"])])
+IN_CHAPTER_OTHER = Hs6Vote(majority="3403.19", majority_share=0.6, model_is_majority=False, agrees=False,
+                           competing=[("3403.19", ["FR", "LU", "NL"]), ("3403.99", ["DE", "AT"])])
+IN_CHAPTER_SPLIT = Hs6Vote(majority=None, majority_share=0.4, model_is_majority=False, agrees=False,
+                           competing=[("3403.99", ["DE", "AT"]), ("3403.19", ["FR", "LU"]), ("2710.19", ["NL"])])
+VETO = "Sent to review by the rulings of the candidates' chapters 34 and 38: 3 of 5 at 3403.19."
+VETO_SPLIT = ("Sent to review by the rulings of the candidates' chapters 34 and 38: split, 2 at 3403.99, 2 at 3403.19 "
+              "and 1 at 2710.19.")
 
 
-def scoped_line(chapters=None, not_indexed=(), vote=None) -> Line:
+def scoped_line(chapters=None, not_indexed=(), vote=None, scoped=None, gate=None, codes=("3403.99",)) -> Line:
     scope = RulingScope(chapters=list(chapters), not_indexed=list(not_indexed)) if chapters is not None else None
-    return Line(line_no=1, versions=[LineVersion(text_en="coolant", hs6_vote=vote, ruling_scope=scope)])
+    candidates = [Candidate(code=code, confidence=90) for code in codes]
+    return Line(line_no=1, versions=[LineVersion(text_en="coolant", candidates=candidates, hs6_vote=vote,
+                                                 hs6_scoped_vote=scoped, ruling_scope=scope, hs6_gate=gate)])
 
 
-@pytest.mark.parametrize("line, chosen, caption", [
-    (scoped_line(["34"], ["34"]), "3403.99", "No rulings indexed for chapter 34."),                          # (a)
-    (scoped_line(["27", "34", "38"], ["27", "34", "38"]), "3403.99", "No rulings indexed for chapters 27, 34 and 38."),
-    (scoped_line(["27", "34", "38"], ["27", "34", "38"]), None, "No rulings indexed for chapters 27, 34 and 38."),
-    (scoped_line(["27", "34", "38"]), "3403.99", "No relevant rulings found."),                              # (b)
-    (scoped_line(["27", "34", "38"], ["38"]), "3403.99", "No relevant rulings found. No rulings indexed for chapter 38."),
-    (scoped_line(["27", "34", "38"], ["27", "38"]), "8419.89",
-     "No relevant rulings found. No rulings indexed for chapters 27 and 38."),
-    (scoped_line(["27", "34", "38"], ["38"], COOLANT_VOTE), "3820.00", "No rulings indexed for chapter 38."),   # (c)
-    (scoped_line(["27", "34", "38"], ["38"], COOLANT_VOTE), "3824.99", "No rulings indexed for chapter 38."),   # typed
-    (scoped_line(["27", "34", "38"], ["38"], COOLANT_VOTE), "3403.99", "3 of 5 agree with 3403.99"),            # (d)
-    (scoped_line(["27", "34", "38"], ["38"], COOLANT_VOTE), "2710.19", "0 of 5 agree with 2710.19"),   # searched, indexed
-    (scoped_line(["27", "34", "38"], ["38"], COOLANT_VOTE), "8419.89", None),                    # (e) typed, not searched
-    (scoped_line(["27", "34", "38"], ["38"], COOLANT_VOTE), "", None),                           # no code chosen yet
-    (scoped_line(), "3403.99", None),                                                            # (f) no scope, no vote
+@pytest.mark.parametrize("line, chosen, captions", [
+    (scoped_line(["34", "38"]), "3403.99", ["No relevant rulings found."]),                    # the gate's vote: no voter
+    (scoped_line(["34", "38"], ["38"]), "3403.99", ["No relevant rulings found.", "No rulings indexed for chapter 38."]),
+    (scoped_line(["27", "34", "38"], ["27", "34", "38"]), None,
+     ["No relevant rulings found.", "No rulings indexed for chapters 27, 34 and 38."]),
+    (scoped_line(["34", "38"], [], COOLANT_VOTE), "3403.99", ["3 of 5 agree with 3403.99"]),   # as before 014a
+    (scoped_line(["34", "38"], ["38"], COOLANT_VOTE), "3820.00",
+     ["0 of 5 agree with 3820.00", "No rulings indexed for chapter 38."]),
+    (scoped_line(["34", "38"], [], COOLANT_VOTE), "8419.89", ["0 of 5 agree with 8419.89"]),   # a typed code
+    (scoped_line(["34", "38"], [], COOLANT_VOTE), "", []),                                     # no code chosen yet
+    (scoped_line(["34", "38"], [], COOLANT_VOTE, IN_CHAPTER_OTHER, Hs6Gate.scoped_veto), "3403.99",
+     ["3 of 5 agree with 3403.99", VETO]),                                                       # the veto, with its code
+    (scoped_line(["34", "38"], [], COOLANT_VOTE, IN_CHAPTER_SPLIT, Hs6Gate.scoped_veto), "3403.99",
+     ["3 of 5 agree with 3403.99", VETO_SPLIT]),
+    (scoped_line(["34", "38"], [], COOLANT_VOTE, IN_CHAPTER_OTHER, Hs6Gate.vote_agrees), "3403.99",
+     ["3 of 5 agree with 3403.99"]),                                                             # no veto: no caption for it
+    (scoped_line(["34", "38"], ["38"], COOLANT_VOTE, IN_CHAPTER_OTHER, Hs6Gate.scoped_veto), "3403.99",
+     ["3 of 5 agree with 3403.99", "Sent to review by the rulings of the candidates' chapter 34: 3 of 5 at 3403.19.",
+      "No rulings indexed for chapter 38."]),                                                    # the chapters that voted
+    (scoped_line(), "3403.99", ["No relevant rulings found."]),                                  # stored before the scope
+    (scoped_line(codes=()), "3403.99", []),                                                      # no candidate, no vote
 ])
-def test_feature_014a_the_rulings_caption(line, chosen, caption):
-    assert view.rulings_caption(line, chosen) == caption
-    assert view.rulings_caption(line, chosen) != FLOOR_TEXT
+def test_feature_014a_block3_captions_under_rule_a(line, chosen, captions):
+    assert view.rulings_captions(line, chosen) == captions
+    assert FLOOR_TEXT not in view.rulings_captions(line, chosen)
+
+
+def test_feature_014a_the_veto_caption_names_one_chapter_in_the_singular():
+    line = scoped_line(["61"], [], COOLANT_VOTE, IN_CHAPTER_OTHER, Hs6Gate.scoped_veto)
+    assert view.rulings_captions(line, "3403.99")[-1] == ("Sent to review by the rulings of the candidates' chapter 61: "
+                                                          "3 of 5 at 3403.19.")
 
 
 def test_feature_014a_a_vote_stored_before_the_scope_keeps_its_agreement_caption():
-    assert view.rulings_caption(scoped_line(vote=COOLANT_VOTE), "3403.99") == "3 of 5 agree with 3403.99"
+    assert view.rulings_captions(scoped_line(vote=COOLANT_VOTE), "3403.99") == ["3 of 5 agree with 3403.99"]
+
+
+def test_feature_014a_a_vetoed_line_explains_the_chapters_vote(kb):
+    store, nos = h.store_with("hs6_veto", kb=kb)
+    line = store.get_line(nos["hs6_veto"])
+    assert line.current.computed_route.value == "review" and line.current.hs6_gate == Hs6Gate.scoped_veto
+    assert view.explain_a(store, line, "a_hs6")[1] == ("Rulings of the candidates' chapters disagree: model 9405 21, their "
+                                                       "nearest rulings 9403 60 (DE, FR, NL), 9405 21 (IE, DE). TARIC runs "
+                                                       "after your pick.")
 
 
 # --------------------------------------------------------------------------- feature 014a: block 2's citation notes

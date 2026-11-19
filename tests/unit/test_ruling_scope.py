@@ -46,7 +46,7 @@ def test_a_ruling_at_exactly_the_floor_is_relevant_and_one_just_below_is_not():
 
     from agent.config import HS6_VOTE_MIN_SIMILARITY
     from agent.routing import hs6_ruling_vote
-    from agent.schemas import Line, LineVersion
+    from agent.schemas import Candidate, Line, LineVersion
     from tools.classify_hs6 import hs6_voters
     from ui import view
 
@@ -56,9 +56,9 @@ def test_a_ruling_at_exactly_the_floor_is_relevant_and_one_just_below_is_not():
     assert hs6_voters([[("bti:DE-1", HS6_VOTE_MIN_SIMILARITY)]], store, index, on_the_day) == [("3403.99", "DE")]
     below = hs6_voters([[("bti:DE-1", HS6_VOTE_MIN_SIMILARITY - 1e-4)]], store, index, on_the_day)
     assert below == [] and hs6_ruling_vote(below, ["3403.99"]) is None                    # as the only hit: no vote
-    line = Line(line_no=1, versions=[LineVersion(text_en="coolant", hs6_vote=None,
-                                                 ruling_scope=RulingScope(chapters=["34"], not_indexed=[]))])
-    assert view.rulings_caption(line, "3403.99") == "No relevant rulings found."
+    line = Line(line_no=1, versions=[LineVersion(text_en="coolant", candidates=[Candidate(code="3403.99", confidence=90)],
+                                                 hs6_vote=None, ruling_scope=RulingScope(chapters=["34"], not_indexed=[]))])
+    assert view.rulings_captions(line, "3403.99") == ["No relevant rulings found."]
 
 
 @pytest.mark.parametrize("below, passes", [(0, True), (1, False)])            # exactly the threshold, and one below

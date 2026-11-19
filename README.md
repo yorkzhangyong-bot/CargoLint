@@ -170,11 +170,11 @@ operator and the course evaluators.
      shown until "Accept". A ruling the reason cites is checked against the rulings retrieved for the line, and a
      note follows the reason when it does not match: "Cited ruling … classifies under 3403.19, not 3403.99." or
      "Cited ruling … was not retrieved for this line; it is not a source."
-  3. Similar rulings: the HS-6 of the 5 nearest EBTI rulings in the candidates' chapters with their issuing
-     countries, how many agree with the chosen code, and the candidates' precedents with "Open ruling ↗". When no
-     ruling votes, a caption says why: "No rulings indexed for chapter 38." when no candidate's chapter holds a
-     ruling, "No relevant rulings found." when none reaches the similarity floor; the first also stands for a chosen
-     code whose chapter holds no ruling.
+  3. Similar rulings: the HS-6 of the 5 nearest EBTI rulings with their issuing countries, how many agree with the
+     chosen code, and the candidates' precedents with "Open ruling ↗". "No relevant rulings found." when none
+     reaches the similarity floor; "Sent to review by the rulings of the candidates' chapters 34 and 38: 3 of 5 at
+     3403.19." when the rulings of the candidates' own chapters do not agree and stopped an auto-accept; "No rulings
+     indexed for chapter 38." for a candidate's chapter with no ruling in the store.
   4. Tariff for the origin: the CN-8 lines under a newly chosen code; the CN-8 or the subdivision to pick while that
      choice is open; or the decided CN-8 and TARIC-10 with the third-country duty, the requirements, "All measures"
      and "Open in EU TARIC ↗", and "Change the code at" CN-8 or TARIC-10.

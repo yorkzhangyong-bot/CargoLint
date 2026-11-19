@@ -34,21 +34,25 @@ not change. The CSV and JSON exports do not carry the notes (014b owns reasons i
 
 ## 3. Block 3, Similar rulings (5 nearest, EBTI)
 
-The heading and the list of codes with their issuing countries are unchanged; the voters now come from the
-candidates' chapters only. The caption under the list (or alone, when nothing voted) replaces both
-"No ruling was within the similarity floor." and, in case (c), "0 of m agree with <code>":
+Rule (a), the author's decision of 2026-11-19: the heading and the list of codes with their issuing countries show
+the deciding vote, the 5 nearest eligible rulings over every indexed chapter (`hs6_vote`), as before feature 014a.
+The vote of the candidates' chapters (`hs6_scoped_vote`) is not listed. Under the list (or alone, when nothing voted),
+`view.rulings_captions(line, chosen)` gives the captions, each in its own `st.caption`, in this order:
 
-| Case | When (line version) | Caption |
+| Order | When (line version) | Caption |
 |---|---|---|
-| (a) | no vote, and no chapter of `ruling_scope.chapters` is indexed | `No rulings indexed for chapter 34.` / `No rulings indexed for chapters 27, 34 and 38.` |
-| (b) | no vote, and at least one of them is indexed | `No relevant rulings found.` then, if some are not indexed, ` No rulings indexed for chapter 38.` |
-| (c) | a vote, and the chosen code's chapter is in `ruling_scope.not_indexed` (a candidate's chapter, or the searched chapter of a code typed under "Other HS-6 code…") | `No rulings indexed for chapter 38.` |
-| (d) | a vote, and the chosen code's chapter was searched and is indexed | `n of m agree with <code>` (unchanged wording) |
-| (e) | a vote, and the chosen code was typed under "Other HS-6 code…" and its chapter was not searched | no caption |
-| (f) | no `ruling_scope` (no valid candidate, or the step failed) | no caption (today's "No ruling was within the similarity floor." is not shown) |
+| 1 | `hs6_vote` is set and a code is chosen (a candidate, or a code typed under "Other HS-6 code…") | `n of m agree with <code>`, the wording before feature 014a: `3 of 5 agree with 3403.99` |
+| 1 | `hs6_vote` is `None` and the line has a candidate: the deciding vote has no voter | `No relevant rulings found.` |
+| 2 | `hs6_gate` is `scoped_veto`: the vote of the candidates' chapters sent the line to review | `Sent to review by the rulings of the candidates' chapter 61: 3 of 5 at 6110.30.` / `Sent to review by the rulings of the candidates' chapters 34 and 38: 3 of 5 at 3403.19.`; on a tie, `Sent to review by the rulings of the candidates' chapters 34 and 38: split, 2 at 3403.99, 2 at 3403.19 and 1 at 2710.19.` |
+| 3 | `ruling_scope.not_indexed` is not empty: a candidate's chapter holds no ruling in the store | `No rulings indexed for chapter 38.` / `No rulings indexed for chapters 27, 34 and 38.` |
 
-Chapter lists are two-digit chapters in ascending order, joined with ", " and a final " and ". The explanation line
-under the list (why the line waits for the clerk) keeps its wording; with no vote it is the existing threshold text.
+Before a code is chosen there is no agreement caption; a line without a candidate (no valid candidate, or the step
+failed) shows no caption. "No ruling was within the similarity floor." is not shown. The veto caption names the
+candidates' chapters that hold rulings (those the second vote read) and the second vote's majority with its share, or
+every code with its rulings on a tie; it reads the stored gate, so it holds as long as the line keeps it. Chapter lists
+are two-digit chapters in ascending order, joined with ", " and a final " and ". The explanation line under the list
+(why the line waits for the clerk) keeps its wording; for a veto it reads `Rulings of the candidates' chapters
+disagree: model <code>, their nearest rulings <codes with countries>. TARIC runs after your pick.`
 
 ## 4. Admin › Ask the agent, Retrieval steps
 

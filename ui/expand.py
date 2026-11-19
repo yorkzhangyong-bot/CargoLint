@@ -252,8 +252,7 @@ def _block3(store: Any, line: Any, code: str | None, kind: str | None) -> None:
     if vote is not None:
         for same, c, countries in view.vote_lines(vote, code):
             st.markdown(f"{':green[✓]' if same else ':red[✗]'} {c} · {md_escape(countries)}")
-    caption = view.rulings_caption(line, code)   # feature 014a: why no ruling votes, or how many agree with the code
-    if caption:
+    for caption in view.rulings_captions(line, code):   # feature 014a (rule (a)): agreement, veto, chapters not indexed
         st.caption(caption)
     if kind == "a_hs6":
         _lines(view.explain_a(store, line, kind)[1])      # why the line waits for the clerk
