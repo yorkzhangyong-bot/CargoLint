@@ -3,7 +3,8 @@
 Every text below comes from `ui/view.py` and is rendered in `ui/expand.py` with native Streamlit elements
 (`st.caption`, `st.markdown`), escaped with `md_escape` where it holds stored text. No element is added, removed or
 moved except the block 1 caption of §1, wanted by the author and display only (clarification 5 and the author's
-confirmation after spec review round 1). No CSS (constitution 1.10.0).
+confirmation after spec review round 1), and block 3's captions of §3 (the author's decision of 2026-11-19). No CSS
+(constitution 1.10.0).
 All values come from the line version in the line store, never from model prose read at render time.
 
 ## 1. Block 1, Description: the customs wording searched

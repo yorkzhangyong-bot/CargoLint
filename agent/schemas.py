@@ -306,8 +306,8 @@ class Hs6Vote(BaseModel):
 
 
 class RulingScope(BaseModel):
-    """Feature 014a (data-model §4): the chapters the HS-6 vote searched, those of the model's validated candidates, and
-    those of them that held no ruling in the store when the HS-6 step ran."""
+    """Feature 014a (data-model §4): the chapters the second HS-6 vote searched (rule (a)), those of the model's
+    validated candidates, and those of them that held no ruling in the store when the HS-6 step ran."""
 
     chapters: list[str] = Field(default_factory=list)      # two digits each, sorted, one to three
     not_indexed: list[str] = Field(default_factory=list)   # the chapters above with no ruling in the store

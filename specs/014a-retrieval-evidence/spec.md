@@ -80,14 +80,16 @@ What the app does today, checked against `main` at 939852f on 2026-11-18:
   makes no amendment (revised by the plan's question B for one text: the knowledge-base sources). Limiting the vote
   reduces its cross-chapter check; SC-004 measures that, and if SC-004 fails the pull request reports it and the author
   decides, with no silent fallback. The author reviews the spec before
-  implementation.
+  implementation. **Superseded on 2026-11-19 by rule (a)** (session 2026-11-19 below): the auto-accept gate reads
+  every indexed chapter again, and the vote within the candidates' chapters can only send a line to review.
 - Q: Which rulings should count as "relevant" to a line, so that block 3 says "No relevant rulings found" instead of
   "0 of 5 agree"? → A: A ruling is relevant when it is eligible to vote under the existing rule, within the chapters of
   the model's candidates: valid on the day, coded to a loaded subheading, not the line's own ruling in an evaluation,
   and at least 0.40 cosine similar to the line, exactly 0.40 counting. "No relevant rulings found" holds exactly when
   no ruling votes, so block 3 never contradicts the routing. `HS6_VOTE_MIN_SIMILARITY` stays a named constant, at 0.40
   to start (clarification 5 has its value tuned with the eval); the boundary is fixed in the spec and covered by a test
-  (constitution I).
+  (constitution I). **Revised on 2026-11-19** (rule (a)): relevant means eligible to vote in the deciding vote, over
+  every indexed chapter; "No relevant rulings found" holds exactly when that vote has no voter.
 - Q: When a candidate's reasoning cites a ruling whose real HS-6 is not that candidate's code, or a ruling that was not
   retrieved for the line, should the app flag it or drop it? → A: Flag, in both cases: the coordinator's choice between
   the two options the requirement allows ("drop or flag"), since flagging keeps the model's text verbatim, adds a fact
@@ -129,6 +131,42 @@ What the app does today, checked against `main` at 939852f on 2026-11-18:
   confirmation after spec review round 1).
 - Q: Is the block 1 caption that shows the rewritten text wanted? → A: Yes. It is display only: it changes neither the
   routing nor the CSV export (the author's confirmation after spec review round 1).
+
+### Session 2026-11-19
+
+The author's decisions after reading docs/reports/014a-regression-analysis.md, the analysis of the after-runs' fall in
+top-1 (84 to 77) and rise in wrong auto-accepts (10 to 12, SC-004 failed):
+
+- Q: Which vote decides the HS-6 auto-accept, and what is left of the vote within the candidates' chapters? → A: Rule
+  (a). The auto-accept is decided by the unfiltered gate again: the 5 nearest eligible rulings over every indexed
+  chapter, constitution 1.5.0's rule word for word (the floor `HS6_VOTE_MIN_SIMILARITY` 0.40, exactly the floor counts;
+  the share 0.5, exactly the share passes). The vote within the candidates' chapters can only veto: when it has voters
+  and does not agree on the decided code, the line goes to review; it never triggers an auto-accept. The precedent
+  override works on the unfiltered vote. The candidate proposal is unchanged. This supersedes clarification 1.
+- Q: What does block 3 show under rule (a)? → A: The deciding (unfiltered) vote: its 5 nearest rulings, their issuing
+  countries and the share that agrees with the chosen code, as before this feature. Its captions: one when the vote of
+  the candidates' chapters sent the line to review, with that vote's code and share; "No rulings indexed for chapter
+  NN" for a candidate's chapter with no ruling in the store, read from stored data; "No relevant rulings found" when
+  the deciding vote has no voter. The exact wordings are in FR-018 and contracts/ui.md §3.
+- Q: How is a line flagged vague routed? → A: Always to ask the shipper, whatever its confidence; the flagged-line lock
+  is unchanged. Feature 001's FR-020, its clarification of 2026-10-14 and its assumption change with it (the ask floor
+  of 50 no longer routes). The constitution needs no amendment: a flagged line still never auto-accepts, and the clerk
+  is told what to ask the shipper.
+- Q: How is SC-004 judged under rule (a)? → A: On the exact replay of the after-runs' rows (the 120-line set's, switch
+  off) under rule (a) and the vague rule, against the baseline's wrong auto-accepts; the coolant set's after-run is
+  replayed the same way and reported beside it.
+- Q: Should the candidate proposal be limited to chapters as well? → A: Option (c) is measured, not shipped: an
+  evaluation-only option limits the candidate proposal to the chapters of the nomenclature search's top subheadings,
+  off by default, with no product change and no product setting. It is compared with rule (a) on the 120-line set, the
+  coolant set and a new set of 10 to 15 lines whose expected HS-6 lies outside the twelve chapters of the old store,
+  three runs each, within $1.10 in all.
+- Q: Where do the new set's lines come from? → A: Each line has a source, an EBTI ruling valid on the evaluation date
+  or another verifiable source, in chapters typical for a Hamburg forwarder, and a line taken from a ruling runs
+  leave-one-out. Before the author approves the lines, each is embedded with the store's embedding model and searched
+  in the rebuilt store (5 nearest rulings, no chapter filter): a line more than 0.85 similar to a ruling, or whose
+  source ruling is in the store, is rewritten in plain shipper wording that keeps the facts its code depends on
+  (material, composition, use, form), searched again, and still runs leave-one-out. Nothing paid runs before the
+  author's approval.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -204,45 +242,57 @@ names the chapters; the unchanged rulings of the previous store reuse their vect
 
 ---
 
-### User Story 3 - Similar rulings come from the candidates' chapters (Priority: P1)
+### User Story 3 - The rulings of the candidates' chapters can stop an auto-accept (Priority: P1)
 
-The rulings that vote on a line's HS-6, and that block 3 lists, are the nearest rulings within the chapters of the
-model's HS-6 candidates. A coolant whose candidates are 2710.19, 3403.99 and 3820.00 is compared with rulings of
-chapters 27, 34 and 38, never with the cooling machinery of chapter 84.
+Rule (a), the author's decision of 2026-11-19: the HS-6 auto-accept is decided by the 5 nearest eligible rulings over
+every indexed chapter, as before this feature. A second vote, of the nearest rulings within the chapters of the
+model's HS-6 candidates, can only stop an auto-accept: when it has voters and does not agree on the decided code, the
+line goes to review. A coolant whose candidates are 2710.19, 3403.99 and 3820.00 is still voted on by its nearest
+rulings over every chapter; the rulings of chapters 27, 34 and 38 can send it to review, never accept it.
 
-**Why this priority**: the vote is the HS-6 auto-accept gate and block 3 is the clerk's evidence. Rulings about other
-goods that merely share a word ("coolant", "cooling") send right lines to review and show the clerk misleading
-precedent. The price is a weaker cross-chapter check: rulings of a chapter none of the candidates is in can no longer
-stop a model that chose the wrong chapter. SC-004 measures it.
+**Why this priority**: the vote is the HS-6 auto-accept gate. Limiting it to the candidates' chapters gave up its
+cross-chapter check: rulings of a chapter none of the candidates is in could no longer stop a model that chose the
+wrong chapter, and the after-runs' wrong auto-accepts rose (SC-004 failed, docs/reports/014a-regression-analysis.md).
+Rule (a) keeps that check and adds the rulings of the candidates' own chapters as evidence that can only send a line
+to review.
 
 **Independent Test**: offline, with an in-memory ruling index of small vectors in several chapters and a recorded
-ranking: the voters and block 3's list come only from the candidates' chapters, the leave-one-out exclusion still
-holds, and the gate's rules are unchanged.
+ranking: the unfiltered vote decides, at exactly the floor and exactly the share; the vote of the candidates' chapters
+sends a line the gate accepts to review when it has voters and does not agree; with no voter in the candidates'
+chapters the gate decides alone; the precedent override works on the unfiltered vote; the leave-one-out exclusion
+holds in both votes.
 
 **Acceptance Scenarios**:
 
 1. **Given** a line whose model candidates are 2710.19, 3403.99 and 3820.00 and whose nearest rulings over all chapters
-   sit at 8419.89 and 8414.59, **When** the HS-6 step runs, **Then** the rulings that vote are the nearest eligible
-   rulings of chapters 27, 34 and 38, and no ruling of chapter 84 votes or is listed in block 3.
+   sit at 8419.89, **When** the HS-6 step runs, **Then** the gate's vote is those nearest rulings, which do not agree
+   with the top candidate, so the line goes to review, and the second vote reads only rulings of chapters 27, 34 and
+   38.
 2. **Given** candidates that all sit in one chapter (6109.10, 6109.90, 6110.20), **When** the HS-6 step runs, **Then**
-   only rulings of chapter 61 vote.
-3. **Given** the chapter-filtered voters, **When** the gate decides, **Then** its rules are those of today: the 5
-   nearest eligible rulings, each counted once at its highest similarity over the query vectors, the majority share of
-   0.5 (exactly the share passes), the similarity floor (0.40 to start; exactly the floor counts), and the precedent
-   override at `OVERRIDE_MIN` (5 of 5).
-4. **Given** a line, **When** the HS-6 step runs, **Then** the candidate proposal before the ranking searches every
+   only rulings of chapter 61 vote in the second vote, while the gate's vote reads every chapter.
+3. **Given** a gate's vote that agrees with the top candidate (its majority with a share of at least 0.5, exactly the
+   share passes, of the 5 nearest eligible rulings at or above the floor of 0.40, exactly the floor counts), **When**
+   the second vote has voters and its majority is another code, its share at the decided code is below 0.5, or it
+   ties, **Then** the line goes to review with the second vote's rulings and their countries as its reason; with no
+   voter in the candidates' chapters the gate's vote decides alone.
+4. **Given** the precedent override on and at least `OVERRIDE_MIN` of the 5 nearest eligible rulings over every
+   chapter at the model's second or third candidate, **When** the gate decides, **Then** that candidate is decided,
+   unless the second vote has voters and does not agree on it.
+5. **Given** a line, **When** the HS-6 step runs, **Then** the candidate proposal before the ranking searches every
    indexed chapter as today, and the ranking prompt is unchanged.
-5. **Given** an evaluation run with a line's own ruling excluded, **When** the chapter-filtered vote runs, **Then** the
-   line's own ruling neither votes nor is listed.
+6. **Given** an evaluation run with a line's own ruling excluded, **When** either vote runs, **Then** the line's own
+   ruling neither votes nor is listed.
 
 ---
 
 ### User Story 4 - The clerk is told when no ruling can help (Priority: P2)
 
-When a candidate's chapter has no ruling in the store, block 3 says "No rulings indexed for chapter NN". When the store
-has rulings of the candidates' chapters but none of them is relevant to the line, it says "No relevant rulings found".
-Neither situation reads "0 of 5 agree" or "No ruling was within the similarity floor." any more. Only the wording of the
-existing caption changes; no element is added to the page.
+When a candidate's chapter has no ruling in the store, block 3 says "No rulings indexed for chapter NN". When no
+ruling of any chapter is relevant to the line, so that the deciding vote has no voter, it says "No relevant rulings
+found". When the vote of the candidates' chapters sent the line to review, it says so, with that vote's code and share
+(rule (a)). "No ruling was within the similarity floor." is not shown any more; the list of the deciding vote's rulings
+and "n of m agree with <code>" stay as before this feature. Only captions change; no other element is added to the
+page.
 
 **Why this priority**: "0 of 5 agree" tells the clerk that five rulings contradict the code, when in fact no ruling of
 that kind exists or none is close. The clerk then distrusts a right code or looks for precedent that is not there.
@@ -252,19 +302,24 @@ unit tests of the relevance rule at the floor.
 
 **Acceptance Scenarios**:
 
-1. **Given** candidates 2710.19, 3403.99 and 3820.00 and a store with no ruling of chapters 27, 34 or 38, **When** the
-   line's block 3 renders, **Then** it reads "No rulings indexed for chapters 27, 34 and 38." and lists no ruling; the
-   line is routed by the gate's existing rule for "no ruling votes" (the model estimate against the threshold).
-2. **Given** a store with rulings of chapter 34, none of them at least 0.40 similar to the line, and the other
-   candidates' chapters indexed too, **When** block 3 renders, **Then** it reads "No relevant rulings found."
+1. **Given** candidates 2710.19, 3403.99 and 3820.00, a store with no ruling of chapters 27, 34 or 38, and no ruling of
+   any chapter at least 0.40 similar to the line, **When** the line's block 3 renders, **Then** it reads "No relevant
+   rulings found." and "No rulings indexed for chapters 27, 34 and 38." and lists no ruling; the line is routed by the
+   gate's existing rule for "no ruling votes" (the model estimate against the threshold).
+2. **Given** no ruling of any chapter at least 0.40 similar to the line, and the candidates' chapters indexed, **When**
+   block 3 renders, **Then** it reads "No relevant rulings found."
 3. **Given** no relevant ruling and candidate chapters 27 and 34 indexed but 38 not, **When** block 3 renders, **Then**
-   it reads "No relevant rulings found. No rulings indexed for chapter 38."
+   it reads "No relevant rulings found." and "No rulings indexed for chapter 38."
 4. **Given** five relevant rulings, three at 3403.99 and two at 3403.19, and 3403.99 chosen in block 2, **When** block
-   3 renders, **Then** it lists both codes and reads "3 of 5 agree with 3403.99", as today.
-5. **Given** relevant voters from chapter 34 and 3820.00 chosen in block 2, chapter 38 holding no ruling, **When** block
-   3 renders, **Then** the caption reads "No rulings indexed for chapter 38." in place of "0 of 5 agree with 3820.00".
-6. **Given** a ruling of a candidate's chapter at a similarity of exactly 0.40, **When** relevance is decided, **Then**
-   it is relevant; at 0.3999 it is not.
+   3 renders, **Then** it lists both codes and reads "3 of 5 agree with 3403.99", as before this feature.
+5. **Given** five relevant rulings over every chapter, none at 3820.00, 3820.00 chosen in block 2 and chapter 38
+   holding no ruling, **When** block 3 renders, **Then** it reads "0 of 5 agree with 3820.00" and "No rulings indexed
+   for chapter 38."
+6. **Given** a gate's vote that agrees with 3403.99 and a vote of chapters 34 and 38 at 3403.19, 3 of 5, **When** block
+   3 renders, **Then** it lists the gate's vote and reads "Sent to review by the rulings of the candidates' chapters 34
+   and 38: 3 of 5 at 3403.19."
+7. **Given** a ruling at a similarity of exactly 0.40, **When** relevance is decided, **Then** it is relevant; at 0.3999
+   it is not.
 
 ---
 
@@ -359,18 +414,22 @@ and shown in block 1, and with the switch off nothing changes.
 
 - A chapter with valid rulings in the extract but none chosen for a bounded store (the demo's 5,000) holds no ruling
   in that store and is reported as "No rulings indexed for chapter NN": the message is true of the store in use.
-- A chapter whose stored rulings have all expired on the day is indexed but has no eligible ruling: "No relevant
-  rulings found".
+- A chapter whose stored rulings have all expired on the day is indexed but has no eligible ruling: no "No rulings
+  indexed" caption for it, and none of its rulings votes; "No relevant rulings found" shows only when the deciding vote
+  has no voter at all.
 - The model returns no valid candidate: there is no vote and no chapter to search, so the line has no chapter facts and
   block 3 shows no ruling caption (today's "No ruling was within the similarity floor." is not shown, FR-018).
-- A code typed by the clerk under "Other HS-6 code…" whose chapter is not among the candidates' chapters: no ruling of
-  its chapter was searched, so block 3 shows no agreement caption for it rather than "0 of m agree".
-- The candidates span one, two or three chapters: the vote searches all of them together; rulings at codes in those
-  chapters that are not candidates still vote (for example 3403.19 when the candidates are 3403.99, 2710.19, 3820.00).
+- A code typed by the clerk under "Other HS-6 code…" whose chapter is not among the candidates' chapters: the
+  deciding vote read every chapter, so block 3 reads "n of m agree with <code>" for it, as before this feature.
+- The candidates span one, two or three chapters: the second vote searches all of them together; rulings at codes in
+  those chapters that are not candidates still vote (for example 3403.19 when the candidates are 3403.99, 2710.19,
+  3820.00).
 - A line with shipper history: the history's soft chapter boost of the nomenclature search is unchanged and does not
-  widen the vote's chapters.
-- A shipper reply or "Re-check this line" makes a new line version: its vote searches the chapters of its own new
-  candidates, and its chapter facts are recorded afresh.
+  widen the second vote's chapters.
+- A shipper reply or "Re-check this line" makes a new line version: its votes are taken afresh, the second within the
+  chapters of its own new candidates, and its chapter facts are recorded afresh.
+- A line flagged vague goes to ask the shipper whatever its confidence and its votes (feature 001's FR-020 since
+  2026-11-19); a vote of the candidates' chapters never routes a flagged line.
 - The knowledge base changes between two checks (a new store after a restart): each line version keeps the chapter
   facts recorded when its HS-6 step ran.
 - The reasoning cites one ruling for several candidates: each candidate is checked on its own.
@@ -409,7 +468,8 @@ and shown in block 1, and with the switch off nothing changes.
   Mineralöl` → 3403.99 (clarification 4); and the plain line `冷却液` → ask the shipper, the check line of the
   customs-wording switch (clarification 5; kept by the author's confirmation).
 - **FR-002**: The HS-6 evaluation MUST run the coolant set through the same path as the 120-line set (description
-  check, HS-6 step, the route the store computes, threshold 85, ask floor 50), without a leakage guard (no line is a
+  check, HS-6 step, the route the store computes, threshold 85, ask floor 50 until the vague rule of 2026-11-19, since
+  then a vague line asks the shipper), without a leakage guard (no line is a
   ruling) and without the cross-layer table against the CN-8 eval (no line has a CN-8 result there). It MUST score the
   lines as User Story 1, scenario 1 says, and keep its results and history entries apart from the 120-line set's,
   marked with the set's name. `--repeat`, `--tag` and `--dry-run` work as for the other sets.
@@ -428,8 +488,9 @@ and shown in block 1, and with the switch off nothing changes.
   shipper" line counts on its route), its majority outcome is its most frequent top-1, or route for an "ask the
   shipper" line, over the runs (a tie goes to the earliest run, as on the 120-line set), and a wrong auto-accept is an
   auto-accepted line that is not right.
-- **FR-005**: The evaluation rows MUST keep, for each line, the chapters the vote searched, the candidate chapters with
-  no indexed ruling, the similarity of each ruling the vote considered, the rewrite when the switch is on, and the
+- **FR-005**: The evaluation rows MUST keep, for each line, both votes (since rule (a)), the chapters the second vote
+  searched, the candidate chapters with no indexed ruling, the similarity of each ruling either vote considered, the
+  rewrite when the switch is on, and the
   citation notes (FR-022), so that a change in the numbers can be traced to its lines and the vote can be replayed at
   another floor without a model call (exact, and evidence for a new value, only at or above the run's floor).
 
@@ -455,16 +516,22 @@ and shown in block 1, and with the switch off nothing changes.
 - **FR-010**: What the app states about the knowledge base (Admin › Data, through its existing statements) and the
   README MUST name the chapters covered truthfully (constitution IV).
 
-**Chapter-filtered ruling search**
+**The gate and the vote of the candidates' chapters (rule (a))**
 
-- **FR-011**: After the model ranks and the codes are validated, the rulings that vote on the line's HS-6 MUST be
-  searched only among the rulings of the chapters of the model's candidates (the first two digits of each, at most
-  three chapters), with the line's existing query vectors and no new embedding call. When the model returns no valid
-  candidate, there is no vote, as today.
-- **FR-012**: The vote's rules MUST otherwise stay as they are (constitution I): the 5 nearest eligible rulings
+- **FR-011** (rule (a), clarification of 2026-11-19): The HS-6 auto-accept MUST be decided by the unfiltered gate: the
+  5 nearest eligible rulings over every indexed chapter, read from the rulings the candidate proposal searched
+  (constitution 1.5.0's rule). After the model ranks and the codes are validated, a second vote MUST be searched only
+  among the rulings of the chapters of the model's candidates (the first two digits of each, at most three chapters),
+  with the line's existing query vectors and no new embedding call. The second vote can only send to review a line the
+  gate would accept: when it has voters and does not agree on the decided code (the precedent override's candidate,
+  else the top one: its majority at the share or above), the line goes to review. It never accepts a line; with no
+  voter in the candidates' chapters the gate decides alone. When the model returns no valid candidate, there is no
+  vote, as today.
+- **FR-012**: The rules of both votes MUST otherwise stay as they are (constitution I): the 5 nearest eligible rulings
   (`HS6_VOTE_K`), each counted once at its highest similarity over the query vectors, the share of 0.5
   (`HS6_VOTE_SHARE`, exactly the share passes), the similarity floor (`HS6_VOTE_MIN_SIMILARITY`, exactly the floor
-  counts), the precedent override at `OVERRIDE_MIN`, the fallback to the model estimate when no ruling votes, and the
+  counts), the precedent override at `OVERRIDE_MIN` on the unfiltered vote, the fallback to the model estimate when no
+  ruling votes in the unfiltered vote, and the
   leave-one-out exclusion of an evaluation. The floor starts at its existing 0.40 and is tuned with the eval
   (clarification 5): the after-runs replay the vote from the logged similarities at the floors the author chooses to
   try, at or above the run's floor (a lower floor could need rulings beyond those the run searched), with no model call,
@@ -474,24 +541,25 @@ and shown in block 1, and with the switch off nothing changes.
 - **FR-013**: The candidate proposal before the ranking MUST keep searching every indexed chapter, since it runs before
   any model candidate exists, and the ranking prompt and what it receives about the line MUST NOT change. The CN-8
   step's ruling search (already limited to the decided HS-6) and the candidates' precedent lookup (by code) are
-  unchanged. No other check is added in place of the cross-chapter check the vote loses (no new routing input,
-  constitution I).
-- **FR-014**: The line's HS-6 result MUST record the chapters the vote searched.
+  unchanged. Under rule (a) the gate keeps its cross-chapter check; the second vote adds a way to review, never one
+  to accept (constitution I: an unflagged line is auto-accepted only when the gate passes).
+- **FR-014**: The line's HS-6 result MUST record both votes and the chapters the second vote searched.
 
 **Relevant rulings and the two messages**
 
-- **FR-015**: A ruling is **relevant** to a line when all of these hold: it sits in a chapter of one of the model's HS-6
-  candidates; it is valid on the day; it is coded to a subheading of the loaded nomenclature; it is not the line's own
-  ruling in an evaluation; and its cosine similarity to the line, the highest over the line's query vectors, is at
-  least `HS6_VOTE_MIN_SIMILARITY` (0.40 to start; exactly the floor is relevant, anything below it is not). The relevant
-  rulings are exactly those eligible to vote, so "no relevant rulings found" holds exactly when no ruling votes, and
-  block 3 never contradicts the routing (clarification 2). `HS6_VOTE_MIN_SIMILARITY` stays a named configuration
-  constant; a value tuned under FR-012 changes the vote and the message together.
+- **FR-015** (revised on 2026-11-19, rule (a)): A ruling is **relevant** to a line when all of these hold: it is
+  among the rulings the unfiltered search read, in any indexed chapter; it is valid on the day; it is coded to a
+  subheading of the loaded nomenclature; it is not the line's own ruling in an evaluation; and its cosine similarity to
+  the line, the highest over the line's query vectors, is at least `HS6_VOTE_MIN_SIMILARITY` (0.40 to start; exactly
+  the floor is relevant, anything below it is not). The relevant rulings are exactly those eligible to vote in the
+  deciding vote, so "no relevant rulings found" holds exactly when the deciding vote has no voter, and block 3 never
+  contradicts the routing (clarification 2). `HS6_VOTE_MIN_SIMILARITY` stays a named configuration constant; a value
+  tuned under FR-012 changes the votes and the message together.
 - **FR-016**: A chapter is **indexed** when the ruling store the app opened holds at least one ruling of that chapter.
   The set of indexed chapters MUST be computed from the stored rulings when the knowledge base opens, without a model
   call.
 - **FR-017**: When the HS-6 step runs, the line's result MUST record which of its candidates' chapters are not indexed.
-  Block 3 MUST read the vote and these chapter facts from the line store, never from model text.
+  Block 3 MUST read both votes, the gate and these chapter facts from the line store, never from model text.
 - **FR-018** (rule (a), clarification of 2026-11-19): Block 3 MUST list the deciding vote, the 5 nearest eligible
   rulings over every indexed chapter with their issuing countries, as before this feature, and show under the list one
   caption each, in this order: (1) with the deciding vote and a chosen code, "n of m agree with <code>" as before this
@@ -502,8 +570,13 @@ and shown in block 1, and with the switch off nothing changes.
   <code> and n at <code>."; (3) "No rulings indexed for chapter NN." ("chapters NN, MM and LL." for several) naming the
   candidates' chapters with no ruling in the store. "No ruling was within the similarity floor." MUST no longer be
   shown. A line without a candidate shows no caption. No element other than these captions is added to the page.
-- **FR-019**: Routing MUST NOT change: with no relevant ruling, the gate's existing rule for "no ruling votes" decides
-  (the model estimate against the threshold, at the threshold counts), and the route reasons keep their wording.
+- **FR-019** (rule (a) and the vague rule, clarification of 2026-11-19): Routing MUST change only by the veto of
+  FR-011 and by feature 001's vague rule: a line flagged vague always goes to ask the shipper, whatever its confidence,
+  with the reason "vague description — ask the shipper"; the flagged-line lock is unchanged. With no relevant ruling,
+  the gate's existing rule for "no ruling votes" decides (the model estimate against the threshold, at the threshold
+  counts), and the existing route reasons keep their wording. A veto's reason reads "the EBTI rulings of the
+  candidates' chapters do not agree: 3 of 5 at 3403.19 (FR, LU, NL) — needs a human look", or "the EBTI rulings of the
+  candidates' chapters are split: <codes with their countries> — needs a human look".
 
 **Citation mismatch check**
 
@@ -580,11 +653,12 @@ and shown in block 1, and with the switch off nothing changes.
 **Tests**
 
 - **FR-030**: Offline tests MUST be written first and seen to fail for the code that carries guardrails or decides what
-  the clerk sees (constitution VII): the parsing of the new settings; the chapter-filtered vote (candidates' chapters
+  the clerk sees (constitution VII): the parsing of the new settings; the second vote (the candidates' chapters
   only, the leave-one-out exclusion, the floor and share boundaries); the relevance boundary (a ruling at exactly the
   floor, 0.40, is relevant and votes, one just below it does neither, and with only such a ruling block 3 reads "No
-  relevant rulings found."); the indexed chapters and the recorded chapter facts; each caption state of FR-018; the
-  citation check (match, mismatch, not retrieved, unknown, normalised reference); the rewrite (the switch, the ruling
+  relevant rulings found."); the indexed chapters and the recorded chapter facts; each caption state of FR-018; rule (a) (the
+  unfiltered gate decides; the veto; no voter in the candidates' chapters; the override on the unfiltered vote; exactly
+  the floor and exactly the share in the unfiltered gate) and the vague rule (FR-019); the citation check (match, mismatch, not retrieved, unknown, normalised reference); the rewrite (the switch, the ruling
   searches only, the merged hits, the raw text everywhere else, the caching, the data block, the prompt's rules against
   added facts, the output language whatever the input language, the stored rewrite and its caption in block 1), with a
   prompt-injection fixture; the glossary (reviewed entries applied, unreviewed ones not, a reviewed entry with no
@@ -602,15 +676,40 @@ and shown in block 1, and with the switch off nothing changes.
   amendment ends with the consistency review the procedure requires. No other constitution text changes (Principle IV
   stays as it is).
 
+**Measurement after the regression analysis (clarification of 2026-11-19)**
+
+- **FR-032**: `tests/eval` MUST gain a third set of 10 to 15 lines, the outside set, whose expected HS-6 lies outside
+  chapters 39, 42, 61–64, 73, 84, 85, 94, 95 and 96, spread over chapters typical for a Hamburg forwarder, each line
+  with its source: an EBTI ruling valid on the evaluation date, or another verifiable source. A line taken from a
+  ruling runs leave-one-out (its ruling neither proposes nor votes), also after a rewrite. Before any paid run, each
+  line MUST be embedded with the store's embedding model and searched in the rebuilt store for its 5 nearest rulings,
+  with no chapter filter; a line whose top similarity is above 0.85, or whose source ruling is in the store, MUST be
+  rewritten in plain shipper wording that keeps the facts its code depends on (material, composition, use, form) and
+  searched again. The author approves the lines before any paid call, given per line its final text (and the original
+  when rewritten), expected HS-6, chapter, source, the top similarity with its ruling's reference, HS-6 and chapter
+  before and after any rewrite, and its flag. The set runs through the same path as the 120-line set (`--set outside`),
+  with its own results and history files.
+- **FR-033**: An evaluation-only option (c) MUST limit the candidate proposal to the chapters of the nomenclature
+  search's top subheadings, while the gate's vote stays unfiltered (rule (a)); it is off by default and changes no
+  product code and no product setting. The evaluation report MUST compare (c) with rule (a) on the 120-line set, the
+  coolant set and the outside set, three runs each, the precedent override off and on: the majority top-1, top-1 per
+  run, and the auto-accepted and wrong auto-accepted lines per run. For the 120-line and coolant sets, (a) is the exact
+  replay of the after-runs' rows under rule (a) and the vague rule, shown with the baseline; on the outside set, (a) is
+  three runs of its own. These runs spend at most $1.10 in all; the author is asked before that would be passed.
+
 ### Key Entities *(include if feature involves data)*
 
 - **Chapter setting**: the chapters whose rulings a build or refresh keeps; `all` by default, or a list of chapters and
   ranges. It shapes the store; the app itself reads only what the store holds.
 - **Indexed chapters**: the chapters that hold at least one ruling in the store the app opened; computed when the
   knowledge base opens.
-- **Vote chapters**: the chapters of the model's validated HS-6 candidates (one to three), within which the voting
-  rulings are searched; recorded with the line's HS-6 result, together with those of them that are not indexed.
-- **Relevant ruling**: a ruling eligible to vote on the line under FR-015; none relevant means no ruling votes.
+- **The two votes** (rule (a)): the gate's vote, of the 5 nearest eligible rulings over every indexed chapter, which
+  decides the auto-accept; and the vote of the candidates' chapters, which can only send a line to review. Both are
+  stored with the line's HS-6 result; block 3 lists the first.
+- **Vote chapters**: the chapters of the model's validated HS-6 candidates (one to three), within which the second
+  vote's rulings are searched; recorded with the line's HS-6 result, together with those of them that are not indexed.
+- **Relevant ruling**: a ruling eligible to vote in the deciding vote under FR-015; none relevant means the deciding
+  vote has no voter.
 - **Citation note**: per candidate, a reference its reasoning cites that does not match: a retrieved ruling at another
   HS-6 (with that HS-6), or a reference not retrieved for the line in that run (not a source); stored on the line
   version, shown after the reasoning, never a routing input and not in the CSV export.
@@ -625,6 +724,10 @@ and shown in block 1, and with the switch off nothing changes.
   the plain "冷却液"; six expect an HS-6 code, two expect "ask the shipper".
 - **Evaluation comparison**: the baseline and after-run entries of both sets (three runs each, and the switch off and
   on after), the vote replayed at the floors tried, and the table in the pull request built from them.
+- **Outside set**: 10 to 15 lines whose expected HS-6 lies outside the twelve chapters of the old store, each with its
+  source and its near-duplicate check (FR-032).
+- **Option (c)**: an evaluation-only limit of the candidate proposal to the chapters of the nomenclature search's top
+  subheadings (FR-033); no product setting.
 
 ## Success Criteria *(mandatory)*
 
@@ -633,16 +736,19 @@ and shown in block 1, and with the switch off nothing changes.
 - **SC-001**: After the rebuild, the local store holds valid rulings of every chapter that has any in the extract, and
   the rebuild embedded only the new and changed rulings: its recorded counts show every unchanged ruling of the twelve
   chapters as reused.
-- **SC-002**: In the after-runs, none of the coolant set's lines has a voting ruling outside its candidates' chapters,
-  and none of them shows a ruling of chapter 84 in block 3 (checked on the evaluation's rows).
+- **SC-002** (revised on 2026-11-19, rule (a)): In the after-runs, none of the coolant set's lines has a ruling outside
+  its candidates' chapters in the vote of the candidates' chapters (checked on the evaluation's rows). Under rule (a)
+  block 3 lists the deciding vote over every chapter, so "none shows a ruling of chapter 84 in block 3" no longer
+  applies.
 - **SC-003**: The pull request reports the HS-6 accuracy of both sets before and after, each from three runs, with the
   numbers taken from the evaluation's history.
-- **SC-004**: On the 120-line set, the wrong auto-accepts summed over the three after-runs with the customs-wording
-  switch off (the shipped default) are no more than those summed over the three baseline runs; this measures the
-  cross-chapter check the chapter-filtered vote gives up. The three after-runs with the switch on are reported
-  separately, for the author's later decision (FR-026), and are not part of SC-004. If SC-004 fails, the pull request
-  reports it with the lines behind it and the author decides; the implementation does not fall back to the unfiltered
-  vote, or add a switch for it, on its own.
+- **SC-004** (rule (a), clarification of 2026-11-19): On the 120-line set, the wrong auto-accepts summed over the three
+  after-runs with the customs-wording switch off (the shipped default), replayed exactly from their rows under rule (a)
+  and the vague rule, are no more than those summed over the three baseline runs; this measures that rule (a) keeps the
+  gate's cross-chapter check. The coolant set's after-runs are replayed the same way and reported beside it. The three
+  after-runs with the switch on are reported separately, for the author's later decision (FR-026), and are not part of
+  SC-004. If SC-004 fails, the report states it with the lines behind it and the author decides. (Judged on the
+  chapter-filtered vote as first built, SC-004 failed: 12 wrong auto-accepts against 10, eval-diff.md.)
 - **SC-005**: Every caption state of FR-018 and every citation case of FR-020 to FR-022 is covered by an offline test,
   and the offline suite passes without a key.
 - **SC-006**: The customs-wording switch is off by default when the feature merges, and the evaluation report and the
@@ -664,8 +770,9 @@ and shown in block 1, and with the switch off nothing changes.
   tuning reads the similarities of packing-list lines, not of ruling texts: short lines score 0.51 to 0.73 cosine
   similarity against rulings, against about 0.82 for ruling texts, so a floor tuned on ruling texts would silently
   switch the gate off.
-- With the vote filtered to the candidates' chapters, more lines may fall back to the model estimate (no ruling
-  votes) and fewer may be stopped by rulings of another chapter. The after-runs measure both (FR-004, SC-004).
+- Under rule (a) the gate reads every chapter, as before this feature: a line falls back to the model estimate only
+  when no ruling of any chapter is relevant, and rulings of another chapter still stop a wrong chapter; the second vote
+  can only add reviews (FR-011, SC-004).
 - A mismatched citation is flagged, not removed (clarification 3): the reasoning is the model's text and stays
   verbatim; the note is code's.
 - The customs wording is an added query behind a switch, used by the ruling searches only (clarification 5), so the
@@ -686,5 +793,5 @@ and shown in block 1, and with the switch off nothing changes.
   yet; the rebuild measures it before embedding.
 - The classification prompt is not changed; the customs-wording prompt is a new, separate prompt for retrieval queries.
 - Out of scope: 014b (a reason per candidate, the subheading consistency check, subdivision by use), the questions to
-  the shipper, and UI changes beyond the caption wording of FR-018, the note of FR-022 and the rewrite's caption in
+  the shipper, and UI changes beyond the captions of FR-018, the note of FR-022 and the rewrite's caption in
   block 1 (FR-025, wanted by the author, display only).

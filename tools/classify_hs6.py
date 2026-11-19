@@ -105,9 +105,9 @@ def hs6_voters(hits: list[list[tuple[str, float]]], bti_store, index, as_of: dat
 
 
 def ruling_scope(codes: list[str], indexed: frozenset[str] | set[str]) -> RulingScope | None:
-    """Feature 014a (spec FR-011, FR-014, FR-017): the chapters the HS-6 vote searches, those of the model's validated
-    candidates (two digits each, sorted, one to three), with those of them that hold no ruling in the store; None
-    without a candidate, as then nothing votes."""
+    """Feature 014a (spec FR-011, FR-014, FR-017): the chapters the second HS-6 vote searches (rule (a)), those of the
+    model's validated candidates (two digits each, sorted, one to three), with those of them that hold no ruling in the
+    store; None without a candidate, as then nothing votes."""
     chapters = sorted({code[:2] for code in codes})
     if not chapters:
         return None

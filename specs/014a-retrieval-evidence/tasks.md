@@ -7,7 +7,7 @@ description: "Task list for feature 014a, retrieval and evidence"
 
 **Input**: Design documents from `specs/014a-retrieval-evidence/`
 
-**Prerequisites**: plan.md, spec.md (with the clarifications of 2026-11-18), research.md, data-model.md,
+**Prerequisites**: plan.md, spec.md (with the clarifications of 2026-11-18 and 2026-11-19), research.md, data-model.md,
 contracts/classify-hs6.md, contracts/ui.md, contracts/eval-cli.md, contracts/settings-and-scripts.md, quickstart.md.
 
 **Tests**: included and written first, offline. Constitution Principle VII asks this for the code that carries
@@ -17,7 +17,8 @@ first and must fail until its implementation task; no test calls a model, OpenRo
 
 **Order** (spec FR-003): the coolant set and the baseline come before any product change (Phase 2); then the
 implementation (Phases 3 to 8); then the rebuild of the local store, the after-runs and the comparison (Phase 9);
-then the documentation and the constitution amendment (Phase 10). Tasks marked **LIVE** call OpenRouter and spend
+then the documentation and the constitution amendment (Phase 10); then the author's decisions of 2026-11-19 (Phase
+11). Tasks marked **LIVE** call OpenRouter and spend
 credits: they are run by the author or with the author's go-ahead, from the feature worktree with its own `.venv`
 and store copy; every evaluation run passes `--expansion off`.
 
@@ -456,6 +457,73 @@ run's floor).
 
 ---
 
+## Phase 11: The author's decisions of 2026-11-19 (in this order)
+
+**Goal**: rule (a), block 3 under rule (a), the vague rule, the spec updates and the traceability mapping, then the
+outside set and option (c) (spec clarifications of 2026-11-19, FR-011 to FR-019, FR-032, FR-033, SC-002, SC-004). Tests
+first, seen failing, for rule (a), block 3 and the vague rule (constitution VII); no paid call before the author
+approves the outside set's lines.
+
+- [X] T053 [US3] Tests for rule (a): a new tests/unit/test_hs6_scoped_veto.py (the gate, the route and the store with
+  both votes: the unfiltered gate decides, the veto with its reason, no voter in the candidates' chapters, the
+  override's candidate checked by the second vote); tests/integration/test_hs6_vote_scope.py rewritten (the gate's
+  vote over every chapter, exactly the floor 0.40 and exactly the share 0.5 in the unfiltered gate, the veto through a
+  search that returns other rulings to the filtered search, no in-chapter voter, the override on the unfiltered vote,
+  the leave-one-out exclusion in both votes); tests/unit/test_hs6_eval.py (rows and replays carry both votes) (spec
+  FR-011, FR-012, FR-014, FR-019)
+- [X] T054 [US3] Rule (a) in agent/schemas.py (`Hs6Gate.scoped_veto`; `hs6_scoped_vote` on `Classification` and
+  `LineVersion`), agent/routing.py (`hs6_gate(..., scoped_vote)`, `route_line(..., hs6_scoped_vote)`, the veto's
+  reason, `hs6_auto_decided`), agent/store.py (both votes in `update_classification`, `_recompute`, `ready_to_accept`
+  and the decided code), tools/classify_hs6.py (the gate's vote from the proposal's hits, the second vote from the
+  search of the candidates' chapters), ui/view.py (`explain_a`'s veto line) and tests/eval/hs6_eval.py (row fields
+  `vote` and `scoped_vote`, both replayed; `--vote-scope` widens the second vote only); commit bd6ac5a (spec FR-011 to
+  FR-014, FR-019)
+- [X] T055 [US4] Tests for block 3 under rule (a): tests/unit/test_view.py `rulings_captions(line, chosen)` for each
+  row of contracts/ui.md §3 (agreement, "No relevant rulings found.", the veto with its code and share or its split,
+  the singular chapter, the chapters not indexed, a vote stored before the scope, no candidate) and the veto's
+  explanation line; tests/ui/test_main_page.py (the review state's two captions; a new harness state `hs6_veto`: the
+  deciding vote's list, its agreement and the veto caption); tests/unit/test_ruling_scope.py's relevance caption (spec
+  FR-015, FR-017, FR-018)
+- [X] T056 [US4] ui/view.py `rulings_captions` and `_veto_text`, ui/expand.py `_block3` with one `st.caption` each;
+  the wordings in spec FR-018 and contracts/ui.md §3; README's block 3; commit 2605e0f (spec FR-018)
+- [X] T057 Tests for the vague rule: tests/unit/test_routing.py (a vague line at any confidence, below, at and above the
+  former ask floor of 50, asks the shipper with the reason "vague description — ask the shipper", and never
+  auto-accepts, whatever the threshold and the vote); the tests and fixtures that pinned the old route:
+  tests/unit/test_hs6_gate.py, test_hs6_override.py, test_store.py, test_hs6_eval.py, tests/integration/
+  test_upload_flow.py and the 12-line sample's line 9 ("Furniture", vague at 58) in data/samples/sample_lines.json; the
+  harness state `vague_review` renamed `vague_high` (spec FR-019; feature 001's FR-020)
+- [X] T058 agent/routing.py: a line flagged vague always routes to ask the shipper; feature 001's spec.md (FR-020, the
+  clarification of 2026-10-14 marked superseded, the assumption) and data-model.md §9; the constitution re-checked, no
+  amendment; README's routing paragraph; commit e130021 (spec FR-019; feature 001's FR-020)
+- [X] T059 The spec updates of 2026-11-19: spec.md (the clarifications, user stories 3 and 4, the edge cases, FR-002,
+  FR-005, FR-011 to FR-015, FR-017, FR-019, FR-030, the new FR-032 and FR-033, SC-002, SC-004, the key entities and the
+  assumptions), plan.md, data-model.md, contracts/ui.md, contracts/classify-hs6.md, quickstart.md §9 and this list
+- [ ] T060 Traceability (docs/qa-platform.md): `014a/FR-###` and `014a/SC-###` tokens in the tests that cover each
+  requirement, and specs/014a-retrieval-evidence/traceability.md for those no test can check (an evaluation result
+  names its evaluation file and report section); `scripts/check_traceability.py` passes with a pull-request body
+  holding `Spec-PR: #7` and a `spec-change:` line, with no undefined or untraced id
+- [ ] T061 [US1] Tests in tests/unit/test_hs6_eval.py for the outside set: the set file's format (every line coded,
+  with a source), `--set outside` with its own results and history files, and a line from a ruling excluded by its
+  reference (leave-one-out) (spec FR-032)
+- [ ] T062 [US1] tests/eval/hs6_eval_outside_set.json and `--set outside` in tests/eval/hs6_eval.py; the
+  near-duplicate check, embedding calls only: each line's 5 nearest rulings in the rebuilt store with no chapter
+  filter, flagged above 0.85 or when its source ruling is in the store, rewritten in plain shipper wording and searched
+  again; the list (final and original text, expected HS-6, chapter, source, top similarity with its reference before
+  and after, flag) goes to the author, and nothing paid runs before the approval (spec FR-032)
+- [ ] T063 [US1] Tests in tests/unit/test_hs6_eval.py for option (c): off by default; on, the candidate proposal reads
+  only the rulings of the chapters of the nomenclature search's top subheadings, while the gate's vote stays
+  unfiltered; no product setting reads it (spec FR-033)
+- [ ] T064 [US1] Option (c) in tests/eval/hs6_eval.py, evaluation only (spec FR-033)
+- [ ] T065 [US1] LIVE (at most $1.10 in all, after the author's approval of T062): rule (a) on the outside set, three
+  runs; option (c) with rule (a) on the 120-line set, the coolant set and the outside set, three runs each; stop and
+  ask before the cost would pass $1.10 (spec FR-033)
+- [ ] T066 [US1] The report, in docs/reports/014a-regression-analysis.md: (c) against (a) per set, the override off and
+  on (majority top-1, top-1 per run, auto-accepted and wrong auto-accepted per run); for the 120-line and coolant sets,
+  (a) as the exact replay of the after-runs' rows under rule (a) and the vague rule, with the baseline; SC-004 under
+  rule (a) stated as passed or failed with its lines (spec FR-033, SC-004)
+
+---
+
 ## Dependencies & Execution Order
 
 - **Phase 1** (T001, T002) first. **Phase 2**: T003 before T004 (the test reads the file), T004 before T005, T005
@@ -475,6 +543,9 @@ run's floor).
 - **Phase 8** after Phases 3 to 7 (its rows read their fields). **Phase 9** after Phase 8, in order: T043 (rebuild)
   before T044 (after-runs) before T045 (replays) before T046 (comparison). **Phase 10** after Phase 9; T050 after the
   implementation so the amended text describes the code; T051 and T052 last.
+- **Phase 11** after Phase 10, in order: T053 before T054, T055 before T056, T057 before T058 (each test task fails
+  until its implementation); T059 before T060 (the list of requirements is final before it is traced); T061 before
+  T062; T062's approval by the author before T065; T063 before T064 before T065 before T066.
 
 ## Parallel Example: the test tasks of a phase
 
@@ -511,15 +582,15 @@ Phase 10: T047 (README.md), T048 (.env.example), T049 (docs/backlog.md)
 | FR-008 | T008, T009, T011, T012 |
 | FR-009 | T001, T002, T009, T043 |
 | FR-010 | T013, T047 |
-| FR-011 | T015, T018 |
-| FR-012 | T015, T018, T041, T042, T045 |
-| FR-013 | T015, T018 |
-| FR-014 | T014, T015, T016, T018 |
-| FR-015 | T021 |
+| FR-011 | T015, T018, T053, T054 |
+| FR-012 | T015, T018, T041, T042, T045, T053 |
+| FR-013 | T015, T018, T053 |
+| FR-014 | T014, T015, T016, T018, T053, T054 |
+| FR-015 | T021, T055 |
 | FR-016 | T014, T017 |
-| FR-017 | T014, T016, T018, T019, T022, T024, T052 |
-| FR-018 | T020, T022, T023, T024, T052 |
-| FR-019 | T021, T024 |
+| FR-017 | T014, T016, T018, T019, T022, T024, T052, T055 |
+| FR-018 | T020, T022, T023, T024, T052, T055, T056 |
+| FR-019 | T021, T024, T053, T054, T057, T058 |
 | FR-020 | T025, T029 |
 | FR-021 | T025, T029 |
 | FR-022 | T026, T027, T028, T030, T052 |
@@ -532,9 +603,11 @@ Phase 10: T047 (README.md), T048 (.env.example), T049 (docs/backlog.md)
 | FR-029 | T047, T048 |
 | FR-030 | T001, T004, T051, and every test task |
 | FR-031 | T050 |
+| FR-032 | T061, T062, T065 |
+| FR-033 | T063, T064, T065, T066 |
 
-Success criteria: SC-001 T043; SC-002 to SC-004 T046; SC-005 T020–T022, T025–T027, T051; SC-006 T036, T046; SC-007 T049;
-SC-008 T050.
+Success criteria: SC-001 T043; SC-002 to SC-004 T046 (SC-004 under rule (a): T066); SC-005 T020–T022, T025–T027, T051,
+T055; SC-006 T036, T046; SC-007 T049; SC-008 T050. Traceability of every requirement: T060.
 
 ## Not in this feature
 

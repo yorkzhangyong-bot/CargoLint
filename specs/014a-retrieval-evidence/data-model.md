@@ -44,17 +44,29 @@ get them from their own rulings.
 
 | Field | Type | Rule |
 |---|---|---|
-| `chapters` | `list[str]` | the chapters of the model's validated HS-6 candidates, two digits each, sorted, one to three; the vote searched only these (FR-011) |
+| `chapters` | `list[str]` | the chapters of the model's validated HS-6 candidates, two digits each, sorted, one to three; the second vote searched only these (FR-011, rule (a)) |
 | `not_indexed` | `list[str]` | those of `chapters` that are not in `KnowledgeBase.indexed_chapters` when the HS-6 step ran (FR-017) |
 
 Carried as `Classification.ruling_scope: RulingScope | None` and copied by `LineStore.update_classification` to
 `LineVersion.ruling_scope`, as `hs6_vote` is; `None` when the line has no valid candidate (no vote) or the step
 failed. Block 3 reads it with `hs6_vote` (contracts/ui.md §3).
 
-**Relevant ruling** (FR-015): a ruling returned by the scoped search that `hs6_voters` keeps: valid on the day, coded
-to a subheading of the loaded nomenclature, not excluded, and with a best similarity of at least
-`HS6_VOTE_MIN_SIMILARITY`. "No relevant rulings found" holds exactly when `hs6_vote` is `None` and `ruling_scope` is
-not.
+**Relevant ruling** (FR-015, revised on 2026-11-19): a ruling returned by the unfiltered search (the candidate
+proposal's) that `hs6_voters` keeps: valid on the day, coded to a subheading of the loaded nomenclature, not excluded,
+and with a best similarity of at least `HS6_VOTE_MIN_SIMILARITY`. "No relevant rulings found" holds exactly when
+`hs6_vote` is `None` on a line with a candidate.
+
+## 4a. The two votes and the gate (rule (a), 2026-11-19)
+
+| Field | Type | Rule |
+|---|---|---|
+| `hs6_vote` | `Hs6Vote \| None` | the gate's vote: the 5 nearest eligible rulings over every indexed chapter, from the candidate proposal's hits; it decides the auto-accept (constitution 1.5.0) |
+| `hs6_scoped_vote` | `Hs6Vote \| None` | the vote of the candidates' chapters, from the search within `ruling_scope.chapters`; `None` without a voter there; it can only stop an auto-accept |
+| `hs6_gate` | `Hs6Gate \| None` | as before, plus `scoped_veto`: the gate passed, but `hs6_scoped_vote` has voters and does not agree on the decided code (the override's candidate, else the top one; its majority at the share or above) |
+
+`Classification` and `LineVersion` carry both votes; `LineStore.update_classification` copies `hs6_scoped_vote` as it
+copies `hs6_vote`, and `_recompute`, `ready_to_accept` and the decided code read both. A line version stored before
+rule (a) has no `hs6_scoped_vote` and routes on `hs6_vote` alone.
 
 ## 5. Citation note (`agent/schemas.CitationNote`, new)
 
@@ -142,12 +154,22 @@ Eight lines (FR-001), in the backlog's order, then the German line, then `冷却
 on for this set. The fifth line's note keeps "CN 2710 19 91", not scored. The file is written with LF line endings and
 UTF-8 without a byte-order mark.
 
+## 8a. Outside set (`tests/eval/hs6_eval_outside_set.json`, new, 2026-11-19)
+
+The coolant set's format, with every line coded (`expected_hs6`) and sourced: `source` names an EBTI ruling valid on
+`built_on` (its reference, which the line's run excludes, leave-one-out) or another verifiable source; `original`
+keeps a source text the line was rewritten from (FR-032); `chapter` is the expected HS-6's chapter, outside the twelve
+of the old store. The near-duplicate check's similarities are reported to the author, not stored in the file.
+
 ## 9. Evaluation rows and history entries (`tests/eval/hs6_eval.py`)
 
 New row fields (both sets; FR-005):
 
 | Field | Type | Meaning |
 |---|---|---|
+| `vote` | object | the gate's vote (since rule (a), 2026-11-19, the unfiltered one; in rows written before, the then-only chapter-filtered vote) |
+| `scoped_vote` | object or `null` | rule (a)'s second vote, the candidates' chapters; absent in rows written before |
+| `nearest_hits` | list | the 40 nearest rulings over every chapter, from a log search (for replaying the gate's vote) |
 | `vote_chapters` | `list[str]` | `ruling_scope.chapters` |
 | `not_indexed` | `list[str]` | `ruling_scope.not_indexed` |
 | `vote_hits` | list of `{reference, hs6, similarity, eligible}` | the scoped search's rulings, each once at its best similarity, nearest first; `eligible` ignores the floor (valid, coded, not excluded), so a replay can apply any floor; it is exact, and evidence for a new value, only at or above the run's floor (see the replay paragraph below) |
@@ -156,20 +178,22 @@ New row fields (both sets; FR-005):
 | `expected_route` | string or `null` | the coolant set's "ask the shipper" lines |
 | `right` | bool | `hit` for a coded line; route `ask_shipper` for an "ask the shipper" line (the coolant set's score) |
 
-New history-entry fields: `set` (`cn8` for the 120 or 30 lines, `coolant`), `customs_wording` (`on`/`off`), `floor`
+New history-entry fields: `set` (`cn8` for the 120 or 30 lines, `coolant`, `outside`), `customs_wording` (`on`/`off`), `floor`
 (the `HS6_VOTE_MIN_SIMILARITY` of the run or replay), `replay` (`{"of": <results file>, "floor": X}` for a floor
 replay). A replay from the logged `vote_hits` is exact only for floors at or above the run's floor: the run searched
 the 12 nearest rulings per query vector, so a lower floor could need rulings beyond those searched (research R-07,
 contracts/eval-cli.md). The coolant set's runs go to `hs6_eval_coolant.json`, `hs6_eval_coolant_<tag>_…json`,
 `hs6_eval_coolant_history.json` and `hs6_eval_coolant.md`; the 120-line set's files keep their names and meaning.
 
-## 10. What block 3 reads (contracts/ui.md §3)
+## 10. What block 3 reads (contracts/ui.md §3, rule (a))
 
-| `hs6_vote` | `ruling_scope` | chosen code | caption |
-|---|---|---|---|
-| `None` | `not_indexed == chapters` | any | (a) "No rulings indexed for chapter NN." / "chapters NN, MM and LL." |
-| `None` | some chapter indexed | any | (b) "No relevant rulings found." + " No rulings indexed for chapter NN." for each unindexed one, if any |
-| set | chosen code's chapter in `not_indexed` | any | (c) "No rulings indexed for chapter NN." |
-| set | chosen code's chapter not in `chapters` | a typed code | no caption |
-| set | otherwise | any | (d) "n of m agree with <code>" (unchanged) |
-| `None` | `None` | — | no caption (no valid candidate, or the step failed) |
+The list: `hs6_vote`'s codes with their rulings' countries. The captions, in this order, one `st.caption` each:
+
+| Order | Reads | Caption |
+|---|---|---|
+| 1 | `hs6_vote` set, a code chosen | "n of m agree with <code>" (before this feature's wording, a typed code included) |
+| 1 | `hs6_vote` `None`, a candidate | "No relevant rulings found." |
+| 2 | `hs6_gate == scoped_veto` | "Sent to review by the rulings of the candidates' chapter(s) NN (and MM): n of m at <code>." or "...: split, n at <code>, n at <code> and n at <code>." (`hs6_scoped_vote`; the chapters of `ruling_scope.chapters` not in `not_indexed`) |
+| 3 | `ruling_scope.not_indexed` not empty | "No rulings indexed for chapter NN." / "chapters NN, MM and LL." |
+
+No caption without a candidate (no valid candidate, or the step failed).
