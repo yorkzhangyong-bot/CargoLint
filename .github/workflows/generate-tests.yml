@@ -1,0 +1,39 @@
+# The agentic QA platform's generate-tests workflow (docs/qa-platform.md), from its templates/caller-generate.yml: a
+# spec becomes Playwright browser tests in tests/e2e-browser, explored against the app the workflow starts on the
+# runner, and comes back as an auto-generate pull request. Run it from the Actions tab with spec_path (a Spec Kit
+# feature folder, e.g. specs/014a-retrieval-evidence), or label an issue ready-for-tests: only maintainers should apply
+# that label, because the issue text becomes agent input. GitHub dispatches a workflow only once it is on main.
+name: Generate tests
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      spec_path: { description: "Spec markdown file or Spec Kit folder (e.g. specs/014a-retrieval-evidence)", required: false }
+jobs:
+  generate:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'ready-for-tests'
+    uses: yorkzhangyong-bot/agentic-qa-platform/.github/workflows/generate-tests.yml@main
+    permissions: { contents: write, pull-requests: write, issues: read }
+    with:
+      framework: playwright
+      test_dir: tests/e2e-browser
+      app_url: http://localhost:8501
+      issue_number: ${{ github.event.issue.number }}
+      spec_path: ${{ inputs.spec_path }}
+      # The app, as in test-and-heal.yml: the locked dependencies through uv, Streamlit on 8501, and the published demo
+      # knowledge base fetched at the first page load. Started once without APP_ENV for the agents and once with it for
+      # the test run. No secret here: the command is printed in the log.
+      app_start_command: >-
+        CARGOLINT_DEMO_STORE_URL=https://github.com/yorkzhangyong-bot/CargoLint/releases/download/demo-store-v1/cargolint-demo-store-v1.zip
+        CARGOLINT_DEMO_STORE_SHA256=be92f0f446dd39326175abd81f417578c37d1799f714271ec8f9dab2c59b05d4
+        ANONYMIZED_TELEMETRY=False
+        pipx run --spec uv==0.13.9 uv run --frozen --python 3.13
+        streamlit run app.py --server.headless true --server.port 8501 --browser.gatherUsageStats false
+      app_ready_timeout: 600
+      engine: opencode
+    secrets:
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      # The app's own key for the test run after generation; never given to the agents (see test-and-heal.yml).
+      APP_ENV: |
+        OPENROUTER_API_KEY=${{ secrets.CI_APP_OPENROUTER_API_KEY }}

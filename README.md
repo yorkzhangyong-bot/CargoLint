@@ -454,7 +454,20 @@ symbols ending in "12", so a bare number no longer counts as a listed term.
 `.github/workflows/tests.yml` runs the offline suite, `pytest -q`, on GitHub Actions on every push to any branch and on
 every pull request to main (Ubuntu, Python 3.13). It needs no API key: the suite runs on fakes, and the four live tests
 stay deselected. The paid evals are not part of CI: `tests/eval/hs6_eval.py` and `tests/eval/e2e_eval.py` are run
-locally by hand, at about $0.20 (HS-6) and $0.27 (end to end) per run of the 120 lines.
+locally by hand, at about $0.20 (HS-6) and $0.27 (end to end) per run of the 120 lines. On pull requests its
+`traceability` job checks a spec-only pull request's spec, or an implementation pull request's test references to its
+feature's requirements and the `Spec-PR:` and `spec-change:` lines of its description
+([docs/qa-platform.md](docs/qa-platform.md#traceability)).
+
+## QA platform
+
+The [agentic QA platform](https://github.com/yorkzhangyong-bot/agentic-qa-platform) runs the Playwright browser tests in
+`tests/e2e-browser` on every pull request (`.github/workflows/test-and-heal.yml`): when one fails, its agents (OpenCode
+with DeepSeek) triage it, repair selector drift in an `auto-heal` pull request and report real bugs as issues.
+`.github/workflows/generate-tests.yml` writes tests from a spec (`spec_path`, e.g. `specs/014a-retrieval-evidence`)
+into an `auto-generate` pull request. Both start the app on the runner with the published demo knowledge base. The
+secrets (`DEEPSEEK_API_KEY` for the agents, `CI_APP_OPENROUTER_API_KEY` for the app's test runs only), the labels, the
+cost and how to run the tests locally are in [docs/qa-platform.md](docs/qa-platform.md).
 
 ## Knowledge base refresh
 
@@ -676,10 +689,10 @@ app.py          Streamlit entry point        ui/        main_page, table, expand
 agent/          config, schemas, routing, prompts, llm (client factory + cost), agent (loop + guard), store
 tools/          the seven tools, parsers, ocr, common (context + per-line runner)
 rag/            loader (CLI), nomenclature (SKOS), bti (EBTI), rules (ICS2 PDFs), embeddings, retriever, translate, taric + taric_extract + pgp (TARIC snapshot), demo_store (hosted demo: cut and fetch), refresh + refresh_taric + refresh_ebti (knowledge base releases: publish and fetch)
-scripts/        refresh_taric.py, refresh_ebti.py: the knowledge base refresh commands (feature 013)
+scripts/        refresh_taric.py, refresh_ebti.py: the knowledge base refresh commands (feature 013); check_spec.py, check_traceability.py: the traceability job
 data/           processed knowledge base, rule lists, shipper history (synthetic), sample lists (xlsx, gbk csv, text pdf, photo), labelled set, SOURCES.md
 store/          Chroma vectors (nomenclature in chroma/, rulings in chroma-bti/), BM25 pickle, BTI document store (git-ignored; rebuilt by the loader)
-tests/          unit, integration, adversarial, live, eval (run_eval.py, make_big_list.py), fixtures
+tests/          unit, integration, adversarial, live, eval (run_eval.py, make_big_list.py), fixtures, e2e-browser (Playwright, with playwright.config.ts and package.json at the root)
 ```
 
 ## Data attribution

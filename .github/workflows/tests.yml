@@ -1,7 +1,8 @@
 # The offline test suite on every push to any branch and on every pull request to main.
 # No OPENROUTER_API_KEY is set here: the offline suite runs on fakes, and the four tests marked `live` (the OpenRouter
 # smoke and budget tests) stay deselected through `addopts = "-m 'not live'"` in pyproject.toml. The paid evals
-# (tests/eval/hs6_eval.py, tests/eval/e2e_eval.py) are run by hand, never here.
+# (tests/eval/hs6_eval.py, tests/eval/e2e_eval.py) are run by hand, never here. On pull requests the traceability job
+# also checks the spec, or the tests' references to it and the description's Spec-PR and spec-change lines.
 name: tests
 
 on:
@@ -30,3 +31,22 @@ jobs:
         run: pip install -e ".[dev]"
       - name: Offline test suite
         run: pytest -q
+
+  # Pull requests only (docs/qa-platform.md, "Traceability"). A spec-only pull request gets the spec check of its
+  # feature; an implementation pull request the tests-traceability of its feature and the description rules.
+  traceability:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0             # the base branch, for the changed files
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - name: Spec check or tests-traceability and the description rules
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: python scripts/check_traceability.py
