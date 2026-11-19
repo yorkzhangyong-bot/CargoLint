@@ -1,5 +1,7 @@
 """tests/eval/eval_diff_014a.py offline: the old, unscoped vote rebuilt from a row's nearest rulings, and the cause rules
-of the evaluation report's line analysis, on hand-written rows."""
+of the evaluation report's line analysis, on hand-written rows.
+
+Traceability: 014a/FR-004."""
 from __future__ import annotations
 
 import pytest

@@ -377,6 +377,7 @@ def test_feature_008_the_minimum_is_for_a_replay():
 
 
 # --------------------------------------------------------------------------- feature 014a: the coolant set
+# 014a/FR-001, 014a/FR-002
 def coolant_set_copy(tmp_path, monkeypatch):
     """A temporary copy of the coolant set (tasks T003) that the eval reads instead of the repository's file."""
     copy = tmp_path / "hs6_eval_coolant_set.json"
@@ -575,6 +576,7 @@ def test_feature_014a_lang_is_for_the_120_line_set():
 
 
 # --------------------------------------------------------------------------- feature 014a: the after-runs' fields and replays
+# 014a/FR-005 (the rows' fields), 014a/FR-012 (the floor replay)
 def test_feature_014a_vote_hits_keep_each_ruling_once_with_its_similarity_and_eligibility():
     kb = SimpleNamespace(bti=BTIStore([ruling("OWN", "3403.99"), ruling("A", "3403.99"), ruling("LOW", "3403.19"),
                                        ruling("OLD", "3403.19", valid_to="2024-12-31"), ruling("GONE", "9999.99")]),
@@ -741,6 +743,7 @@ def test_feature_014a_a_file_without_vote_hits_is_refused(tmp_path, monkeypatch)
 
 
 # --------------------------------------------------------------------------- the 014a regression ablation (eval only)
+# 014a/FR-005, 014a/FR-011: the rows keep both votes of rule (a), and the gate's vote reads every chapter
 def test_the_unscoped_vote_drops_only_the_vote_searchs_chapter_filter():
     calls = []
 

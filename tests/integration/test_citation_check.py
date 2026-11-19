@@ -1,6 +1,8 @@
 """Feature 014a, User Story 5: classify_one checks each candidate's reasoning against the rulings retrieved for the line
 in that run and stores the notes on the candidate; the route, the vote and the candidates' order are those of the same
-run without the notes, and neither export carries them (spec FR-022, FR-023)."""
+run without the notes, and neither export carries them (spec FR-022, FR-023).
+
+Traceability: 014a/FR-022, 014a/FR-023."""
 from __future__ import annotations
 
 from datetime import date, datetime, timezone

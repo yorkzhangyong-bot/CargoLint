@@ -1,6 +1,8 @@
 """Feature 014a, User Story 3: the indexed chapters of the store the app opened, and the ruling scope a line's HS-6 step
 records: the chapters of the model's validated candidates, searched by the vote, and those of them with no ruling in the
-store (spec FR-014, FR-016, FR-017; data-model §3, §4)."""
+store (spec FR-014, FR-016, FR-017; data-model §3, §4).
+
+Traceability: 014a/FR-014, 014a/FR-015, 014a/FR-016, 014a/FR-017, 014a/FR-019."""
 from __future__ import annotations
 
 import pytest

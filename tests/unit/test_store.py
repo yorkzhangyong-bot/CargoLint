@@ -177,6 +177,7 @@ class TestCountsAndDerived:
         assert v.status == LineStatus.failed and v.error_reason == "boom"
         assert v.computed_route == Route.review
 
+    # 014a/FR-017
     def test_feature_014a_the_ruling_scope_is_copied_and_cleared_when_the_step_fails(self, memory_store):
         from agent.schemas import RulingScope
 

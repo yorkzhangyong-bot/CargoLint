@@ -479,6 +479,7 @@ class TestOptions:
 
 
 # --------------------------------------------------------------------------- feature 014a: every chapter
+# 014a/FR-007, 014a/FR-008, 014a/FR-009 (the vectors the rebuild reuses)
 CHAPTER_ROWS = [row("DE-C27", code="2710199100************", description="Metal-working oil, mineral oil over 70 %"),
                 row("FR-C34", code="3403990000************", description="Cutting fluid without mineral oil"),
                 row("NL-C38", code="3820000000************", description="Antifreeze for engines"),

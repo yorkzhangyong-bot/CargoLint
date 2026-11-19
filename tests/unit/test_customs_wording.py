@@ -1,6 +1,8 @@
 """Feature 014a, User Story 6: the store's main language, the customs-wording rewrite (its prompt, its data block, its
 output schema and its cache) and the optional reviewed glossary (spec FR-024, FR-025, FR-027; data-model §3, §6, §7).
-The model is a stub: no test calls OpenRouter."""
+The model is a stub: no test calls OpenRouter.
+
+Traceability: 014a/FR-024, 014a/FR-025, 014a/FR-027."""
 from __future__ import annotations
 
 import json

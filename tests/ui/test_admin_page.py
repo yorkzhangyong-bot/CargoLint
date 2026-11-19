@@ -201,6 +201,7 @@ def test_ask_the_agent(kb, recorder):
 
 
 # --------------------------------------------------------------------------- feature 014a: the customs wording in the steps
+# 014a/FR-025
 def test_feature_014a_the_retrieval_steps_list_the_customs_wording(kb, recorder):
     from agent.schemas import Classification, CustomsWording, LineStatus, RetrievalTrace
 

@@ -1,7 +1,8 @@
 """Feature 006: classify_one stores the HS-6 vote of the nearest eligible EBTI rulings: the rulings below the similarity
 floor and the line's own ruling (exclude_refs) do not vote, and a majority at the model's 2nd or 3rd candidate is
-recorded. Since feature 014a the vote reads its own search, within the chapters of the model's candidates, after the
-precedent search over every chapter; the double below returns the same hits to both and records their filters."""
+recorded. Since feature 014a (rule (a)) the gate's vote reads the precedent search over every chapter, and a second
+vote its own search within the chapters of the model's candidates; the double below returns the same hits to both and
+records their filters."""
 from datetime import date
 
 import pytest

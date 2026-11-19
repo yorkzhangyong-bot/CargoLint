@@ -19,6 +19,7 @@ class TestRoutingTable:
         assert _route(FlagKind.stop_word, 99)[0] == Route.ask_shipper
         assert _route(FlagKind.stop_word, 0)[0] == Route.ask_shipper
 
+    # 014a/FR-019 (feature 001's FR-020 since 2026-11-19): the vague rule
     @pytest.mark.parametrize("conf", [None, 0, 31, 49, 50, 58, 96])   # below, at and above the former ask floor of 50
     def test_vague_always_goes_to_ask_shipper(self, conf):            # the author's decision of 2026-11-19
         assert _route(FlagKind.vague, conf) == (Route.ask_shipper, "vague description — ask the shipper")

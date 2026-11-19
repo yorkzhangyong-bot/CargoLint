@@ -56,6 +56,7 @@ def test_the_freshness_limits():
 
 
 # --------------------------------------------------------------------------- feature 014a: the chapter setting
+# 014a/FR-006
 @pytest.mark.parametrize("env", [{}, {"CARGOLINT_EBTI_CHAPTERS": ""}, {"CARGOLINT_EBTI_CHAPTERS": "  "}])
 def test_every_chapter_by_default(env):
     assert load_settings(env).ebti_chapters == "all"            # an empty value reads as unset
@@ -89,6 +90,7 @@ def test_any_other_chapter_value_is_refused(value):
 
 
 # --------------------------------------------------------------------------- feature 014a: the customs-wording switch
+# 014a/FR-024, 014a/FR-026, 014a/SC-006: off by default; any other value refused
 @pytest.mark.parametrize("env, on", [({}, False), ({"CARGOLINT_CUSTOMS_WORDING": ""}, False),
                                      ({"CARGOLINT_CUSTOMS_WORDING": "off"}, False), ({"CARGOLINT_CUSTOMS_WORDING": "OFF"}, False),
                                      ({"CARGOLINT_CUSTOMS_WORDING": "on"}, True), ({"CARGOLINT_CUSTOMS_WORDING": " On "}, True)])

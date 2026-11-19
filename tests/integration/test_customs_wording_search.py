@@ -1,7 +1,9 @@
 """Feature 014a, User Story 6: with the customs-wording switch on, the rewrite's vector joins the HS-6 step's two ruling
 searches only (the candidate proposal and the vote), beside the raw-text vectors, and their hits merge; the
 nomenclature search, the ranking prompt and the CN-8 step keep the raw text; everything is embedded in one request;
-with the switch off nothing changes (spec FR-025, FR-026; contracts/classify-hs6.md steps 3 to 9)."""
+with the switch off nothing changes (spec FR-025, FR-026; contracts/classify-hs6.md steps 3 to 9).
+
+Traceability: 014a/FR-025, 014a/FR-026."""
 from __future__ import annotations
 
 from datetime import date, datetime, timezone

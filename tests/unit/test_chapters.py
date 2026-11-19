@@ -1,6 +1,8 @@
 """Feature 014a, User Story 2: the chapter setting reaches the loader and rag.bti, and the source version names the
 chapters (spec FR-006, FR-008; contracts/settings-and-scripts.md). Every test runs on temporary paths: the loader's
-store, raw, subset and sidecar paths are monkeypatched, so no repository path is written."""
+store, raw, subset and sidecar paths are monkeypatched, so no repository path is written.
+
+Traceability: 014a/FR-006, 014a/FR-008."""
 from __future__ import annotations
 
 from types import SimpleNamespace

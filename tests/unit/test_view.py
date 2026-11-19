@@ -346,6 +346,7 @@ def test_rulings_statement():
     assert view.rulings_statement(dated_kb(rulings=(None, "unknown"))) == "EBTI rulings: 2 · date unknown"
 
 
+# 014a/FR-010
 def test_feature_014a_the_rulings_statement_names_every_chapter():
     every = "full extract of 2026-11-18, all chapters"                          # a store built with all chapters
     kb = dated_kb(bti=180000, rulings=("2026-11-18", "extract"), source=every)
@@ -1029,6 +1030,7 @@ def test_clerk_changed_at_the_cn8_and_the_taric10(kb):  # FR-013: another code t
 
 
 # --------------------------------------------------------------------------- feature 014a: block 3's captions (rule (a))
+# 014a/FR-018, 014a/SC-005: every caption state of contracts/ui.md §3
 from agent.schemas import Candidate, Hs6Gate, Hs6Vote, Line, LineVersion, RulingScope  # noqa: E402
 
 FLOOR_TEXT = "No ruling was within the similarity floor."
@@ -1097,6 +1099,7 @@ def test_feature_014a_a_vetoed_line_explains_the_chapters_vote(kb):
 
 
 # --------------------------------------------------------------------------- feature 014a: block 2's citation notes
+# 014a/FR-022, 014a/SC-005
 def test_feature_014a_citation_notes_follow_the_reasoning():
     from agent.schemas import CitationNote
 
@@ -1113,6 +1116,7 @@ def test_feature_014a_citation_notes_follow_the_reasoning():
 
 
 # --------------------------------------------------------------------------- feature 014a: the customs wording shown
+# 014a/FR-025
 def test_feature_014a_the_customs_wording_texts():
     from agent.schemas import CustomsWording
 

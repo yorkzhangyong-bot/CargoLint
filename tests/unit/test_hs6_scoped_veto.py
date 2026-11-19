@@ -2,7 +2,9 @@
 constitution 1.5.0 again, the 5 nearest eligible rulings over every indexed chapter; the vote of the candidates'
 chapters can only send a line to review. When it has voters and does not agree on the code the gate would decide (the
 top candidate, or the precedent override's candidate), the line goes to review; it never auto-accepts on its own. The
-gate (agent/routing.py) and the store's route, gate and audit note."""
+gate (agent/routing.py) and the store's route, gate and audit note.
+
+Traceability: 014a/FR-011, 014a/FR-019."""
 from __future__ import annotations
 
 import pytest

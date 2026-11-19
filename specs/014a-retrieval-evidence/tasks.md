@@ -498,7 +498,7 @@ approves the outside set's lines.
 - [X] T059 The spec updates of 2026-11-19: spec.md (the clarifications, user stories 3 and 4, the edge cases, FR-002,
   FR-005, FR-011 to FR-015, FR-017, FR-019, FR-030, the new FR-032 and FR-033, SC-002, SC-004, the key entities and the
   assumptions), plan.md, data-model.md, contracts/ui.md, contracts/classify-hs6.md, quickstart.md §9 and this list
-- [ ] T060 Traceability (docs/qa-platform.md): `014a/FR-###` and `014a/SC-###` tokens in the tests that cover each
+- [X] T060 Traceability (docs/qa-platform.md): `014a/FR-###` and `014a/SC-###` tokens in the tests that cover each
   requirement, and specs/014a-retrieval-evidence/traceability.md for those no test can check (an evaluation result
   names its evaluation file and report section); `scripts/check_traceability.py` passes with a pull-request body
   holding `Spec-PR: #7` and a `spec-change:` line, with no undefined or untraced id

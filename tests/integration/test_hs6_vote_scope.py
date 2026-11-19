@@ -7,7 +7,9 @@ classify-hs6.md, steps 6 to 9).
 The rulings sit in an in-memory index over fake embeddings: for the line below, five cooling machines (chapter 84) are
 the nearest rulings over all chapters, the lubricating preparations of chapter 34 follow, then one ruling of chapter 27
 and one of chapter 38. The boundary cases use search doubles with exact similarities: one honours the chapter filter as
-Chroma's `$in` does, the other returns other rulings to the filtered search, as an approximate index can."""
+Chroma's `$in` does, the other returns other rulings to the filtered search, as an approximate index can.
+
+Traceability: 014a/FR-011, 014a/FR-012, 014a/FR-013, 014a/FR-014."""
 from __future__ import annotations
 
 from datetime import date

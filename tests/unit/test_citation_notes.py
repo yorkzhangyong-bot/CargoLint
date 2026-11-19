@@ -1,7 +1,9 @@
 """Feature 014a, User Story 5: the rulings a candidate's reasoning cites are checked against the rulings retrieved for the
 line in that run, at six digits: a retrieved ruling at another HS-6 gets an "other code" note with that HS-6, a reference
 not retrieved (known to the store or not) a "not retrieved" note; references are compared without regard to case,
-spaces or punctuation, by equality of their normal forms (spec FR-020, FR-021; data-model §5)."""
+spaces or punctuation, by equality of their normal forms (spec FR-020, FR-021; data-model §5).
+
+Traceability: 014a/FR-020, 014a/FR-021, 014a/SC-005."""
 from __future__ import annotations
 
 import pytest

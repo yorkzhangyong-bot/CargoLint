@@ -1159,6 +1159,7 @@ def test_an_overridden_line_shows_the_chosen_candidate_and_its_audit_entry(kb, r
         == [("8543.70", "9405.21", "rulings overrode the model: 4 of 5 agree on 9405.21; candidate 2 chosen")]
 
 
+# 014a/FR-017, 014a/FR-018: block 3 reads both votes, the gate and the chapter facts from the line store
 def test_feature_014a_block3_lists_the_voters_and_how_many_agree(kb, recorder):
     store, nos = h.store_with("hs6_override", kb=kb, hs6_override_min=4)
     n = nos["hs6_override"]
@@ -1183,6 +1184,7 @@ def test_feature_014a_block3_shows_the_deciding_vote_and_the_chapters_veto(kb, r
     assert view.explain_a(store, line, "a_hs6")[1] in page
 
 
+# 014a/FR-022
 def test_feature_014a_block2_shows_the_citation_notes_after_the_reasoning(kb, recorder):
     from agent.schemas import CitationNote, Classification, LineStatus
 
@@ -1197,6 +1199,7 @@ def test_feature_014a_block2_shows_the_citation_notes_after_the_reasoning(kb, re
     assert "Why: matches the subheading 9405.21 Cited ruling DEBTI1234/22 classifies under 8419.89, not 9405.21." in page
 
 
+# 014a/FR-025
 def test_feature_014a_block1_shows_the_customs_wording_only_when_the_line_has_one(kb, recorder):
     from agent.schemas import Classification, CustomsWording, LineStatus
 
