@@ -377,7 +377,7 @@ def test_feature_008_the_minimum_is_for_a_replay():
 
 
 # --------------------------------------------------------------------------- feature 014a: the coolant set
-# 014a/FR-001, 014a/FR-002
+# 014a/FR-001, 014a/FR-002; nine lines with coolant-9, the live-test line, since feature 017 (017/FR-006)
 def coolant_set_copy(tmp_path, monkeypatch):
     """A temporary copy of the coolant set (tasks T003) that the eval reads instead of the repository's file."""
     copy = tmp_path / "hs6_eval_coolant_set.json"
@@ -389,18 +389,20 @@ def coolant_set_copy(tmp_path, monkeypatch):
 def test_feature_014a_the_coolant_set_loads_as_typed_lines(tmp_path, monkeypatch):
     copy = coolant_set_copy(tmp_path, monkeypatch)
     data = json.loads(copy.read_text(encoding="utf-8"))
-    assert data["built_on"] == "2026-11-18" and len(data["lines"]) == 8
+    assert data["built_on"] == "2026-11-18" and len(data["lines"]) == 9
     assert all(("expected_hs6" in line) != ("expected_route" in line) for line in data["lines"])   # exactly one of them
     items = ev.coolant_items(data)
-    assert [i["reference"] for i in items] == [f"coolant-{k}" for k in range(1, 9)]
+    assert [i["reference"] for i in items] == [f"coolant-{k}" for k in range(1, 10)]
     assert [i.get("expected_hs6") or i["expected_route"] for i in items] == [
-        "2710.19", "ask_shipper", "3403.99", "3403.99", "2710.19", "3403.99", "3403.99", "ask_shipper"]
+        "2710.19", "ask_shipper", "3403.99", "3403.99", "2710.19", "3403.99", "3403.99", "ask_shipper", "3403.99"]
     assert [ev.expected_of(i) for i in items][:2] == ["2710.19", None]                     # an "ask the shipper" line
     fifth = ev.line_text(5, items[4])                                                       # split as a typed line
     assert (fifth.text_zh, fifth.text_en) == ("金属加工冷却液，矿物油含量大于70%",
                                               "Metal-working coolant, petroleum mineral oil content more than 70% by weight")
     assert ev.line_text(7, items[6]).text_en == "Kühlschmierstoff für die Metallbearbeitung, ohne Mineralöl"
     assert (ev.line_text(8, items[7]).text_zh, ev.line_text(8, items[7]).text_en) == ("冷却液", "")
+    ninth = ev.line_text(9, items[8])                               # feature 017: the Chinese-only live-test line of 2026-11-20
+    assert (ninth.text_zh, ninth.text_en) == ("金属加工冷却液，不含矿物基础油", "")
 
 
 def coolant_row(reference, top1, route, expected="2710.19", expected_route=None, top3=None, confidence=90):
@@ -503,7 +505,7 @@ def test_feature_014a_a_coolant_run_writes_its_own_files_only(tmp_path, monkeypa
     assert calls[0]["as_of"] == date(2026, 11, 18) and calls[0]["references"][0] == "coolant-1"   # on the set's date
     assert ev.COOLANT_OUT.exists() and (tmp_path / "hs6_eval_coolant_t1_en_expansion-off_wording-off.json").exists()
     entry = json.loads(ev.COOLANT_HISTORY.read_text(encoding="utf-8"))[-1]
-    assert (entry["iteration"], entry["set"], entry["tag"], entry["n"], entry["repeat"]) == (1, "coolant", "t1", 8, 3)
+    assert (entry["iteration"], entry["set"], entry["tag"], entry["n"], entry["repeat"]) == (1, "coolant", "t1", 9, 3)   # 017/FR-006
     assert entry["top1_runs"] == [2, 2, 2] and entry["majority_top1"] == 2   # the two 2710.19 lines
     assert "cross_layer" not in entry                                         # no CN-8 results for these lines
     assert "| coolant-8 | 冷却液 | ask_shipper |" in ev.COOLANT_REPORT.read_text(encoding="utf-8")
@@ -737,8 +739,8 @@ def test_feature_014a_a_typed_sets_entry_has_the_override_on_measures(tmp_path, 
     entry = json.loads(ev.COOLANT_HISTORY.read_text(encoding="utf-8"))[-1]
     assert entry["top1_runs"] == [2, 2, 2] and entry["override_min"] == ev.OVERRIDE_MIN    # the switch off, as before
     on = entry["on"]
-    assert (on["top1_runs"], on["majority_top1"]) == ([6, 6, 6], 6)        # the six coded lines; the two "ask" lines are
-    assert [r["auto_accept"] for r in on["routes_runs"]] == [8, 8, 8]       # auto-accepted, so wrong
+    assert (on["top1_runs"], on["majority_top1"]) == ([7, 7, 7], 7)        # the seven coded lines (coolant-9 since feature
+    assert [r["auto_accept"] for r in on["routes_runs"]] == [9, 9, 9]       # 017, 017/FR-006); the two "ask" lines are
     assert [len(w) for w in on["wrong_auto_runs"]] == [2, 2, 2]
 
 

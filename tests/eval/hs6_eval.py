@@ -60,8 +60,9 @@ The line-by-line results go to tests/eval/hs6_eval.json, the latest run, and to 
 tests/eval/hs6_eval_<tag>_<lang>_expansion-<on|off>.json (iteration<N> in place of the tag without --tag), which a run
 with another tag leaves alone, as the CN-8 iteration files keep earlier CN-8 runs (feature 007).
 
-Feature 014a: `--set coolant` runs the eight coolant lines of tests/eval/hs6_eval_coolant_set.json (the six of the
-author's user test in docs/backlog.md item 10, a German line and the plain 冷却液) through the same path, each line as
+Feature 014a: `--set coolant` runs the nine coolant lines of tests/eval/hs6_eval_coolant_set.json (the six of the
+author's user test in docs/backlog.md item 10, a German line, the plain 冷却液 and, since feature 017, coolant-9, the
+Chinese-only live-test line of 2026-11-20) through the same path, each line as
 typed, with no leakage guard (no line is a ruling), no cross-layer table (no line has a CN-8 result) and ruling validity
 on the set's build date. A line with an expected HS-6 is right when its top-1 is that code; a line expecting "ask the
 shipper" when its route is ask_shipper, whatever codes it shows. Its results, history and report are its own:
@@ -141,7 +142,7 @@ OUT = ROOT / "tests" / "eval" / "hs6_eval.json"
 HISTORY = ROOT / "tests" / "eval" / "hs6_eval_history.json"
 REPORT = ROOT / "tests" / "eval" / "hs6_eval.md"
 CN8_RESULTS = ROOT / "tests" / "eval" / "cn8_eval_iteration11.json"
-COOLANT_SET = ROOT / "tests" / "eval" / "hs6_eval_coolant_set.json"   # feature 014a: the eight coolant lines
+COOLANT_SET = ROOT / "tests" / "eval" / "hs6_eval_coolant_set.json"   # feature 014a: the nine coolant lines
 COOLANT_OUT = ROOT / "tests" / "eval" / "hs6_eval_coolant.json"
 COOLANT_HISTORY = ROOT / "tests" / "eval" / "hs6_eval_coolant_history.json"
 COOLANT_REPORT = ROOT / "tests" / "eval" / "hs6_eval_coolant.md"
@@ -1093,7 +1094,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--expansion", choices=("on", "off"),
                     help="feature 009: query expansion for this run (default: CARGOLINT_QUERY_EXPANSION)")
     ap.add_argument("--set", choices=("cn8", *TYPED_SETS), default="cn8", dest="set_name",
-                    help="feature 014a: cn8, the 120 rulings of cn8_eval_set.json (default); coolant, the eight lines of "
+                    help="feature 014a: cn8, the 120 rulings of cn8_eval_set.json (default); coolant, the nine lines of "
                          "hs6_eval_coolant_set.json; outside, the lines of hs6_eval_outside_set.json, each line's source "
                          "ruling kept out")
     ap.add_argument("--customs-wording", choices=("on", "off"),
