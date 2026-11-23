@@ -473,8 +473,9 @@ symbols ending in "12", so a bare number no longer counts as a listed term.
 nearest rulings over every chapter, and the rulings of the candidates' chapters can only send a line to review (rule
 (a), the author's decision of 2026-11-19); a vague line always asks the shipper; the customs-wording rewrite waits
 behind its switch. `tests/eval/hs6_eval.py` gained these options. `--set coolant` runs the coolant set instead of the
-120 lines: eight coolant lines in Chinese, English and German (`tests/eval/hs6_eval_coolant_set.json`), each expecting
-an HS-6 or "ask the shipper", with their own results, history and report files. `--set outside` runs 14 lines whose
+120 lines: nine coolant lines in Chinese, English and German (`tests/eval/hs6_eval_coolant_set.json`; coolant-9, the
+Chinese-only live-test line, since feature 017), each expecting an HS-6 or "ask the shipper", with their own results,
+history and report files. `--set outside` runs 14 lines whose
 codes lie outside the twelve chapters of the old store (`tests/eval/hs6_eval_outside_set.json`), each taken from an
 EBTI ruling that the run keeps out. `--customs-wording on|off` sets the rewrite for the run over
 `CARGOLINT_CUSTOMS_WORDING`. `--replay <results file> --floor X` rebuilds a run's votes at a similarity floor at or
@@ -504,6 +505,14 @@ after-runs' rows, they give the 120 lines a majority top-1 of 77 with 3 / 3 / 3 
 baseline's 10, so the criterion now passes, and the coolant set 8/8 with none wrong. Option (c) was measured and is not
 in the app: 64/120 on the 120 lines, 7/8 on the coolant set and 11/14 on the outside set, against 77, 8 and 12 under
 rule (a). The analysis and these numbers are in `docs/reports/014a-regression-analysis.md`, section 5.
+
+**Chinese examples in the vagueness check** (feature 017): the judgement's prompt gained four pairs of Chinese examples
+(complete lines marked acceptable, bare category terms marked vague) and nothing else; in three runs per set on
+2026-11-23 the Chinese-only coolant lines that state the goods, their use and composition (coolant-3 and the live-test
+line, coolant-9) are no longer flagged vague and route by the vote, the vague ones (coolant-1, coolant-2 and plain
+冷却液) still ask the shipper, and no set regressed: 120 lines 78/120 on majority with the same three wrong auto-accepts
+by majority per line, the coolant set 8/8 (9/9 with coolant-9), the outside set 12/14
+(`specs/017-coolant-vague-chinese-examples/eval-report.md`).
 
 **Eval-set notes**:
 - **Cleanup**: six Swedish rulings in `tests/eval/cn8_eval_set.json` are still labelled `en`: SEBTITV-2026-01096,

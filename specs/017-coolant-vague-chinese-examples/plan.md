@@ -3,7 +3,7 @@
 **Branch**: `017-coolant-vague-chinese-examples` | **Date**: 2026-11-23 | **Spec**: [spec.md](spec.md)
 
 **Input**: Feature specification from `specs/017-coolant-vague-chinese-examples/spec.md`, with its clarifications of
-2026-11-23 (coolant-9, flags judged on every run, one revision round). The facts behind each decision are in
+2026-11-23 (coolant-9, flags judged on every run, majority per line, the staged runs). The facts behind each decision are in
 [research.md](research.md).
 
 ## Summary
@@ -27,10 +27,13 @@ The vagueness judgement's prompt gains one sentence of Chinese examples; nothing
 - **The after-runs** (spec FR-006, FR-007): the 120-line, coolant and outside sets, three runs each, with the
   configured model and the evaluation's settings, after the author's approval of the $0.65 estimate (below) and with
   none of the six overrides T016 checks by name in the environment. The flags of coolant-1, -2, -3, -8 and -9 are read
-  per run from the runs' own files; SC-004's coolant verdict from the summary's per-line entries of coolant-1 to -8;
-  every set's vague flags per run are compared with the baseline runs (research R-06). A missed SC-001 or SC-002
-  spends the one revision round, whatever SC-003, SC-004 and SC-007 show; with SC-001 and SC-002 holding, a missed
-  SC-003, SC-004 or SC-007 stops with a line diff for the author (spec FR-007).
+  per run from the runs' own files; SC-003's wrong auto-accepts are counted per line by majority from the 120-line
+  rows, the override off and on, against the baseline's 3 lines (the author's decision of 2026-11-23, with the per-run
+  numbers reported alongside); SC-004's coolant verdict from the summary's per-line entries of coolant-1 to -8;
+  every set's vague flags per run are compared with the baseline runs (research R-06). The runs are staged (the
+  author's approval of 2026-11-23): the coolant set first, the outside set only when every coolant criterion holds,
+  the 120-line set only when the outside set holds; on any miss the work stops with a line diff for the author, and
+  no revision round runs without the author's go-ahead (spec FR-007).
 - **The record** (spec FR-008): `eval-report.md` in this folder and the pull request carry the comparison with the
   shipped numbers and the flag comparison; backlog item 17 is marked done, its superseded bullets marked, not
   deleted; the README's coolant-set sentence says nine lines (research R-10).
@@ -60,7 +63,8 @@ unchanged otherwise.
 call; no measurable change in time or cost per line.
 
 **Constraints**: prompt examples only (spec FR-004); no stop-word, routing, rule (a), vague-rule or ASK_FLOOR change;
-offline tests; the paid runs only after approval, estimate $0.65, 2x margin $1.30, one revision round at most.
+offline tests; the paid runs only after approval, estimate $0.65, 2x margin $1.30, in the author's stages, a revision
+round only with the author's go-ahead.
 
 **Scale/Scope**: one prompt string, one JSON line, three test files, one report, two documentation edits.
 
@@ -111,8 +115,9 @@ rebuilt store, Gemini 2.5 Flash with reasoning off, three runs each, query expan
 | **One pass** | the four runs of 2026-11-19 tallied $0.6558 and cost $0.5544 by the key's usage | **$0.62** by the tallies, about $0.53 by the key's usage |
 
 - **Estimate put to the author: $0.65** for one pass of the three commands of quickstart.md §3. The 2x rule's margin,
-  **$1.30**, covers exactly one revision round (clarification 3); a third pass, or a second pass that the budget
-  pre-check below rejects, needs a new approval from the author, and neither runs automatically.
+  **$1.30**, is the cap over everything, the stages and a revision round included (the author's staged approval of
+  2026-11-23); a revision round needs the author's go-ahead, a pass that the budget pre-check below rejects needs a
+  new approval, and nothing runs automatically after a miss.
 - **Procedure**: the implementation asks the author, through the coordinator, before the first paid call, with the three
   commands and this table, and asks in the same message for permission to commit the files the runs write (the
   results, history and report files under `tests/eval/`, and a revision round's); nothing paid runs before the answer,
@@ -126,27 +131,46 @@ rebuilt store, Gemini 2.5 Flash with reasoning off, three runs each, query expan
   `CARGOLINT_WORKERS` changes only concurrency; `CARGOLINT_USD_EUR` only the euro tally; and `CARGOLINT_GPG`,
   `CARGOLINT_GH`, `CARGOLINT_RELEASE_REPO`, `CARGOLINT_DEMO_STORE_URL`, `CARGOLINT_DEMO_STORE_SHA256`,
   `CARGOLINT_DEMO_NOTICE`, `CARGOLINT_TARIC_RELEASE`, `CARGOLINT_EBTI_RELEASE`, `CARGOLINT_EBTI_RULINGS`,
-  `CARGOLINT_OCR_MIN_SCORE` and `CARGOLINT_APP_PASSWORD` do not affect what the evaluation measures. Before a second
-  pass, the tallies the first pass printed plus about $0.62 must stay within the $1.30 cap (the key's own usage total
-  settles late); when they do not, the second pass does not run, and the implementation stops and asks the author for
-  a new approval, the same branch as a second substantive failure. After the runs, the spend is read
+  `CARGOLINT_OCR_MIN_SCORE` and `CARGOLINT_APP_PASSWORD` do not affect what the evaluation measures. The runs go in
+  the author's stages: the coolant set, then the outside set when every coolant criterion holds, then the 120-line
+  set when the outside set holds; before each stage, and before a revision round the author chose, the tallies so
+  far plus the stage's estimate must stay within the $1.30 cap (the key's own usage total settles late); when they
+  do not, nothing runs, and the implementation stops and asks the author for a new approval. After the runs, the
+  spend is read
   from the key's usage once OpenRouter has settled it and reported against the $0.65 in `eval-report.md` and the pull
-  request, with the approval and its amount (as feature 014a's pull request did).
+  request, with the approval and its amount (as feature 014a's pull request did). The key's usage is the `usage`
+  field (USD) of OpenRouter's key endpoint, `GET https://openrouter.ai/api/v1/key`, read once before the first paid
+  call and again after the runs (and later, as it settles late), the difference being the spend; the key goes only
+  in the request's authorization header and is never printed, logged or written (quickstart.md §3).
 - **Reading the results**: the flags and routes per run of coolant-1, -2, -3, -8 and -9 from the coolant run's own
   file (quickstart.md §3); SC-004's coolant verdict from the summary's per-line `lines` entries of coolant-1 to
   coolant-8 (`id`, `majority`, `right`), never from the set-wide counts, which include coolant-9; per-run counts
   compared with iteration 9 computed from the rows without coolant-9, or naming it; the summaries' majority top-1,
   top-1 per run, auto-accepted and wrong auto-accepted per run for the three sets, the override off and from the `on`
-  block; per set and per run the lines flagged vague against the baseline runs (120-line iteration 21: five named
-  lines in every run; outside iteration 1: none; coolant iteration 9: coolant-1, -2, -3, -8), naming every line whose
-  flag changed, coolant-4 to -7 included (SC-007). No model call and no new script (research R-06).
-- **Precedence of the verdicts** (clarification 3 read as given: the pre-approved revision round covers Acceptance 1
-  and 2, SC-001 and SC-002, and nothing else): a missed SC-001 or SC-002 always spends the pre-approved revision round,
-  whatever the state of SC-003, SC-004 and SC-007, and the report carries the SC-003/SC-004 line diff alongside it so
-  that the author sees both; the stop-and-ask branch (the line diff, then the author decides whether to spend the
-  round or stop) applies only when SC-001 and SC-002 both hold and SC-003, SC-004 or SC-007 misses, SC-007 alone
-  included; a missed SC-007 never spends the round by itself (spec FR-007). Nothing is re-run on the stop-and-ask
-  branch before the author's answer.
+  block; SC-003's wrong auto-accept count per line by majority, computed from the 120-line rows (a line counts when
+  `route` is `auto_accept` and `hit` is false in at least 2 of its 3 runs; for the override on, the row's `on` block's
+  `route` and `hit`), against the baseline's 3 lines, and the same count for the coolant set without coolant-9 and
+  the outside set, reported against 0 and 1 (the table below; spec SC-003, SC-004, clarification of 2026-11-23); per
+  set and per run the lines flagged vague against the baseline runs (120-line iteration 21: five named lines in every
+  run; outside iteration 1: none; coolant iteration 9: coolant-1, -2, -3, -8), naming every line whose flag changed,
+  coolant-4 to -7 included (SC-007). No model call and no new script (research R-06).
+- **The baseline counts by majority per line** (the author's decision of 2026-11-23, computed offline from the stored
+  rows the same day, no model call): a line counts when it is auto-accepted with a wrong top-1 in at least 2 of its 3
+  runs. SC-003 passes when the 120-line after-run's count with the override off is at most 3 and its majority top-1 at
+  least 77; the coolant and outside counts are reported, not judged (SC-004). For each set the report puts a per-run
+  table (right, auto-accepted and wrong auto-accepted per run, the override off and on) next to the majority-per-line
+  results, coolant-9 apart from the original eight.
+
+  | Baseline | Wrong auto-accepts per run | By majority per line, override off | Override on |
+  |---|---|---|---|
+  | 120-line, iteration 21 (`tests/eval/hs6_eval_014a-rule-a.json`) | 3 / 3 / 3 (off and on) | 3: IEBTIIENEN004-2024-BTI356, MTBTI2024-002, MTBTI2025-011, each in all three runs | 3, the same lines |
+  | coolant, iteration 9 (`tests/eval/hs6_eval_coolant_014a-rule-a.json`) | 0 / 0 / 0 | 0 | 0 |
+  | outside, iteration 1 (`tests/eval/hs6_eval_outside_014a-a_en_expansion-off_wording-off.json`) | 0 / 1 / 1 | 1: FRBTIFR-BTI-2026-00308, in runs 2 and 3 | 1, the same line |
+- **Stop on any miss** (the author's staged approval of 2026-11-23, spec clarification 5, replacing the automatic
+  revision round of clarification 3): a miss in any stage (the coolant set: SC-001, SC-002, the original eight each
+  right on majority, SC-007; the outside set: SC-004; the 120-line set: SC-003) stops the runs; the author gets the
+  miss per line (flag, route and top-1 per run against the baseline) and the line diff below, and decides whether a
+  revision round is spent or the feature stops (spec FR-007). Nothing is re-run before the author's answer.
 - **The line diff**: each line whose majority top-1 differs from the baseline run's (the typed sets' majorities from
   the summary's `lines` entries; the 120-line set's computed from the rows with the evaluation's own `majority`
   helper, `tests/eval/cn8_eval.py` line 131, a tie going to the earliest run) and whether its vague flag changed in
@@ -199,10 +223,9 @@ docs/backlog.md, README.md                     # housekeeping (research R-10)
    the two nine-line coolant-set tests, seen failing; the two path tests, which pass today by design.
 3. The prompt sentence and coolant-9; the suite green; `scripts/check_spec.py` and `scripts/check_traceability.py`
    clean (`traceability.md` for the live requirements).
-4. The approval of the $0.65 estimate with the commit permission; the environment check; then the three after-runs
-   (quickstart.md §3); the results read; a missed SC-001 or SC-002 spends the one revision round; with SC-001 and
-   SC-002 holding, a missed SC-003, SC-004 or SC-007 goes to the author with the line diff before anything is re-run;
-   at most one revision round, within the $1.30 cap.
+4. The approval of the $0.65 estimate with the commit permission; the environment check; then the after-runs in the
+   author's stages (quickstart.md §3), each stage's results read before the next; on any miss the author gets the
+   line diff before anything is re-run; a revision round only with the author's go-ahead, within the $1.30 cap.
 5. `eval-report.md`, backlog item 17, the README sentence; the pull request with the tables, the approval and both
    traceability lines.
 

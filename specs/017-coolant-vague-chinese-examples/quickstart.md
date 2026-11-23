@@ -45,10 +45,16 @@ environment, checked by variable name only, never by value (`CARGOLINT_APP_PASSW
 
 ```bash
 env | cut -d= -f1 | grep -iE '^CARGOLINT_(CHAT_MODEL|REASONING|EMBED_MODEL|STRUCTURED_METHOD|HS6_OVERRIDE|EBTI_CHAPTERS)$'   # must print nothing
-.venv/Scripts/python tests/eval/hs6_eval.py --repeat 3 --tag 017-after --expansion off --customs-wording off
-.venv/Scripts/python tests/eval/hs6_eval.py --set coolant --repeat 3 --tag 017-after --expansion off --customs-wording off
-.venv/Scripts/python tests/eval/hs6_eval.py --set outside --repeat 3 --tag 017-after --expansion off --customs-wording off
+curl -s https://openrouter.ai/api/v1/key -H "Authorization: Bearer $OPENROUTER_API_KEY" | .venv/Scripts/python -c "import json, sys; print(json.load(sys.stdin)['data']['usage'])"   # the key's usage (USD) before the first paid call; the key only in the header, never printed
+.venv/Scripts/python tests/eval/hs6_eval.py --set coolant --repeat 3 --tag 017-after --expansion off --customs-wording off   # stage 1
+.venv/Scripts/python tests/eval/hs6_eval.py --set outside --repeat 3 --tag 017-after --expansion off --customs-wording off   # stage 2, only when stage 1 held
+.venv/Scripts/python tests/eval/hs6_eval.py --repeat 3 --tag 017-after --expansion off --customs-wording off                 # stage 3, only when stage 2 held
 ```
+
+The stages are the author's approval of 2026-11-23 (spec clarification 5): read each stage's results before the next
+with the snippet below; the outside set runs only when every coolant criterion holds (SC-001, SC-002, coolant-1 to -8
+each right on majority, SC-007), the 120-line set only when the outside set is at least 12 of 14 right on majority;
+before each stage the tallies so far plus the stage's estimate must stay within $1.30.
 
 The defaults then apply: Gemini 2.5 Flash, reasoning off, the shipped embedding model and structured-output method,
 the override on, every chapter. The other `CARGOLINT_*` variables need no check: the command's own `--expansion off`
@@ -58,7 +64,9 @@ changes only concurrency; `CARGOLINT_USD_EUR` only the euro tally; and `CARGOLIN
 `CARGOLINT_TARIC_RELEASE`, `CARGOLINT_EBTI_RELEASE`, `CARGOLINT_EBTI_RULINGS`, `CARGOLINT_OCR_MIN_SCORE` and
 `CARGOLINT_APP_PASSWORD` do not affect what is measured.
 
-Each command prints its cost; together about $0.62 by the evaluation's tallies (research R-07). Each writes its own
+Each command prints its cost; together about $0.62 by the evaluation's tallies (research R-07). Read the key's
+`usage` again after the runs with the same command, and later as it settles: its difference from the value read
+before the first paid call is the spend by the key's usage (spec FR-007, SC-006). Each writes its own
 results file (`tests/eval/hs6_eval_017-after_en_expansion-off_wording-off.json`,
 `tests/eval/hs6_eval_coolant_017-after_en_expansion-off_wording-off.json`,
 `tests/eval/hs6_eval_outside_017-after_en_expansion-off_wording-off.json`), overwrites the set's "latest run" file,
@@ -79,6 +87,20 @@ print("original eight right:", sum(l["right"] for l in eight), "of", len(eight),
 for k, run in enumerate(d["runs"], 1):                                           # per-run counts without coolant-9
     rows = [r for r in run if r["reference"] != "coolant-9"]
     print(f"run {k}: auto {sum(r['route'] == 'auto_accept' for r in rows)}, wrong auto {sum(r['route'] == 'auto_accept' and not r['right'] for r in rows)}")
+def on_rows(run):                                                                # the override on: each row's `on` block
+    return [{**r, "top1": r["on"]["chosen"], "hit": r["on"]["hit"], "route": r["on"]["route"]} for r in run]
+def right(r):                                                                    # a coded line on its top-1, an "ask" line on its route
+    return r["route"] == r["expected_route"] if r.get("expected_route") else r["hit"]
+def wrong(r):                                                                    # auto-accepted and wrong
+    return r["route"] == "auto_accept" and not right(r)
+def per_line(runs):                                                              # SC-003's count: at least 2 of the 3 runs
+    return sorted(seen[0]["reference"] for seen in zip(*runs) if sum(wrong(r) for r in seen) >= 2)
+for path in ("tests/eval/hs6_eval_017-after_en_expansion-off_wording-off.json", after,
+             "tests/eval/hs6_eval_outside_017-after_en_expansion-off_wording-off.json"):
+    runs = [[r for r in run if r["reference"] != "coolant-9"] for run in json.load(open(path, encoding="utf-8"))["runs"]]
+    for switch, rs in (("off", runs), ("on", [on_rows(run) for run in runs])):      # majority per line, then per run
+        print(path, switch, "wrong auto by majority per line:", per_line(rs), "| per run: right", [sum(right(r) for r in run) for run in rs],
+              "auto", [sum(r["route"] == "auto_accept" for r in run) for run in rs], "wrong auto", [sum(wrong(r) for r in run) for run in rs])
 baselines = {"tests/eval/hs6_eval_017-after_en_expansion-off_wording-off.json": "tests/eval/hs6_eval_014a-rule-a.json",
              after: "tests/eval/hs6_eval_coolant_014a-rule-a.json",
              "tests/eval/hs6_eval_outside_017-after_en_expansion-off_wording-off.json": "tests/eval/hs6_eval_outside_014a-a_en_expansion-off_wording-off.json"}
@@ -91,42 +113,42 @@ EOF
 
 Expected (spec SC-001, SC-002, SC-007): coolant-3 and coolant-9 `ok` in every run with route `review` or
 `auto_accept`; coolant-1, coolant-2 and coolant-8 `vague` with route `ask_shipper` in every run; coolant-4 to -7 `ok`
-in every run. Expected for the summaries (SC-003, SC-004): the 120-line `majority_top1` at least 77 and
-`wrong_auto_runs` summing to at most 9 (the override off; the `on` block reported too); the original eight coolant
+in every run. Expected for the summaries and the rows (SC-003, SC-004): the 120-line `majority_top1` at least 77 and
+its wrong auto-accepts counted per line by majority (the snippet's `per_line`: a line counts when it is auto-accepted
+with a wrong top-1 in at least 2 of its 3 runs) at most 3, the baseline's count with the override off
+(IEBTIIENEN004-2024-BTI356, MTBTI2024-002, MTBTI2025-011; the override-on count, 3 today, and the per-run counts are
+reported alongside, never summed into a criterion: the author's decision of 2026-11-23); the original eight coolant
 lines each `right` in the summary's `lines` entries (never the set-wide `majority_top1`, which counts coolant-9); the
-outside set at least 12 of 14 right. The flag comparison names every line whose flag changed against the baseline runs
+outside set at least 12 of 14 right, both sets' per-line counts reported against 0 and 1. The flag comparison names
+every line whose flag changed against the baseline runs
 (120 lines: the same five lines flagged in every run; outside: none; coolant: coolant-1, -2, -3, -8 before).
 
-Precedence of the verdicts (clarification 3 read as given: the pre-approved revision round covers Acceptance 1 and 2,
-SC-001 and SC-002, and nothing else): a missed SC-001 or SC-002 always spends the pre-approved revision round, whatever
-the state of SC-003, SC-004 and SC-007, and the report carries the SC-003/SC-004 line diff alongside it so that the
-author sees both; the stop-and-ask branch (the line diff, then the author decides whether to spend the round or stop)
-applies only when SC-001 and SC-002 both hold and SC-003, SC-004 or SC-007 misses, SC-007 alone included; a missed
-SC-007 never spends the round by itself.
+On any miss in any stage (the coolant set: SC-001, SC-002, the original eight each right on majority, SC-007; the
+outside set: SC-004; the 120-line set: SC-003): stop; nothing more is run, and no revision round runs without the
+author's go-ahead (the staged approval of 2026-11-23, which replaces the automatic revision round of clarification
+3). Report the miss per line (flag, route and top-1 per run against the baseline) and write the line diff (each line
+whose majority top-1 differs from the baseline run's, with its top-1 per run and whether its flag changed in any run;
+the typed sets' majorities from the summary's `lines` entries, the 120-line set's from the rows with the evaluation's
+own `majority` helper; a top-1 change is noise only on a line whose three baseline runs already disagreed, 120-line
+set MTBTI2025-018, XIBTI505060394, IEBTIIENEN004-2026-BTI72 and IEBTIIENEN004-2026-BTI71, outside set
+FRBTIFR-BTI-2026-00308, none in the coolant set; any other top-1 change on a line whose flag did not change is "not
+attributable: flag unchanged, reason text not recorded"; for SC-007 the coolant-4 to -7 flags per run) and send it to
+the author, who decides whether a revision round is spent or the feature stops (spec FR-007, tasks T018).
 
-If SC-001 and SC-002 both hold and SC-003, SC-004 or SC-007 is missed: stop; nothing is re-run. Write the line diff
-(each line whose majority top-1 differs from the baseline run's, with its top-1 per run and whether its flag changed in
-any run; the typed sets' majorities from the summary's `lines` entries, the 120-line set's from the rows with the
-evaluation's own `majority` helper; a top-1 change is noise only on a line whose three baseline runs already
-disagreed, 120-line set MTBTI2025-018, XIBTI505060394, IEBTIIENEN004-2026-BTI72 and IEBTIIENEN004-2026-BTI71,
-outside set FRBTIFR-BTI-2026-00308, none in the coolant set; any other top-1 change on a line whose flag did not
-change is "not attributable: flag unchanged, reason text not recorded"; for SC-007 the coolant-4 to -7 flags per
-run) and send it to the author, who decides whether the one revision round is spent or the feature stops (spec
-FR-007, tasks T018).
-
-If SC-001 or SC-002 is missed, whatever SC-003, SC-004 and SC-007 show, or the author chose the round: revise the
-examples once under spec FR-001's rules, update FR-001's table and the test's lists, run the offline suite, write the
-SC-003/SC-004 line diff into the report alongside when those were missed too, check that the tallies the first pass
-printed plus about $0.62 stay within the $1.30 cap (when they do not: the second pass does not run; stop and ask the
-author for a new approval, never an automatic further pass), repeat the environment check (names only) and the three
-commands with `--tag 017-after-2`, then read the results again (tasks T019). A second failure stops the feature:
-report, and the author decides.
+With the author's go-ahead for the round: revise the examples once under spec FR-001's rules, update FR-001's table
+and the test's lists, run the offline suite, check that the tallies so far plus about $0.62 for all three sets stay
+within the $1.30 cap (when they do not: the second pass does not run; stop and ask the author for a new approval,
+never an automatic further pass), repeat the environment check (names only) and the commands in the same stages with
+`--tag 017-after-2`, then read the results again (tasks T019). A second failure stops the feature: report, and the
+author decides.
 
 ## 4. The record
 
-- `specs/017-coolant-vague-chinese-examples/eval-report.md`: the tables of spec FR-008 (per set: majority top-1,
-  top-1 per run, auto-accepted and wrong auto-accepted per run, cost; the coolant set's per-run counts without
-  coolant-9; the coolant lines' flag, route and top-1 per run, coolant-4 to -7 included; the vague flags per set and
+- `specs/017-coolant-vague-chinese-examples/eval-report.md`: the tables of spec FR-008 (per set: the results by
+  majority per line that decide pass or fail, majority top-1 and the wrong auto-accepts counted per line by majority,
+  with a per-run table of right, auto-accepted and wrong auto-accepted per run next to them, the override off and on,
+  and the cost; the coolant set's counts without coolant-9, coolant-9 in its own row; the coolant lines' flag, route
+  and top-1 per run, coolant-4 to -7 included; the vague flags per set and
   per run against the baseline with every changed line named; the line diff of §3 when one was written), with the
   results files, iterations, the approval and the spend by the key's usage against the $0.65 approval.
 - `docs/backlog.md` item 17 marked done with the numbers, its "Approach" and "Open decisions for the author" bullets

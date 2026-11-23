@@ -72,3 +72,25 @@ def test_without_a_client_rules_still_run_and_clear_lines_are_ok(rules):
     out = check_descriptions([_line(1, "礼品", "Gift"), _line(2, "不锈钢保温杯", "Stainless steel vacuum flask")], rules=rules, client=None)
     assert out[0].flag.kind == FlagKind.stop_word
     assert out[1].flag.kind == FlagKind.ok and "rules only" in out[1].flag.reason
+
+
+def test_a_complete_chinese_line_judged_ok_gets_no_flag(fake_llm, rules):
+    """Feature 017 (017/FR-004, User Story 1 scenario 1): an OK judgement on the Chinese-only live-test line gives no
+    flag and asks for nothing. The judgement is recorded here, so this documents the path the live after-runs exercise;
+    it does not prove the model's answer (spec SC-001 is live)."""
+    fake_llm.recorded.setdefault("JudgementOut", {})["金属加工冷却液，不含矿物基础油"] = {
+        "vague": False, "missing": [], "reason": "names the goods, the use and the composition"}
+    out = check_descriptions([_line(1, "金属加工冷却液，不含矿物基础油", "")], rules=rules, client=get_client())
+    assert [c["schema"] for c in fake_llm.calls] == ["JudgementOut"]
+    assert out[0].flag.kind == FlagKind.ok and out[0].flag.ask_for == []
+
+
+def test_a_vague_chinese_line_judged_vague_asks_for_the_three_facts(fake_llm, rules):
+    """Feature 017 (017/FR-004, User Story 2 scenario 1): a vague judgement on 冷却液 flags the line as the judgement's and
+    asks for the material, the product name and the use, as before the Chinese examples; the reason is the judgement's."""
+    fake_llm.recorded.setdefault("JudgementOut", {})["冷却液"] = {
+        "vague": True, "missing": ["use"], "reason": "coolant alone: engine or metal-working"}
+    out = check_descriptions([_line(1, "冷却液", "")], rules=rules, client=get_client())
+    f = out[0].flag
+    assert f.kind == FlagKind.vague and f.rule_source == RuleSource.judgement
+    assert {"material", "product_name", "use"} <= set(f.ask_for) and f.reason == "coolant alone: engine or metal-working"

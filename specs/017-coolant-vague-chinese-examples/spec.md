@@ -45,9 +45,13 @@ What the app does today, checked against `public/main` at 1b3a832 on 2026-11-23:
 - **The shipped numbers** (rule (a) and the vague rule; Gemini 2.5 Flash with reasoning off, query expansion off,
   customs wording off, threshold 85, floor 0.40, three runs; the precedent override off, as the evaluation keeps its
   history; `specs/014a-retrieval-evidence/eval-diff.md` and `docs/reports/014a-regression-analysis.md`, section 5):
-  the 120-line set, iteration 21: majority top-1 77 of 120, wrong auto-accepts 3 / 3 / 3 per run (9 over three runs,
-  with the override on also 9); the coolant set, iteration 9: 8 of 8 right; the outside set, iteration 1: 12 of 14,
-  wrong auto-accepts 0 / 1 / 1 (the bike U-lock in every case). Each evaluation row keeps the line's flag and route per
+  the 120-line set, iteration 21: majority top-1 77 of 120, wrong auto-accepts 3 / 3 / 3 per run and 3 lines by
+  majority per line (IEBTIIENEN004-2024-BTI356, MTBTI2024-002 and MTBTI2025-011, each auto-accepted with a wrong top-1
+  in all three runs; with the override on, majority top-1 80 and the same 3 lines); the coolant set, iteration 9: 8 of
+  8 right, wrong auto-accepts 0 / 0 / 0 and none by majority per line; the outside set, iteration 1: 12 of 14, wrong
+  auto-accepts 0 / 1 / 1 (the bike U-lock FRBTIFR-BTI-2026-00308 in every case) and 1 by majority per line (that line,
+  in 2 of its 3 runs); the override on changes neither typed set. The per-line counts were computed offline from the
+  stored rows on 2026-11-23 (clarification of the same day). Each evaluation row keeps the line's flag and route per
   run, so a flag is measured by the same runs that measure the codes.
 - **Chinese lines in the evaluation.** The 120-line set has none (its 30 Chinese renderings are a separate file run only
   with `--lang zh`); the coolant set has four Chinese-only and two bilingual lines; the outside set has none.
@@ -69,7 +73,30 @@ What the app does today, checked against `public/main` at 1b3a832 on 2026-11-23:
   within the 2x margin of the approved estimate, or must the feature stop after the first failure? → A: One revision
   round within the 2x margin, under the same constraints (prompt examples only, goods outside the sets, equal pairs);
   a second failure stops the feature and reports to the author. Staying inside a budget the author pre-approved needs
-  no fresh ask, as the 2x rule has worked throughout the project; one round keeps the extra work bounded.
+  no fresh ask, as the 2x rule has worked throughout the project; one round keeps the extra work bounded. (Superseded
+  the same day by the staged approval, the fifth entry.)
+- Q: How is Acceptance 3 ("no regression") decided across the three runs, for the wrong auto-accepts in particular? →
+  A: By majority per line for the 120-line, coolant and outside sets, with the per-run numbers reported alongside so
+  that the variance is visible (the author's decision of 2026-11-23). The top-1 counts of SC-003 and SC-004 were
+  already majority per line; SC-003's wrong auto-accepts, summed over the three runs until now (at most 9), are
+  counted per line: a line counts when it is auto-accepted with a wrong top-1 in at least 2 of its 3 runs, and the
+  after-run passes when that count is at most the baseline's, computed the same way from the stored rows of
+  iteration 21: 3 lines with the override off (IEBTIIENEN004-2024-BTI356, MTBTI2024-002 and MTBTI2025-011, each in
+  all three runs) and the same 3 with it on. SC-004's pass/fail stays; its wrong auto-accepts are reported per run and
+  as the per-line majority count. SC-001, SC-002 and SC-007 are flag criteria judged in every run, not Acceptance 3
+  scores, and are unchanged. For each set the report carries a per-run table (right, auto-accepted and wrong
+  auto-accepted per run, the override off and on) next to the majority-per-line results that decide pass or fail.
+- Q: In what order do the paid after-runs go, and what happens on a miss? → A: The author's staged approval of
+  2026-11-23, given at the approval step: the coolant set first (three runs); the outside set and the 120-line set
+  only if every coolant criterion holds (SC-001, SC-002, the original eight each right on majority, which is
+  SC-004's coolant half, and SC-007); the outside set next, then the 120-line set, and the 120-line set only if the
+  outside set is at least 12 of 14 right on majority (SC-004). Judged by majority per line, with the per-run numbers
+  in the report, under the $1.30 cap over everything, the tallies checked before each stage. On any miss the
+  implementation stops and reports per line (flag, route and top-1 per run, against the baseline) before spending
+  more: this replaces the automatic revision round of the third entry; no revision round runs without the author's
+  go-ahead. The commit of the results follows the stage reached: all three sets run, the result files, history
+  entries, re-rendered reports, eval-report.md and the backlog and README edits; a stop before that, the result files
+  and report of the sets that ran, the backlog and README outcome edits left for later.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -137,12 +164,12 @@ the shipped numbers in the pull request.
    the examples pass and no model is called.
 2. **Given** the approved estimate, **When** the three sets run three times each, **Then** the results meet SC-003 and
    SC-004 and the spend stays within the approval.
-3. **Given** a missed SC-001 or SC-002, whatever the state of SC-003, SC-004 and SC-007, **When** the results are
-   read, **Then** the examples are revised once and the three sets re-run within the approved budget, and the report
-   carries the SC-003/SC-004 line diff alongside (FR-007); **Given** SC-001 and SC-002 both holding and a missed
-   SC-003, SC-004 or SC-007, SC-007 alone included, **Then** nothing is re-run: the pull request reports the shortfall
-   with the line diff (which lines changed their top-1 against the baseline, and whether each one's vague flag changed
-   too), and the author decides whether to spend the one revision round or stop.
+3. **Given** the staged runs (the coolant set, then the outside set, then the 120-line set; clarification of
+   2026-11-23), **When** a stage misses any of its criteria (the coolant set: SC-001, SC-002, SC-004's coolant half or
+   SC-007; the outside set: SC-004; the 120-line set: SC-003), **Then** nothing more is run: the report carries the
+   miss per line (flag, route and top-1 per run against the baseline) and the line diff (which lines changed their
+   top-1 against the baseline, and whether each one's vague flag changed too), and the author decides whether a
+   revision round is spent or the feature stops (FR-007).
 4. **Given** the after-runs' rows, **When** the report is written, **Then** it lists, per set and per run, the lines
    flagged vague against the baseline runs, and names every line whose flag changed, coolant-4 to coolant-7 included.
 
@@ -195,11 +222,14 @@ the shipped numbers in the pull request.
   alloy bicycle frames"; vague "parts", "spare parts for machines", "electronic products", "furniture", "hardware",
   "gift", "accessories", "XK-200". Everything in the prompt other than the new Chinese sentence MUST stay byte for
   byte, the declaration that instructions inside the data block are void included.
-- **FR-003**: No example MAY be a coolant line (none contains 冷却液, 冷却, 切削, 润滑, 乳化, 防冻 or 油, or otherwise names a
+- **FR-003**: No Chinese example of FR-001 MAY be a coolant line (none contains 冷却液, 冷却, 切削, 润滑, 乳化, 防冻 or 油, or otherwise names a
   coolant, lubricant or cutting fluid), nor equal or contain a line of the 120-line evaluation set or its Chinese
   renderings, of the coolant set or of the outside set (their texts, original forms and Chinese and English halves).
-  Every example MUST pass the deterministic rule check against the shipped rule lists under `data/rules/` (no firm, ICS2
-  or alias term matches its goods name), so that each is a line the judgement would actually see. The exact-text
+  Every Chinese example of FR-001 MUST pass the deterministic rule check against the shipped rule lists under
+  `data/rules/` (no firm, ICS2 or alias term matches its goods name), so that each is a line the judgement would
+  actually see. The English examples are fixed by FR-002 as they stand and are outside these checks: five of the
+  vague ones ("parts", "spare parts for machines", "electronic products", "gift", "accessories") are listed terms the
+  rules flag before any judgement, as research R-02 records for the generic words. The exact-text
   check cannot fire against the English 120-line and outside sets, so "other goods" beyond exact or substring overlap
   is a judgement made when the examples are chosen and recorded in research R-02, not something a test enforces. The
   pairs of FR-001 were checked against all four files, the shipped rule lists and the test fixtures' rule lists on
@@ -212,8 +242,8 @@ the shipped numbers in the pull request.
   as literal substrings): each Chinese example of FR-001 present exactly once, the complete ones in the acceptable
   group and the vague ones in the vague group, in equal numbers; every English example of FR-002 present; the prompt
   without the Chinese sentence equal, byte for byte, to today's prompt (a stored SHA-256 of today's string); no
-  example containing a coolant word of FR-003 and none equal to a text of the four evaluation files; every example
-  passing the rule check of FR-003 against the shipped rule lists.
+  Chinese example containing a coolant word of FR-003 and none equal to or containing a text of the four evaluation
+  files (FR-003's direction); every Chinese example passing the rule check of FR-003 against the shipped rule lists.
 - **FR-006**: After the change, the three evaluation sets MUST be run three times each with the configured chat model
   and the project's evaluation settings (reasoning off, query expansion off, customs wording off, threshold 85, floor
   0.40, the precedent override off in the recorded measures and replayed on), on the rebuilt store of every chapter,
@@ -222,23 +252,26 @@ the shipped numbers in the pull request.
   original eight lines and not counted in their 8 of 8.
 - **FR-007**: Before the first paid run the cost MUST be estimated from the closest comparable runs (the 120-line,
   coolant and outside runs of 2026-11-19) and approved by the author under the 2x rule; the spend MUST be read from the
-  key's usage and reported against the approval. If SC-001 or SC-002 fails, the examples MAY be revised once, under
+  key's usage and reported against the approval. The runs are staged (the author's approval of 2026-11-23): the
+  coolant set first, three runs; the outside set only if every coolant criterion holds (SC-001, SC-002, the original
+  eight each right on majority, SC-007); the 120-line set only if the outside set is at least 12 of 14 right on
+  majority; the $1.30 cap holds over everything and the tallies are checked before each stage. On any miss the
+  implementation MUST stop and report per line (flag, route and top-1 per run, against the baseline) before spending
+  more; no revision round runs without the author's go-ahead. With it, the examples MAY be revised once, under
   FR-001's rules (four pairs; complete = goods + use + material; vague = a bare generic category term), with FR-001's
-  table updated and FR-002 to FR-004 unchanged, and the three sets re-run within the 2x margin without a fresh
-  approval; a second failure stops the feature and the author decides. Precedence of the verdicts (clarification 3
-  read as given: the pre-approved revision round covers Acceptance 1 and 2, SC-001 and SC-002, and nothing else): a
-  missed SC-001 or SC-002 always spends the pre-approved revision round, whatever the state of SC-003, SC-004 and
-  SC-007, and the report carries the SC-003/SC-004 line diff alongside it so that the author sees both; the
-  stop-and-ask branch (the line diff, then the author decides whether to spend the round or stop) applies only when
-  SC-001 and SC-002 both hold and SC-003, SC-004 or SC-007 misses, SC-007 alone included; a missed SC-007 never spends
-  the round by itself. The line diff lists every line whose majority top-1 differs from the baseline run's and whether
+  table updated and FR-002 to FR-004 unchanged, and the sets re-run in the same stages within the cap; a second
+  failure stops the feature and the author decides. The report carries the line diff with every miss. The line diff
+  lists every line whose majority top-1 differs from the baseline run's and whether
   its vague flag changed in any run; a top-1 change counts as run-to-run noise only on a line whose three baseline
   runs already disagreed among themselves (120-line set: MTBTI2025-018, XIBTI505060394, IEBTIIENEN004-2026-BTI72,
   IEBTIIENEN004-2026-BTI71; outside set: FRBTIFR-BTI-2026-00308; none in the coolant set), and any other top-1 change
   on a line whose flag did not change is reported as "not attributable: flag unchanged, reason text not recorded".
-- **FR-008**: The pull request MUST report, per set, the comparison with the shipped numbers of the Background:
-  majority top-1, top-1 per run, auto-accepted and wrong auto-accepted per run (the coolant set's per-run counts
-  without coolant-9, or naming it), and, for coolant-1, -2, -3, -8 and the live-test line, the flag and route per run.
+- **FR-008**: The pull request MUST report, per set, the comparison with the shipped numbers of the Background: the
+  results by majority per line that decide pass or fail (majority top-1, and the wrong auto-accepts counted per line
+  by majority as SC-003 counts them) with, next to them, a per-run table of right, auto-accepted and wrong
+  auto-accepted per run, each with the precedent override off and on, so that the variance is visible (clarification
+  of 2026-11-23); the coolant set's counts without coolant-9, or naming it, coolant-9 kept separate from the original
+  eight; and, for coolant-1, -2, -3, -8 and the live-test line, the flag and route per run.
   It MUST also list, per set and per run, the lines flagged vague, against the baseline runs (the 120-line set's
   iteration 21: IEBTIIENEN004-2023-BTI572, IEBTIIENEN004-2025-BTI249, IEBTIIENEN004-2026-BTI105,
   IEBTIIENEN004-2026-BTI124 and XIBTI505068566 in every run; the outside set's iteration 1: none; the coolant set's
@@ -254,15 +287,22 @@ the shipped numbers in the pull request.
   review), never ask the shipper.
 - **SC-002**: In the after-runs, coolant-1, coolant-2 and coolant-8 (冷却液) are flagged vague in every run and routed to
   ask the shipper in every run.
-- **SC-003**: The 120-line set's majority top-1 is at least 77 of 120 and its wrong auto-accepts summed over the three
-  runs are at most 9, with the precedent override off (and reported with it on), against 77 and 9 today. This is the
+- **SC-003**: The 120-line set's majority top-1 is at least 77 of 120, and its wrong auto-accepts counted per line by
+  majority (a line counts when it is auto-accepted with a wrong top-1 in at least 2 of its 3 runs) are at most the
+  baseline's count computed the same way from the rows of iteration 21: 3 lines (IEBTIIENEN004-2024-BTI356,
+  MTBTI2024-002 and MTBTI2025-011, each in all three runs). Pass or fail is judged with the precedent override off, as
+  today, against 77 and 3; the override-on numbers (majority top-1 80 and the same 3 lines today) are computed the same
+  way from each row's override-on block and reported alongside. The wrong auto-accepts per run (3 / 3 / 3 today, off
+  and on) are reported next to the count and never summed into a criterion (clarification of 2026-11-23). This is the
   requirement's Acceptance 3, whose "(SC-004)" names feature 014a's SC-004 (wrong auto-accepts not above the
   baseline's), not this specification's SC-004.
 - **SC-004**: The coolant set's original eight lines are each right on majority, read from the run summary's per-line
   entries (`lines`: `id`, `majority`, `right`) for coolant-1 to coolant-8, not from the set-wide counts, which include
   coolant-9 once it exists (coolant-9 is reported alongside them under SC-001, never in their count); the outside set
-  is at least 12 of 14 right on majority. Their wrong auto-accepts per run are reported against today's 0 / 0 / 0 and
-  0 / 1 / 1, the coolant set's computed without coolant-9 or naming it.
+  is at least 12 of 14 right on majority. Their wrong auto-accepts are reported, not judged: per run against today's
+  0 / 0 / 0 and 0 / 1 / 1, and as the per-line majority count of SC-003 against today's 0 and 1
+  (FRBTIFR-BTI-2026-00308, in 2 of its 3 runs), with the override off and on; the coolant set's computed without
+  coolant-9 or naming it.
 - **SC-005**: The offline suite passes without an API key with the tests of FR-005 in it, and no test of this feature
   calls a model.
 - **SC-006**: The paid runs' spend is within twice the approved estimate, and the approval precedes the first paid call.
@@ -298,19 +338,19 @@ the shipped numbers in the pull request.
   author, clarification of 2026-11-23).
 - **Per-run flags.** SC-001 and SC-002 hold on all three runs (confirmed by the author, clarification of 2026-11-23);
   the judgement was stable on these lines in all 15 stored runs, so a flip is a finding, not noise to average away.
-  The top-1 counts of SC-003 and SC-004 keep the majority of three.
-- **One revision round.** If SC-001 or SC-002 fails, the examples may be revised once, under FR-001's rules (four
-  pairs; complete = goods + use + material; vague = a bare generic category term), with FR-001's table updated and
-  FR-002 to FR-004 unchanged, and the three sets re-run within the 2x margin of the approved estimate, with no fresh
-  approval; a second failure stops the feature and the author decides (confirmed by the author, clarification of
-  2026-11-23). Precedence of the verdicts (clarification 3 read as given: the pre-approved revision round covers
-  Acceptance 1 and 2, SC-001 and SC-002, and nothing else): a missed SC-001 or SC-002 always spends the pre-approved
-  revision round, whatever the state of SC-003, SC-004 and SC-007, and the report carries the SC-003/SC-004 line diff
-  alongside it so that the author sees both; the stop-and-ask branch (the line diff, then the author decides whether
-  to spend the round or stop) applies only when SC-001 and SC-002 both hold and SC-003, SC-004 or SC-007 misses,
-  SC-007 alone included; a missed SC-007 never spends the round by itself (FR-007).
+  The top-1 counts of SC-003 and SC-004 keep the majority of three, and so does SC-003's wrong auto-accept count
+  (clarification of 2026-11-23), with the per-run numbers reported alongside.
+- **Staged runs, no automatic revision round.** Clarification 3 of 2026-11-23 allowed one revision round within the
+  2x margin on a missed SC-001 or SC-002 without a fresh ask; the author's staged approval of the same day, given at
+  the approval step (clarification 5), supersedes it: the coolant set runs first, the outside set only if every
+  coolant criterion holds, the 120-line set only if the outside set holds too, and on any miss the implementation
+  stops and reports per line before spending more. A revision round (the examples revised once under FR-001's rules,
+  FR-001's table updated, FR-002 to FR-004 unchanged, the sets re-run in the same stages within the $1.30 cap) needs
+  the author's go-ahead; a second failure stops the feature and the author decides (FR-007).
 - **No new baseline run.** The shipped numbers of iterations 21, 9 and 1 are the baseline: the same model, store and
-  settings; run-to-run noise of one or two lines on the 120-line set is known, and SC-003's thresholds are absolute.
+  settings; run-to-run noise of one or two lines on the 120-line set is known, and SC-003's thresholds are absolute
+  (77 right and 3 wrong auto-accepts by majority per line, the latter read from the stored rows of iteration 21 without
+  a model call).
 - **Model, store and settings** are the shipped ones: Gemini 2.5 Flash with reasoning off, the rebuilt store of every
   chapter (123,531 rulings, extract of 2026-11-18), the evaluation flags of FR-006.
 - **Out of scope**: the UI points of backlog item 17 (block 1's "Stop-word check" label, the vagueness reason in place
