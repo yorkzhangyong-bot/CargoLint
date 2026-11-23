@@ -228,8 +228,14 @@ the record (spec FR-006 to FR-008, SC-001 to SC-004, SC-006, SC-007; User Story 
   coolant-4 to -7 with their flag per run (SC-007), the summary's `lines` entries of coolant-1 to coolant-8 (`right`
   for each: SC-004's coolant verdict, never the set-wide `majority_top1`, which counts coolant-9), and the per-run
   counts of the original eight recomputed from the rows without coolant-9 against iteration 9's 0 / 0 / 0; SC-003
-  from the 120-line summary (`majority_top1`, `wrong_auto_runs`, the `on` block) and the outside set's `lines`
-  entries (SC-004); per set and per run, the references flagged vague, compared with the baseline files
+  from the 120-line summary (`majority_top1`, the `on` block's `majority_top1`) and its rows: the wrong auto-accepts
+  counted per line by majority (a line counts when `route` is `auto_accept` and `hit` is false in at least 2 of its 3
+  runs; for the override on, the row's `on` block's `route` and `hit`), against the baseline's 3 lines
+  (IEBTIIENEN004-2024-BTI356, MTBTI2024-002, MTBTI2025-011; the same 3 with the override on), with the per-run counts
+  (`wrong_auto_runs`, the `on` block's) next to it, never summed; the same per-line count for the coolant set without
+  coolant-9 and for the outside set, reported against 0 and 1 (FRBTIFR-BTI-2026-00308), and the outside set's `lines`
+  entries (SC-004; the author's decision of 2026-11-23, the snippet's `per_line`); per set and per run, the
+  references flagged vague, compared with the baseline files
   (`tests/eval/hs6_eval_014a-rule-a.json`: IEBTIIENEN004-2023-BTI572, IEBTIIENEN004-2025-BTI249,
   IEBTIIENEN004-2026-BTI105, IEBTIIENEN004-2026-BTI124, XIBTI505068566 in every run;
   `tests/eval/hs6_eval_outside_014a-a_en_expansion-off_wording-off.json`: none;
@@ -247,7 +253,9 @@ the record (spec FR-006 to FR-008, SC-001 to SC-004, SC-006, SC-007; User Story 
   iteration 9 for the coolant set, iteration 1 for the outside set; the typed sets' majorities from the summary's
   `lines` entries, the 120-line set's computed from the rows with the evaluation's own `majority` helper,
   `tests/eval/cn8_eval.py` line 131, a tie going to the earliest run, as the 120-line summary has no per-line
-  entries), its baseline and after top-1 per run, and whether its vague flag changed in any run; mark a top-1 change
+  entries), its baseline and after top-1 per run, and whether its vague flag changed in any run; when SC-003's wrong
+  auto-accept count missed, the lines that count by majority per line (auto-accepted and wrong in at least 2 of 3
+  runs) against the baseline's three, with each one's route and top-1 per run; mark a top-1 change
   as run-to-run noise only on a line whose three baseline runs already disagreed among themselves (120-line set:
   MTBTI2025-018, XIBTI505060394, IEBTIIENEN004-2026-BTI72, IEBTIIENEN004-2026-BTI71; outside set:
   FRBTIFR-BTI-2026-00308; none in the coolant set), and any other top-1 change on a line whose flag did not change as
@@ -274,9 +282,13 @@ the record (spec FR-006 to FR-008, SC-001 to SC-004, SC-006, SC-007; User Story 
   then repeat T016's environment check (names only) and its three commands with `--tag 017-after-2`, then T017. A
   second failure stops the feature: report the lines and the author decides
 - [ ] T020 [US3] Write `specs/017-coolant-vague-chinese-examples/eval-report.md` (spec FR-008): per set, the shipped
-  numbers against the after-run (majority top-1, top-1 per run, auto-accepted and wrong auto-accepted per run, cost by
-  the tallies; the override off and from the `on` block; the coolant set's per-run counts without coolant-9, or naming
-  it), the baseline iterations named (120-line 21, coolant 9, outside 1) and the after-run files and iterations; the
+  numbers against the after-run: first the results by majority per line that decide pass or fail (majority top-1 and
+  the wrong auto-accepts counted per line by majority, against the baseline's 77 and 3, 8 of 8 and 0, 12 of 14 and 1),
+  then, next to them, a per-run table (right per run, auto-accepted per run and wrong auto-accepted per run), each the
+  override off and on (the `on` block and the rows' `on` fields), with the cost by the tallies; the coolant set's
+  counts without coolant-9, or naming it, coolant-9 in its own row apart from the original eight (the author's
+  decision of 2026-11-23); the baseline iterations named (120-line 21, coolant 9, outside 1) and the after-run files
+  and iterations; the
   coolant lines' flag, route and top-1 per run, coolant-9 alongside the original eight and coolant-4 to -7 included;
   the vague flags per set and per run against the baseline, with every line whose flag changed named; the verdict per
   success criterion SC-001 to SC-004 and SC-007; the line diff of T018 when it was written; the approval (date,

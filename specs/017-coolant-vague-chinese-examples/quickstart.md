@@ -79,6 +79,20 @@ print("original eight right:", sum(l["right"] for l in eight), "of", len(eight),
 for k, run in enumerate(d["runs"], 1):                                           # per-run counts without coolant-9
     rows = [r for r in run if r["reference"] != "coolant-9"]
     print(f"run {k}: auto {sum(r['route'] == 'auto_accept' for r in rows)}, wrong auto {sum(r['route'] == 'auto_accept' and not r['right'] for r in rows)}")
+def on_rows(run):                                                                # the override on: each row's `on` block
+    return [{**r, "top1": r["on"]["chosen"], "hit": r["on"]["hit"], "route": r["on"]["route"]} for r in run]
+def right(r):                                                                    # a coded line on its top-1, an "ask" line on its route
+    return r["route"] == r["expected_route"] if r.get("expected_route") else r["hit"]
+def wrong(r):                                                                    # auto-accepted and wrong
+    return r["route"] == "auto_accept" and not right(r)
+def per_line(runs):                                                              # SC-003's count: at least 2 of the 3 runs
+    return sorted(seen[0]["reference"] for seen in zip(*runs) if sum(wrong(r) for r in seen) >= 2)
+for path in ("tests/eval/hs6_eval_017-after_en_expansion-off_wording-off.json", after,
+             "tests/eval/hs6_eval_outside_017-after_en_expansion-off_wording-off.json"):
+    runs = [[r for r in run if r["reference"] != "coolant-9"] for run in json.load(open(path, encoding="utf-8"))["runs"]]
+    for switch, rs in (("off", runs), ("on", [on_rows(run) for run in runs])):      # majority per line, then per run
+        print(path, switch, "wrong auto by majority per line:", per_line(rs), "| per run: right", [sum(right(r) for r in run) for run in rs],
+              "auto", [sum(r["route"] == "auto_accept" for r in run) for run in rs], "wrong auto", [sum(wrong(r) for r in run) for run in rs])
 baselines = {"tests/eval/hs6_eval_017-after_en_expansion-off_wording-off.json": "tests/eval/hs6_eval_014a-rule-a.json",
              after: "tests/eval/hs6_eval_coolant_014a-rule-a.json",
              "tests/eval/hs6_eval_outside_017-after_en_expansion-off_wording-off.json": "tests/eval/hs6_eval_outside_014a-a_en_expansion-off_wording-off.json"}
@@ -91,10 +105,14 @@ EOF
 
 Expected (spec SC-001, SC-002, SC-007): coolant-3 and coolant-9 `ok` in every run with route `review` or
 `auto_accept`; coolant-1, coolant-2 and coolant-8 `vague` with route `ask_shipper` in every run; coolant-4 to -7 `ok`
-in every run. Expected for the summaries (SC-003, SC-004): the 120-line `majority_top1` at least 77 and
-`wrong_auto_runs` summing to at most 9 (the override off; the `on` block reported too); the original eight coolant
+in every run. Expected for the summaries and the rows (SC-003, SC-004): the 120-line `majority_top1` at least 77 and
+its wrong auto-accepts counted per line by majority (the snippet's `per_line`: a line counts when it is auto-accepted
+with a wrong top-1 in at least 2 of its 3 runs) at most 3, the baseline's count with the override off
+(IEBTIIENEN004-2024-BTI356, MTBTI2024-002, MTBTI2025-011; the override-on count, 3 today, and the per-run counts are
+reported alongside, never summed into a criterion: the author's decision of 2026-11-23); the original eight coolant
 lines each `right` in the summary's `lines` entries (never the set-wide `majority_top1`, which counts coolant-9); the
-outside set at least 12 of 14 right. The flag comparison names every line whose flag changed against the baseline runs
+outside set at least 12 of 14 right, both sets' per-line counts reported against 0 and 1. The flag comparison names
+every line whose flag changed against the baseline runs
 (120 lines: the same five lines flagged in every run; outside: none; coolant: coolant-1, -2, -3, -8 before).
 
 Precedence of the verdicts (clarification 3 read as given: the pre-approved revision round covers Acceptance 1 and 2,
@@ -124,9 +142,11 @@ report, and the author decides.
 
 ## 4. The record
 
-- `specs/017-coolant-vague-chinese-examples/eval-report.md`: the tables of spec FR-008 (per set: majority top-1,
-  top-1 per run, auto-accepted and wrong auto-accepted per run, cost; the coolant set's per-run counts without
-  coolant-9; the coolant lines' flag, route and top-1 per run, coolant-4 to -7 included; the vague flags per set and
+- `specs/017-coolant-vague-chinese-examples/eval-report.md`: the tables of spec FR-008 (per set: the results by
+  majority per line that decide pass or fail, majority top-1 and the wrong auto-accepts counted per line by majority,
+  with a per-run table of right, auto-accepted and wrong auto-accepted per run next to them, the override off and on,
+  and the cost; the coolant set's counts without coolant-9, coolant-9 in its own row; the coolant lines' flag, route
+  and top-1 per run, coolant-4 to -7 included; the vague flags per set and
   per run against the baseline with every changed line named; the line diff of §3 when one was written), with the
   results files, iterations, the approval and the spend by the key's usage against the $0.65 approval.
 - `docs/backlog.md` item 17 marked done with the numbers, its "Approach" and "Open decisions for the author" bullets

@@ -160,7 +160,11 @@ sets have them), so its majority per line is computed from the rows with the eva
 (`tests/eval/hs6_eval_017-after_en_expansion-off_wording-off.json`, `…_coolant_017-after_…`, `…_outside_017-after_…`)
 and the history entries, by hand: nine coolant rows and three sets of summary numbers do not need a renderer. SC-004's
 coolant verdict is read from the `lines` entries of coolant-1 to coolant-8; per-run counts compared with iteration 9
-are computed from the rows without coolant-9, or name it. Per set and per run, the report lists the lines flagged
+are computed from the rows without coolant-9, or name it. SC-003's wrong auto-accepts are counted per line by
+majority from the 120-line rows, the override off and on (the author's decision of 2026-11-23: a line counts when
+auto-accepted with a wrong top-1 in at least 2 of its 3 runs; the baseline's count, read from iteration 21's rows the
+same day, is 3 either way), with the per-run counts next to them, never summed. Per set and per run, the report
+lists the lines flagged
 vague against the baseline runs above and names every line whose flag changed, coolant-4 to -7 included (SC-007 gates
 those four). On a missed SC-003, SC-004 or SC-007 the report adds the line diff: each line whose majority top-1 differs
 from the baseline run's (the typed sets' majorities from the `lines` entries, the 120-line set's from the rows with

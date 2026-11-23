@@ -44,8 +44,16 @@ no `<set>_` part) holds `summary` (the history entry) and `runs`, three lists of
 
 - **Set-wide measures** of `summary`: `majority_top1`, `top1_runs`, `routes_runs`, `wrong_auto_runs`, `cost_usd`, the
   `on` block of the precedent override. They count every line of the set, so for the coolant set they include
-  coolant-9: SC-003 reads them for the 120-line set; the coolant set's per-run counts compared with iteration 9 are
-  recomputed from the rows without coolant-9, or name it.
+  coolant-9: SC-003's majority top-1 reads `majority_top1` for the 120-line set, and the per-run table of FR-008 reads
+  `top1_runs`, `routes_runs` and `wrong_auto_runs` (the override on: the `on` block's); the coolant set's per-run
+  counts compared with iteration 9 are recomputed from the rows without coolant-9, or name it.
+- **Wrong auto-accepts by majority per line** (SC-003's count; the author's decision of 2026-11-23): computed from the
+  rows, not the summary, which has no per-line entries for the 120-line set. A line counts when it is auto-accepted
+  with a wrong top-1 (`route` `auto_accept` and `hit` false; for a line expecting a route, `route` not the expected
+  one) in at least 2 of its 3 runs; with the override on, the row's `on` block's `route` and `hit` replace its own.
+  Baseline counts from the stored rows: the 120-line set 3 with the override off (IEBTIIENEN004-2024-BTI356,
+  MTBTI2024-002, MTBTI2025-011, each in all three runs) and the same 3 on; the coolant set 0 and 0; the outside set 1
+  and 1 (FRBTIFR-BTI-2026-00308, in 2 of its 3 runs). The per-run counts are reported next to it, never summed.
 - **Per-line entries** `summary["lines"]`: `id`, `expected`, `majority`, `right`, and `seen` (each run's `top1` and
   `route`). SC-004's coolant verdict reads `right` of coolant-1 to coolant-8 from here; the outside set's verdict reads
   its 14 entries.

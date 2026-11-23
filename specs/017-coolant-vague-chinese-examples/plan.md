@@ -27,7 +27,9 @@ The vagueness judgement's prompt gains one sentence of Chinese examples; nothing
 - **The after-runs** (spec FR-006, FR-007): the 120-line, coolant and outside sets, three runs each, with the
   configured model and the evaluation's settings, after the author's approval of the $0.65 estimate (below) and with
   none of the six overrides T016 checks by name in the environment. The flags of coolant-1, -2, -3, -8 and -9 are read
-  per run from the runs' own files; SC-004's coolant verdict from the summary's per-line entries of coolant-1 to -8;
+  per run from the runs' own files; SC-003's wrong auto-accepts are counted per line by majority from the 120-line
+  rows, the override off and on, against the baseline's 3 lines (the author's decision of 2026-11-23, with the per-run
+  numbers reported alongside); SC-004's coolant verdict from the summary's per-line entries of coolant-1 to -8;
   every set's vague flags per run are compared with the baseline runs (research R-06). A missed SC-001 or SC-002
   spends the one revision round, whatever SC-003, SC-004 and SC-007 show; with SC-001 and SC-002 holding, a missed
   SC-003, SC-004 or SC-007 stops with a line diff for the author (spec FR-007).
@@ -137,9 +139,25 @@ rebuilt store, Gemini 2.5 Flash with reasoning off, three runs each, query expan
   coolant-8 (`id`, `majority`, `right`), never from the set-wide counts, which include coolant-9; per-run counts
   compared with iteration 9 computed from the rows without coolant-9, or naming it; the summaries' majority top-1,
   top-1 per run, auto-accepted and wrong auto-accepted per run for the three sets, the override off and from the `on`
-  block; per set and per run the lines flagged vague against the baseline runs (120-line iteration 21: five named
-  lines in every run; outside iteration 1: none; coolant iteration 9: coolant-1, -2, -3, -8), naming every line whose
-  flag changed, coolant-4 to -7 included (SC-007). No model call and no new script (research R-06).
+  block; SC-003's wrong auto-accept count per line by majority, computed from the 120-line rows (a line counts when
+  `route` is `auto_accept` and `hit` is false in at least 2 of its 3 runs; for the override on, the row's `on` block's
+  `route` and `hit`), against the baseline's 3 lines, and the same count for the coolant set without coolant-9 and
+  the outside set, reported against 0 and 1 (the table below; spec SC-003, SC-004, clarification of 2026-11-23); per
+  set and per run the lines flagged vague against the baseline runs (120-line iteration 21: five named lines in every
+  run; outside iteration 1: none; coolant iteration 9: coolant-1, -2, -3, -8), naming every line whose flag changed,
+  coolant-4 to -7 included (SC-007). No model call and no new script (research R-06).
+- **The baseline counts by majority per line** (the author's decision of 2026-11-23, computed offline from the stored
+  rows the same day, no model call): a line counts when it is auto-accepted with a wrong top-1 in at least 2 of its 3
+  runs. SC-003 passes when the 120-line after-run's count with the override off is at most 3 and its majority top-1 at
+  least 77; the coolant and outside counts are reported, not judged (SC-004). For each set the report puts a per-run
+  table (right, auto-accepted and wrong auto-accepted per run, the override off and on) next to the majority-per-line
+  results, coolant-9 apart from the original eight.
+
+  | Baseline | Wrong auto-accepts per run | By majority per line, override off | Override on |
+  |---|---|---|---|
+  | 120-line, iteration 21 (`tests/eval/hs6_eval_014a-rule-a.json`) | 3 / 3 / 3 (off and on) | 3: IEBTIIENEN004-2024-BTI356, MTBTI2024-002, MTBTI2025-011, each in all three runs | 3, the same lines |
+  | coolant, iteration 9 (`tests/eval/hs6_eval_coolant_014a-rule-a.json`) | 0 / 0 / 0 | 0 | 0 |
+  | outside, iteration 1 (`tests/eval/hs6_eval_outside_014a-a_en_expansion-off_wording-off.json`) | 0 / 1 / 1 | 1: FRBTIFR-BTI-2026-00308, in runs 2 and 3 | 1, the same line |
 - **Precedence of the verdicts** (clarification 3 read as given: the pre-approved revision round covers Acceptance 1
   and 2, SC-001 and SC-002, and nothing else): a missed SC-001 or SC-002 always spends the pre-approved revision round,
   whatever the state of SC-003, SC-004 and SC-007, and the report carries the SC-003/SC-004 line diff alongside it so
