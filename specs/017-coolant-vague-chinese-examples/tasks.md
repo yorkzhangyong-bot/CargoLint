@@ -152,16 +152,16 @@ green; the vague group of `chinese_groups(JUDGEMENT_SYSTEM)` equals `ZH_VAGUE`.
 
 ### Tests for User Story 2 (write first, see them fail)
 
-- [ ] T010 [US2] Tests in `tests/unit/test_judgement_examples.py`: `test_the_chinese_vague_examples_are_the_spec_pairs`
+- [X] T010 [US2] Tests in `tests/unit/test_judgement_examples.py`: `test_the_chinese_vague_examples_are_the_spec_pairs`
   (the vague group equals `set(ZH_VAGUE)`, four members, each once) and `test_the_chinese_examples_come_in_equal_numbers`
   (`len(acceptable) == len(vague) == 4`); both `017/FR-001`; fail while the vague group is absent
-- [ ] T011 [P] [US2] Tests in `tests/unit/test_judgement_examples.py`: `test_no_example_is_a_coolant_or_evaluation_line`
+- [X] T011 [P] [US2] Tests in `tests/unit/test_judgement_examples.py`: `test_no_example_is_a_coolant_or_evaluation_line`
   (no member of either group contains any of `COOLANT_WORDS`; no normalised member equals or contains any string of
   `evaluation_texts()`, that direction only, as spec FR-003 says; `017/FR-003`) and `test_every_chinese_example_reaches_the_judgement`
   (`check_rules(text, "", SHIPPED_RULES) is None` for every member of both groups, the fixture rule set of the `rules`
   fixture optionally too; `017/FR-003`, `017/FR-005`); both assert four members per group first, so they fail while
   the vague group is absent
-- [ ] T012 [P] [US2] Test in `tests/integration/test_check_description.py`:
+- [X] T012 [P] [US2] Test in `tests/integration/test_check_description.py`:
   `test_a_vague_chinese_line_judged_vague_asks_for_the_three_facts` (`017/FR-004`, User Story 2 scenario 1): record
   `fake_llm.recorded.setdefault("JudgementOut", {})["冷却液"] = {"vague": True, "missing": ["use"], "reason": "coolant
   alone: engine or metal-working"}`, run `check_descriptions` on `_line(1, "冷却液", "")`, assert `flag.kind ==
@@ -171,7 +171,7 @@ green; the vague group of `chinese_groups(JUDGEMENT_SYSTEM)` equals `ZH_VAGUE`.
 
 ### Implementation for User Story 2
 
-- [ ] T013 [US2] In `tools/check_description.py`, complete the Chinese sentence of T008 so that, whitespace-normalised,
+- [X] T013 [US2] In `tools/check_description.py`, complete the Chinese sentence of T008 so that, whitespace-normalised,
   it reads `Examples in Chinese - acceptable: "铝合金折叠梯，家用", "陶瓷地砖，室内地面用", "儿童用的塑料餐具，不含双酚A",
   "橡胶密封垫片，水管接头用"; vague: "金属件", "建材", "日用百货", "零部件".` (wrapped only at a space between items; the sentence
   still its own source line or lines before `The description is inside`); nothing else changes (spec FR-001, FR-004);
@@ -191,7 +191,7 @@ the record (spec FR-006 to FR-008, SC-001 to SC-004, SC-006, SC-007; User Story 
 **Independent Test**: `eval-report.md` holds every table of spec FR-008 with its source files named, and
 `scripts/check_traceability.py` passes for feature 017.
 
-- [ ] T014 [US3] Write `specs/017-coolant-vague-chinese-examples/traceability.md` (the pattern of
+- [X] T014 [US3] Write `specs/017-coolant-vague-chinese-examples/traceability.md` (the pattern of
   `specs/014a-retrieval-evidence/traceability.md`): one line per requirement no offline test checks, `017/FR-006:
   <reason>`, `017/FR-007`, `017/FR-008`, `017/SC-001`, `017/SC-002`, `017/SC-003`, `017/SC-004`, `017/SC-006`,
   `017/SC-007` (evaluation results, the approval, documentation; each naming the file or report section that holds
