@@ -73,7 +73,8 @@ What the app does today, checked against `public/main` at 1b3a832 on 2026-11-23:
   within the 2x margin of the approved estimate, or must the feature stop after the first failure? → A: One revision
   round within the 2x margin, under the same constraints (prompt examples only, goods outside the sets, equal pairs);
   a second failure stops the feature and reports to the author. Staying inside a budget the author pre-approved needs
-  no fresh ask, as the 2x rule has worked throughout the project; one round keeps the extra work bounded.
+  no fresh ask, as the 2x rule has worked throughout the project; one round keeps the extra work bounded. (Superseded
+  the same day by the staged approval, the fifth entry.)
 - Q: How is Acceptance 3 ("no regression") decided across the three runs, for the wrong auto-accepts in particular? →
   A: By majority per line for the 120-line, coolant and outside sets, with the per-run numbers reported alongside so
   that the variance is visible (the author's decision of 2026-11-23). The top-1 counts of SC-003 and SC-004 were
@@ -85,6 +86,17 @@ What the app does today, checked against `public/main` at 1b3a832 on 2026-11-23:
   as the per-line majority count. SC-001, SC-002 and SC-007 are flag criteria judged in every run, not Acceptance 3
   scores, and are unchanged. For each set the report carries a per-run table (right, auto-accepted and wrong
   auto-accepted per run, the override off and on) next to the majority-per-line results that decide pass or fail.
+- Q: In what order do the paid after-runs go, and what happens on a miss? → A: The author's staged approval of
+  2026-11-23, given at the approval step: the coolant set first (three runs); the outside set and the 120-line set
+  only if every coolant criterion holds (SC-001, SC-002, the original eight each right on majority, which is
+  SC-004's coolant half, and SC-007); the outside set next, then the 120-line set, and the 120-line set only if the
+  outside set is at least 12 of 14 right on majority (SC-004). Judged by majority per line, with the per-run numbers
+  in the report, under the $1.30 cap over everything, the tallies checked before each stage. On any miss the
+  implementation stops and reports per line (flag, route and top-1 per run, against the baseline) before spending
+  more: this replaces the automatic revision round of the third entry; no revision round runs without the author's
+  go-ahead. The commit of the results follows the stage reached: all three sets run, the result files, history
+  entries, re-rendered reports, eval-report.md and the backlog and README edits; a stop before that, the result files
+  and report of the sets that ran, the backlog and README outcome edits left for later.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -152,12 +164,12 @@ the shipped numbers in the pull request.
    the examples pass and no model is called.
 2. **Given** the approved estimate, **When** the three sets run three times each, **Then** the results meet SC-003 and
    SC-004 and the spend stays within the approval.
-3. **Given** a missed SC-001 or SC-002, whatever the state of SC-003, SC-004 and SC-007, **When** the results are
-   read, **Then** the examples are revised once and the three sets re-run within the approved budget, and the report
-   carries the SC-003/SC-004 line diff alongside (FR-007); **Given** SC-001 and SC-002 both holding and a missed
-   SC-003, SC-004 or SC-007, SC-007 alone included, **Then** nothing is re-run: the pull request reports the shortfall
-   with the line diff (which lines changed their top-1 against the baseline, and whether each one's vague flag changed
-   too), and the author decides whether to spend the one revision round or stop.
+3. **Given** the staged runs (the coolant set, then the outside set, then the 120-line set; clarification of
+   2026-11-23), **When** a stage misses any of its criteria (the coolant set: SC-001, SC-002, SC-004's coolant half or
+   SC-007; the outside set: SC-004; the 120-line set: SC-003), **Then** nothing more is run: the report carries the
+   miss per line (flag, route and top-1 per run against the baseline) and the line diff (which lines changed their
+   top-1 against the baseline, and whether each one's vague flag changed too), and the author decides whether a
+   revision round is spent or the feature stops (FR-007).
 4. **Given** the after-runs' rows, **When** the report is written, **Then** it lists, per set and per run, the lines
    flagged vague against the baseline runs, and names every line whose flag changed, coolant-4 to coolant-7 included.
 
@@ -240,16 +252,16 @@ the shipped numbers in the pull request.
   original eight lines and not counted in their 8 of 8.
 - **FR-007**: Before the first paid run the cost MUST be estimated from the closest comparable runs (the 120-line,
   coolant and outside runs of 2026-11-19) and approved by the author under the 2x rule; the spend MUST be read from the
-  key's usage and reported against the approval. If SC-001 or SC-002 fails, the examples MAY be revised once, under
+  key's usage and reported against the approval. The runs are staged (the author's approval of 2026-11-23): the
+  coolant set first, three runs; the outside set only if every coolant criterion holds (SC-001, SC-002, the original
+  eight each right on majority, SC-007); the 120-line set only if the outside set is at least 12 of 14 right on
+  majority; the $1.30 cap holds over everything and the tallies are checked before each stage. On any miss the
+  implementation MUST stop and report per line (flag, route and top-1 per run, against the baseline) before spending
+  more; no revision round runs without the author's go-ahead. With it, the examples MAY be revised once, under
   FR-001's rules (four pairs; complete = goods + use + material; vague = a bare generic category term), with FR-001's
-  table updated and FR-002 to FR-004 unchanged, and the three sets re-run within the 2x margin without a fresh
-  approval; a second failure stops the feature and the author decides. Precedence of the verdicts (clarification 3
-  read as given: the pre-approved revision round covers Acceptance 1 and 2, SC-001 and SC-002, and nothing else): a
-  missed SC-001 or SC-002 always spends the pre-approved revision round, whatever the state of SC-003, SC-004 and
-  SC-007, and the report carries the SC-003/SC-004 line diff alongside it so that the author sees both; the
-  stop-and-ask branch (the line diff, then the author decides whether to spend the round or stop) applies only when
-  SC-001 and SC-002 both hold and SC-003, SC-004 or SC-007 misses, SC-007 alone included; a missed SC-007 never spends
-  the round by itself. The line diff lists every line whose majority top-1 differs from the baseline run's and whether
+  table updated and FR-002 to FR-004 unchanged, and the sets re-run in the same stages within the cap; a second
+  failure stops the feature and the author decides. The report carries the line diff with every miss. The line diff
+  lists every line whose majority top-1 differs from the baseline run's and whether
   its vague flag changed in any run; a top-1 change counts as run-to-run noise only on a line whose three baseline
   runs already disagreed among themselves (120-line set: MTBTI2025-018, XIBTI505060394, IEBTIIENEN004-2026-BTI72,
   IEBTIIENEN004-2026-BTI71; outside set: FRBTIFR-BTI-2026-00308; none in the coolant set), and any other top-1 change
@@ -328,16 +340,13 @@ the shipped numbers in the pull request.
   the judgement was stable on these lines in all 15 stored runs, so a flip is a finding, not noise to average away.
   The top-1 counts of SC-003 and SC-004 keep the majority of three, and so does SC-003's wrong auto-accept count
   (clarification of 2026-11-23), with the per-run numbers reported alongside.
-- **One revision round.** If SC-001 or SC-002 fails, the examples may be revised once, under FR-001's rules (four
-  pairs; complete = goods + use + material; vague = a bare generic category term), with FR-001's table updated and
-  FR-002 to FR-004 unchanged, and the three sets re-run within the 2x margin of the approved estimate, with no fresh
-  approval; a second failure stops the feature and the author decides (confirmed by the author, clarification of
-  2026-11-23). Precedence of the verdicts (clarification 3 read as given: the pre-approved revision round covers
-  Acceptance 1 and 2, SC-001 and SC-002, and nothing else): a missed SC-001 or SC-002 always spends the pre-approved
-  revision round, whatever the state of SC-003, SC-004 and SC-007, and the report carries the SC-003/SC-004 line diff
-  alongside it so that the author sees both; the stop-and-ask branch (the line diff, then the author decides whether
-  to spend the round or stop) applies only when SC-001 and SC-002 both hold and SC-003, SC-004 or SC-007 misses,
-  SC-007 alone included; a missed SC-007 never spends the round by itself (FR-007).
+- **Staged runs, no automatic revision round.** Clarification 3 of 2026-11-23 allowed one revision round within the
+  2x margin on a missed SC-001 or SC-002 without a fresh ask; the author's staged approval of the same day, given at
+  the approval step (clarification 5), supersedes it: the coolant set runs first, the outside set only if every
+  coolant criterion holds, the 120-line set only if the outside set holds too, and on any miss the implementation
+  stops and reports per line before spending more. A revision round (the examples revised once under FR-001's rules,
+  FR-001's table updated, FR-002 to FR-004 unchanged, the sets re-run in the same stages within the $1.30 cap) needs
+  the author's go-ahead; a second failure stops the feature and the author decides (FR-007).
 - **No new baseline run.** The shipped numbers of iterations 21, 9 and 1 are the baseline: the same model, store and
   settings; run-to-run noise of one or two lines on the 120-line set is known, and SC-003's thresholds are absolute
   (77 right and 3 wrong auto-accepts by majority per line, the latter read from the stored rows of iteration 21 without

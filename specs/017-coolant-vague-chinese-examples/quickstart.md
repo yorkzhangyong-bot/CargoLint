@@ -46,10 +46,15 @@ environment, checked by variable name only, never by value (`CARGOLINT_APP_PASSW
 ```bash
 env | cut -d= -f1 | grep -iE '^CARGOLINT_(CHAT_MODEL|REASONING|EMBED_MODEL|STRUCTURED_METHOD|HS6_OVERRIDE|EBTI_CHAPTERS)$'   # must print nothing
 curl -s https://openrouter.ai/api/v1/key -H "Authorization: Bearer $OPENROUTER_API_KEY" | .venv/Scripts/python -c "import json, sys; print(json.load(sys.stdin)['data']['usage'])"   # the key's usage (USD) before the first paid call; the key only in the header, never printed
-.venv/Scripts/python tests/eval/hs6_eval.py --repeat 3 --tag 017-after --expansion off --customs-wording off
-.venv/Scripts/python tests/eval/hs6_eval.py --set coolant --repeat 3 --tag 017-after --expansion off --customs-wording off
-.venv/Scripts/python tests/eval/hs6_eval.py --set outside --repeat 3 --tag 017-after --expansion off --customs-wording off
+.venv/Scripts/python tests/eval/hs6_eval.py --set coolant --repeat 3 --tag 017-after --expansion off --customs-wording off   # stage 1
+.venv/Scripts/python tests/eval/hs6_eval.py --set outside --repeat 3 --tag 017-after --expansion off --customs-wording off   # stage 2, only when stage 1 held
+.venv/Scripts/python tests/eval/hs6_eval.py --repeat 3 --tag 017-after --expansion off --customs-wording off                 # stage 3, only when stage 2 held
 ```
+
+The stages are the author's approval of 2026-11-23 (spec clarification 5): read each stage's results before the next
+with the snippet below; the outside set runs only when every coolant criterion holds (SC-001, SC-002, coolant-1 to -8
+each right on majority, SC-007), the 120-line set only when the outside set is at least 12 of 14 right on majority;
+before each stage the tallies so far plus the stage's estimate must stay within $1.30.
 
 The defaults then apply: Gemini 2.5 Flash, reasoning off, the shipped embedding model and structured-output method,
 the override on, every chapter. The other `CARGOLINT_*` variables need no check: the command's own `--expansion off`
@@ -118,30 +123,24 @@ outside set at least 12 of 14 right, both sets' per-line counts reported against
 every line whose flag changed against the baseline runs
 (120 lines: the same five lines flagged in every run; outside: none; coolant: coolant-1, -2, -3, -8 before).
 
-Precedence of the verdicts (clarification 3 read as given: the pre-approved revision round covers Acceptance 1 and 2,
-SC-001 and SC-002, and nothing else): a missed SC-001 or SC-002 always spends the pre-approved revision round, whatever
-the state of SC-003, SC-004 and SC-007, and the report carries the SC-003/SC-004 line diff alongside it so that the
-author sees both; the stop-and-ask branch (the line diff, then the author decides whether to spend the round or stop)
-applies only when SC-001 and SC-002 both hold and SC-003, SC-004 or SC-007 misses, SC-007 alone included; a missed
-SC-007 never spends the round by itself.
+On any miss in any stage (the coolant set: SC-001, SC-002, the original eight each right on majority, SC-007; the
+outside set: SC-004; the 120-line set: SC-003): stop; nothing more is run, and no revision round runs without the
+author's go-ahead (the staged approval of 2026-11-23, which replaces the automatic revision round of clarification
+3). Report the miss per line (flag, route and top-1 per run against the baseline) and write the line diff (each line
+whose majority top-1 differs from the baseline run's, with its top-1 per run and whether its flag changed in any run;
+the typed sets' majorities from the summary's `lines` entries, the 120-line set's from the rows with the evaluation's
+own `majority` helper; a top-1 change is noise only on a line whose three baseline runs already disagreed, 120-line
+set MTBTI2025-018, XIBTI505060394, IEBTIIENEN004-2026-BTI72 and IEBTIIENEN004-2026-BTI71, outside set
+FRBTIFR-BTI-2026-00308, none in the coolant set; any other top-1 change on a line whose flag did not change is "not
+attributable: flag unchanged, reason text not recorded"; for SC-007 the coolant-4 to -7 flags per run) and send it to
+the author, who decides whether a revision round is spent or the feature stops (spec FR-007, tasks T018).
 
-If SC-001 and SC-002 both hold and SC-003, SC-004 or SC-007 is missed: stop; nothing is re-run. Write the line diff
-(each line whose majority top-1 differs from the baseline run's, with its top-1 per run and whether its flag changed in
-any run; the typed sets' majorities from the summary's `lines` entries, the 120-line set's from the rows with the
-evaluation's own `majority` helper; a top-1 change is noise only on a line whose three baseline runs already
-disagreed, 120-line set MTBTI2025-018, XIBTI505060394, IEBTIIENEN004-2026-BTI72 and IEBTIIENEN004-2026-BTI71,
-outside set FRBTIFR-BTI-2026-00308, none in the coolant set; any other top-1 change on a line whose flag did not
-change is "not attributable: flag unchanged, reason text not recorded"; for SC-007 the coolant-4 to -7 flags per
-run) and send it to the author, who decides whether the one revision round is spent or the feature stops (spec
-FR-007, tasks T018).
-
-If SC-001 or SC-002 is missed, whatever SC-003, SC-004 and SC-007 show, or the author chose the round: revise the
-examples once under spec FR-001's rules, update FR-001's table and the test's lists, run the offline suite, write the
-SC-003/SC-004 line diff into the report alongside when those were missed too, check that the tallies the first pass
-printed plus about $0.62 stay within the $1.30 cap (when they do not: the second pass does not run; stop and ask the
-author for a new approval, never an automatic further pass), repeat the environment check (names only) and the three
-commands with `--tag 017-after-2`, then read the results again (tasks T019). A second failure stops the feature:
-report, and the author decides.
+With the author's go-ahead for the round: revise the examples once under spec FR-001's rules, update FR-001's table
+and the test's lists, run the offline suite, check that the tallies so far plus about $0.62 for all three sets stay
+within the $1.30 cap (when they do not: the second pass does not run; stop and ask the author for a new approval,
+never an automatic further pass), repeat the environment check (names only) and the commands in the same stages with
+`--tag 017-after-2`, then read the results again (tasks T019). A second failure stops the feature: report, and the
+author decides.
 
 ## 4. The record
 

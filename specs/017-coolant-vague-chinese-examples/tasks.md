@@ -19,9 +19,10 @@ exercise. No test calls a model, OpenRouter or the network. The tests name the f
 `traceability.md` (T014).
 
 **Order**: the environment (Phase 1), the shared test module (Phase 2), the complete examples and coolant-9 (Phase 3),
-the vague examples (Phase 4), the measurement (Phase 5: approval before any paid call, then the after-runs, the
-results, the author's decision on a missed SC-003, SC-004 or SC-007 when SC-001 and SC-002 hold, at most one revision
-round, then the report), the documentation (Phase 6). Tasks marked **LIVE** call OpenRouter and spend credits: they run
+the vague examples (Phase 4), the measurement (Phase 5: approval before any paid call, then the after-runs in the
+author's stages, the coolant set, then the outside set, then the 120-line set, each only when the stage before held,
+the results, a stop and report on any miss, a revision round only with the author's go-ahead, then the report), the
+documentation (Phase 6). Tasks marked **LIVE** call OpenRouter and spend credits: they run
 only after the author's approval (T015), from the feature worktree with its own `.venv` and store copy, with none of
 the six overrides T016 checks by name set.
 
@@ -184,9 +185,9 @@ green; the vague group of `chinese_groups(JUDGEMENT_SYSTEM)` equals `ZH_VAGUE`.
 
 ## Phase 5: User Story 3 - The change is measured before it ships (Priority: P2)
 
-**Goal**: the approval, the after-runs of the three sets, the flags per run against the baseline, the comparison
-with the shipped numbers, the author's decision on a missed SC-003, SC-004 or SC-007 when SC-001 and SC-002 hold, and
-the record (spec FR-006 to FR-008, SC-001 to SC-004, SC-006, SC-007; User Story 3).
+**Goal**: the approval, the after-runs of the three sets in the author's stages, the flags per run against the
+baseline, the comparison with the shipped numbers, a stop and report on any miss (the author decides whether a
+revision round is spent), and the record (spec FR-006 to FR-008, SC-001 to SC-004, SC-006, SC-007; User Story 3).
 
 **Independent Test**: `eval-report.md` holds every table of spec FR-008 with its source files named, and
 `scripts/check_traceability.py` passes for feature 017.
@@ -197,14 +198,19 @@ the record (spec FR-006 to FR-008, SC-001 to SC-004, SC-006, SC-007; User Story 
   `017/SC-007` (evaluation results, the approval, documentation; each naming the file or report section that holds
   the evidence); run `.venv/Scripts/python scripts/check_traceability.py` and `scripts/check_spec.py
   specs/017-coolant-vague-chinese-examples`; both clean
-- [ ] T015 [US3] Approval before any paid call (spec FR-007, clarification 3): ask the author, through the coordinator,
+- [X] T015 [US3] Approval before any paid call (spec FR-007, clarification 3): ask the author, through the coordinator,
   in one message: (a) the three commands of quickstart.md §3 and plan.md's table "Live evaluation: cost estimate and
   approval", the estimate $0.65 for one pass (about $0.62 by the evaluation's tallies, about $0.53 by the key's
-  usage) and the 2x cap of $1.30, which covers exactly one revision round; (b) permission to commit the files the
+  usage) and the 2x cap of $1.30 (put to the author as covering one revision round); (b) permission to commit the files the
   runs write (the results, history and report files under `tests/eval/`, and a revision round's) together with the
   product change, the coolant set and the tests. Wait for the answer; note its date, the amount and the commit
   permission for T020 and the pull request. Nothing of T016 runs before the answer; without the commit permission
-  the tree stays uncommitted, as feature 014a's T006 ran
+  the tree stays uncommitted, as feature 014a's T006 ran. Asked and answered on 2026-11-23: approved, staged (spec
+  clarification 5: the coolant set first; the outside and 120-line sets only when the stage before held; stop and
+  report on any miss; no revision round without the author's go-ahead; the $1.30 cap over everything, the tallies
+  checked before each stage) with the commit permission: all three sets run, the result files, history entries,
+  re-rendered reports, eval-report.md and the backlog and README edits; a stop before that, the result files and
+  report of the sets that ran, the backlog and README outcome edits left for later
 - [ ] T016 [US3] LIVE (approved estimate $0.65, cap $1.30; about $0.62 by the tallies; after T015): first check the
   environment by variable name only, never by value (`CARGOLINT_APP_PASSWORD` is a secret):
   `env | cut -d= -f1 | grep -iE '^CARGOLINT_(CHAT_MODEL|REASONING|EMBED_MODEL|STRUCTURED_METHOD|HS6_OVERRIDE|EBTI_CHAPTERS)$'`
@@ -218,16 +224,20 @@ the record (spec FR-006 to FR-008, SC-001 to SC-004, SC-006, SC-007; User Story 
   shows the product change
   (T008, T013), coolant-9 (T009) and the tests in place (committed if T015 allowed it, else uncommitted) and nothing
   else changed outside `specs/`; then read the key's `usage` before the first paid call (quickstart.md §3; the key
-  only in the request header, never printed) and run from the worktree with its `.venv` and store copy:
-  `.venv/Scripts/python tests/eval/hs6_eval.py --repeat 3 --tag 017-after --expansion off --customs-wording off`, then
-  the same with `--set coolant` and with `--set outside`; keep every file they write (the runs' own files
+  only in the request header, never printed) and run from the worktree with its `.venv` and store copy, in the
+  author's stages (the approval of 2026-11-23, spec clarification 5): first
+  `.venv/Scripts/python tests/eval/hs6_eval.py --set coolant --repeat 3 --tag 017-after --expansion off --customs-wording off`,
+  read as T017 reads it, and go on only when every coolant criterion holds (SC-001, SC-002, coolant-1 to -8 each
+  right on majority, SC-007); then the same with `--set outside`, and go on only when it is at least 12 of 14 right
+  on majority; then the same without `--set`, the 120-line set; before each stage the tallies so far plus the
+  stage's estimate stay within $1.30; on any miss stop and report (T018); keep every file they write (the runs' own files
   `tests/eval/hs6_eval_017-after_en_expansion-off_wording-off.json`,
   `tests/eval/hs6_eval_coolant_017-after_en_expansion-off_wording-off.json`,
   `tests/eval/hs6_eval_outside_017-after_en_expansion-off_wording-off.json`, the three "latest run" files, the history
   entries and the re-rendered reports); note each set's majority top-1, top-1 per run, auto-accepted and wrong
   auto-accepted per run, the `on` block, the elapsed time and the cost printed, and the sum of the three tallies
   (spec FR-006)
-- [ ] T017 [US3] Read the results, no model call (the snippet of quickstart.md §3): from the coolant run's own file,
+- [ ] T017 [US3] Read each stage's results as soon as it ends, no model call (the snippet of quickstart.md §3): from the coolant run's own file,
   coolant-1, -2, -3, -8 and -9 with flag, route and top-1 per run (SC-001 and SC-002 on every run, clarification 2),
   coolant-4 to -7 with their flag per run (SC-007), the summary's `lines` entries of coolant-1 to coolant-8 (`right`
   for each: SC-004's coolant verdict, never the set-wide `majority_top1`, which counts coolant-9), and the per-run
@@ -247,14 +257,12 @@ the record (spec FR-006 to FR-008, SC-001 to SC-004, SC-006, SC-007; User Story 
   run; read the spend from the key's usage once OpenRouter has settled it (the key endpoint's `usage` field after the
   runs against its value read before the first paid call in T016, quickstart.md §3; the key only in the request
   header, never printed) and note it against the $0.65 (spec FR-008, SC-006)
-- [ ] T018 [US3] Only when T017 shows SC-001 and SC-002 both holding and SC-003, SC-004 or SC-007 missed, SC-007 alone
-  included: stop, nothing is re-run. Precedence of the verdicts (clarification 3 read as given: the pre-approved
-  revision round covers Acceptance 1 and 2, SC-001 and SC-002, and nothing else): a missed SC-001 or SC-002 always
-  spends the pre-approved revision round, whatever the state of SC-003, SC-004 and SC-007, and the report carries the
-  SC-003/SC-004 line diff alongside it so that the author sees both; the stop-and-ask branch (the line diff, then the
-  author decides whether to spend the round or stop) applies only when SC-001 and SC-002 both hold and SC-003, SC-004
-  or SC-007 misses, SC-007 alone included; a missed SC-007 never spends the round by itself. Write the line diff for
-  the author: every line whose majority top-1 differs from the baseline run's (iteration 21 for the 120 lines,
+- [ ] T018 [US3] On any miss in any stage (the coolant set: SC-001, SC-002, coolant-1 to -8 each right on majority,
+  SC-007; the outside set: SC-004; the 120-line set: SC-003): stop, nothing more is run, no revision round without
+  the author's go-ahead (the staged approval of 2026-11-23, spec clarification 5, which replaces the automatic
+  revision round of clarification 3). Report per line, for the missed criterion, the flag, route and top-1 per run
+  against the baseline, and write the line diff for the author: every line whose majority top-1 differs from the
+  baseline run's (iteration 21 for the 120 lines,
   iteration 9 for the coolant set, iteration 1 for the outside set; the typed sets' majorities from the summary's
   `lines` entries, the 120-line set's computed from the rows with the evaluation's own `majority` helper,
   `tests/eval/cn8_eval.py` line 131, a tie going to the earliest run, as the 120-line summary has no per-line
@@ -267,14 +275,9 @@ the record (spec FR-006 to FR-008, SC-001 to SC-004, SC-006, SC-007; User Story 
   "not attributable: flag unchanged, reason text not recorded" (an OK judgement's reason text reaches the ranking
   prompt with the flag, `tools/classify_hs6.py` lines 240–242, and the rows do not record it); for a missed SC-007,
   the coolant-4 to -7 flags per run. Send it to the author through the coordinator and wait: the author decides
-  whether the one revision round (T019) is spent on it or the feature stops with the report (spec FR-007)
-- [ ] T019 [US3] LIVE (within the $1.30 cap; when T017 missed SC-001 or SC-002, whatever the state of SC-003, SC-004
-  and SC-007, or when the author chose the round in T018). Precedence of the verdicts (clarification 3 read as given:
-  the pre-approved revision round covers Acceptance 1 and 2, SC-001 and SC-002, and nothing else): a missed SC-001 or
-  SC-002 always spends the pre-approved revision round, whatever the state of SC-003, SC-004 and SC-007, and the
-  report carries the SC-003/SC-004 line diff alongside it so that the author sees both; the stop-and-ask branch (the
-  line diff, then the author decides whether to spend the round or stop) applies only when SC-001 and SC-002 both hold
-  and SC-003, SC-004 or SC-007 misses, SC-007 alone included; a missed SC-007 never spends the round by itself. Revise
+  whether a revision round (T019) is spent on it or the feature stops with the report (spec FR-007)
+- [ ] T019 [US3] LIVE (within the $1.30 cap; only when the author chose the round in T018: no revision round runs
+  without the author's go-ahead, the staged approval of 2026-11-23). Revise
   the examples once under spec FR-001's rules (four pairs; complete = goods + use + material; vague = a bare generic
   category term), updating FR-001's table in spec.md, `ZH_ACCEPTABLE` and `ZH_VAGUE` in
   `tests/unit/test_judgement_examples.py` and the sentence in `tools/check_description.py`, with FR-002 to FR-004
@@ -282,10 +285,10 @@ the record (spec FR-006 to FR-008, SC-001 to SC-004, SC-006, SC-007; User Story 
   the shipped lists, no `COOLANT_WORDS`, no overlap with the four evaluation files; the goods not those of an
   evaluation line); `pytest -q` green; when T017 also missed SC-003 or SC-004, write their line diff as T018 describes
   and put it in the report alongside; before the second pass check that the tallies T016 printed plus about $0.62
-  stay within $1.30 (the key's usage total settles late): when they do not, the second pass does not run, stop and ask
-  the author for a new approval, the same branch as a second substantive failure, never an automatic further pass;
-  then repeat T016's environment check (names only) and its three commands with `--tag 017-after-2`, then T017. A
-  second failure stops the feature: report the lines and the author decides
+  for all three sets stay within $1.30 (the key's usage total settles late): when they do not, the second pass does
+  not run, stop and ask the author for a new approval, never an automatic further pass; then repeat T016's
+  environment check (names only) and its commands in the same stages with `--tag 017-after-2`, then T017. A second
+  failure stops the feature: report the lines and the author decides
 - [ ] T020 [US3] Write `specs/017-coolant-vague-chinese-examples/eval-report.md` (spec FR-008): per set, the shipped
   numbers against the after-run: first the results by majority per line that decide pass or fail (majority top-1 and
   the wrong auto-accepts counted per line by majority, against the baseline's 77 and 3, 8 of 8 and 0, 12 of 14 and 1),
@@ -342,9 +345,8 @@ R-10, the project's Definition of done)
 - **Phase 4 (US2)**: T010 after T008 (it needs the sentence to exist); T011 and T012 in parallel with T010; T013 after
   T010 to T012.
 - **Phase 5 (US3)**: T014 after T013; T015 after T014 (the approval reads the final commands); T016 after T015 and
-  T002; T017 after T016; T018 only when T017 shows SC-001 and SC-002 both holding and SC-003, SC-004 or SC-007 missed;
-  T019 when T017 missed SC-001 or SC-002 (whatever SC-003, SC-004 and SC-007 show) or on the author's choice in T018,
-  then T017 again; T020 after T017 (or after the second T017, or after T018 when the author stopped the feature).
+  T002, stage by stage, with T017 after each stage; T018 on any miss in any stage; T019 only on the author's choice
+  in T018, then T017 again; T020 after the last T017 (or after T018 when the author stopped the feature).
 - **Phase 6**: T021 and T022 [P] after T020; T023 after T021 and T022; T024 last.
 - **User story order**: US1 then US2 (one sentence, two halves), then US3 (it measures both). US1 and US2 are each
   independently testable offline; US3 is the live measurement of both.
@@ -366,9 +368,9 @@ Task: "T022 README.md: nine coolant lines; feature 017's sentence"
 
 1. **MVP = Phases 1 to 4** (T001 to T013): the complete product change, offline-tested, in one sentence of the prompt
    and one line of the coolant set. Stop and validate: `pytest -q` green, `check_spec.py` clean.
-2. **Then the measurement** (Phase 5): the approval first (T015), the environment check and the three after-runs
-   (T016), the verdicts and the flag comparison (T017), the author's decision on a missed SC-003, SC-004 or SC-007 when
-   SC-001 and SC-002 hold (T018), at most one revision round (T019), the report (T020).
+2. **Then the measurement** (Phase 5): the approval first (T015), the environment check and the after-runs in the
+   author's stages (T016), the verdicts and the flag comparison after each stage (T017), a stop and report on any
+   miss (T018), a revision round only with the author's go-ahead (T019), the report (T020).
 3. **Then the record** (Phase 6) and the pull request.
 
 ## Requirement coverage

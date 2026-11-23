@@ -169,9 +169,9 @@ vague against the baseline runs above and names every line whose flag changed, c
 those four). On a missed SC-003, SC-004 or SC-007 the report adds the line diff: each line whose majority top-1 differs
 from the baseline run's (the typed sets' majorities from the `lines` entries, the 120-line set's from the rows with
 `majority`), with whether its flag changed in any run, marked noise only on the lines named above whose baseline runs
-already disagreed, and otherwise "not attributable: flag unchanged, reason text not recorded". The precedence of the
-verdicts is spec FR-007's: a missed SC-001 or SC-002 always spends the pre-approved revision round with that diff
-alongside; the stop-and-ask branch applies only when SC-001 and SC-002 both hold. The same tables go to
+already disagreed, and otherwise "not attributable: flag unchanged, reason text not recorded". Since the author's
+staged approval of 2026-11-23 (spec clarification 5), a miss in any stage stops the runs with that diff for the
+author, and no revision round runs without the author's go-ahead. The same tables go to
 `specs/017-coolant-vague-chinese-examples/eval-report.md` so that the record survives the pull request, with the files
 and iterations named.
 
@@ -208,6 +208,12 @@ affect what the evaluation measures. Before a second pass, the tallies the first
 stay within $1.30; the tallies are used because the key's own usage total settles late. When that pre-check fails,
 the second pass does not run: the implementation stops and asks the author for a new approval, the same branch as a
 second substantive failure, never an automatic further pass.
+
+**Update (2026-11-23, the staged approval)**: at the approval step the author staged the runs: the coolant set first,
+the outside set only when every coolant criterion holds, the 120-line set only when the outside set holds; stop and
+report per line on any miss; no revision round without the author's go-ahead; the $1.30 cap over everything, the
+tallies checked before each stage. Recorded in spec clarification 5 and FR-007, tasks T016 to T019, quickstart.md §3
+and plan.md; the second-pass pre-check above now applies before each stage and before a round the author chose.
 
 **Alternatives considered**: a fresh baseline run before the change (another $0.62 for numbers the history already
 holds for the same model, store and settings; spec assumption "No new baseline run"); one run per set instead of
