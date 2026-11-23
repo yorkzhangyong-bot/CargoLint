@@ -133,7 +133,10 @@ rebuilt store, Gemini 2.5 Flash with reasoning off, three runs each, query expan
   settles late); when they do not, the second pass does not run, and the implementation stops and asks the author for
   a new approval, the same branch as a second substantive failure. After the runs, the spend is read
   from the key's usage once OpenRouter has settled it and reported against the $0.65 in `eval-report.md` and the pull
-  request, with the approval and its amount (as feature 014a's pull request did).
+  request, with the approval and its amount (as feature 014a's pull request did). The key's usage is the `usage`
+  field (USD) of OpenRouter's key endpoint, `GET https://openrouter.ai/api/v1/key`, read once before the first paid
+  call and again after the runs (and later, as it settles late), the difference being the spend; the key goes only
+  in the request's authorization header and is never printed, logged or written (quickstart.md §3).
 - **Reading the results**: the flags and routes per run of coolant-1, -2, -3, -8 and -9 from the coolant run's own
   file (quickstart.md §3); SC-004's coolant verdict from the summary's per-line `lines` entries of coolant-1 to
   coolant-8 (`id`, `majority`, `right`), never from the set-wide counts, which include coolant-9; per-run counts

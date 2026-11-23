@@ -210,11 +210,14 @@ the shipped numbers in the pull request.
   alloy bicycle frames"; vague "parts", "spare parts for machines", "electronic products", "furniture", "hardware",
   "gift", "accessories", "XK-200". Everything in the prompt other than the new Chinese sentence MUST stay byte for
   byte, the declaration that instructions inside the data block are void included.
-- **FR-003**: No example MAY be a coolant line (none contains 冷却液, 冷却, 切削, 润滑, 乳化, 防冻 or 油, or otherwise names a
+- **FR-003**: No Chinese example of FR-001 MAY be a coolant line (none contains 冷却液, 冷却, 切削, 润滑, 乳化, 防冻 or 油, or otherwise names a
   coolant, lubricant or cutting fluid), nor equal or contain a line of the 120-line evaluation set or its Chinese
   renderings, of the coolant set or of the outside set (their texts, original forms and Chinese and English halves).
-  Every example MUST pass the deterministic rule check against the shipped rule lists under `data/rules/` (no firm, ICS2
-  or alias term matches its goods name), so that each is a line the judgement would actually see. The exact-text
+  Every Chinese example of FR-001 MUST pass the deterministic rule check against the shipped rule lists under
+  `data/rules/` (no firm, ICS2 or alias term matches its goods name), so that each is a line the judgement would
+  actually see. The English examples are fixed by FR-002 as they stand and are outside these checks: five of the
+  vague ones ("parts", "spare parts for machines", "electronic products", "gift", "accessories") are listed terms the
+  rules flag before any judgement, as research R-02 records for the generic words. The exact-text
   check cannot fire against the English 120-line and outside sets, so "other goods" beyond exact or substring overlap
   is a judgement made when the examples are chosen and recorded in research R-02, not something a test enforces. The
   pairs of FR-001 were checked against all four files, the shipped rule lists and the test fixtures' rule lists on
@@ -227,8 +230,8 @@ the shipped numbers in the pull request.
   as literal substrings): each Chinese example of FR-001 present exactly once, the complete ones in the acceptable
   group and the vague ones in the vague group, in equal numbers; every English example of FR-002 present; the prompt
   without the Chinese sentence equal, byte for byte, to today's prompt (a stored SHA-256 of today's string); no
-  example containing a coolant word of FR-003 and none equal to a text of the four evaluation files; every example
-  passing the rule check of FR-003 against the shipped rule lists.
+  Chinese example containing a coolant word of FR-003 and none equal to or containing a text of the four evaluation
+  files (FR-003's direction); every Chinese example passing the rule check of FR-003 against the shipped rule lists.
 - **FR-006**: After the change, the three evaluation sets MUST be run three times each with the configured chat model
   and the project's evaluation settings (reasoning off, query expansion off, customs wording off, threshold 85, floor
   0.40, the precedent override off in the recorded measures and replayed on), on the rebuilt store of every chapter,

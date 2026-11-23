@@ -45,6 +45,7 @@ environment, checked by variable name only, never by value (`CARGOLINT_APP_PASSW
 
 ```bash
 env | cut -d= -f1 | grep -iE '^CARGOLINT_(CHAT_MODEL|REASONING|EMBED_MODEL|STRUCTURED_METHOD|HS6_OVERRIDE|EBTI_CHAPTERS)$'   # must print nothing
+curl -s https://openrouter.ai/api/v1/key -H "Authorization: Bearer $OPENROUTER_API_KEY" | .venv/Scripts/python -c "import json, sys; print(json.load(sys.stdin)['data']['usage'])"   # the key's usage (USD) before the first paid call; the key only in the header, never printed
 .venv/Scripts/python tests/eval/hs6_eval.py --repeat 3 --tag 017-after --expansion off --customs-wording off
 .venv/Scripts/python tests/eval/hs6_eval.py --set coolant --repeat 3 --tag 017-after --expansion off --customs-wording off
 .venv/Scripts/python tests/eval/hs6_eval.py --set outside --repeat 3 --tag 017-after --expansion off --customs-wording off
@@ -58,7 +59,9 @@ changes only concurrency; `CARGOLINT_USD_EUR` only the euro tally; and `CARGOLIN
 `CARGOLINT_TARIC_RELEASE`, `CARGOLINT_EBTI_RELEASE`, `CARGOLINT_EBTI_RULINGS`, `CARGOLINT_OCR_MIN_SCORE` and
 `CARGOLINT_APP_PASSWORD` do not affect what is measured.
 
-Each command prints its cost; together about $0.62 by the evaluation's tallies (research R-07). Each writes its own
+Each command prints its cost; together about $0.62 by the evaluation's tallies (research R-07). Read the key's
+`usage` again after the runs with the same command, and later as it settles: its difference from the value read
+before the first paid call is the spend by the key's usage (spec FR-007, SC-006). Each writes its own
 results file (`tests/eval/hs6_eval_017-after_en_expansion-off_wording-off.json`,
 `tests/eval/hs6_eval_coolant_017-after_en_expansion-off_wording-off.json`,
 `tests/eval/hs6_eval_outside_017-after_en_expansion-off_wording-off.json`), overwrites the set's "latest run" file,

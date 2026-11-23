@@ -214,7 +214,8 @@ the record (spec FR-006 to FR-008, SC-001 to SC-004, SC-006, SC-007; User Story 
   `CARGOLINT_OCR_MIN_SCORE` and `CARGOLINT_APP_PASSWORD` do not affect what is measured); then check that `git status`
   shows the product change
   (T008, T013), coolant-9 (T009) and the tests in place (committed if T015 allowed it, else uncommitted) and nothing
-  else changed outside `specs/`; then run from the worktree with its `.venv` and store copy:
+  else changed outside `specs/`; then read the key's `usage` before the first paid call (quickstart.md §3; the key
+  only in the request header, never printed) and run from the worktree with its `.venv` and store copy:
   `.venv/Scripts/python tests/eval/hs6_eval.py --repeat 3 --tag 017-after --expansion off --customs-wording off`, then
   the same with `--set coolant` and with `--set outside`; keep every file they write (the runs' own files
   `tests/eval/hs6_eval_017-after_en_expansion-off_wording-off.json`,
@@ -240,8 +241,9 @@ the record (spec FR-006 to FR-008, SC-001 to SC-004, SC-006, SC-007; User Story 
   IEBTIIENEN004-2026-BTI105, IEBTIIENEN004-2026-BTI124, XIBTI505068566 in every run;
   `tests/eval/hs6_eval_outside_014a-a_en_expansion-off_wording-off.json`: none;
   `tests/eval/hs6_eval_coolant_014a-rule-a.json`: coolant-1, -2, -3, -8), naming every line whose flag changed in any
-  run; read the spend from the key's usage once OpenRouter has settled it and note it against the $0.65 (spec FR-008,
-  SC-006)
+  run; read the spend from the key's usage once OpenRouter has settled it (the key endpoint's `usage` field after the
+  runs against its value read before the first paid call in T016, quickstart.md §3; the key only in the request
+  header, never printed) and note it against the $0.65 (spec FR-008, SC-006)
 - [ ] T018 [US3] Only when T017 shows SC-001 and SC-002 both holding and SC-003, SC-004 or SC-007 missed, SC-007 alone
   included: stop, nothing is re-run. Precedence of the verdicts (clarification 3 read as given: the pre-approved
   revision round covers Acceptance 1 and 2, SC-001 and SC-002, and nothing else): a missed SC-001 or SC-002 always
@@ -303,8 +305,9 @@ the record (spec FR-006 to FR-008, SC-001 to SC-004, SC-006, SC-007; User Story 
 **Purpose**: the record outside the feature folder, the final checks, the pull request text (spec FR-008, research
 R-10, the project's Definition of done)
 
-- [ ] T021 [P] `docs/backlog.md` item 17: in the backlog's short style, make the first line "Done, merged in PR #<n>"
-  with the outcome (the live-test line and coolant-3 no longer flagged; coolant-1, -2 and 冷却液 still ask; the three
+- [ ] T021 [P] `docs/backlog.md` item 17: in the backlog's short style, make the first line "Done in feature 017" (the
+  pull request's number is added after the merge, as items 1 and 2 got theirs in a later docs pull request; the QA
+  stage opens this feature's pull request after the implementation) with the outcome (the live-test line and coolant-3 no longer flagged; coolant-1, -2 and 冷却液 still ask; the three
   sets' numbers and the flag comparison from T020); keep the "Language effect", "Cause and fix" and "UI" bullets as
   they are and the `ask_for` point as an open line (it ties to item 4); mark the "Approach" and "Open decisions for
   the author" bullets as superseded by feature 017 (examples only; the decisions they list, both or either of material
