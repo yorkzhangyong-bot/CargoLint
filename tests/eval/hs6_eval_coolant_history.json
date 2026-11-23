@@ -2646,5 +2646,354 @@
    0.0
   ],
   "note": "rule (a) and the vague rule (2026-11-19): the exact replay of coolant iteration 2's rows by the product's routing functions"
+ },
+ {
+  "iteration": 10,
+  "run_on": "2026-11-23",
+  "change": "3 independent runs, temperature 0.0, seed none",
+  "tag": "017-after",
+  "set": "coolant",
+  "model": "google/gemini-2.5-flash",
+  "reasoning": {
+   "enabled": false
+  },
+  "expansion": "off",
+  "customs_wording": "off",
+  "floor": 0.4,
+  "threshold": 85,
+  "ask_floor": 50,
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 3,
+  "n": 9,
+  "top1_runs": [
+   9,
+   9,
+   9
+  ],
+  "majority_top1": 9,
+  "top3_runs": [
+   7,
+   7,
+   7
+  ],
+  "routes_runs": [
+   {
+    "auto_accept": 1,
+    "review": 5,
+    "ask_shipper": 3
+   },
+   {
+    "auto_accept": 1,
+    "review": 5,
+    "ask_shipper": 3
+   },
+   {
+    "auto_accept": 1,
+    "review": 5,
+    "ask_shipper": 3
+   }
+  ],
+  "wrong_auto_runs": [
+   [],
+   [],
+   []
+  ],
+  "lines": [
+   {
+    "id": "coolant-1",
+    "expected": "2710.19",
+    "majority": "2710.19",
+    "right": true,
+    "seen": [
+     {
+      "top1": "2710.19",
+      "route": "ask_shipper"
+     },
+     {
+      "top1": "2710.19",
+      "route": "ask_shipper"
+     },
+     {
+      "top1": "2710.19",
+      "route": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "id": "coolant-2",
+    "expected": "ask_shipper",
+    "majority": "ask_shipper",
+    "right": true,
+    "seen": [
+     {
+      "top1": "3820.00",
+      "route": "ask_shipper"
+     },
+     {
+      "top1": "3820.00",
+      "route": "ask_shipper"
+     },
+     {
+      "top1": "3820.00",
+      "route": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "id": "coolant-3",
+    "expected": "3403.99",
+    "majority": "3403.99",
+    "right": true,
+    "seen": [
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.99",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "coolant-4",
+    "expected": "3403.99",
+    "majority": "3403.99",
+    "right": true,
+    "seen": [
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.99",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "coolant-5",
+    "expected": "2710.19",
+    "majority": "2710.19",
+    "right": true,
+    "seen": [
+     {
+      "top1": "2710.19",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "2710.19",
+      "route": "auto_accept"
+     },
+     {
+      "top1": "2710.19",
+      "route": "auto_accept"
+     }
+    ]
+   },
+   {
+    "id": "coolant-6",
+    "expected": "3403.99",
+    "majority": "3403.99",
+    "right": true,
+    "seen": [
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.99",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "coolant-7",
+    "expected": "3403.99",
+    "majority": "3403.99",
+    "right": true,
+    "seen": [
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.99",
+      "route": "review"
+     }
+    ]
+   },
+   {
+    "id": "coolant-8",
+    "expected": "ask_shipper",
+    "majority": "ask_shipper",
+    "right": true,
+    "seen": [
+     {
+      "top1": "3820.00",
+      "route": "ask_shipper"
+     },
+     {
+      "top1": "3820.00",
+      "route": "ask_shipper"
+     },
+     {
+      "top1": "3820.00",
+      "route": "ask_shipper"
+     }
+    ]
+   },
+   {
+    "id": "coolant-9",
+    "expected": "3403.99",
+    "majority": "3403.99",
+    "right": true,
+    "seen": [
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.99",
+      "route": "review"
+     },
+     {
+      "top1": "3403.99",
+      "route": "review"
+     }
+    ]
+   }
+  ],
+  "gate_runs": [
+   {
+    "vote_agrees": 1,
+    "vote_disagrees": 5,
+    "vote_tie": 0,
+    "vote_share_low": 0,
+    "scoped_veto": 0,
+    "no_rulings": 0,
+    "not_gated": 3
+   },
+   {
+    "vote_agrees": 1,
+    "vote_disagrees": 5,
+    "vote_tie": 0,
+    "vote_share_low": 0,
+    "scoped_veto": 0,
+    "no_rulings": 0,
+    "not_gated": 3
+   },
+   {
+    "vote_agrees": 1,
+    "vote_disagrees": 5,
+    "vote_tie": 0,
+    "vote_share_low": 0,
+    "scoped_veto": 0,
+    "no_rulings": 0,
+    "not_gated": 3
+   }
+  ],
+  "no_rulings_review_runs": [
+   0,
+   0,
+   0
+  ],
+  "no_voter_runs": [
+   0,
+   0,
+   0
+  ],
+  "right_auto_runs": [
+   1,
+   1,
+   1
+  ],
+  "lost_runs": [
+   5,
+   5,
+   5
+  ],
+  "override_min": 5,
+  "on": {
+   "top1_runs": [
+    9,
+    9,
+    9
+   ],
+   "majority_top1": 9,
+   "routes_runs": [
+    {
+     "auto_accept": 1,
+     "review": 5,
+     "ask_shipper": 3
+    },
+    {
+     "auto_accept": 1,
+     "review": 5,
+     "ask_shipper": 3
+    },
+    {
+     "auto_accept": 1,
+     "review": 5,
+     "ask_shipper": 3
+    }
+   ],
+   "wrong_auto_runs": [
+    [],
+    [],
+    []
+   ]
+  },
+  "parse": {
+   "retry_limit": 2,
+   "runs": [
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    },
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    },
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    }
+   ]
+  },
+  "elapsed_s": 51.9,
+  "cost_usd": 0.0395,
+  "cost_eur": 0.0363,
+  "cost_eur_runs": [
+   0.012,
+   0.0119,
+   0.0124
+  ]
  }
 ]

@@ -211,7 +211,7 @@ revision round is spent), and the record (spec FR-006 to FR-008, SC-001 to SC-00
   checked before each stage) with the commit permission: all three sets run, the result files, history entries,
   re-rendered reports, eval-report.md and the backlog and README edits; a stop before that, the result files and
   report of the sets that ran, the backlog and README outcome edits left for later
-- [ ] T016 [US3] LIVE (approved estimate $0.65, cap $1.30; about $0.62 by the tallies; after T015): first check the
+- [X] T016 [US3] LIVE (approved estimate $0.65, cap $1.30; about $0.62 by the tallies; after T015): first check the
   environment by variable name only, never by value (`CARGOLINT_APP_PASSWORD` is a secret):
   `env | cut -d= -f1 | grep -iE '^CARGOLINT_(CHAT_MODEL|REASONING|EMBED_MODEL|STRUCTURED_METHOD|HS6_OVERRIDE|EBTI_CHAPTERS)$'`
   must print nothing, so the defaults apply (Gemini 2.5 Flash, reasoning off, the shipped embedding model and structured-output
@@ -237,7 +237,7 @@ revision round is spent), and the record (spec FR-006 to FR-008, SC-001 to SC-00
   entries and the re-rendered reports); note each set's majority top-1, top-1 per run, auto-accepted and wrong
   auto-accepted per run, the `on` block, the elapsed time and the cost printed, and the sum of the three tallies
   (spec FR-006)
-- [ ] T017 [US3] Read each stage's results as soon as it ends, no model call (the snippet of quickstart.md §3): from the coolant run's own file,
+- [X] T017 [US3] Read each stage's results as soon as it ends, no model call (the snippet of quickstart.md §3): from the coolant run's own file,
   coolant-1, -2, -3, -8 and -9 with flag, route and top-1 per run (SC-001 and SC-002 on every run, clarification 2),
   coolant-4 to -7 with their flag per run (SC-007), the summary's `lines` entries of coolant-1 to coolant-8 (`right`
   for each: SC-004's coolant verdict, never the set-wide `majority_top1`, which counts coolant-9), and the per-run
@@ -257,7 +257,7 @@ revision round is spent), and the record (spec FR-006 to FR-008, SC-001 to SC-00
   run; read the spend from the key's usage once OpenRouter has settled it (the key endpoint's `usage` field after the
   runs against its value read before the first paid call in T016, quickstart.md §3; the key only in the request
   header, never printed) and note it against the $0.65 (spec FR-008, SC-006)
-- [ ] T018 [US3] On any miss in any stage (the coolant set: SC-001, SC-002, coolant-1 to -8 each right on majority,
+- [X] T018 [US3] (Not triggered on 2026-11-23: no stage missed.) On any miss in any stage (the coolant set: SC-001, SC-002, coolant-1 to -8 each right on majority,
   SC-007; the outside set: SC-004; the 120-line set: SC-003): stop, nothing more is run, no revision round without
   the author's go-ahead (the staged approval of 2026-11-23, spec clarification 5, which replaces the automatic
   revision round of clarification 3). Report per line, for the missed criterion, the flag, route and top-1 per run
@@ -276,7 +276,7 @@ revision round is spent), and the record (spec FR-006 to FR-008, SC-001 to SC-00
   prompt with the flag, `tools/classify_hs6.py` lines 240–242, and the rows do not record it); for a missed SC-007,
   the coolant-4 to -7 flags per run. Send it to the author through the coordinator and wait: the author decides
   whether a revision round (T019) is spent on it or the feature stops with the report (spec FR-007)
-- [ ] T019 [US3] LIVE (within the $1.30 cap; only when the author chose the round in T018: no revision round runs
+- [X] T019 [US3] (Not triggered on 2026-11-23: no miss, no round.) LIVE (within the $1.30 cap; only when the author chose the round in T018: no revision round runs
   without the author's go-ahead, the staged approval of 2026-11-23). Revise
   the examples once under spec FR-001's rules (four pairs; complete = goods + use + material; vague = a bare generic
   category term), updating FR-001's table in spec.md, `ZH_ACCEPTABLE` and `ZH_VAGUE` in
@@ -289,7 +289,7 @@ revision round is spent), and the record (spec FR-006 to FR-008, SC-001 to SC-00
   not run, stop and ask the author for a new approval, never an automatic further pass; then repeat T016's
   environment check (names only) and its commands in the same stages with `--tag 017-after-2`, then T017. A second
   failure stops the feature: report the lines and the author decides
-- [ ] T020 [US3] Write `specs/017-coolant-vague-chinese-examples/eval-report.md` (spec FR-008): per set, the shipped
+- [X] T020 [US3] Write `specs/017-coolant-vague-chinese-examples/eval-report.md` (spec FR-008): per set, the shipped
   numbers against the after-run: first the results by majority per line that decide pass or fail (majority top-1 and
   the wrong auto-accepts counted per line by majority, against the baseline's 77 and 3, 8 of 8 and 0, 12 of 14 and 1),
   then, next to them, a per-run table (right per run, auto-accepted per run and wrong auto-accepted per run), each the
@@ -311,22 +311,22 @@ revision round is spent), and the record (spec FR-006 to FR-008, SC-001 to SC-00
 **Purpose**: the record outside the feature folder, the final checks, the pull request text (spec FR-008, research
 R-10, the project's Definition of done)
 
-- [ ] T021 [P] `docs/backlog.md` item 17: in the backlog's short style, make the first line "Done in feature 017" (the
+- [X] T021 [P] `docs/backlog.md` item 17: in the backlog's short style, make the first line "Done in feature 017" (the
   pull request's number is added after the merge, as items 1 and 2 got theirs in a later docs pull request; the QA
   stage opens this feature's pull request after the implementation) with the outcome (the live-test line and coolant-3 no longer flagged; coolant-1, -2 and 冷却液 still ask; the three
   sets' numbers and the flag comparison from T020); keep the "Language effect", "Cause and fix" and "UI" bullets as
   they are and the `ask_for` point as an open line (it ties to item 4); mark the "Approach" and "Open decisions for
   the author" bullets as superseded by feature 017 (examples only; the decisions they list, both or either of material
   and use, a negative composition, single-term list flags, still open in product terms), deleting nothing
-- [ ] T022 [P] `README.md`: in the feature 014a paragraph change "eight coolant lines in Chinese, English and German" to
+- [X] T022 [P] `README.md`: in the feature 014a paragraph change "eight coolant lines in Chinese, English and German" to
   "nine coolant lines in Chinese, English and German (coolant-9, the Chinese-only live-test line, since feature 017)";
   after the rule (a) paragraph add one sentence with feature 017's change (Chinese examples in the vagueness check)
   and its result from T020; nothing else
-- [ ] T023 Final checks: `.venv/Scripts/python -m pytest -q` green; `scripts/check_spec.py
+- [X] T023 Final checks: `.venv/Scripts/python -m pytest -q` green; `scripts/check_spec.py
   specs/017-coolant-vague-chinese-examples` and `scripts/check_traceability.py` clean; `git ls-files --eol` shows
   `w/lf` for every file changed; `git diff --stat` touches only the files of plan.md's "Source Code" and this
   feature's folder; no key or secret in any changed file; quickstart.md §2 to §4 followed (spec SC-005)
-- [ ] T024 The pull request text (opened when the author asks; commit and push only as T015's approval allows): the
+- [X] T024 (The text is in the worker's report of 2026-11-23; the QA stage opens the pull request.) The pull request text (opened when the author asks; commit and push only as T015's approval allows): the
   tables of T020, the approval with its date and amount and the spend by the key's usage, the list of files, and the
   two lines `scripts/check_traceability.py` requires of every implementation pull request of this feature, since it
   changes `tools/` and always adds `traceability.md` and `eval-report.md` under `specs/`: `Spec-PR: #<n>` naming the
