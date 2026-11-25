@@ -30,6 +30,7 @@
 | 21 | 2026-11-19 | 014a-rule-a | 3 | 76 / 77 / 77 of 120 | 77/120 | 104 / 105 / 105 of 120 | 116/120 | 117/120 | 3 / 3 / 3 | 62 / 61 / 63 of 120 | 63 / 63 / 62 | 15 / 16 / 17 | $0.0000 (€0.0000), 0 s |
 | 22 | 2026-11-23 | 017-after | 3 | 78 / 77 / 78 of 120 | 78/120 | 105 / 104 / 105 of 120 | 116/120 | 118/120 | 3 / 3 / 2 | 64 / 63 / 65 of 120 | 63 / 64 / 62 | 18 / 16 / 18 | $0.5328 (€0.4902), 399 s |
 | 23 | 2026-11-25 | 021-family-excl | 3 | 75 / 74 / 75 of 120 | 75/120 | 99 / 100 / 101 of 120 | 112/120 | 117/120 | 1 / 2 / 2 | 61 / 60 / 62 of 120 | 56 / 58 / 57 | 20 / 18 / 20 | $0.5306 (€0.4882), 455 s |
+| 24 | 2026-11-25 | 022-notes | 3 | 3 / 3 / 3 of 5 | 3/5 | 5 / 5 / 5 of 5 | 5/5 | 5/5 | 0 / 0 / 0 | 2 / 2 / 2 of 5 | 1 / 1 / 1 | 2 / 2 / 2 | $0.0244 (€0.0224), 152 s |
 
 ## Iteration 1 (hs6-baseline, openai/gpt-4o-mini, 2026-10-25)
 
@@ -2544,4 +2545,69 @@ Overrides that fired per run: 4 / 3 / 3, of which chose the right HS-6: 3 / 3 / 
 - run 3: IEBTIIENEN004-2026-BTI72 (expected 9619.00): candidate 2, 9619.00, instead of 6108.22; right
 - run 3: IEBTIIENEN004-2026-BTI71 (expected 9619.00): candidate 2, 9619.00, instead of 6108.21; right
 
-Model: google/gemini-2.5-flash. Line-by-line results of the latest run, iteration 23 (021-family-excl): `tests/eval/hs6_eval.json`; since feature 007 each run also keeps its own, `tests/eval/hs6_eval_<tag>.json`; earlier runs are in the git history of `hs6_eval.json`.
+## Iteration 24 (022-notes, google/gemini-2.5-flash, en, query expansion off, customs wording off, 2026-11-25)
+
+Invalid answers (retried at most 2 times): run 1: 0 retried (0 not valid JSON, 0 not the schema), 0 calls still invalid, 0 lines failed; run 2: 0 retried (0 not valid JSON, 0 not the schema), 0 calls still invalid, 0 lines failed; run 3: 0 retried (0 not valid JSON, 0 not the schema), 0 calls still invalid, 0 lines failed.
+
+The model's own confidence of its top-1 (before the vague cap), all runs, right / wrong: 95: 9 / 6.
+
+| Run | Top-1 | In top 3 | Auto-accept | Review | Ask the shipper | Wrong, auto-accepted |
+|---|---|---|---|---|---|---|
+| 1 | 3/5 | 5/5 | 1 | 4 | 0 | 0 |
+| 2 | 3/5 | 5/5 | 1 | 4 | 0 | 0 |
+| 3 | 3/5 | 5/5 | 1 | 4 | 0 | 0 |
+
+### Vote gate
+
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 1 | 3 | 0 | 1 | 0 | 0 | 0 | 0 | 1 | 2 |
+| 2 | 1 | 3 | 0 | 1 | 0 | 0 | 0 | 0 | 1 | 2 |
+| 3 | 1 | 3 | 0 | 1 | 0 | 0 | 0 | 0 | 1 | 2 |
+
+### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
+
+The CN-8 eval starts from the correct HS-6, so a line is right end to end only when both are right. Majority: the majority top-1 of each eval; run k: run k of both.
+
+| | HS-6 right, CN-8 right (end to end) | HS-6 right, CN-8 wrong | HS-6 wrong, CN-8 right | HS-6 wrong, CN-8 wrong |
+|---|---|---|---|---|
+| Majority | 2 | 1 | 1 | 1 |
+| Run 1 | 2 | 1 | 1 | 1 |
+| Run 2 | 2 | 1 | 1 | 1 |
+| Run 3 | 2 | 1 | 1 | 1 |
+
+On majority results 3 of 5 lines end wrong: 2 from the HS-6 step (the CN-8 step would have failed too on 1 of them), 1 from the CN-8 step alone. End-to-end estimate per run: 2 / 2 / 2 of 5.
+
+Wrong top-1 results (line × run): 6; the correct HS-6 was among the candidates shown to the model in 6 (100.0%).
+
+Leakage guard: each line's own ruling was its nearest ruling in 5 / 5 / 5 of 5 lines (per run), among the 12 the precedent search reads in 5 / 5 / 5; the guard kept it out of the precedents.
+
+### Lines wrong in every run (2)
+
+- SEBTITV-2026-01096 (chapter 63, expected 6307.90): 9503.00 (95, review) · 9503.00 (95, review) · 9503.00 (95, review); correct in the top 3 in 3 of 3 runs. "Varan är enligt uppgift en konfektionerad hundleksak i form av en gris. Varan ä…"
+- CZBTI47/152108/2024-580000-04/01 (chapter 63, expected 6307.90): 9503.00 (95, review) · 9503.00 (95, review) · 9503.00 (95, review); correct in the top 3 in 3 of 3 runs. "Dle deklarovaných údajů se jedná o textilní vycpávaný výrobek - hračku pro kočk…"
+
+### Lines whose top-1 differed between runs (0)
+
+### Wrong but auto-accepted (the HS-6 layer)
+
+Per run: 0 / 0 / 0. In every run: 0 lines, each among the lines wrong in every run above.
+
+### Precedent override (feature 008)
+
+With the switch on, at least 5 of the nearest rulings at the model's candidate 2 or 3 choose that candidate and auto-accept it. The entry above is the switch off; the switch on is replayed from the same model answers and rulings, so the two differ only where an override fired. HS-6 right: the HS-6 chosen, the top-1 when no override fired.
+
+| Run | Switch | HS-6 right | Auto-accepted | Wrong, auto-accepted | Right auto-accepts | End to end (estimate) |
+|---|---|---|---|---|---|---|
+| 1 | off | 3/5 | 1 | 0 | 1 | 2/5 |
+| 1 | on | 3/5 | 1 | 0 | 1 | 2/5 |
+| 2 | off | 3/5 | 1 | 0 | 1 | 2/5 |
+| 2 | on | 3/5 | 1 | 0 | 1 | 2/5 |
+| 3 | off | 3/5 | 1 | 0 | 1 | 2/5 |
+| 3 | on | 3/5 | 1 | 0 | 1 | 2/5 |
+
+Overrides that fired per run: 0 / 0 / 0, of which chose the right HS-6: 0 / 0 / 0. The rulings' majority supported the model's candidate 2 or 3 on 3 / 3 / 3 lines per run; that candidate was the right HS-6 on 2 / 2 / 2.
+
+Model: google/gemini-2.5-flash. Line-by-line results of the latest run, iteration 24 (022-notes): `tests/eval/hs6_eval.json`; since feature 007 each run also keeps its own, `tests/eval/hs6_eval_<tag>.json`; earlier runs are in the git history of `hs6_eval.json`.

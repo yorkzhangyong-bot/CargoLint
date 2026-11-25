@@ -33151,5 +33151,376 @@
    0.1627
   ],
   "note": "backlog items 20/21 re-baseline: family exclusion on, 3 runs, vs 017-after (exclusion off)"
+ },
+ {
+  "iteration": 24,
+  "run_on": "2026-11-25",
+  "change": "3 independent runs, temperature 0.0, seed none",
+  "tag": "022-notes",
+  "set": "cn8",
+  "model": "google/gemini-2.5-flash",
+  "reasoning": {
+   "enabled": false
+  },
+  "lang": "en",
+  "expansion": "off",
+  "customs_wording": "off",
+  "floor": 0.4,
+  "family_exclusion": true,
+  "notes": "tests/eval/hs6_note_texts.json",
+  "threshold": 85,
+  "ask_floor": 50,
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 3,
+  "n": 5,
+  "top1_runs": [
+   3,
+   3,
+   3
+  ],
+  "majority_top1": 3,
+  "top3_runs": [
+   5,
+   5,
+   5
+  ],
+  "chapter_runs": [
+   3,
+   3,
+   3
+  ],
+  "heading_runs": [
+   3,
+   3,
+   3
+  ],
+  "majority_chapter": 3,
+  "majority_heading": 3,
+  "wrong_levels": {
+   "chapter": 2
+  },
+  "same_top1": 5,
+  "top1_consistency": 1.0,
+  "same_route": 5,
+  "route_consistency": 1.0,
+  "routes_runs": [
+   {
+    "auto_accept": 1,
+    "review": 4,
+    "ask_shipper": 0
+   },
+   {
+    "auto_accept": 1,
+    "review": 4,
+    "ask_shipper": 0
+   },
+   {
+    "auto_accept": 1,
+    "review": 4,
+    "ask_shipper": 0
+   }
+  ],
+  "wrong_auto_runs": [
+   [],
+   [],
+   []
+  ],
+  "always_wrong": [
+   {
+    "reference": "SEBTITV-2026-01096",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     },
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     },
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "CZBTI47/152108/2024-580000-04/01",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     },
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     },
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   }
+  ],
+  "unstable": [],
+  "gate_runs": [
+   {
+    "vote_agrees": 1,
+    "vote_disagrees": 3,
+    "vote_tie": 0,
+    "vote_share_low": 1,
+    "scoped_veto": 0,
+    "no_rulings": 0,
+    "not_gated": 0
+   },
+   {
+    "vote_agrees": 1,
+    "vote_disagrees": 3,
+    "vote_tie": 0,
+    "vote_share_low": 1,
+    "scoped_veto": 0,
+    "no_rulings": 0,
+    "not_gated": 0
+   },
+   {
+    "vote_agrees": 1,
+    "vote_disagrees": 3,
+    "vote_tie": 0,
+    "vote_share_low": 1,
+    "scoped_veto": 0,
+    "no_rulings": 0,
+    "not_gated": 0
+   }
+  ],
+  "no_rulings_review_runs": [
+   0,
+   0,
+   0
+  ],
+  "no_voter_runs": [
+   0,
+   0,
+   0
+  ],
+  "right_auto_runs": [
+   1,
+   1,
+   1
+  ],
+  "lost_runs": [
+   2,
+   2,
+   2
+  ],
+  "override_min": 5,
+  "on": {
+   "top1_runs": [
+    3,
+    3,
+    3
+   ],
+   "majority_top1": 3,
+   "routes_runs": [
+    {
+     "auto_accept": 1,
+     "review": 4,
+     "ask_shipper": 0
+    },
+    {
+     "auto_accept": 1,
+     "review": 4,
+     "ask_shipper": 0
+    },
+    {
+     "auto_accept": 1,
+     "review": 4,
+     "ask_shipper": 0
+    }
+   ],
+   "wrong_auto_runs": [
+    [],
+    [],
+    []
+   ],
+   "right_auto_runs": [
+    1,
+    1,
+    1
+   ],
+   "cross_layer": {
+    "majority": {
+     "hs6_right_cn8_right": 2,
+     "hs6_right_cn8_wrong": 1,
+     "hs6_wrong_cn8_right": 1,
+     "hs6_wrong_cn8_wrong": 1
+    },
+    "runs": [
+     {
+      "hs6_right_cn8_right": 2,
+      "hs6_right_cn8_wrong": 1,
+      "hs6_wrong_cn8_right": 1,
+      "hs6_wrong_cn8_wrong": 1
+     },
+     {
+      "hs6_right_cn8_right": 2,
+      "hs6_right_cn8_wrong": 1,
+      "hs6_wrong_cn8_right": 1,
+      "hs6_wrong_cn8_wrong": 1
+     },
+     {
+      "hs6_right_cn8_right": 2,
+      "hs6_right_cn8_wrong": 1,
+      "hs6_wrong_cn8_right": 1,
+      "hs6_wrong_cn8_wrong": 1
+     }
+    ],
+    "end_to_end_runs": [
+     2,
+     2,
+     2
+    ]
+   }
+  },
+  "overrides_runs": [
+   [],
+   [],
+   []
+  ],
+  "supported_runs": [
+   {
+    "lines": 3,
+    "right": 2
+   },
+   {
+    "lines": 3,
+    "right": 2
+   },
+   {
+    "lines": 3,
+    "right": 2
+   }
+  ],
+  "expected_sent": {
+   "wrong": 6,
+   "with_expected": 6,
+   "share": 1.0
+  },
+  "own_ruling": {
+   "nearest_runs": [
+    5,
+    5,
+    5
+   ],
+   "searched_runs": [
+    5,
+    5,
+    5
+   ],
+   "logged_runs": [
+    5,
+    5,
+    5
+   ],
+   "searched": 12
+  },
+  "cn8_iteration": 11,
+  "cn8_source": "cn8_eval_iteration11.json",
+  "cross_layer": {
+   "majority": {
+    "hs6_right_cn8_right": 2,
+    "hs6_right_cn8_wrong": 1,
+    "hs6_wrong_cn8_right": 1,
+    "hs6_wrong_cn8_wrong": 1
+   },
+   "runs": [
+    {
+     "hs6_right_cn8_right": 2,
+     "hs6_right_cn8_wrong": 1,
+     "hs6_wrong_cn8_right": 1,
+     "hs6_wrong_cn8_wrong": 1
+    },
+    {
+     "hs6_right_cn8_right": 2,
+     "hs6_right_cn8_wrong": 1,
+     "hs6_wrong_cn8_right": 1,
+     "hs6_wrong_cn8_wrong": 1
+    },
+    {
+     "hs6_right_cn8_right": 2,
+     "hs6_right_cn8_wrong": 1,
+     "hs6_wrong_cn8_right": 1,
+     "hs6_wrong_cn8_wrong": 1
+    }
+   ],
+   "end_to_end_runs": [
+    2,
+    2,
+    2
+   ]
+  },
+  "family": {
+   "family_majority": 3.0,
+   "family_units": 5,
+   "per_family": {
+    "baskets": 1.0
+   },
+   "standalone": 2
+  },
+  "parse": {
+   "retry_limit": 2,
+   "runs": [
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    },
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    },
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    }
+   ]
+  },
+  "confidence": {
+   "95": {
+    "right": 9,
+    "wrong": 6
+   }
+  },
+  "elapsed_s": 152.4,
+  "cost_usd": 0.0244,
+  "cost_eur": 0.0224,
+  "cost_eur_runs": [
+   0.0075,
+   0.0074,
+   0.0075
+  ]
  }
 ]

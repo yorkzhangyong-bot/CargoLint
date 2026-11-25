@@ -477,10 +477,10 @@ def stub_live_run(monkeypatch, runs):
     queue = iter(runs)
 
     def run_once(rulings, kb, client, as_of, workers, expansion=False, leave_one_out=True, customs_wording=False,
-                 vote_scope="candidates", proposal_scope="all", family_exclusion=False, siblings=None):
+                 vote_scope="candidates", proposal_scope="all", family_exclusion=False, siblings=None, note_texts=None):
         calls.append({"references": [r["reference"] for r in rulings], "as_of": as_of, "leave_one_out": leave_one_out,
                       "customs_wording": customs_wording, "vote_scope": vote_scope, "proposal_scope": proposal_scope,
-                      "family_exclusion": family_exclusion, "siblings": siblings})
+                      "family_exclusion": family_exclusion, "siblings": siblings, "note_texts": note_texts})
         return next(queue), 1.0
 
     monkeypatch.setattr(ev, "run_once", run_once)
@@ -1092,3 +1092,64 @@ def test_the_families_file_matches_the_set_and_has_no_overlap():
             assert member["reference"] not in seen, f"{member['reference']} is in two families"
             seen[member["reference"]] = family["name"]
     assert len(seen) == 35 and len(data["families"]) == 12
+
+
+# --------------------------------------------------------------------------- backlog item 22: the note-text injection
+def test_note_texts_by_reference_maps_each_listed_line_to_its_notes():
+    by_ref = ev.note_texts_by_reference(ev.ROOT / "tests" / "eval" / "hs6_note_texts.json")
+    # 3 treatment + 3 controls, but BTI23 is a control in two notes, so five unique references
+    assert set(by_ref) == {"IEBTIIENEN004-2024-BTI8", "IEBTIIENEN004-2026-BTI23", "SEBTITV-2026-01096",
+                           "CZBTI47/152108/2024-580000-04/01", "IEBTIIENEN004-2025-BTI38"}
+    for ref, text in by_ref.items():
+        assert text.startswith("EU classification note (applies to these goods):\n")
+    assert by_ref["IEBTIIENEN004-2024-BTI8"].count("EU classification note") == 1        # the baskets note only
+    assert "paper strips are twisted" in by_ref["IEBTIIENEN004-2024-BTI8"]
+    assert by_ref["IEBTIIENEN004-2026-BTI23"].count("EU classification note") == 2       # baskets + pet toys, joined
+    assert "intended exclusively for animals" in by_ref["IEBTIIENEN004-2026-BTI23"]
+    assert "paper strips are twisted" in by_ref["IEBTIIENEN004-2026-BTI23"]
+
+
+def test_note_injection_applies_to_the_listed_lines_only(small_index, fake_embeddings, rules, fake_llm):
+    from agent.llm import get_client
+    from rag.loader import KnowledgeBase
+    from rag.retriever import BM25Index, HybridRetriever, InMemoryVectorSearch
+
+    vectors = InMemoryVectorSearch([(c.id, c.text, c.metadata) for c in small_index.chunks], fake_embeddings)
+    kb = KnowledgeBase(small_index, HybridRetriever(bm25=BM25Index([(c.id, c.text) for c in small_index.chunks]),
+                                                    vectors=vectors, chunks=small_index), BTIStore([]), rules,
+                       {"embedding_model": "fake", "built_at": "2026-11-18T00:00:00"}, fake_embeddings)
+    rulings = [{"reference": "LISTED", "chapter": "39", "cn8": "39269097", "language": "en",
+                "description": "alpha goods line"},
+               {"reference": "OTHER", "chapter": "39", "cn8": "39269097", "language": "en",
+                "description": "beta goods line"}]
+    ev.run_once(rulings, kb, get_client(), date(2026, 11, 18), workers=1,
+                note_texts={"LISTED": "EU classification note (applies to these goods):\nDECIDING TEXT"})
+    prompts = fake_llm.prompts_for("RankOut")
+    listed = [p for p in prompts if "alpha goods line" in p]
+    other = [p for p in prompts if "beta goods line" in p]
+    assert len(listed) == 1 and "DECIDING TEXT" in listed[0]            # the note reaches the ranking request
+    assert len(other) == 1 and "DECIDING TEXT" not in other[0]          # and only for the listed line
+
+
+def test_references_filters_the_set_and_notes_reach_run_once(tmp_path, monkeypatch):
+    eval_files_in(tmp_path, monkeypatch)
+    rulings = [{"reference": r, "chapter": "39", "hs6": "3926.90", "cn8": "39269097", "language": "en",
+                "description": f"goods {r}"} for r in ("A", "B", "C")]
+    test_set = tmp_path / "set.json"
+    test_set.write_text(json.dumps({"built_on": "2026-10-23", "rulings": rulings}), encoding="utf-8")
+    monkeypatch.setattr(ev, "SET", test_set)
+    cn8 = tmp_path / "cn8.json"
+    cn8.write_text(json.dumps({"summary": {"iteration": 12}, "rows": [cn8_row(r, "39269097") for r in "ABC"]}),
+                   encoding="utf-8")
+    notes = tmp_path / "notes.json"
+    notes.write_text(json.dumps({"notes": [{"deciding_text": "DECIDING", "treatment": ["A"], "controls": ["C"]}]}),
+                     encoding="utf-8")
+    refs = tmp_path / "refs.json"
+    refs.write_text(json.dumps(["A", "C"]), encoding="utf-8")
+    calls = stub_live_run(monkeypatch, [[{**voted(r, [], top3=["3926.90"]), "route": "review",
+                                          "route_by_confidence": "review", "raw_confidence": 90,
+                                          **ev.override_fields(voted(r, [], top3=["3926.90"]))} for r in "AC"]])
+    assert ev.main(["--tag", "t4", "--cn8", str(cn8), "--notes", str(notes), "--references", str(refs)]) == 0
+    assert calls[0]["references"] == ["A", "C"]                              # only the listed lines run
+    assert set(calls[0]["note_texts"]) == {"A", "C"}                         # both treatment and controls get the note
+    assert "DECIDING" in calls[0]["note_texts"]["A"] and "DECIDING" in calls[0]["note_texts"]["C"]

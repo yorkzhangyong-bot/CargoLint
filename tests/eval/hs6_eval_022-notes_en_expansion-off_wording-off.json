@@ -1,0 +1,4070 @@
+{
+ "summary": {
+  "iteration": 24,
+  "run_on": "2026-11-25",
+  "change": "3 independent runs, temperature 0.0, seed none",
+  "tag": "022-notes",
+  "set": "cn8",
+  "model": "google/gemini-2.5-flash",
+  "reasoning": {
+   "enabled": false
+  },
+  "lang": "en",
+  "expansion": "off",
+  "customs_wording": "off",
+  "floor": 0.4,
+  "family_exclusion": true,
+  "notes": "tests/eval/hs6_note_texts.json",
+  "threshold": 85,
+  "ask_floor": 50,
+  "temperature": 0.0,
+  "seed": null,
+  "repeat": 3,
+  "n": 5,
+  "top1_runs": [
+   3,
+   3,
+   3
+  ],
+  "majority_top1": 3,
+  "top3_runs": [
+   5,
+   5,
+   5
+  ],
+  "chapter_runs": [
+   3,
+   3,
+   3
+  ],
+  "heading_runs": [
+   3,
+   3,
+   3
+  ],
+  "majority_chapter": 3,
+  "majority_heading": 3,
+  "wrong_levels": {
+   "chapter": 2
+  },
+  "same_top1": 5,
+  "top1_consistency": 1.0,
+  "same_route": 5,
+  "route_consistency": 1.0,
+  "routes_runs": [
+   {
+    "auto_accept": 1,
+    "review": 4,
+    "ask_shipper": 0
+   },
+   {
+    "auto_accept": 1,
+    "review": 4,
+    "ask_shipper": 0
+   },
+   {
+    "auto_accept": 1,
+    "review": 4,
+    "ask_shipper": 0
+   }
+  ],
+  "wrong_auto_runs": [
+   [],
+   [],
+   []
+  ],
+  "always_wrong": [
+   {
+    "reference": "SEBTITV-2026-01096",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     },
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     },
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   },
+   {
+    "reference": "CZBTI47/152108/2024-580000-04/01",
+    "chapter": "63",
+    "expected": "6307.90",
+    "seen": [
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     },
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     },
+     {
+      "top1": "9503.00",
+      "confidence": 95,
+      "route": "review",
+      "in_top3": true
+     }
+    ]
+   }
+  ],
+  "unstable": [],
+  "gate_runs": [
+   {
+    "vote_agrees": 1,
+    "vote_disagrees": 3,
+    "vote_tie": 0,
+    "vote_share_low": 1,
+    "scoped_veto": 0,
+    "no_rulings": 0,
+    "not_gated": 0
+   },
+   {
+    "vote_agrees": 1,
+    "vote_disagrees": 3,
+    "vote_tie": 0,
+    "vote_share_low": 1,
+    "scoped_veto": 0,
+    "no_rulings": 0,
+    "not_gated": 0
+   },
+   {
+    "vote_agrees": 1,
+    "vote_disagrees": 3,
+    "vote_tie": 0,
+    "vote_share_low": 1,
+    "scoped_veto": 0,
+    "no_rulings": 0,
+    "not_gated": 0
+   }
+  ],
+  "no_rulings_review_runs": [
+   0,
+   0,
+   0
+  ],
+  "no_voter_runs": [
+   0,
+   0,
+   0
+  ],
+  "right_auto_runs": [
+   1,
+   1,
+   1
+  ],
+  "lost_runs": [
+   2,
+   2,
+   2
+  ],
+  "override_min": 5,
+  "on": {
+   "top1_runs": [
+    3,
+    3,
+    3
+   ],
+   "majority_top1": 3,
+   "routes_runs": [
+    {
+     "auto_accept": 1,
+     "review": 4,
+     "ask_shipper": 0
+    },
+    {
+     "auto_accept": 1,
+     "review": 4,
+     "ask_shipper": 0
+    },
+    {
+     "auto_accept": 1,
+     "review": 4,
+     "ask_shipper": 0
+    }
+   ],
+   "wrong_auto_runs": [
+    [],
+    [],
+    []
+   ],
+   "right_auto_runs": [
+    1,
+    1,
+    1
+   ],
+   "cross_layer": {
+    "majority": {
+     "hs6_right_cn8_right": 2,
+     "hs6_right_cn8_wrong": 1,
+     "hs6_wrong_cn8_right": 1,
+     "hs6_wrong_cn8_wrong": 1
+    },
+    "runs": [
+     {
+      "hs6_right_cn8_right": 2,
+      "hs6_right_cn8_wrong": 1,
+      "hs6_wrong_cn8_right": 1,
+      "hs6_wrong_cn8_wrong": 1
+     },
+     {
+      "hs6_right_cn8_right": 2,
+      "hs6_right_cn8_wrong": 1,
+      "hs6_wrong_cn8_right": 1,
+      "hs6_wrong_cn8_wrong": 1
+     },
+     {
+      "hs6_right_cn8_right": 2,
+      "hs6_right_cn8_wrong": 1,
+      "hs6_wrong_cn8_right": 1,
+      "hs6_wrong_cn8_wrong": 1
+     }
+    ],
+    "end_to_end_runs": [
+     2,
+     2,
+     2
+    ]
+   }
+  },
+  "overrides_runs": [
+   [],
+   [],
+   []
+  ],
+  "supported_runs": [
+   {
+    "lines": 3,
+    "right": 2
+   },
+   {
+    "lines": 3,
+    "right": 2
+   },
+   {
+    "lines": 3,
+    "right": 2
+   }
+  ],
+  "expected_sent": {
+   "wrong": 6,
+   "with_expected": 6,
+   "share": 1.0
+  },
+  "own_ruling": {
+   "nearest_runs": [
+    5,
+    5,
+    5
+   ],
+   "searched_runs": [
+    5,
+    5,
+    5
+   ],
+   "logged_runs": [
+    5,
+    5,
+    5
+   ],
+   "searched": 12
+  },
+  "cn8_iteration": 11,
+  "cn8_source": "cn8_eval_iteration11.json",
+  "cross_layer": {
+   "majority": {
+    "hs6_right_cn8_right": 2,
+    "hs6_right_cn8_wrong": 1,
+    "hs6_wrong_cn8_right": 1,
+    "hs6_wrong_cn8_wrong": 1
+   },
+   "runs": [
+    {
+     "hs6_right_cn8_right": 2,
+     "hs6_right_cn8_wrong": 1,
+     "hs6_wrong_cn8_right": 1,
+     "hs6_wrong_cn8_wrong": 1
+    },
+    {
+     "hs6_right_cn8_right": 2,
+     "hs6_right_cn8_wrong": 1,
+     "hs6_wrong_cn8_right": 1,
+     "hs6_wrong_cn8_wrong": 1
+    },
+    {
+     "hs6_right_cn8_right": 2,
+     "hs6_right_cn8_wrong": 1,
+     "hs6_wrong_cn8_right": 1,
+     "hs6_wrong_cn8_wrong": 1
+    }
+   ],
+   "end_to_end_runs": [
+    2,
+    2,
+    2
+   ]
+  },
+  "family": {
+   "family_majority": 3.0,
+   "family_units": 5,
+   "per_family": {
+    "baskets": 1.0
+   },
+   "standalone": 2
+  },
+  "parse": {
+   "retry_limit": 2,
+   "runs": [
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    },
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    },
+    {
+     "retries": 0,
+     "unparseable": 0,
+     "schema_invalid": 0,
+     "failed_calls": 0,
+     "failed_lines": 0
+    }
+   ]
+  },
+  "confidence": {
+   "95": {
+    "right": 9,
+    "wrong": 6
+   }
+  },
+  "elapsed_s": 152.4,
+  "cost_usd": 0.0244,
+  "cost_eur": 0.0224,
+  "cost_eur_runs": [
+   0.0075,
+   0.0074,
+   0.0075
+  ],
+  "set_built_on": "2026-10-23",
+  "cn8_lines": [
+   {
+    "reference": "IEBTIIENEN004-2026-BTI23",
+    "quadrant": "hs6_right_cn8_right",
+    "hs6_hits": [
+     true,
+     true,
+     true
+    ],
+    "cn8_hits": [
+     true,
+     true,
+     true
+    ]
+   },
+   {
+    "reference": "SEBTITV-2026-01096",
+    "quadrant": "hs6_wrong_cn8_wrong",
+    "hs6_hits": [
+     false,
+     false,
+     false
+    ],
+    "cn8_hits": [
+     false,
+     false,
+     false
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI8",
+    "quadrant": "hs6_right_cn8_right",
+    "hs6_hits": [
+     true,
+     true,
+     true
+    ],
+    "cn8_hits": [
+     true,
+     true,
+     true
+    ]
+   },
+   {
+    "reference": "CZBTI47/152108/2024-580000-04/01",
+    "quadrant": "hs6_wrong_cn8_right",
+    "hs6_hits": [
+     false,
+     false,
+     false
+    ],
+    "cn8_hits": [
+     true,
+     true,
+     true
+    ]
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI38",
+    "quadrant": "hs6_right_cn8_wrong",
+    "hs6_hits": [
+     true,
+     true,
+     true
+    ],
+    "cn8_hits": [
+     false,
+     false,
+     false
+    ]
+   }
+  ],
+  "usage": {
+   "total_tokens": 53580,
+   "prompt_tokens": 49596,
+   "completion_tokens": 3984,
+   "calls": 45,
+   "cost_usd": 0.0244,
+   "cost_eur": 0.0224
+  }
+ },
+ "rows": [
+  {
+   "reference": "IEBTIIENEN004-2026-BTI23",
+   "chapter": "63",
+   "language": "en",
+   "expected": "6307.90",
+   "flag": "ok",
+   "top1": "6307.90",
+   "top3": [
+    "6307.90",
+    "5808.90",
+    "6215.90"
+   ],
+   "confidences": [
+    95,
+    80,
+    40
+   ],
+   "confidence": 95,
+   "raw_confidence": 95,
+   "raw": [
+    {
+     "code": "6307.90",
+     "confidence": 95
+    },
+    {
+     "code": "5808.90",
+     "confidence": 80
+    },
+    {
+     "code": "6215.90",
+     "confidence": 40
+    }
+   ],
+   "hit": true,
+   "in_top3": true,
+   "route": "review",
+   "route_by_confidence": "auto_accept",
+   "gate": "vote_share_low",
+   "vote": {
+    "majority": "6307.90",
+    "share": 0.4,
+    "voters": 5,
+    "candidate": null,
+    "counts": [
+     [
+      "6307.90",
+      2
+     ],
+     [
+      "5808.90",
+      1
+     ],
+     [
+      "4823.90",
+      1
+     ],
+     [
+      "5806.40",
+      1
+     ]
+    ]
+   },
+   "scoped_vote": {
+    "majority": "6307.90",
+    "share": 0.4,
+    "voters": 5,
+    "candidate": null,
+    "counts": [
+     [
+      "6307.90",
+      2
+     ],
+     [
+      "5808.90",
+      1
+     ],
+     [
+      "5806.40",
+      1
+     ],
+     [
+      "5806.32",
+      1
+     ]
+    ]
+   },
+   "status": "checked",
+   "error": null,
+   "precedent_codes": [
+    "6307.90",
+    "5806.32",
+    "5808.90"
+   ],
+   "expected_sent": true,
+   "own_rank": 1,
+   "nearest_hits": [{"reference":"IEBTIIENEN004-2026-BTI23","hs6":"6307.90","distance":0.032712,"country":"IE","eligible":false},{"reference":"DEBTI26260/24-1","hs6":"5808.90","distance":0.29392,"country":"DE","eligible":true},{"reference":"DEBTI48563/25-1","hs6":"6307.90","distance":0.305741,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2026-01865","hs6":"5806.32","distance":0.30995,"country":"FR","eligible":false},{"reference":"DEBTI14944/24-1","hs6":"6307.90","distance":0.31885,"country":"DE","eligible":true},{"reference":"IEBTIIENEN004-2025-BTI392","hs6":"4823.90","distance":0.321866,"country":"IE","eligible":true},{"reference":"DEBTI14507/24-1","hs6":"5806.40","distance":0.325098,"country":"DE","eligible":true},{"reference":"DEBTI14943/24-1","hs6":"5806.32","distance":0.325257,"country":"DE","eligible":true},{"reference":"SKBTI514144/24/283","hs6":"3926.40","distance":0.325296,"country":"SK","eligible":true},{"reference":"DEBTI14944/24-2","hs6":"6307.90","distance":0.327436,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2026-00477","hs6":"5806.32","distance":0.327569,"country":"FR","eligible":true},{"reference":"DEBTI60458/24-1","hs6":"6307.90","distance":0.328265,"country":"DE","eligible":true},{"reference":"SKBTI514121/24/281","hs6":"3926.40","distance":0.328424,"country":"SK","eligible":true},{"reference":"DEBTI21118/26-1","hs6":"6307.90","distance":0.329325,"country":"DE","eligible":false},{"reference":"DEBTI17307/25-1","hs6":"6307.90","distance":0.329446,"country":"DE","eligible":true},{"reference":"DEBTI60441/24-1","hs6":"6307.90","distance":0.332765,"country":"DE","eligible":true},{"reference":"DEBTI49113/25-1","hs6":"6117.80","distance":0.333909,"country":"DE","eligible":true},{"reference":"DEBTI49429/23-1","hs6":"6307.90","distance":0.334511,"country":"DE","eligible":true},{"reference":"DEBTI35191/25-1","hs6":"6307.90","distance":0.337618,"country":"DE","eligible":true},{"reference":"DEBTI17377/25-1","hs6":"6307.90","distance":0.337683,"country":"DE","eligible":true},{"reference":"DEBTI23183/26-1","hs6":"6307.90","distance":0.337943,"country":"DE","eligible":false},{"reference":"ATBTI2024000254-DEC","hs6":"6307.90","distance":0.340268,"country":"AT","eligible":true},{"reference":"DEBTI17585/24-1","hs6":"6307.90","distance":0.340594,"country":"DE","eligible":true},{"reference":"DEBTI21759/25-1","hs6":"6307.90","distance":0.34246,"country":"DE","eligible":true},{"reference":"DEBTI25252/25-1","hs6":"6307.90","distance":0.343014,"country":"DE","eligible":true},{"reference":"DEBTI60417/24-1","hs6":"6307.90","distance":0.343091,"country":"DE","eligible":true},{"reference":"DEBTI25254/25-1","hs6":"6307.90","distance":0.343302,"country":"DE","eligible":true},{"reference":"SKBTI514134/24/282","hs6":"4823.90","distance":0.343266,"country":"SK","eligible":true},{"reference":"DEBTI28513/26-1","hs6":"6307.90","distance":0.34378,"country":"DE","eligible":true},{"reference":"DEBTI14712/26-1","hs6":"5806.39","distance":0.344054,"country":"DE","eligible":true},{"reference":"DEBTI50534/23-1","hs6":"3926.40","distance":0.344267,"country":"DE","eligible":true},{"reference":"DEBTI39591/23-1","hs6":"6307.90","distance":0.345281,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-04901","hs6":"6307.90","distance":0.345745,"country":"FR","eligible":true},{"reference":"ESBTIESBTI2026REN807","hs6":"6307.90","distance":0.346235,"country":"ES","eligible":true},{"reference":"DEBTI23190/26-1","hs6":"6307.90","distance":0.346637,"country":"DE","eligible":false},{"reference":"NLBTI2025-1771","hs6":"6307.90","distance":0.347173,"country":"NL","eligible":true},{"reference":"DEBTI48015/24-1","hs6":"6307.90","distance":0.347413,"country":"DE","eligible":true},{"reference":"DEBTI40909/23-1","hs6":"5609.00","distance":0.347648,"country":"DE","eligible":true},{"reference":"DEBTI28519/26-1","hs6":"6307.90","distance":0.348005,"country":"DE","eligible":false},{"reference":"DEBTI43745/25-1","hs6":"6307.90","distance":0.349123,"country":"DE","eligible":true}],
+   "vote_chapters": [
+    "58",
+    "62",
+    "63"
+   ],
+   "not_indexed": [],
+   "vote_hits": [
+    {
+     "reference": "IEBTIIENEN004-2026-BTI23",
+     "hs6": "6307.90",
+     "similarity": 0.967288,
+     "eligible": false
+    },
+    {
+     "reference": "DEBTI26260/24-1",
+     "hs6": "5808.90",
+     "similarity": 0.70608,
+     "eligible": true
+    },
+    {
+     "reference": "DEBTI48563/25-1",
+     "hs6": "6307.90",
+     "similarity": 0.694259,
+     "eligible": true
+    },
+    {
+     "reference": "FRBTIFR-BTI-2026-01865",
+     "hs6": "5806.32",
+     "similarity": 0.69005,
+     "eligible": false
+    },
+    {
+     "reference": "DEBTI14944/24-1",
+     "hs6": "6307.90",
+     "similarity": 0.68115,
+     "eligible": true
+    },
+    {
+     "reference": "DEBTI14507/24-1",
+     "hs6": "5806.40",
+     "similarity": 0.674902,
+     "eligible": true
+    },
+    {
+     "reference": "DEBTI14943/24-1",
+     "hs6": "5806.32",
+     "similarity": 0.674743,
+     "eligible": true
+    },
+    {
+     "reference": "DEBTI14944/24-2",
+     "hs6": "6307.90",
+     "similarity": 0.672564,
+     "eligible": true
+    },
+    {
+     "reference": "FRBTIFR-BTI-2026-00477",
+     "hs6": "5806.32",
+     "similarity": 0.672431,
+     "eligible": true
+    },
+    {
+     "reference": "DEBTI60458/24-1",
+     "hs6": "6307.90",
+     "similarity": 0.671735,
+     "eligible": true
+    },
+    {
+     "reference": "DEBTI21118/26-1",
+     "hs6": "6307.90",
+     "similarity": 0.670675,
+     "eligible": false
+    },
+    {
+     "reference": "DEBTI17307/25-1",
+     "hs6": "6307.90",
+     "similarity": 0.670554,
+     "eligible": true
+    }
+   ],
+   "customs_wording": null,
+   "proposal_chapters": null,
+   "citation_notes": [],
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "on": {
+    "gate": "vote_share_low",
+    "route": "review",
+    "rank": 1,
+    "chosen": "6307.90",
+    "hit": true
+   }
+  },
+  {
+   "reference": "SEBTITV-2026-01096",
+   "chapter": "63",
+   "language": "en",
+   "expected": "6307.90",
+   "flag": "ok",
+   "top1": "9503.00",
+   "top3": [
+    "9503.00",
+    "6307.90",
+    "4205.00"
+   ],
+   "confidences": [
+    95,
+    60,
+    0
+   ],
+   "confidence": 95,
+   "raw_confidence": 95,
+   "raw": [
+    {
+     "code": "9503.00",
+     "confidence": 95
+    },
+    {
+     "code": "6307.90",
+     "confidence": 60
+    },
+    {
+     "code": "4205.00",
+     "confidence": 0
+    }
+   ],
+   "hit": false,
+   "in_top3": true,
+   "route": "review",
+   "route_by_confidence": "auto_accept",
+   "gate": "vote_disagrees",
+   "vote": {
+    "majority": "6307.90",
+    "share": 0.4,
+    "voters": 5,
+    "candidate": 2,
+    "counts": [
+     [
+      "6307.90",
+      2
+     ],
+     [
+      "4205.00",
+      1
+     ],
+     [
+      "9503.00",
+      1
+     ],
+     [
+      "4421.99",
+      1
+     ]
+    ]
+   },
+   "scoped_vote": {
+    "majority": null,
+    "share": 0.4,
+    "voters": 5,
+    "candidate": null,
+    "counts": [
+     [
+      "6307.90",
+      2
+     ],
+     [
+      "9503.00",
+      2
+     ],
+     [
+      "4205.00",
+      1
+     ]
+    ]
+   },
+   "status": "checked",
+   "error": null,
+   "precedent_codes": [
+    "6307.90",
+    "9503.00",
+    "4205.00"
+   ],
+   "expected_sent": true,
+   "own_rank": 1,
+   "nearest_hits": [{"reference":"SEBTITV-2026-01096","hs6":"6307.90","distance":0.080297,"country":"SE","eligible":false},{"reference":"SEBTITV-2025-28542","hs6":"4205.00","distance":0.347988,"country":"SE","eligible":true},{"reference":"SEBTITV-2025-28962","hs6":"6307.90","distance":0.368001,"country":"SE","eligible":true},{"reference":"SEBTITV-2026-09400","hs6":"9503.00","distance":0.373139,"country":"SE","eligible":true},{"reference":"SEBTITV-2025-28976","hs6":"4421.99","distance":0.37624,"country":"SE","eligible":true},{"reference":"SEBTITV-2025-28956","hs6":"6307.90","distance":0.377557,"country":"SE","eligible":true},{"reference":"SEBTITV-2025-28514","hs6":"5609.00","distance":0.381563,"country":"SE","eligible":true},{"reference":"SEBTITV-2025-28516","hs6":"3926.90","distance":0.391158,"country":"SE","eligible":true},{"reference":"BEBTIDT.50.020.651","hs6":"9503.00","distance":0.394935,"country":"BE","eligible":true},{"reference":"SEBTITV-2026-01721","hs6":"6307.90","distance":0.399875,"country":"SE","eligible":true},{"reference":"CZBTI45/141761/2024-580000-04/01","hs6":"6307.90","distance":0.403688,"country":"CZ","eligible":true},{"reference":"DKBTI25-1430297","hs6":"3926.40","distance":0.410731,"country":"DK","eligible":true},{"reference":"DEBTI46027/25-1","hs6":"4016.99","distance":0.412652,"country":"DE","eligible":true},{"reference":"DEBTI45001/25-1","hs6":"4016.99","distance":0.416268,"country":"DE","eligible":true},{"reference":"DKBTI25-5000779","hs6":"9503.00","distance":0.416714,"country":"DK","eligible":true},{"reference":"DEBTI14025/24-1","hs6":"4016.99","distance":0.416995,"country":"DE","eligible":true},{"reference":"DKBTI25-5000457","hs6":"6307.90","distance":0.417761,"country":"DK","eligible":true},{"reference":"DEBTI43057/25-1","hs6":"6307.90","distance":0.419364,"country":"DE","eligible":true},{"reference":"DEBTI11497/26-1","hs6":"6307.90","distance":0.420171,"country":"DE","eligible":true},{"reference":"SEBTITV-2025-22443","hs6":"6307.90","distance":0.420188,"country":"SE","eligible":true},{"reference":"DKBTI24-2728021","hs6":"9503.00","distance":0.421438,"country":"DK","eligible":true},{"reference":"DEBTI42458/25-1","hs6":"9503.00","distance":0.421667,"country":"DE","eligible":true},{"reference":"DEBTI45741/25-1","hs6":"4016.99","distance":0.42251,"country":"DE","eligible":true},{"reference":"DEBTI57678/24-1","hs6":"6307.90","distance":0.423127,"country":"DE","eligible":true},{"reference":"DKBTI25-5643022-2","hs6":"9503.00","distance":0.42425,"country":"DK","eligible":true},{"reference":"DKBTI25-5320345","hs6":"6307.90","distance":0.424915,"country":"DK","eligible":true},{"reference":"DEBTI41088/24-1","hs6":"6307.90","distance":0.425093,"country":"DE","eligible":true},{"reference":"DKBTI25-5000560","hs6":"9503.00","distance":0.42598,"country":"DK","eligible":true},{"reference":"NLBTI2025-0642","hs6":"6307.90","distance":0.426698,"country":"NL","eligible":true},{"reference":"DEBTI45002/25-1","hs6":"4016.99","distance":0.427456,"country":"DE","eligible":true},{"reference":"DKBTI25-1430334","hs6":"9505.90","distance":0.427819,"country":"DK","eligible":true},{"reference":"DEBTI47136/25-1","hs6":"4016.99","distance":0.428118,"country":"DE","eligible":true},{"reference":"DEBTI37340/26-1","hs6":"9503.00","distance":0.42816,"country":"DE","eligible":true},{"reference":"DKBTI25-5000547","hs6":"6307.90","distance":0.428379,"country":"DK","eligible":true},{"reference":"DKBTI25-5000712","hs6":"9505.10","distance":0.428836,"country":"DK","eligible":true},{"reference":"DEBTI13210/26-1","hs6":"6307.90","distance":0.429022,"country":"DE","eligible":true},{"reference":"DKBTI24-0408670","hs6":"9503.00","distance":0.42907,"country":"DK","eligible":true},{"reference":"SEBTITV-2026-10642","hs6":"7907.00","distance":0.430142,"country":"SE","eligible":true},{"reference":"SEBTITV-2024-25506","hs6":"6307.90","distance":0.430999,"country":"SE","eligible":true},{"reference":"DKBTI25-5000483","hs6":"9503.00","distance":0.431698,"country":"DK","eligible":true}],
+   "vote_chapters": [
+    "42",
+    "63",
+    "95"
+   ],
+   "not_indexed": [],
+   "vote_hits": [
+    {
+     "reference": "SEBTITV-2026-01096",
+     "hs6": "6307.90",
+     "similarity": 0.919703,
+     "eligible": false
+    },
+    {
+     "reference": "SEBTITV-2025-28542",
+     "hs6": "4205.00",
+     "similarity": 0.652012,
+     "eligible": true
+    },
+    {
+     "reference": "SEBTITV-2025-28962",
+     "hs6": "6307.90",
+     "similarity": 0.631999,
+     "eligible": true
+    },
+    {
+     "reference": "SEBTITV-2026-09400",
+     "hs6": "9503.00",
+     "similarity": 0.626861,
+     "eligible": true
+    },
+    {
+     "reference": "SEBTITV-2025-28956",
+     "hs6": "6307.90",
+     "similarity": 0.622443,
+     "eligible": true
+    },
+    {
+     "reference": "BEBTIDT.50.020.651",
+     "hs6": "9503.00",
+     "similarity": 0.605065,
+     "eligible": true
+    },
+    {
+     "reference": "SEBTITV-2026-01721",
+     "hs6": "6307.90",
+     "similarity": 0.600125,
+     "eligible": true
+    },
+    {
+     "reference": "CZBTI45/141761/2024-580000-04/01",
+     "hs6": "6307.90",
+     "similarity": 0.596312,
+     "eligible": true
+    },
+    {
+     "reference": "DKBTI25-5000779",
+     "hs6": "9503.00",
+     "similarity": 0.583286,
+     "eligible": true
+    },
+    {
+     "reference": "DKBTI25-5000457",
+     "hs6": "6307.90",
+     "similarity": 0.582239,
+     "eligible": true
+    },
+    {
+     "reference": "DEBTI43057/25-1",
+     "hs6": "6307.90",
+     "similarity": 0.580636,
+     "eligible": true
+    },
+    {
+     "reference": "DEBTI11497/26-1",
+     "hs6": "6307.90",
+     "similarity": 0.579829,
+     "eligible": true
+    }
+   ],
+   "customs_wording": null,
+   "proposal_chapters": null,
+   "citation_notes": [],
+   "supported": {
+    "rank": 2,
+    "right": true
+   },
+   "on": {
+    "gate": "vote_disagrees",
+    "route": "review",
+    "rank": 1,
+    "chosen": "9503.00",
+    "hit": false
+   }
+  },
+  {
+   "reference": "IEBTIIENEN004-2024-BTI8",
+   "chapter": "63",
+   "language": "en",
+   "expected": "6307.90",
+   "flag": "ok",
+   "top1": "6307.90",
+   "top3": [
+    "6307.90",
+    "4602.90",
+    "4602.19"
+   ],
+   "confidences": [
+    95,
+    40,
+    35
+   ],
+   "confidence": 95,
+   "raw_confidence": 95,
+   "raw": [
+    {
+     "code": "6307.90",
+     "confidence": 95
+    },
+    {
+     "code": "4602.90",
+     "confidence": 40
+    },
+    {
+     "code": "4602.19",
+     "confidence": 35
+    }
+   ],
+   "hit": true,
+   "in_top3": true,
+   "route": "review",
+   "route_by_confidence": "auto_accept",
+   "gate": "vote_disagrees",
+   "vote": {
+    "majority": "4602.19",
+    "share": 0.6,
+    "voters": 5,
+    "candidate": 3,
+    "counts": [
+     [
+      "4602.19",
+      3
+     ],
+     [
+      "6307.90",
+      1
+     ],
+     [
+      "4602.90",
+      1
+     ]
+    ]
+   },
+   "scoped_vote": {
+    "majority": "4602.19",
+    "share": 0.6,
+    "voters": 5,
+    "candidate": 3,
+    "counts": [
+     [
+      "4602.19",
+      3
+     ],
+     [
+      "6307.90",
+      1
+     ],
+     [
+      "4602.90",
+      1
+     ]
+    ]
+   },
+   "status": "checked",
+   "error": null,
+   "precedent_codes": [
+    "4602.19",
+    "6307.90",
+    "4602.90"
+   ],
+   "expected_sent": true,
+   "own_rank": 1,
+   "nearest_hits": [{"reference":"IEBTIIENEN004-2024-BTI8","hs6":"6307.90","distance":0.144596,"country":"IE","eligible":false},{"reference":"IEBTIIENEN004-2024-BTI5","hs6":"6307.90","distance":0.194236,"country":"IE","eligible":true},{"reference":"IEBTIIENEN004-2024-BTI7","hs6":"6307.90","distance":0.230085,"country":"IE","eligible":true},{"reference":"DEBTI41104/25-1","hs6":"4602.19","distance":0.36276,"country":"DE","eligible":true},{"reference":"DEBTI40335/23-1","hs6":"6307.90","distance":0.373338,"country":"DE","eligible":true},{"reference":"DEBTI41080/25-1","hs6":"4602.19","distance":0.376517,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-05281","hs6":"4602.90","distance":0.380812,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2024-05865","hs6":"4602.19","distance":0.38288,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2025-06224","hs6":"4601.29","distance":0.38433,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2025-00696","hs6":"4202.92","distance":0.386622,"country":"FR","eligible":true},{"reference":"DEBTI40889/25-1","hs6":"4602.19","distance":0.388631,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2024-05866","hs6":"4602.19","distance":0.390819,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2024-03731","hs6":"4602.90","distance":0.391799,"country":"FR","eligible":true},{"reference":"DEBTI47851/24-1","hs6":"5609.00","distance":0.393804,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-03068","hs6":"4602.19","distance":0.396875,"country":"FR","eligible":true},{"reference":"DEBTI18781/26-1","hs6":"5609.00","distance":0.39713,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2026-02705","hs6":"4823.90","distance":0.398622,"country":"FR","eligible":false},{"reference":"DEBTI333/26-1","hs6":"5609.00","distance":0.398765,"country":"DE","eligible":true},{"reference":"DEBTI3899/26-1","hs6":"5609.00","distance":0.398902,"country":"DE","eligible":true},{"reference":"DEBTI46951/25-1","hs6":"4602.19","distance":0.401327,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-00864","hs6":"4602.19","distance":0.402525,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2024-05864","hs6":"4602.19","distance":0.402748,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2025-03311","hs6":"4602.19","distance":0.403496,"country":"FR","eligible":true},{"reference":"DEBTI47311/24-1","hs6":"6307.90","distance":0.403716,"country":"DE","eligible":true},{"reference":"DEBTI18233/26-1","hs6":"4602.90","distance":0.403824,"country":"DE","eligible":true},{"reference":"DEBTI47309/24-1","hs6":"6307.90","distance":0.404051,"country":"DE","eligible":true},{"reference":"DEBTI40784/25-1","hs6":"4602.19","distance":0.404994,"country":"DE","eligible":true},{"reference":"DEBTI6478/26-1","hs6":"6307.90","distance":0.404991,"country":"DE","eligible":true},{"reference":"DEBTI11063/24-1","hs6":"5609.00","distance":0.40524,"country":"DE","eligible":true},{"reference":"DEBTI40042/25-1","hs6":"4602.19","distance":0.407027,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2026-04900","hs6":"4602.19","distance":0.408584,"country":"FR","eligible":false},{"reference":"DEBTI45688/23-1","hs6":"4602.19","distance":0.408759,"country":"DE","eligible":true},{"reference":"DEBTI40929/25-1","hs6":"4602.19","distance":0.409259,"country":"DE","eligible":true},{"reference":"DEBTI6273/26-1","hs6":"6307.90","distance":0.409611,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-04299","hs6":"9505.10","distance":0.409696,"country":"FR","eligible":true},{"reference":"SKBTI163032/26/110","hs6":"4602.19","distance":0.410306,"country":"SK","eligible":true},{"reference":"DEBTI14197/24-1","hs6":"6307.90","distance":0.410847,"country":"DE","eligible":true},{"reference":"DEBTI20225/25-1","hs6":"4602.19","distance":0.411462,"country":"DE","eligible":true},{"reference":"DEBTI21832/25-1","hs6":"6307.90","distance":0.411506,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2024-04857","hs6":"4602.90","distance":0.412873,"country":"FR","eligible":true}],
+   "vote_chapters": [
+    "46",
+    "63"
+   ],
+   "not_indexed": [],
+   "vote_hits": [
+    {
+     "reference": "IEBTIIENEN004-2024-BTI8",
+     "hs6": "6307.90",
+     "similarity": 0.855404,
+     "eligible": false
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI5",
+     "hs6": "6307.90",
+     "similarity": 0.805764,
+     "eligible": true
+    },
+    {
+     "reference": "IEBTIIENEN004-2024-BTI7",
+     "hs6": "6307.90",
+     "similarity": 0.769915,
+     "eligible": true
+    },
+    {
+     "reference": "DEBTI41104/25-1",
+     "hs6": "4602.19",
+     "similarity": 0.63724,
+     "eligible": true
+    },
+    {
+     "reference": "DEBTI40335/23-1",
+     "hs6": "6307.90",
+     "similarity": 0.626662,
+     "eligible": true
+    },
+    {
+     "reference": "DEBTI41080/25-1",
+     "hs6": "4602.19",
+     "similarity": 0.623483,
+     "eligible": true
+    },
+    {
+     "reference": "FRBTIFR-BTI-2025-05281",
+     "hs6": "4602.90",
+     "similarity": 0.619188,
+     "eligible": true
+    },
+    {
+     "reference": "FRBTIFR-BTI-2024-05865",
+     "hs6": "4602.19",
+     "similarity": 0.61712,
+     "eligible": true
+    },
+    {
+     "reference": "FRBTIFR-BTI-2025-06224",
+     "hs6": "4601.29",
+     "similarity": 0.61567,
+     "eligible": true
+    },
+    {
+     "reference": "DEBTI40889/25-1",
+     "hs6": "4602.19",
+     "similarity": 0.611369,
+     "eligible": true
+    },
+    {
+     "reference": "CZBTI47/304942/2025-300000-ZI/01",
+     "hs6": "4602.19",
+     "similarity": 0.611008,
+     "eligible": true
+    },
+    {
+     "reference": "FRBTIFR-BTI-2024-05866",
+     "hs6": "4602.19",
+     "similarity": 0.609181,
+     "eligible": true
+    }
+   ],
+   "customs_wording": null,
+   "proposal_chapters": null,
+   "citation_notes": [],
+   "supported": {
+    "rank": 3,
+    "right": false
+   },
+   "on": {
+    "gate": "vote_disagrees",
+    "route": "review",
+    "rank": 1,
+    "chosen": "6307.90",
+    "hit": true
+   }
+  },
+  {
+   "reference": "CZBTI47/152108/2024-580000-04/01",
+   "chapter": "63",
+   "language": "cs",
+   "expected": "6307.90",
+   "flag": "ok",
+   "top1": "9503.00",
+   "top3": [
+    "9503.00",
+    "6307.90",
+    "6701.00"
+   ],
+   "confidences": [
+    95,
+    60,
+    40
+   ],
+   "confidence": 95,
+   "raw_confidence": 95,
+   "raw": [
+    {
+     "code": "9503.00",
+     "confidence": 95
+    },
+    {
+     "code": "6307.90",
+     "confidence": 60
+    },
+    {
+     "code": "6701.00",
+     "confidence": 40
+    }
+   ],
+   "hit": false,
+   "in_top3": true,
+   "route": "review",
+   "route_by_confidence": "auto_accept",
+   "gate": "vote_disagrees",
+   "vote": {
+    "majority": "6307.90",
+    "share": 0.6,
+    "voters": 5,
+    "candidate": 2,
+    "counts": [
+     [
+      "6307.90",
+      3
+     ],
+     [
+      "6701.00",
+      1
+     ],
+     [
+      "3926.90",
+      1
+     ]
+    ]
+   },
+   "scoped_vote": {
+    "majority": "6307.90",
+    "share": 0.6,
+    "voters": 5,
+    "candidate": 2,
+    "counts": [
+     [
+      "6307.90",
+      3
+     ],
+     [
+      "6701.00",
+      2
+     ]
+    ]
+   },
+   "status": "checked",
+   "error": null,
+   "precedent_codes": [
+    "6307.90",
+    "6701.00",
+    "3926.90"
+   ],
+   "expected_sent": true,
+   "own_rank": 1,
+   "nearest_hits": [{"reference":"CZBTI47/152108/2024-580000-04/01","hs6":"6307.90","distance":0.092097,"country":"CZ","eligible":false},{"reference":"CZBTI47/002334/2025-580000-04/01","hs6":"6307.90","distance":0.126592,"country":"CZ","eligible":true},{"reference":"CZBTI45/206864/2024-580000-04/01","hs6":"6701.00","distance":0.154869,"country":"CZ","eligible":true},{"reference":"CZBTI45/152099/2024-580000-04/01","hs6":"6307.90","distance":0.172117,"country":"CZ","eligible":true},{"reference":"CZBTI45/189629/2023-580000-04/01","hs6":"6307.90","distance":0.175333,"country":"CZ","eligible":true},{"reference":"CZBTI51/021089/2025-300000-ZI/01","hs6":"3926.90","distance":0.186985,"country":"CZ","eligible":true},{"reference":"CZBTI41/152107/2024-580000-04/01","hs6":"6701.00","distance":0.188931,"country":"CZ","eligible":true},{"reference":"CZBTI31/208095/2024-580000-04/01","hs6":"6307.90","distance":0.190809,"country":"CZ","eligible":true},{"reference":"CZBTI41/152101/2024-580000-04/01","hs6":"6307.90","distance":0.196802,"country":"CZ","eligible":true},{"reference":"CZBTI47/152110/2024-580000-04/01","hs6":"5609.00","distance":0.19684,"country":"CZ","eligible":true},{"reference":"CZBTI47/152113/2024-580000-04/01","hs6":"4303.90","distance":0.200641,"country":"CZ","eligible":true},{"reference":"CZBTI51/144698/2024-580000-04/01","hs6":"6307.90","distance":0.205136,"country":"CZ","eligible":true},{"reference":"CZBTI34/182905/2023-580000-04/01","hs6":"6307.90","distance":0.208152,"country":"CZ","eligible":true},{"reference":"CZBTI34/182902/2023-580000-04/01","hs6":"6701.00","distance":0.214146,"country":"CZ","eligible":true},{"reference":"CZBTI31/192336/2023-580000-04/01","hs6":"6701.00","distance":0.22063,"country":"CZ","eligible":true},{"reference":"CZBTI50/208094/2024-580000-04/01","hs6":"6307.90","distance":0.224409,"country":"CZ","eligible":true},{"reference":"CZBTI50/538679/2026-300000-ZI/01","hs6":"6307.90","distance":0.224474,"country":"CZ","eligible":true},{"reference":"CZBTI45/141761/2024-580000-04/01","hs6":"6307.90","distance":0.225424,"country":"CZ","eligible":true},{"reference":"CZBTI50/182882/2023-580000-04/01","hs6":"6307.90","distance":0.225939,"country":"CZ","eligible":true},{"reference":"CZBTI32/152112/2024-580000-04/01","hs6":"6307.90","distance":0.226077,"country":"CZ","eligible":true},{"reference":"CZBTI45/189663/2023-580000-04/01","hs6":"6307.90","distance":0.226629,"country":"CZ","eligible":true},{"reference":"CZBTI48/182418/2023-580000-04/01","hs6":"8479.89","distance":0.227173,"country":"CZ","eligible":true},{"reference":"CZBTI47/445891/2026-300000-ZI/01","hs6":"6307.90","distance":0.232913,"country":"CZ","eligible":true},{"reference":"CZBTI32/189532/2023-580000-04/01","hs6":"6307.90","distance":0.233399,"country":"CZ","eligible":true},{"reference":"CZBTI34/144692/2024-580000-04/01","hs6":"6307.90","distance":0.233449,"country":"CZ","eligible":true},{"reference":"CZBTI32/182743/2023-580000-04/01","hs6":"3926.90","distance":0.234762,"country":"CZ","eligible":true},{"reference":"CZBTI32/021100/2025-300000-ZI/01","hs6":"3926.90","distance":0.238847,"country":"CZ","eligible":true},{"reference":"CZBTI51/189422/2023-580000-04/01","hs6":"6307.90","distance":0.239183,"country":"CZ","eligible":true},{"reference":"CZBTI41/445894/2026-300000-ZI/01","hs6":"6307.90","distance":0.240159,"country":"CZ","eligible":true},{"reference":"CZBTI41/206862/2024-580000-04/01","hs6":"6307.90","distance":0.246129,"country":"CZ","eligible":true},{"reference":"CZBTI32/182908/2023-580000-04/01","hs6":"6307.90","distance":0.248198,"country":"CZ","eligible":true},{"reference":"CZBTI34/189556/2023-580000-04/01","hs6":"8479.89","distance":0.249008,"country":"CZ","eligible":true},{"reference":"CZBTI34/206856/2024-580000-04/01","hs6":"6307.90","distance":0.250182,"country":"CZ","eligible":true},{"reference":"CZBTI32/141807/2024-580000-04/01","hs6":"6307.90","distance":0.2503,"country":"CZ","eligible":true},{"reference":"CZBTI51/189561/2023-580000-04/01","hs6":"8479.89","distance":0.252341,"country":"CZ","eligible":true},{"reference":"CZBTI41/062301/2025-580000-04/01","hs6":"5609.00","distance":0.252386,"country":"CZ","eligible":true},{"reference":"CZBTI45/067359/2025-580000-04/01","hs6":"6307.90","distance":0.255038,"country":"CZ","eligible":true},{"reference":"CZBTI50/133146/2024-580000-04/01","hs6":"6307.90","distance":0.257119,"country":"CZ","eligible":true},{"reference":"CZBTI50/251270/2024-580000-04/01","hs6":"5609.00","distance":0.257057,"country":"CZ","eligible":true},{"reference":"CZBTI32/182774/2023-580000-04/01","hs6":"3926.90","distance":0.260565,"country":"CZ","eligible":true}],
+   "vote_chapters": [
+    "63",
+    "67",
+    "95"
+   ],
+   "not_indexed": [],
+   "vote_hits": [
+    {
+     "reference": "CZBTI47/152108/2024-580000-04/01",
+     "hs6": "6307.90",
+     "similarity": 0.907903,
+     "eligible": false
+    },
+    {
+     "reference": "CZBTI47/002334/2025-580000-04/01",
+     "hs6": "6307.90",
+     "similarity": 0.873408,
+     "eligible": true
+    },
+    {
+     "reference": "CZBTI45/206864/2024-580000-04/01",
+     "hs6": "6701.00",
+     "similarity": 0.845131,
+     "eligible": true
+    },
+    {
+     "reference": "CZBTI45/152099/2024-580000-04/01",
+     "hs6": "6307.90",
+     "similarity": 0.827883,
+     "eligible": true
+    },
+    {
+     "reference": "CZBTI45/189629/2023-580000-04/01",
+     "hs6": "6307.90",
+     "similarity": 0.824667,
+     "eligible": true
+    },
+    {
+     "reference": "CZBTI41/152107/2024-580000-04/01",
+     "hs6": "6701.00",
+     "similarity": 0.811069,
+     "eligible": true
+    },
+    {
+     "reference": "CZBTI31/208095/2024-580000-04/01",
+     "hs6": "6307.90",
+     "similarity": 0.809191,
+     "eligible": true
+    },
+    {
+     "reference": "CZBTI41/152101/2024-580000-04/01",
+     "hs6": "6307.90",
+     "similarity": 0.803198,
+     "eligible": true
+    },
+    {
+     "reference": "CZBTI51/144698/2024-580000-04/01",
+     "hs6": "6307.90",
+     "similarity": 0.794864,
+     "eligible": true
+    },
+    {
+     "reference": "CZBTI34/182905/2023-580000-04/01",
+     "hs6": "6307.90",
+     "similarity": 0.791848,
+     "eligible": true
+    },
+    {
+     "reference": "CZBTI34/182902/2023-580000-04/01",
+     "hs6": "6701.00",
+     "similarity": 0.785854,
+     "eligible": true
+    },
+    {
+     "reference": "CZBTI31/192336/2023-580000-04/01",
+     "hs6": "6701.00",
+     "similarity": 0.77937,
+     "eligible": true
+    }
+   ],
+   "customs_wording": null,
+   "proposal_chapters": null,
+   "citation_notes": [],
+   "supported": {
+    "rank": 2,
+    "right": true
+   },
+   "on": {
+    "gate": "vote_disagrees",
+    "route": "review",
+    "rank": 1,
+    "chosen": "9503.00",
+    "hit": false
+   }
+  },
+  {
+   "reference": "IEBTIIENEN004-2025-BTI38",
+   "chapter": "95",
+   "language": "en",
+   "expected": "9503.00",
+   "flag": "ok",
+   "top1": "9503.00",
+   "top3": [
+    "9503.00",
+    "9505.90",
+    "9618.00"
+   ],
+   "confidences": [
+    95,
+    60,
+    30
+   ],
+   "confidence": 95,
+   "raw_confidence": 95,
+   "raw": [
+    {
+     "code": "9503.00",
+     "confidence": 95
+    },
+    {
+     "code": "9505.90",
+     "confidence": 60
+    },
+    {
+     "code": "9618.00",
+     "confidence": 30
+    }
+   ],
+   "hit": true,
+   "in_top3": true,
+   "route": "auto_accept",
+   "route_by_confidence": "auto_accept",
+   "gate": "vote_agrees",
+   "vote": {
+    "majority": "9503.00",
+    "share": 1.0,
+    "voters": 5,
+    "candidate": null,
+    "counts": [
+     [
+      "9503.00",
+      5
+     ]
+    ]
+   },
+   "scoped_vote": {
+    "majority": "9503.00",
+    "share": 1.0,
+    "voters": 5,
+    "candidate": null,
+    "counts": [
+     [
+      "9503.00",
+      5
+     ]
+    ]
+   },
+   "status": "checked",
+   "error": null,
+   "precedent_codes": [
+    "9503.00"
+   ],
+   "expected_sent": true,
+   "own_rank": 1,
+   "nearest_hits": [{"reference":"IEBTIIENEN004-2025-BTI38","hs6":"9503.00","distance":0.180657,"country":"IE","eligible":false},{"reference":"XIBTI505070782","hs6":"9503.00","distance":0.341415,"country":"XI","eligible":true},{"reference":"BEBTIDT.50.019.995","hs6":"9503.00","distance":0.349303,"country":"BE","eligible":true},{"reference":"DEBTI10934/26-1","hs6":"9503.00","distance":0.361045,"country":"DE","eligible":true},{"reference":"ROBTI2025/004881","hs6":"9503.00","distance":0.364944,"country":"RO","eligible":true},{"reference":"IEBTIIENEN004-2026-BTI99","hs6":"9503.00","distance":0.365056,"country":"IE","eligible":true},{"reference":"DEBTI15226/25-1","hs6":"9503.00","distance":0.368189,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-07407","hs6":"9503.00","distance":0.37076,"country":"FR","eligible":true},{"reference":"ITBTI2025-0796","hs6":"9503.00","distance":0.374351,"country":"IT","eligible":true},{"reference":"ITBTI2025-0797","hs6":"9503.00","distance":0.376837,"country":"IT","eligible":true},{"reference":"DEBTI26693/26-1","hs6":"9503.00","distance":0.376996,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2026-06857","hs6":"9503.00","distance":0.377784,"country":"FR","eligible":false},{"reference":"ITBTI2025-0799","hs6":"9503.00","distance":0.379666,"country":"IT","eligible":true},{"reference":"DEBTI40865/26-2","hs6":"9503.00","distance":0.381112,"country":"DE","eligible":true},{"reference":"ITBTI2025-0798","hs6":"9503.00","distance":0.381058,"country":"IT","eligible":true},{"reference":"DEBTI17759/25-1","hs6":"9503.00","distance":0.387925,"country":"DE","eligible":true},{"reference":"DEBTI30044/24-1","hs6":"9503.00","distance":0.391247,"country":"DE","eligible":true},{"reference":"IEBTIIENEN004-2026-BTI118","hs6":"9503.00","distance":0.392746,"country":"IE","eligible":true},{"reference":"DEBTI35413/24-1","hs6":"9503.00","distance":0.393239,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2024-02457","hs6":"9503.00","distance":0.393839,"country":"FR","eligible":true},{"reference":"DEBTI8036/25-1","hs6":"9503.00","distance":0.394205,"country":"DE","eligible":true},{"reference":"ESBTIESBTI2026SOL18","hs6":"9503.00","distance":0.394376,"country":"ES","eligible":true},{"reference":"XIBTI505070880","hs6":"9503.00","distance":0.395006,"country":"XI","eligible":true},{"reference":"DEBTI41911/25-1","hs6":"9503.00","distance":0.396634,"country":"DE","eligible":true},{"reference":"DEBTI29453/26-1","hs6":"9503.00","distance":0.400524,"country":"DE","eligible":true},{"reference":"DEBTI8039/25-1","hs6":"9503.00","distance":0.401614,"country":"DE","eligible":true},{"reference":"IEBTIIENEN004-2025-BTI393","hs6":"9503.00","distance":0.402685,"country":"IE","eligible":true},{"reference":"DEBTI39850/25-1","hs6":"9503.00","distance":0.403429,"country":"DE","eligible":true},{"reference":"DEBTI46034/25-1","hs6":"9503.00","distance":0.404554,"country":"DE","eligible":true},{"reference":"DEBTI18878/26-1","hs6":"9503.00","distance":0.405277,"country":"DE","eligible":true},{"reference":"DEBTI34236/25-1","hs6":"9503.00","distance":0.408607,"country":"DE","eligible":true},{"reference":"DEBTI13726/24-1","hs6":"9503.00","distance":0.409335,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-00192","hs6":"9503.00","distance":0.40932,"country":"FR","eligible":true},{"reference":"DEBTI24756/25-1","hs6":"9503.00","distance":0.410705,"country":"DE","eligible":true},{"reference":"DEBTI16569/25-1","hs6":"9503.00","distance":0.410901,"country":"DE","eligible":true},{"reference":"ESBTIESBTI2025SOL1537","hs6":"9503.00","distance":0.411003,"country":"ES","eligible":true},{"reference":"DEBTI26691/26-1","hs6":"9503.00","distance":0.412317,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-01471","hs6":"9503.00","distance":0.412269,"country":"FR","eligible":true},{"reference":"ROBTI2026-005468","hs6":"9503.00","distance":0.413072,"country":"RO","eligible":true},{"reference":"BEBTIDT.50.020.647","hs6":"9503.00","distance":0.413357,"country":"BE","eligible":true}],
+   "vote_chapters": [
+    "95",
+    "96"
+   ],
+   "not_indexed": [],
+   "vote_hits": [
+    {
+     "reference": "IEBTIIENEN004-2025-BTI38",
+     "hs6": "9503.00",
+     "similarity": 0.819343,
+     "eligible": false
+    },
+    {
+     "reference": "XIBTI505070782",
+     "hs6": "9503.00",
+     "similarity": 0.658585,
+     "eligible": true
+    },
+    {
+     "reference": "BEBTIDT.50.019.995",
+     "hs6": "9503.00",
+     "similarity": 0.650697,
+     "eligible": true
+    },
+    {
+     "reference": "DEBTI10934/26-1",
+     "hs6": "9503.00",
+     "similarity": 0.638955,
+     "eligible": true
+    },
+    {
+     "reference": "ROBTI2025/004881",
+     "hs6": "9503.00",
+     "similarity": 0.635056,
+     "eligible": true
+    },
+    {
+     "reference": "IEBTIIENEN004-2026-BTI99",
+     "hs6": "9503.00",
+     "similarity": 0.634944,
+     "eligible": true
+    },
+    {
+     "reference": "DEBTI15226/25-1",
+     "hs6": "9503.00",
+     "similarity": 0.631811,
+     "eligible": true
+    },
+    {
+     "reference": "FRBTIFR-BTI-2025-07407",
+     "hs6": "9503.00",
+     "similarity": 0.62924,
+     "eligible": true
+    },
+    {
+     "reference": "ITBTI2025-0796",
+     "hs6": "9503.00",
+     "similarity": 0.625649,
+     "eligible": true
+    },
+    {
+     "reference": "ITBTI2025-0797",
+     "hs6": "9503.00",
+     "similarity": 0.623163,
+     "eligible": true
+    },
+    {
+     "reference": "DEBTI26693/26-1",
+     "hs6": "9503.00",
+     "similarity": 0.623004,
+     "eligible": true
+    },
+    {
+     "reference": "FRBTIFR-BTI-2026-06857",
+     "hs6": "9503.00",
+     "similarity": 0.622216,
+     "eligible": false
+    }
+   ],
+   "customs_wording": null,
+   "proposal_chapters": null,
+   "citation_notes": [],
+   "supported": {
+    "rank": null,
+    "right": null
+   },
+   "on": {
+    "gate": "vote_agrees",
+    "route": "auto_accept",
+    "rank": 1,
+    "chosen": "9503.00",
+    "hit": true
+   }
+  }
+ ],
+ "runs": [
+  [
+   {
+    "reference": "IEBTIIENEN004-2026-BTI23",
+    "chapter": "63",
+    "language": "en",
+    "expected": "6307.90",
+    "flag": "ok",
+    "top1": "6307.90",
+    "top3": [
+     "6307.90",
+     "5808.90",
+     "6215.90"
+    ],
+    "confidences": [
+     95,
+     80,
+     40
+    ],
+    "confidence": 95,
+    "raw_confidence": 95,
+    "raw": [
+     {
+      "code": "6307.90",
+      "confidence": 95
+     },
+     {
+      "code": "5808.90",
+      "confidence": 80
+     },
+     {
+      "code": "6215.90",
+      "confidence": 40
+     }
+    ],
+    "hit": true,
+    "in_top3": true,
+    "route": "review",
+    "route_by_confidence": "auto_accept",
+    "gate": "vote_share_low",
+    "vote": {
+     "majority": "6307.90",
+     "share": 0.4,
+     "voters": 5,
+     "candidate": null,
+     "counts": [
+      [
+       "6307.90",
+       2
+      ],
+      [
+       "5808.90",
+       1
+      ],
+      [
+       "4823.90",
+       1
+      ],
+      [
+       "5806.40",
+       1
+      ]
+     ]
+    },
+    "scoped_vote": {
+     "majority": "6307.90",
+     "share": 0.4,
+     "voters": 5,
+     "candidate": null,
+     "counts": [
+      [
+       "6307.90",
+       2
+      ],
+      [
+       "5808.90",
+       1
+      ],
+      [
+       "5806.40",
+       1
+      ],
+      [
+       "5806.32",
+       1
+      ]
+     ]
+    },
+    "status": "checked",
+    "error": null,
+    "precedent_codes": [
+     "6307.90",
+     "5806.32",
+     "5808.90"
+    ],
+    "expected_sent": true,
+    "own_rank": 1,
+    "nearest_hits": [{"reference":"IEBTIIENEN004-2026-BTI23","hs6":"6307.90","distance":0.032712,"country":"IE","eligible":false},{"reference":"DEBTI26260/24-1","hs6":"5808.90","distance":0.29392,"country":"DE","eligible":true},{"reference":"DEBTI48563/25-1","hs6":"6307.90","distance":0.305741,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2026-01865","hs6":"5806.32","distance":0.30995,"country":"FR","eligible":false},{"reference":"DEBTI14944/24-1","hs6":"6307.90","distance":0.31885,"country":"DE","eligible":true},{"reference":"IEBTIIENEN004-2025-BTI392","hs6":"4823.90","distance":0.321866,"country":"IE","eligible":true},{"reference":"DEBTI14507/24-1","hs6":"5806.40","distance":0.325098,"country":"DE","eligible":true},{"reference":"DEBTI14943/24-1","hs6":"5806.32","distance":0.325257,"country":"DE","eligible":true},{"reference":"SKBTI514144/24/283","hs6":"3926.40","distance":0.325296,"country":"SK","eligible":true},{"reference":"DEBTI14944/24-2","hs6":"6307.90","distance":0.327436,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2026-00477","hs6":"5806.32","distance":0.327569,"country":"FR","eligible":true},{"reference":"DEBTI60458/24-1","hs6":"6307.90","distance":0.328265,"country":"DE","eligible":true},{"reference":"SKBTI514121/24/281","hs6":"3926.40","distance":0.328424,"country":"SK","eligible":true},{"reference":"DEBTI21118/26-1","hs6":"6307.90","distance":0.329325,"country":"DE","eligible":false},{"reference":"DEBTI17307/25-1","hs6":"6307.90","distance":0.329446,"country":"DE","eligible":true},{"reference":"DEBTI60441/24-1","hs6":"6307.90","distance":0.332765,"country":"DE","eligible":true},{"reference":"DEBTI49113/25-1","hs6":"6117.80","distance":0.333909,"country":"DE","eligible":true},{"reference":"DEBTI49429/23-1","hs6":"6307.90","distance":0.334511,"country":"DE","eligible":true},{"reference":"DEBTI35191/25-1","hs6":"6307.90","distance":0.337618,"country":"DE","eligible":true},{"reference":"DEBTI17377/25-1","hs6":"6307.90","distance":0.337683,"country":"DE","eligible":true},{"reference":"DEBTI23183/26-1","hs6":"6307.90","distance":0.337943,"country":"DE","eligible":false},{"reference":"ATBTI2024000254-DEC","hs6":"6307.90","distance":0.340268,"country":"AT","eligible":true},{"reference":"DEBTI17585/24-1","hs6":"6307.90","distance":0.340594,"country":"DE","eligible":true},{"reference":"DEBTI21759/25-1","hs6":"6307.90","distance":0.34246,"country":"DE","eligible":true},{"reference":"DEBTI25252/25-1","hs6":"6307.90","distance":0.343014,"country":"DE","eligible":true},{"reference":"DEBTI60417/24-1","hs6":"6307.90","distance":0.343091,"country":"DE","eligible":true},{"reference":"DEBTI25254/25-1","hs6":"6307.90","distance":0.343302,"country":"DE","eligible":true},{"reference":"SKBTI514134/24/282","hs6":"4823.90","distance":0.343266,"country":"SK","eligible":true},{"reference":"DEBTI28513/26-1","hs6":"6307.90","distance":0.34378,"country":"DE","eligible":true},{"reference":"DEBTI14712/26-1","hs6":"5806.39","distance":0.344054,"country":"DE","eligible":true},{"reference":"DEBTI50534/23-1","hs6":"3926.40","distance":0.344267,"country":"DE","eligible":true},{"reference":"DEBTI39591/23-1","hs6":"6307.90","distance":0.345281,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-04901","hs6":"6307.90","distance":0.345745,"country":"FR","eligible":true},{"reference":"ESBTIESBTI2026REN807","hs6":"6307.90","distance":0.346235,"country":"ES","eligible":true},{"reference":"DEBTI23190/26-1","hs6":"6307.90","distance":0.346637,"country":"DE","eligible":false},{"reference":"NLBTI2025-1771","hs6":"6307.90","distance":0.347173,"country":"NL","eligible":true},{"reference":"DEBTI48015/24-1","hs6":"6307.90","distance":0.347413,"country":"DE","eligible":true},{"reference":"DEBTI40909/23-1","hs6":"5609.00","distance":0.347648,"country":"DE","eligible":true},{"reference":"DEBTI28519/26-1","hs6":"6307.90","distance":0.348005,"country":"DE","eligible":false},{"reference":"DEBTI43745/25-1","hs6":"6307.90","distance":0.349123,"country":"DE","eligible":true}],
+    "vote_chapters": [
+     "58",
+     "62",
+     "63"
+    ],
+    "not_indexed": [],
+    "vote_hits": [
+     {
+      "reference": "IEBTIIENEN004-2026-BTI23",
+      "hs6": "6307.90",
+      "similarity": 0.967288,
+      "eligible": false
+     },
+     {
+      "reference": "DEBTI26260/24-1",
+      "hs6": "5808.90",
+      "similarity": 0.70608,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI48563/25-1",
+      "hs6": "6307.90",
+      "similarity": 0.694259,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2026-01865",
+      "hs6": "5806.32",
+      "similarity": 0.69005,
+      "eligible": false
+     },
+     {
+      "reference": "DEBTI14944/24-1",
+      "hs6": "6307.90",
+      "similarity": 0.68115,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI14507/24-1",
+      "hs6": "5806.40",
+      "similarity": 0.674902,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI14943/24-1",
+      "hs6": "5806.32",
+      "similarity": 0.674743,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI14944/24-2",
+      "hs6": "6307.90",
+      "similarity": 0.672564,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2026-00477",
+      "hs6": "5806.32",
+      "similarity": 0.672431,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI60458/24-1",
+      "hs6": "6307.90",
+      "similarity": 0.671735,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI21118/26-1",
+      "hs6": "6307.90",
+      "similarity": 0.670675,
+      "eligible": false
+     },
+     {
+      "reference": "DEBTI17307/25-1",
+      "hs6": "6307.90",
+      "similarity": 0.670554,
+      "eligible": true
+     }
+    ],
+    "customs_wording": null,
+    "proposal_chapters": null,
+    "citation_notes": [],
+    "supported": {
+     "rank": null,
+     "right": null
+    },
+    "on": {
+     "gate": "vote_share_low",
+     "route": "review",
+     "rank": 1,
+     "chosen": "6307.90",
+     "hit": true
+    }
+   },
+   {
+    "reference": "SEBTITV-2026-01096",
+    "chapter": "63",
+    "language": "en",
+    "expected": "6307.90",
+    "flag": "ok",
+    "top1": "9503.00",
+    "top3": [
+     "9503.00",
+     "6307.90",
+     "4205.00"
+    ],
+    "confidences": [
+     95,
+     60,
+     0
+    ],
+    "confidence": 95,
+    "raw_confidence": 95,
+    "raw": [
+     {
+      "code": "9503.00",
+      "confidence": 95
+     },
+     {
+      "code": "6307.90",
+      "confidence": 60
+     },
+     {
+      "code": "4205.00",
+      "confidence": 0
+     }
+    ],
+    "hit": false,
+    "in_top3": true,
+    "route": "review",
+    "route_by_confidence": "auto_accept",
+    "gate": "vote_disagrees",
+    "vote": {
+     "majority": "6307.90",
+     "share": 0.4,
+     "voters": 5,
+     "candidate": 2,
+     "counts": [
+      [
+       "6307.90",
+       2
+      ],
+      [
+       "4205.00",
+       1
+      ],
+      [
+       "9503.00",
+       1
+      ],
+      [
+       "4421.99",
+       1
+      ]
+     ]
+    },
+    "scoped_vote": {
+     "majority": null,
+     "share": 0.4,
+     "voters": 5,
+     "candidate": null,
+     "counts": [
+      [
+       "6307.90",
+       2
+      ],
+      [
+       "9503.00",
+       2
+      ],
+      [
+       "4205.00",
+       1
+      ]
+     ]
+    },
+    "status": "checked",
+    "error": null,
+    "precedent_codes": [
+     "6307.90",
+     "9503.00",
+     "4205.00"
+    ],
+    "expected_sent": true,
+    "own_rank": 1,
+    "nearest_hits": [{"reference":"SEBTITV-2026-01096","hs6":"6307.90","distance":0.080297,"country":"SE","eligible":false},{"reference":"SEBTITV-2025-28542","hs6":"4205.00","distance":0.347988,"country":"SE","eligible":true},{"reference":"SEBTITV-2025-28962","hs6":"6307.90","distance":0.368001,"country":"SE","eligible":true},{"reference":"SEBTITV-2026-09400","hs6":"9503.00","distance":0.373139,"country":"SE","eligible":true},{"reference":"SEBTITV-2025-28976","hs6":"4421.99","distance":0.37624,"country":"SE","eligible":true},{"reference":"SEBTITV-2025-28956","hs6":"6307.90","distance":0.377557,"country":"SE","eligible":true},{"reference":"SEBTITV-2025-28514","hs6":"5609.00","distance":0.381563,"country":"SE","eligible":true},{"reference":"SEBTITV-2025-28516","hs6":"3926.90","distance":0.391158,"country":"SE","eligible":true},{"reference":"BEBTIDT.50.020.651","hs6":"9503.00","distance":0.394935,"country":"BE","eligible":true},{"reference":"SEBTITV-2026-01721","hs6":"6307.90","distance":0.399875,"country":"SE","eligible":true},{"reference":"CZBTI45/141761/2024-580000-04/01","hs6":"6307.90","distance":0.403688,"country":"CZ","eligible":true},{"reference":"DKBTI25-1430297","hs6":"3926.40","distance":0.410731,"country":"DK","eligible":true},{"reference":"DEBTI46027/25-1","hs6":"4016.99","distance":0.412652,"country":"DE","eligible":true},{"reference":"DEBTI45001/25-1","hs6":"4016.99","distance":0.416268,"country":"DE","eligible":true},{"reference":"DKBTI25-5000779","hs6":"9503.00","distance":0.416714,"country":"DK","eligible":true},{"reference":"DEBTI14025/24-1","hs6":"4016.99","distance":0.416995,"country":"DE","eligible":true},{"reference":"DKBTI25-5000457","hs6":"6307.90","distance":0.417761,"country":"DK","eligible":true},{"reference":"DEBTI43057/25-1","hs6":"6307.90","distance":0.419364,"country":"DE","eligible":true},{"reference":"DEBTI11497/26-1","hs6":"6307.90","distance":0.420171,"country":"DE","eligible":true},{"reference":"SEBTITV-2025-22443","hs6":"6307.90","distance":0.420188,"country":"SE","eligible":true},{"reference":"DKBTI24-2728021","hs6":"9503.00","distance":0.421438,"country":"DK","eligible":true},{"reference":"DEBTI42458/25-1","hs6":"9503.00","distance":0.421667,"country":"DE","eligible":true},{"reference":"DEBTI45741/25-1","hs6":"4016.99","distance":0.42251,"country":"DE","eligible":true},{"reference":"DEBTI57678/24-1","hs6":"6307.90","distance":0.423127,"country":"DE","eligible":true},{"reference":"DKBTI25-5643022-2","hs6":"9503.00","distance":0.42425,"country":"DK","eligible":true},{"reference":"DKBTI25-5320345","hs6":"6307.90","distance":0.424915,"country":"DK","eligible":true},{"reference":"DEBTI41088/24-1","hs6":"6307.90","distance":0.425093,"country":"DE","eligible":true},{"reference":"DKBTI25-5000560","hs6":"9503.00","distance":0.42598,"country":"DK","eligible":true},{"reference":"NLBTI2025-0642","hs6":"6307.90","distance":0.426698,"country":"NL","eligible":true},{"reference":"DEBTI45002/25-1","hs6":"4016.99","distance":0.427456,"country":"DE","eligible":true},{"reference":"DKBTI25-1430334","hs6":"9505.90","distance":0.427819,"country":"DK","eligible":true},{"reference":"DEBTI47136/25-1","hs6":"4016.99","distance":0.428118,"country":"DE","eligible":true},{"reference":"DEBTI37340/26-1","hs6":"9503.00","distance":0.42816,"country":"DE","eligible":true},{"reference":"DKBTI25-5000547","hs6":"6307.90","distance":0.428379,"country":"DK","eligible":true},{"reference":"DKBTI25-5000712","hs6":"9505.10","distance":0.428836,"country":"DK","eligible":true},{"reference":"DEBTI13210/26-1","hs6":"6307.90","distance":0.429022,"country":"DE","eligible":true},{"reference":"DKBTI24-0408670","hs6":"9503.00","distance":0.42907,"country":"DK","eligible":true},{"reference":"SEBTITV-2026-10642","hs6":"7907.00","distance":0.430142,"country":"SE","eligible":true},{"reference":"SEBTITV-2024-25506","hs6":"6307.90","distance":0.430999,"country":"SE","eligible":true},{"reference":"DKBTI25-5000483","hs6":"9503.00","distance":0.431698,"country":"DK","eligible":true}],
+    "vote_chapters": [
+     "42",
+     "63",
+     "95"
+    ],
+    "not_indexed": [],
+    "vote_hits": [
+     {
+      "reference": "SEBTITV-2026-01096",
+      "hs6": "6307.90",
+      "similarity": 0.919703,
+      "eligible": false
+     },
+     {
+      "reference": "SEBTITV-2025-28542",
+      "hs6": "4205.00",
+      "similarity": 0.652012,
+      "eligible": true
+     },
+     {
+      "reference": "SEBTITV-2025-28962",
+      "hs6": "6307.90",
+      "similarity": 0.631999,
+      "eligible": true
+     },
+     {
+      "reference": "SEBTITV-2026-09400",
+      "hs6": "9503.00",
+      "similarity": 0.626861,
+      "eligible": true
+     },
+     {
+      "reference": "SEBTITV-2025-28956",
+      "hs6": "6307.90",
+      "similarity": 0.622443,
+      "eligible": true
+     },
+     {
+      "reference": "BEBTIDT.50.020.651",
+      "hs6": "9503.00",
+      "similarity": 0.605065,
+      "eligible": true
+     },
+     {
+      "reference": "SEBTITV-2026-01721",
+      "hs6": "6307.90",
+      "similarity": 0.600125,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI45/141761/2024-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.596312,
+      "eligible": true
+     },
+     {
+      "reference": "DKBTI25-5000779",
+      "hs6": "9503.00",
+      "similarity": 0.583286,
+      "eligible": true
+     },
+     {
+      "reference": "DKBTI25-5000457",
+      "hs6": "6307.90",
+      "similarity": 0.582239,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI43057/25-1",
+      "hs6": "6307.90",
+      "similarity": 0.580636,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI11497/26-1",
+      "hs6": "6307.90",
+      "similarity": 0.579829,
+      "eligible": true
+     }
+    ],
+    "customs_wording": null,
+    "proposal_chapters": null,
+    "citation_notes": [],
+    "supported": {
+     "rank": 2,
+     "right": true
+    },
+    "on": {
+     "gate": "vote_disagrees",
+     "route": "review",
+     "rank": 1,
+     "chosen": "9503.00",
+     "hit": false
+    }
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI8",
+    "chapter": "63",
+    "language": "en",
+    "expected": "6307.90",
+    "flag": "ok",
+    "top1": "6307.90",
+    "top3": [
+     "6307.90",
+     "4602.90",
+     "4602.19"
+    ],
+    "confidences": [
+     95,
+     40,
+     35
+    ],
+    "confidence": 95,
+    "raw_confidence": 95,
+    "raw": [
+     {
+      "code": "6307.90",
+      "confidence": 95
+     },
+     {
+      "code": "4602.90",
+      "confidence": 40
+     },
+     {
+      "code": "4602.19",
+      "confidence": 35
+     }
+    ],
+    "hit": true,
+    "in_top3": true,
+    "route": "review",
+    "route_by_confidence": "auto_accept",
+    "gate": "vote_disagrees",
+    "vote": {
+     "majority": "4602.19",
+     "share": 0.6,
+     "voters": 5,
+     "candidate": 3,
+     "counts": [
+      [
+       "4602.19",
+       3
+      ],
+      [
+       "6307.90",
+       1
+      ],
+      [
+       "4602.90",
+       1
+      ]
+     ]
+    },
+    "scoped_vote": {
+     "majority": "4602.19",
+     "share": 0.6,
+     "voters": 5,
+     "candidate": 3,
+     "counts": [
+      [
+       "4602.19",
+       3
+      ],
+      [
+       "6307.90",
+       1
+      ],
+      [
+       "4602.90",
+       1
+      ]
+     ]
+    },
+    "status": "checked",
+    "error": null,
+    "precedent_codes": [
+     "4602.19",
+     "6307.90",
+     "4602.90"
+    ],
+    "expected_sent": true,
+    "own_rank": 1,
+    "nearest_hits": [{"reference":"IEBTIIENEN004-2024-BTI8","hs6":"6307.90","distance":0.144596,"country":"IE","eligible":false},{"reference":"IEBTIIENEN004-2024-BTI5","hs6":"6307.90","distance":0.194236,"country":"IE","eligible":true},{"reference":"IEBTIIENEN004-2024-BTI7","hs6":"6307.90","distance":0.230085,"country":"IE","eligible":true},{"reference":"DEBTI41104/25-1","hs6":"4602.19","distance":0.36276,"country":"DE","eligible":true},{"reference":"DEBTI40335/23-1","hs6":"6307.90","distance":0.373338,"country":"DE","eligible":true},{"reference":"DEBTI41080/25-1","hs6":"4602.19","distance":0.376517,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-05281","hs6":"4602.90","distance":0.380812,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2024-05865","hs6":"4602.19","distance":0.38288,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2025-06224","hs6":"4601.29","distance":0.38433,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2025-00696","hs6":"4202.92","distance":0.386622,"country":"FR","eligible":true},{"reference":"DEBTI40889/25-1","hs6":"4602.19","distance":0.388631,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2024-05866","hs6":"4602.19","distance":0.390819,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2024-03731","hs6":"4602.90","distance":0.391799,"country":"FR","eligible":true},{"reference":"DEBTI47851/24-1","hs6":"5609.00","distance":0.393804,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-03068","hs6":"4602.19","distance":0.396875,"country":"FR","eligible":true},{"reference":"DEBTI18781/26-1","hs6":"5609.00","distance":0.39713,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2026-02705","hs6":"4823.90","distance":0.398622,"country":"FR","eligible":false},{"reference":"DEBTI333/26-1","hs6":"5609.00","distance":0.398765,"country":"DE","eligible":true},{"reference":"DEBTI3899/26-1","hs6":"5609.00","distance":0.398902,"country":"DE","eligible":true},{"reference":"DEBTI46951/25-1","hs6":"4602.19","distance":0.401327,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-00864","hs6":"4602.19","distance":0.402525,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2024-05864","hs6":"4602.19","distance":0.402748,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2025-03311","hs6":"4602.19","distance":0.403496,"country":"FR","eligible":true},{"reference":"DEBTI47311/24-1","hs6":"6307.90","distance":0.403716,"country":"DE","eligible":true},{"reference":"DEBTI18233/26-1","hs6":"4602.90","distance":0.403824,"country":"DE","eligible":true},{"reference":"DEBTI47309/24-1","hs6":"6307.90","distance":0.404051,"country":"DE","eligible":true},{"reference":"DEBTI40784/25-1","hs6":"4602.19","distance":0.404994,"country":"DE","eligible":true},{"reference":"DEBTI6478/26-1","hs6":"6307.90","distance":0.404991,"country":"DE","eligible":true},{"reference":"DEBTI11063/24-1","hs6":"5609.00","distance":0.40524,"country":"DE","eligible":true},{"reference":"DEBTI40042/25-1","hs6":"4602.19","distance":0.407027,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2026-04900","hs6":"4602.19","distance":0.408584,"country":"FR","eligible":false},{"reference":"DEBTI45688/23-1","hs6":"4602.19","distance":0.408759,"country":"DE","eligible":true},{"reference":"DEBTI40929/25-1","hs6":"4602.19","distance":0.409259,"country":"DE","eligible":true},{"reference":"DEBTI6273/26-1","hs6":"6307.90","distance":0.409611,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-04299","hs6":"9505.10","distance":0.409696,"country":"FR","eligible":true},{"reference":"SKBTI163032/26/110","hs6":"4602.19","distance":0.410306,"country":"SK","eligible":true},{"reference":"DEBTI14197/24-1","hs6":"6307.90","distance":0.410847,"country":"DE","eligible":true},{"reference":"DEBTI20225/25-1","hs6":"4602.19","distance":0.411462,"country":"DE","eligible":true},{"reference":"DEBTI21832/25-1","hs6":"6307.90","distance":0.411506,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2024-04857","hs6":"4602.90","distance":0.412873,"country":"FR","eligible":true}],
+    "vote_chapters": [
+     "46",
+     "63"
+    ],
+    "not_indexed": [],
+    "vote_hits": [
+     {
+      "reference": "IEBTIIENEN004-2024-BTI8",
+      "hs6": "6307.90",
+      "similarity": 0.855404,
+      "eligible": false
+     },
+     {
+      "reference": "IEBTIIENEN004-2024-BTI5",
+      "hs6": "6307.90",
+      "similarity": 0.805764,
+      "eligible": true
+     },
+     {
+      "reference": "IEBTIIENEN004-2024-BTI7",
+      "hs6": "6307.90",
+      "similarity": 0.769915,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI41104/25-1",
+      "hs6": "4602.19",
+      "similarity": 0.63724,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI40335/23-1",
+      "hs6": "6307.90",
+      "similarity": 0.626662,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI41080/25-1",
+      "hs6": "4602.19",
+      "similarity": 0.623483,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2025-05281",
+      "hs6": "4602.90",
+      "similarity": 0.619188,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2024-05865",
+      "hs6": "4602.19",
+      "similarity": 0.61712,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2025-06224",
+      "hs6": "4601.29",
+      "similarity": 0.61567,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI40889/25-1",
+      "hs6": "4602.19",
+      "similarity": 0.611369,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI47/304942/2025-300000-ZI/01",
+      "hs6": "4602.19",
+      "similarity": 0.611008,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2024-05866",
+      "hs6": "4602.19",
+      "similarity": 0.609181,
+      "eligible": true
+     }
+    ],
+    "customs_wording": null,
+    "proposal_chapters": null,
+    "citation_notes": [],
+    "supported": {
+     "rank": 3,
+     "right": false
+    },
+    "on": {
+     "gate": "vote_disagrees",
+     "route": "review",
+     "rank": 1,
+     "chosen": "6307.90",
+     "hit": true
+    }
+   },
+   {
+    "reference": "CZBTI47/152108/2024-580000-04/01",
+    "chapter": "63",
+    "language": "cs",
+    "expected": "6307.90",
+    "flag": "ok",
+    "top1": "9503.00",
+    "top3": [
+     "9503.00",
+     "6307.90",
+     "6701.00"
+    ],
+    "confidences": [
+     95,
+     60,
+     40
+    ],
+    "confidence": 95,
+    "raw_confidence": 95,
+    "raw": [
+     {
+      "code": "9503.00",
+      "confidence": 95
+     },
+     {
+      "code": "6307.90",
+      "confidence": 60
+     },
+     {
+      "code": "6701.00",
+      "confidence": 40
+     }
+    ],
+    "hit": false,
+    "in_top3": true,
+    "route": "review",
+    "route_by_confidence": "auto_accept",
+    "gate": "vote_disagrees",
+    "vote": {
+     "majority": "6307.90",
+     "share": 0.6,
+     "voters": 5,
+     "candidate": 2,
+     "counts": [
+      [
+       "6307.90",
+       3
+      ],
+      [
+       "6701.00",
+       1
+      ],
+      [
+       "3926.90",
+       1
+      ]
+     ]
+    },
+    "scoped_vote": {
+     "majority": "6307.90",
+     "share": 0.6,
+     "voters": 5,
+     "candidate": 2,
+     "counts": [
+      [
+       "6307.90",
+       3
+      ],
+      [
+       "6701.00",
+       2
+      ]
+     ]
+    },
+    "status": "checked",
+    "error": null,
+    "precedent_codes": [
+     "6307.90",
+     "6701.00",
+     "3926.90"
+    ],
+    "expected_sent": true,
+    "own_rank": 1,
+    "nearest_hits": [{"reference":"CZBTI47/152108/2024-580000-04/01","hs6":"6307.90","distance":0.092097,"country":"CZ","eligible":false},{"reference":"CZBTI47/002334/2025-580000-04/01","hs6":"6307.90","distance":0.126592,"country":"CZ","eligible":true},{"reference":"CZBTI45/206864/2024-580000-04/01","hs6":"6701.00","distance":0.154869,"country":"CZ","eligible":true},{"reference":"CZBTI45/152099/2024-580000-04/01","hs6":"6307.90","distance":0.172117,"country":"CZ","eligible":true},{"reference":"CZBTI45/189629/2023-580000-04/01","hs6":"6307.90","distance":0.175333,"country":"CZ","eligible":true},{"reference":"CZBTI51/021089/2025-300000-ZI/01","hs6":"3926.90","distance":0.186985,"country":"CZ","eligible":true},{"reference":"CZBTI41/152107/2024-580000-04/01","hs6":"6701.00","distance":0.188931,"country":"CZ","eligible":true},{"reference":"CZBTI31/208095/2024-580000-04/01","hs6":"6307.90","distance":0.190809,"country":"CZ","eligible":true},{"reference":"CZBTI41/152101/2024-580000-04/01","hs6":"6307.90","distance":0.196802,"country":"CZ","eligible":true},{"reference":"CZBTI47/152110/2024-580000-04/01","hs6":"5609.00","distance":0.19684,"country":"CZ","eligible":true},{"reference":"CZBTI47/152113/2024-580000-04/01","hs6":"4303.90","distance":0.200641,"country":"CZ","eligible":true},{"reference":"CZBTI51/144698/2024-580000-04/01","hs6":"6307.90","distance":0.205136,"country":"CZ","eligible":true},{"reference":"CZBTI34/182905/2023-580000-04/01","hs6":"6307.90","distance":0.208152,"country":"CZ","eligible":true},{"reference":"CZBTI34/182902/2023-580000-04/01","hs6":"6701.00","distance":0.214146,"country":"CZ","eligible":true},{"reference":"CZBTI31/192336/2023-580000-04/01","hs6":"6701.00","distance":0.22063,"country":"CZ","eligible":true},{"reference":"CZBTI50/208094/2024-580000-04/01","hs6":"6307.90","distance":0.224409,"country":"CZ","eligible":true},{"reference":"CZBTI50/538679/2026-300000-ZI/01","hs6":"6307.90","distance":0.224474,"country":"CZ","eligible":true},{"reference":"CZBTI45/141761/2024-580000-04/01","hs6":"6307.90","distance":0.225424,"country":"CZ","eligible":true},{"reference":"CZBTI50/182882/2023-580000-04/01","hs6":"6307.90","distance":0.225939,"country":"CZ","eligible":true},{"reference":"CZBTI32/152112/2024-580000-04/01","hs6":"6307.90","distance":0.226077,"country":"CZ","eligible":true},{"reference":"CZBTI45/189663/2023-580000-04/01","hs6":"6307.90","distance":0.226629,"country":"CZ","eligible":true},{"reference":"CZBTI48/182418/2023-580000-04/01","hs6":"8479.89","distance":0.227173,"country":"CZ","eligible":true},{"reference":"CZBTI47/445891/2026-300000-ZI/01","hs6":"6307.90","distance":0.232913,"country":"CZ","eligible":true},{"reference":"CZBTI32/189532/2023-580000-04/01","hs6":"6307.90","distance":0.233399,"country":"CZ","eligible":true},{"reference":"CZBTI34/144692/2024-580000-04/01","hs6":"6307.90","distance":0.233449,"country":"CZ","eligible":true},{"reference":"CZBTI32/182743/2023-580000-04/01","hs6":"3926.90","distance":0.234762,"country":"CZ","eligible":true},{"reference":"CZBTI32/021100/2025-300000-ZI/01","hs6":"3926.90","distance":0.238847,"country":"CZ","eligible":true},{"reference":"CZBTI51/189422/2023-580000-04/01","hs6":"6307.90","distance":0.239183,"country":"CZ","eligible":true},{"reference":"CZBTI41/445894/2026-300000-ZI/01","hs6":"6307.90","distance":0.240159,"country":"CZ","eligible":true},{"reference":"CZBTI41/206862/2024-580000-04/01","hs6":"6307.90","distance":0.246129,"country":"CZ","eligible":true},{"reference":"CZBTI32/182908/2023-580000-04/01","hs6":"6307.90","distance":0.248198,"country":"CZ","eligible":true},{"reference":"CZBTI34/189556/2023-580000-04/01","hs6":"8479.89","distance":0.249008,"country":"CZ","eligible":true},{"reference":"CZBTI34/206856/2024-580000-04/01","hs6":"6307.90","distance":0.250182,"country":"CZ","eligible":true},{"reference":"CZBTI32/141807/2024-580000-04/01","hs6":"6307.90","distance":0.2503,"country":"CZ","eligible":true},{"reference":"CZBTI51/189561/2023-580000-04/01","hs6":"8479.89","distance":0.252341,"country":"CZ","eligible":true},{"reference":"CZBTI41/062301/2025-580000-04/01","hs6":"5609.00","distance":0.252386,"country":"CZ","eligible":true},{"reference":"CZBTI45/067359/2025-580000-04/01","hs6":"6307.90","distance":0.255038,"country":"CZ","eligible":true},{"reference":"CZBTI50/133146/2024-580000-04/01","hs6":"6307.90","distance":0.257119,"country":"CZ","eligible":true},{"reference":"CZBTI50/251270/2024-580000-04/01","hs6":"5609.00","distance":0.257057,"country":"CZ","eligible":true},{"reference":"CZBTI32/182774/2023-580000-04/01","hs6":"3926.90","distance":0.260565,"country":"CZ","eligible":true}],
+    "vote_chapters": [
+     "63",
+     "67",
+     "95"
+    ],
+    "not_indexed": [],
+    "vote_hits": [
+     {
+      "reference": "CZBTI47/152108/2024-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.907903,
+      "eligible": false
+     },
+     {
+      "reference": "CZBTI47/002334/2025-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.873408,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI45/206864/2024-580000-04/01",
+      "hs6": "6701.00",
+      "similarity": 0.845131,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI45/152099/2024-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.827883,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI45/189629/2023-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.824667,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI41/152107/2024-580000-04/01",
+      "hs6": "6701.00",
+      "similarity": 0.811069,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI31/208095/2024-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.809191,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI41/152101/2024-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.803198,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI51/144698/2024-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.794864,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI34/182905/2023-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.791848,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI34/182902/2023-580000-04/01",
+      "hs6": "6701.00",
+      "similarity": 0.785854,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI31/192336/2023-580000-04/01",
+      "hs6": "6701.00",
+      "similarity": 0.77937,
+      "eligible": true
+     }
+    ],
+    "customs_wording": null,
+    "proposal_chapters": null,
+    "citation_notes": [],
+    "supported": {
+     "rank": 2,
+     "right": true
+    },
+    "on": {
+     "gate": "vote_disagrees",
+     "route": "review",
+     "rank": 1,
+     "chosen": "9503.00",
+     "hit": false
+    }
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI38",
+    "chapter": "95",
+    "language": "en",
+    "expected": "9503.00",
+    "flag": "ok",
+    "top1": "9503.00",
+    "top3": [
+     "9503.00",
+     "9505.90",
+     "9618.00"
+    ],
+    "confidences": [
+     95,
+     60,
+     30
+    ],
+    "confidence": 95,
+    "raw_confidence": 95,
+    "raw": [
+     {
+      "code": "9503.00",
+      "confidence": 95
+     },
+     {
+      "code": "9505.90",
+      "confidence": 60
+     },
+     {
+      "code": "9618.00",
+      "confidence": 30
+     }
+    ],
+    "hit": true,
+    "in_top3": true,
+    "route": "auto_accept",
+    "route_by_confidence": "auto_accept",
+    "gate": "vote_agrees",
+    "vote": {
+     "majority": "9503.00",
+     "share": 1.0,
+     "voters": 5,
+     "candidate": null,
+     "counts": [
+      [
+       "9503.00",
+       5
+      ]
+     ]
+    },
+    "scoped_vote": {
+     "majority": "9503.00",
+     "share": 1.0,
+     "voters": 5,
+     "candidate": null,
+     "counts": [
+      [
+       "9503.00",
+       5
+      ]
+     ]
+    },
+    "status": "checked",
+    "error": null,
+    "precedent_codes": [
+     "9503.00"
+    ],
+    "expected_sent": true,
+    "own_rank": 1,
+    "nearest_hits": [{"reference":"IEBTIIENEN004-2025-BTI38","hs6":"9503.00","distance":0.180657,"country":"IE","eligible":false},{"reference":"XIBTI505070782","hs6":"9503.00","distance":0.341415,"country":"XI","eligible":true},{"reference":"BEBTIDT.50.019.995","hs6":"9503.00","distance":0.349303,"country":"BE","eligible":true},{"reference":"DEBTI10934/26-1","hs6":"9503.00","distance":0.361045,"country":"DE","eligible":true},{"reference":"ROBTI2025/004881","hs6":"9503.00","distance":0.364944,"country":"RO","eligible":true},{"reference":"IEBTIIENEN004-2026-BTI99","hs6":"9503.00","distance":0.365056,"country":"IE","eligible":true},{"reference":"DEBTI15226/25-1","hs6":"9503.00","distance":0.368189,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-07407","hs6":"9503.00","distance":0.37076,"country":"FR","eligible":true},{"reference":"ITBTI2025-0796","hs6":"9503.00","distance":0.374351,"country":"IT","eligible":true},{"reference":"ITBTI2025-0797","hs6":"9503.00","distance":0.376837,"country":"IT","eligible":true},{"reference":"DEBTI26693/26-1","hs6":"9503.00","distance":0.376996,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2026-06857","hs6":"9503.00","distance":0.377784,"country":"FR","eligible":false},{"reference":"ITBTI2025-0799","hs6":"9503.00","distance":0.379666,"country":"IT","eligible":true},{"reference":"DEBTI40865/26-2","hs6":"9503.00","distance":0.381112,"country":"DE","eligible":true},{"reference":"ITBTI2025-0798","hs6":"9503.00","distance":0.381058,"country":"IT","eligible":true},{"reference":"DEBTI17759/25-1","hs6":"9503.00","distance":0.387925,"country":"DE","eligible":true},{"reference":"DEBTI30044/24-1","hs6":"9503.00","distance":0.391247,"country":"DE","eligible":true},{"reference":"IEBTIIENEN004-2026-BTI118","hs6":"9503.00","distance":0.392746,"country":"IE","eligible":true},{"reference":"DEBTI35413/24-1","hs6":"9503.00","distance":0.393239,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2024-02457","hs6":"9503.00","distance":0.393839,"country":"FR","eligible":true},{"reference":"DEBTI8036/25-1","hs6":"9503.00","distance":0.394205,"country":"DE","eligible":true},{"reference":"ESBTIESBTI2026SOL18","hs6":"9503.00","distance":0.394376,"country":"ES","eligible":true},{"reference":"XIBTI505070880","hs6":"9503.00","distance":0.395006,"country":"XI","eligible":true},{"reference":"DEBTI41911/25-1","hs6":"9503.00","distance":0.396634,"country":"DE","eligible":true},{"reference":"DEBTI29453/26-1","hs6":"9503.00","distance":0.400524,"country":"DE","eligible":true},{"reference":"DEBTI8039/25-1","hs6":"9503.00","distance":0.401614,"country":"DE","eligible":true},{"reference":"IEBTIIENEN004-2025-BTI393","hs6":"9503.00","distance":0.402685,"country":"IE","eligible":true},{"reference":"DEBTI39850/25-1","hs6":"9503.00","distance":0.403429,"country":"DE","eligible":true},{"reference":"DEBTI46034/25-1","hs6":"9503.00","distance":0.404554,"country":"DE","eligible":true},{"reference":"DEBTI18878/26-1","hs6":"9503.00","distance":0.405277,"country":"DE","eligible":true},{"reference":"DEBTI34236/25-1","hs6":"9503.00","distance":0.408607,"country":"DE","eligible":true},{"reference":"DEBTI13726/24-1","hs6":"9503.00","distance":0.409335,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-00192","hs6":"9503.00","distance":0.40932,"country":"FR","eligible":true},{"reference":"DEBTI24756/25-1","hs6":"9503.00","distance":0.410705,"country":"DE","eligible":true},{"reference":"DEBTI16569/25-1","hs6":"9503.00","distance":0.410901,"country":"DE","eligible":true},{"reference":"ESBTIESBTI2025SOL1537","hs6":"9503.00","distance":0.411003,"country":"ES","eligible":true},{"reference":"DEBTI26691/26-1","hs6":"9503.00","distance":0.412317,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-01471","hs6":"9503.00","distance":0.412269,"country":"FR","eligible":true},{"reference":"ROBTI2026-005468","hs6":"9503.00","distance":0.413072,"country":"RO","eligible":true},{"reference":"BEBTIDT.50.020.647","hs6":"9503.00","distance":0.413357,"country":"BE","eligible":true}],
+    "vote_chapters": [
+     "95",
+     "96"
+    ],
+    "not_indexed": [],
+    "vote_hits": [
+     {
+      "reference": "IEBTIIENEN004-2025-BTI38",
+      "hs6": "9503.00",
+      "similarity": 0.819343,
+      "eligible": false
+     },
+     {
+      "reference": "XIBTI505070782",
+      "hs6": "9503.00",
+      "similarity": 0.658585,
+      "eligible": true
+     },
+     {
+      "reference": "BEBTIDT.50.019.995",
+      "hs6": "9503.00",
+      "similarity": 0.650697,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI10934/26-1",
+      "hs6": "9503.00",
+      "similarity": 0.638955,
+      "eligible": true
+     },
+     {
+      "reference": "ROBTI2025/004881",
+      "hs6": "9503.00",
+      "similarity": 0.635056,
+      "eligible": true
+     },
+     {
+      "reference": "IEBTIIENEN004-2026-BTI99",
+      "hs6": "9503.00",
+      "similarity": 0.634944,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI15226/25-1",
+      "hs6": "9503.00",
+      "similarity": 0.631811,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2025-07407",
+      "hs6": "9503.00",
+      "similarity": 0.62924,
+      "eligible": true
+     },
+     {
+      "reference": "ITBTI2025-0796",
+      "hs6": "9503.00",
+      "similarity": 0.625649,
+      "eligible": true
+     },
+     {
+      "reference": "ITBTI2025-0797",
+      "hs6": "9503.00",
+      "similarity": 0.623163,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI26693/26-1",
+      "hs6": "9503.00",
+      "similarity": 0.623004,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2026-06857",
+      "hs6": "9503.00",
+      "similarity": 0.622216,
+      "eligible": false
+     }
+    ],
+    "customs_wording": null,
+    "proposal_chapters": null,
+    "citation_notes": [],
+    "supported": {
+     "rank": null,
+     "right": null
+    },
+    "on": {
+     "gate": "vote_agrees",
+     "route": "auto_accept",
+     "rank": 1,
+     "chosen": "9503.00",
+     "hit": true
+    }
+   }
+  ],
+  [
+   {
+    "reference": "IEBTIIENEN004-2026-BTI23",
+    "chapter": "63",
+    "language": "en",
+    "expected": "6307.90",
+    "flag": "ok",
+    "top1": "6307.90",
+    "top3": [
+     "6307.90",
+     "5808.90",
+     "6215.90"
+    ],
+    "confidences": [
+     95,
+     80,
+     40
+    ],
+    "confidence": 95,
+    "raw_confidence": 95,
+    "raw": [
+     {
+      "code": "6307.90",
+      "confidence": 95
+     },
+     {
+      "code": "5808.90",
+      "confidence": 80
+     },
+     {
+      "code": "6215.90",
+      "confidence": 40
+     }
+    ],
+    "hit": true,
+    "in_top3": true,
+    "route": "review",
+    "route_by_confidence": "auto_accept",
+    "gate": "vote_share_low",
+    "vote": {
+     "majority": "6307.90",
+     "share": 0.4,
+     "voters": 5,
+     "candidate": null,
+     "counts": [
+      [
+       "6307.90",
+       2
+      ],
+      [
+       "5808.90",
+       1
+      ],
+      [
+       "4823.90",
+       1
+      ],
+      [
+       "5806.40",
+       1
+      ]
+     ]
+    },
+    "scoped_vote": {
+     "majority": "6307.90",
+     "share": 0.4,
+     "voters": 5,
+     "candidate": null,
+     "counts": [
+      [
+       "6307.90",
+       2
+      ],
+      [
+       "5808.90",
+       1
+      ],
+      [
+       "5806.40",
+       1
+      ],
+      [
+       "5806.32",
+       1
+      ]
+     ]
+    },
+    "status": "checked",
+    "error": null,
+    "precedent_codes": [
+     "6307.90",
+     "5806.32",
+     "5808.90"
+    ],
+    "expected_sent": true,
+    "own_rank": 1,
+    "nearest_hits": [{"reference":"IEBTIIENEN004-2026-BTI23","hs6":"6307.90","distance":0.032991,"country":"IE","eligible":false},{"reference":"DEBTI26260/24-1","hs6":"5808.90","distance":0.294694,"country":"DE","eligible":true},{"reference":"DEBTI48563/25-1","hs6":"6307.90","distance":0.306284,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2026-01865","hs6":"5806.32","distance":0.311335,"country":"FR","eligible":false},{"reference":"DEBTI14944/24-1","hs6":"6307.90","distance":0.319537,"country":"DE","eligible":true},{"reference":"IEBTIIENEN004-2025-BTI392","hs6":"4823.90","distance":0.322842,"country":"IE","eligible":true},{"reference":"DEBTI14507/24-1","hs6":"5806.40","distance":0.325815,"country":"DE","eligible":true},{"reference":"DEBTI14943/24-1","hs6":"5806.32","distance":0.326013,"country":"DE","eligible":true},{"reference":"SKBTI514144/24/283","hs6":"3926.40","distance":0.32632,"country":"SK","eligible":true},{"reference":"DEBTI14944/24-2","hs6":"6307.90","distance":0.328283,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2026-00477","hs6":"5806.32","distance":0.32883,"country":"FR","eligible":true},{"reference":"DEBTI60458/24-1","hs6":"6307.90","distance":0.32897,"country":"DE","eligible":true},{"reference":"SKBTI514121/24/281","hs6":"3926.40","distance":0.329289,"country":"SK","eligible":true},{"reference":"DEBTI17307/25-1","hs6":"6307.90","distance":0.329884,"country":"DE","eligible":true},{"reference":"DEBTI21118/26-1","hs6":"6307.90","distance":0.329989,"country":"DE","eligible":false},{"reference":"DEBTI60441/24-1","hs6":"6307.90","distance":0.333576,"country":"DE","eligible":true},{"reference":"DEBTI49113/25-1","hs6":"6117.80","distance":0.334443,"country":"DE","eligible":true},{"reference":"DEBTI49429/23-1","hs6":"6307.90","distance":0.335528,"country":"DE","eligible":true},{"reference":"DEBTI17377/25-1","hs6":"6307.90","distance":0.33798,"country":"DE","eligible":true},{"reference":"DEBTI35191/25-1","hs6":"6307.90","distance":0.337954,"country":"DE","eligible":true},{"reference":"DEBTI23183/26-1","hs6":"6307.90","distance":0.338738,"country":"DE","eligible":false},{"reference":"ATBTI2024000254-DEC","hs6":"6307.90","distance":0.34084,"country":"AT","eligible":true},{"reference":"DEBTI17585/24-1","hs6":"6307.90","distance":0.341043,"country":"DE","eligible":true},{"reference":"DEBTI21759/25-1","hs6":"6307.90","distance":0.343117,"country":"DE","eligible":true},{"reference":"DEBTI25252/25-1","hs6":"6307.90","distance":0.343934,"country":"DE","eligible":true},{"reference":"DEBTI60417/24-1","hs6":"6307.90","distance":0.343984,"country":"DE","eligible":true},{"reference":"DEBTI28513/26-1","hs6":"6307.90","distance":0.344111,"country":"DE","eligible":true},{"reference":"DEBTI25254/25-1","hs6":"6307.90","distance":0.344202,"country":"DE","eligible":true},{"reference":"SKBTI514134/24/282","hs6":"4823.90","distance":0.34425,"country":"SK","eligible":true},{"reference":"DEBTI14712/26-1","hs6":"5806.39","distance":0.344834,"country":"DE","eligible":true},{"reference":"DEBTI50534/23-1","hs6":"3926.40","distance":0.344831,"country":"DE","eligible":true},{"reference":"DEBTI39591/23-1","hs6":"6307.90","distance":0.345549,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-04901","hs6":"6307.90","distance":0.3469,"country":"FR","eligible":true},{"reference":"ESBTIESBTI2026REN807","hs6":"6307.90","distance":0.346952,"country":"ES","eligible":true},{"reference":"DEBTI23190/26-1","hs6":"6307.90","distance":0.347293,"country":"DE","eligible":false},{"reference":"DEBTI48015/24-1","hs6":"6307.90","distance":0.347598,"country":"DE","eligible":true},{"reference":"DEBTI40909/23-1","hs6":"5609.00","distance":0.348037,"country":"DE","eligible":true},{"reference":"DEBTI28519/26-1","hs6":"6307.90","distance":0.34837,"country":"DE","eligible":false},{"reference":"NLBTI2025-1771","hs6":"6307.90","distance":0.348384,"country":"NL","eligible":true},{"reference":"DEBTI43745/25-1","hs6":"6307.90","distance":0.350143,"country":"DE","eligible":true}],
+    "vote_chapters": [
+     "58",
+     "62",
+     "63"
+    ],
+    "not_indexed": [],
+    "vote_hits": [
+     {
+      "reference": "IEBTIIENEN004-2026-BTI23",
+      "hs6": "6307.90",
+      "similarity": 0.967009,
+      "eligible": false
+     },
+     {
+      "reference": "DEBTI26260/24-1",
+      "hs6": "5808.90",
+      "similarity": 0.705306,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI48563/25-1",
+      "hs6": "6307.90",
+      "similarity": 0.693716,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2026-01865",
+      "hs6": "5806.32",
+      "similarity": 0.688665,
+      "eligible": false
+     },
+     {
+      "reference": "DEBTI14944/24-1",
+      "hs6": "6307.90",
+      "similarity": 0.680463,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI14507/24-1",
+      "hs6": "5806.40",
+      "similarity": 0.674185,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI14943/24-1",
+      "hs6": "5806.32",
+      "similarity": 0.673987,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI14944/24-2",
+      "hs6": "6307.90",
+      "similarity": 0.671717,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2026-00477",
+      "hs6": "5806.32",
+      "similarity": 0.67117,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI60458/24-1",
+      "hs6": "6307.90",
+      "similarity": 0.67103,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI17307/25-1",
+      "hs6": "6307.90",
+      "similarity": 0.670116,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI21118/26-1",
+      "hs6": "6307.90",
+      "similarity": 0.670011,
+      "eligible": false
+     }
+    ],
+    "customs_wording": null,
+    "proposal_chapters": null,
+    "citation_notes": [],
+    "supported": {
+     "rank": null,
+     "right": null
+    },
+    "on": {
+     "gate": "vote_share_low",
+     "route": "review",
+     "rank": 1,
+     "chosen": "6307.90",
+     "hit": true
+    }
+   },
+   {
+    "reference": "SEBTITV-2026-01096",
+    "chapter": "63",
+    "language": "en",
+    "expected": "6307.90",
+    "flag": "ok",
+    "top1": "9503.00",
+    "top3": [
+     "9503.00",
+     "6307.90",
+     "4205.00"
+    ],
+    "confidences": [
+     95,
+     60,
+     0
+    ],
+    "confidence": 95,
+    "raw_confidence": 95,
+    "raw": [
+     {
+      "code": "9503.00",
+      "confidence": 95
+     },
+     {
+      "code": "6307.90",
+      "confidence": 60
+     },
+     {
+      "code": "4205.00",
+      "confidence": 0
+     }
+    ],
+    "hit": false,
+    "in_top3": true,
+    "route": "review",
+    "route_by_confidence": "auto_accept",
+    "gate": "vote_disagrees",
+    "vote": {
+     "majority": "6307.90",
+     "share": 0.4,
+     "voters": 5,
+     "candidate": 2,
+     "counts": [
+      [
+       "6307.90",
+       2
+      ],
+      [
+       "4205.00",
+       1
+      ],
+      [
+       "9503.00",
+       1
+      ],
+      [
+       "4421.99",
+       1
+      ]
+     ]
+    },
+    "scoped_vote": {
+     "majority": null,
+     "share": 0.4,
+     "voters": 5,
+     "candidate": null,
+     "counts": [
+      [
+       "6307.90",
+       2
+      ],
+      [
+       "9503.00",
+       2
+      ],
+      [
+       "4205.00",
+       1
+      ]
+     ]
+    },
+    "status": "checked",
+    "error": null,
+    "precedent_codes": [
+     "6307.90",
+     "9503.00",
+     "4205.00"
+    ],
+    "expected_sent": true,
+    "own_rank": 1,
+    "nearest_hits": [{"reference":"SEBTITV-2026-01096","hs6":"6307.90","distance":0.080004,"country":"SE","eligible":false},{"reference":"SEBTITV-2025-28542","hs6":"4205.00","distance":0.347441,"country":"SE","eligible":true},{"reference":"SEBTITV-2025-28962","hs6":"6307.90","distance":0.36786,"country":"SE","eligible":true},{"reference":"SEBTITV-2026-09400","hs6":"9503.00","distance":0.373006,"country":"SE","eligible":true},{"reference":"SEBTITV-2025-28976","hs6":"4421.99","distance":0.376354,"country":"SE","eligible":true},{"reference":"SEBTITV-2025-28956","hs6":"6307.90","distance":0.377416,"country":"SE","eligible":true},{"reference":"SEBTITV-2025-28514","hs6":"5609.00","distance":0.381016,"country":"SE","eligible":true},{"reference":"SEBTITV-2025-28516","hs6":"3926.90","distance":0.39118,"country":"SE","eligible":true},{"reference":"BEBTIDT.50.020.651","hs6":"9503.00","distance":0.395364,"country":"BE","eligible":true},{"reference":"SEBTITV-2026-01721","hs6":"6307.90","distance":0.399948,"country":"SE","eligible":true},{"reference":"CZBTI45/141761/2024-580000-04/01","hs6":"6307.90","distance":0.403735,"country":"CZ","eligible":true},{"reference":"DKBTI25-1430297","hs6":"3926.40","distance":0.411562,"country":"DK","eligible":true},{"reference":"DEBTI46027/25-1","hs6":"4016.99","distance":0.412456,"country":"DE","eligible":true},{"reference":"DEBTI45001/25-1","hs6":"4016.99","distance":0.416257,"country":"DE","eligible":true},{"reference":"DEBTI14025/24-1","hs6":"4016.99","distance":0.417147,"country":"DE","eligible":true},{"reference":"DKBTI25-5000779","hs6":"9503.00","distance":0.417339,"country":"DK","eligible":true},{"reference":"DKBTI25-5000457","hs6":"6307.90","distance":0.417926,"country":"DK","eligible":true},{"reference":"DEBTI43057/25-1","hs6":"6307.90","distance":0.419326,"country":"DE","eligible":true},{"reference":"SEBTITV-2025-22443","hs6":"6307.90","distance":0.419798,"country":"SE","eligible":true},{"reference":"DEBTI11497/26-1","hs6":"6307.90","distance":0.420132,"country":"DE","eligible":true},{"reference":"DEBTI42458/25-1","hs6":"9503.00","distance":0.421593,"country":"DE","eligible":true},{"reference":"DKBTI24-2728021","hs6":"9503.00","distance":0.421563,"country":"DK","eligible":true},{"reference":"DEBTI45741/25-1","hs6":"4016.99","distance":0.422491,"country":"DE","eligible":true},{"reference":"DEBTI57678/24-1","hs6":"6307.90","distance":0.423268,"country":"DE","eligible":true},{"reference":"DKBTI25-5643022-2","hs6":"9503.00","distance":0.424299,"country":"DK","eligible":true},{"reference":"DEBTI41088/24-1","hs6":"6307.90","distance":0.425069,"country":"DE","eligible":true},{"reference":"DKBTI25-5320345","hs6":"6307.90","distance":0.425443,"country":"DK","eligible":true},{"reference":"DKBTI25-5000560","hs6":"9503.00","distance":0.426583,"country":"DK","eligible":true},{"reference":"NLBTI2025-0642","hs6":"6307.90","distance":0.426733,"country":"NL","eligible":true},{"reference":"DEBTI45002/25-1","hs6":"4016.99","distance":0.426964,"country":"DE","eligible":true},{"reference":"DEBTI47136/25-1","hs6":"4016.99","distance":0.427649,"country":"DE","eligible":true},{"reference":"DEBTI37340/26-1","hs6":"9503.00","distance":0.428077,"country":"DE","eligible":true},{"reference":"DKBTI25-1430334","hs6":"9505.90","distance":0.428288,"country":"DK","eligible":true},{"reference":"DKBTI25-5000547","hs6":"6307.90","distance":0.428636,"country":"DK","eligible":true},{"reference":"DEBTI13210/26-1","hs6":"6307.90","distance":0.428805,"country":"DE","eligible":true},{"reference":"DKBTI25-5000712","hs6":"9505.10","distance":0.429113,"country":"DK","eligible":true},{"reference":"DKBTI24-0408670","hs6":"9503.00","distance":0.429165,"country":"DK","eligible":true},{"reference":"SEBTITV-2026-10642","hs6":"7907.00","distance":0.430483,"country":"SE","eligible":true},{"reference":"SEBTITV-2024-25506","hs6":"6307.90","distance":0.430696,"country":"SE","eligible":true},{"reference":"DKBTI25-5000483","hs6":"9503.00","distance":0.431907,"country":"DK","eligible":true}],
+    "vote_chapters": [
+     "42",
+     "63",
+     "95"
+    ],
+    "not_indexed": [],
+    "vote_hits": [
+     {
+      "reference": "SEBTITV-2026-01096",
+      "hs6": "6307.90",
+      "similarity": 0.919996,
+      "eligible": false
+     },
+     {
+      "reference": "SEBTITV-2025-28542",
+      "hs6": "4205.00",
+      "similarity": 0.652559,
+      "eligible": true
+     },
+     {
+      "reference": "SEBTITV-2025-28962",
+      "hs6": "6307.90",
+      "similarity": 0.63214,
+      "eligible": true
+     },
+     {
+      "reference": "SEBTITV-2026-09400",
+      "hs6": "9503.00",
+      "similarity": 0.626994,
+      "eligible": true
+     },
+     {
+      "reference": "SEBTITV-2025-28956",
+      "hs6": "6307.90",
+      "similarity": 0.622584,
+      "eligible": true
+     },
+     {
+      "reference": "BEBTIDT.50.020.651",
+      "hs6": "9503.00",
+      "similarity": 0.604636,
+      "eligible": true
+     },
+     {
+      "reference": "SEBTITV-2026-01721",
+      "hs6": "6307.90",
+      "similarity": 0.600052,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI45/141761/2024-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.596265,
+      "eligible": true
+     },
+     {
+      "reference": "DKBTI25-5000779",
+      "hs6": "9503.00",
+      "similarity": 0.582661,
+      "eligible": true
+     },
+     {
+      "reference": "DKBTI25-5000457",
+      "hs6": "6307.90",
+      "similarity": 0.582074,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI43057/25-1",
+      "hs6": "6307.90",
+      "similarity": 0.580674,
+      "eligible": true
+     },
+     {
+      "reference": "SEBTITV-2025-22443",
+      "hs6": "6307.90",
+      "similarity": 0.580202,
+      "eligible": true
+     }
+    ],
+    "customs_wording": null,
+    "proposal_chapters": null,
+    "citation_notes": [],
+    "supported": {
+     "rank": 2,
+     "right": true
+    },
+    "on": {
+     "gate": "vote_disagrees",
+     "route": "review",
+     "rank": 1,
+     "chosen": "9503.00",
+     "hit": false
+    }
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI8",
+    "chapter": "63",
+    "language": "en",
+    "expected": "6307.90",
+    "flag": "ok",
+    "top1": "6307.90",
+    "top3": [
+     "6307.90",
+     "4602.90",
+     "4602.19"
+    ],
+    "confidences": [
+     95,
+     40,
+     35
+    ],
+    "confidence": 95,
+    "raw_confidence": 95,
+    "raw": [
+     {
+      "code": "6307.90",
+      "confidence": 95
+     },
+     {
+      "code": "4602.90",
+      "confidence": 40
+     },
+     {
+      "code": "4602.19",
+      "confidence": 35
+     }
+    ],
+    "hit": true,
+    "in_top3": true,
+    "route": "review",
+    "route_by_confidence": "auto_accept",
+    "gate": "vote_disagrees",
+    "vote": {
+     "majority": "4602.19",
+     "share": 0.6,
+     "voters": 5,
+     "candidate": 3,
+     "counts": [
+      [
+       "4602.19",
+       3
+      ],
+      [
+       "6307.90",
+       1
+      ],
+      [
+       "4602.90",
+       1
+      ]
+     ]
+    },
+    "scoped_vote": {
+     "majority": "4602.19",
+     "share": 0.6,
+     "voters": 5,
+     "candidate": 3,
+     "counts": [
+      [
+       "4602.19",
+       3
+      ],
+      [
+       "6307.90",
+       1
+      ],
+      [
+       "4602.90",
+       1
+      ]
+     ]
+    },
+    "status": "checked",
+    "error": null,
+    "precedent_codes": [
+     "4602.19",
+     "6307.90",
+     "4602.90"
+    ],
+    "expected_sent": true,
+    "own_rank": 1,
+    "nearest_hits": [{"reference":"IEBTIIENEN004-2024-BTI8","hs6":"6307.90","distance":0.144143,"country":"IE","eligible":false},{"reference":"IEBTIIENEN004-2024-BTI5","hs6":"6307.90","distance":0.194244,"country":"IE","eligible":true},{"reference":"IEBTIIENEN004-2024-BTI7","hs6":"6307.90","distance":0.230561,"country":"IE","eligible":true},{"reference":"DEBTI41104/25-1","hs6":"4602.19","distance":0.362662,"country":"DE","eligible":true},{"reference":"DEBTI40335/23-1","hs6":"6307.90","distance":0.373169,"country":"DE","eligible":true},{"reference":"DEBTI41080/25-1","hs6":"4602.19","distance":0.376262,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-05281","hs6":"4602.90","distance":0.380331,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2024-05865","hs6":"4602.19","distance":0.382574,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2025-06224","hs6":"4601.29","distance":0.384037,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2025-00696","hs6":"4202.92","distance":0.386465,"country":"FR","eligible":true},{"reference":"DEBTI40889/25-1","hs6":"4602.19","distance":0.387969,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2024-05866","hs6":"4602.19","distance":0.390499,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2024-03731","hs6":"4602.90","distance":0.391323,"country":"FR","eligible":true},{"reference":"DEBTI47851/24-1","hs6":"5609.00","distance":0.393493,"country":"DE","eligible":true},{"reference":"DEBTI18781/26-1","hs6":"5609.00","distance":0.396584,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-03068","hs6":"4602.19","distance":0.396842,"country":"FR","eligible":true},{"reference":"DEBTI333/26-1","hs6":"5609.00","distance":0.398194,"country":"DE","eligible":true},{"reference":"DEBTI3899/26-1","hs6":"5609.00","distance":0.398669,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2026-02705","hs6":"4823.90","distance":0.399311,"country":"FR","eligible":false},{"reference":"DEBTI46951/25-1","hs6":"4602.19","distance":0.40047,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-00864","hs6":"4602.19","distance":0.402175,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2024-05864","hs6":"4602.19","distance":0.402584,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2025-03311","hs6":"4602.19","distance":0.402984,"country":"FR","eligible":true},{"reference":"DEBTI18233/26-1","hs6":"4602.90","distance":0.403065,"country":"DE","eligible":true},{"reference":"DEBTI47311/24-1","hs6":"6307.90","distance":0.403698,"country":"DE","eligible":true},{"reference":"DEBTI47309/24-1","hs6":"6307.90","distance":0.40392,"country":"DE","eligible":true},{"reference":"DEBTI40784/25-1","hs6":"4602.19","distance":0.404251,"country":"DE","eligible":true},{"reference":"DEBTI6478/26-1","hs6":"6307.90","distance":0.404696,"country":"DE","eligible":true},{"reference":"DEBTI11063/24-1","hs6":"5609.00","distance":0.404833,"country":"DE","eligible":true},{"reference":"DEBTI40042/25-1","hs6":"4602.19","distance":0.406301,"country":"DE","eligible":true},{"reference":"DEBTI45688/23-1","hs6":"4602.19","distance":0.408153,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2026-04900","hs6":"4602.19","distance":0.408179,"country":"FR","eligible":false},{"reference":"DEBTI40929/25-1","hs6":"4602.19","distance":0.408802,"country":"DE","eligible":true},{"reference":"DEBTI6273/26-1","hs6":"6307.90","distance":0.40923,"country":"DE","eligible":true},{"reference":"SKBTI163032/26/110","hs6":"4602.19","distance":0.410189,"country":"SK","eligible":true},{"reference":"DEBTI14197/24-1","hs6":"6307.90","distance":0.410543,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-04299","hs6":"9505.10","distance":0.410536,"country":"FR","eligible":true},{"reference":"DEBTI20225/25-1","hs6":"4602.19","distance":0.410864,"country":"DE","eligible":true},{"reference":"DEBTI21832/25-1","hs6":"6307.90","distance":0.41115,"country":"DE","eligible":true},{"reference":"DEBTI24221/26-1","hs6":"7323.99","distance":0.411868,"country":"DE","eligible":true}],
+    "vote_chapters": [
+     "46",
+     "63"
+    ],
+    "not_indexed": [],
+    "vote_hits": [
+     {
+      "reference": "IEBTIIENEN004-2024-BTI8",
+      "hs6": "6307.90",
+      "similarity": 0.855857,
+      "eligible": false
+     },
+     {
+      "reference": "IEBTIIENEN004-2024-BTI5",
+      "hs6": "6307.90",
+      "similarity": 0.805756,
+      "eligible": true
+     },
+     {
+      "reference": "IEBTIIENEN004-2024-BTI7",
+      "hs6": "6307.90",
+      "similarity": 0.769439,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI41104/25-1",
+      "hs6": "4602.19",
+      "similarity": 0.637338,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI40335/23-1",
+      "hs6": "6307.90",
+      "similarity": 0.626831,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI41080/25-1",
+      "hs6": "4602.19",
+      "similarity": 0.623738,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2025-05281",
+      "hs6": "4602.90",
+      "similarity": 0.619669,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2024-05865",
+      "hs6": "4602.19",
+      "similarity": 0.617426,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2025-06224",
+      "hs6": "4601.29",
+      "similarity": 0.615963,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI40889/25-1",
+      "hs6": "4602.19",
+      "similarity": 0.612031,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI47/304942/2025-300000-ZI/01",
+      "hs6": "4602.19",
+      "similarity": 0.611278,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2024-05866",
+      "hs6": "4602.19",
+      "similarity": 0.609501,
+      "eligible": true
+     }
+    ],
+    "customs_wording": null,
+    "proposal_chapters": null,
+    "citation_notes": [],
+    "supported": {
+     "rank": 3,
+     "right": false
+    },
+    "on": {
+     "gate": "vote_disagrees",
+     "route": "review",
+     "rank": 1,
+     "chosen": "6307.90",
+     "hit": true
+    }
+   },
+   {
+    "reference": "CZBTI47/152108/2024-580000-04/01",
+    "chapter": "63",
+    "language": "cs",
+    "expected": "6307.90",
+    "flag": "ok",
+    "top1": "9503.00",
+    "top3": [
+     "9503.00",
+     "6307.90",
+     "9505.90"
+    ],
+    "confidences": [
+     95,
+     60,
+     40
+    ],
+    "confidence": 95,
+    "raw_confidence": 95,
+    "raw": [
+     {
+      "code": "9503.00",
+      "confidence": 95
+     },
+     {
+      "code": "6307.90",
+      "confidence": 60
+     },
+     {
+      "code": "9505.90",
+      "confidence": 40
+     }
+    ],
+    "hit": false,
+    "in_top3": true,
+    "route": "review",
+    "route_by_confidence": "auto_accept",
+    "gate": "vote_disagrees",
+    "vote": {
+     "majority": "6307.90",
+     "share": 0.6,
+     "voters": 5,
+     "candidate": 2,
+     "counts": [
+      [
+       "6307.90",
+       3
+      ],
+      [
+       "6701.00",
+       1
+      ],
+      [
+       "3926.90",
+       1
+      ]
+     ]
+    },
+    "scoped_vote": {
+     "majority": "6307.90",
+     "share": 1.0,
+     "voters": 5,
+     "candidate": 2,
+     "counts": [
+      [
+       "6307.90",
+       5
+      ]
+     ]
+    },
+    "status": "checked",
+    "error": null,
+    "precedent_codes": [
+     "6307.90",
+     "6701.00",
+     "3926.90"
+    ],
+    "expected_sent": true,
+    "own_rank": 1,
+    "nearest_hits": [{"reference":"CZBTI47/152108/2024-580000-04/01","hs6":"6307.90","distance":0.092005,"country":"CZ","eligible":false},{"reference":"CZBTI47/002334/2025-580000-04/01","hs6":"6307.90","distance":0.126228,"country":"CZ","eligible":true},{"reference":"CZBTI45/206864/2024-580000-04/01","hs6":"6701.00","distance":0.154487,"country":"CZ","eligible":true},{"reference":"CZBTI45/152099/2024-580000-04/01","hs6":"6307.90","distance":0.171635,"country":"CZ","eligible":true},{"reference":"CZBTI45/189629/2023-580000-04/01","hs6":"6307.90","distance":0.175478,"country":"CZ","eligible":true},{"reference":"CZBTI51/021089/2025-300000-ZI/01","hs6":"3926.90","distance":0.186863,"country":"CZ","eligible":true},{"reference":"CZBTI41/152107/2024-580000-04/01","hs6":"6701.00","distance":0.188579,"country":"CZ","eligible":true},{"reference":"CZBTI31/208095/2024-580000-04/01","hs6":"6307.90","distance":0.190553,"country":"CZ","eligible":true},{"reference":"CZBTI41/152101/2024-580000-04/01","hs6":"6307.90","distance":0.196392,"country":"CZ","eligible":true},{"reference":"CZBTI47/152110/2024-580000-04/01","hs6":"5609.00","distance":0.196722,"country":"CZ","eligible":true},{"reference":"CZBTI47/152113/2024-580000-04/01","hs6":"4303.90","distance":0.20108,"country":"CZ","eligible":true},{"reference":"CZBTI51/144698/2024-580000-04/01","hs6":"6307.90","distance":0.205041,"country":"CZ","eligible":true},{"reference":"CZBTI34/182905/2023-580000-04/01","hs6":"6307.90","distance":0.20808,"country":"CZ","eligible":true},{"reference":"CZBTI34/182902/2023-580000-04/01","hs6":"6701.00","distance":0.214214,"country":"CZ","eligible":true},{"reference":"CZBTI31/192336/2023-580000-04/01","hs6":"6701.00","distance":0.220621,"country":"CZ","eligible":true},{"reference":"CZBTI50/538679/2026-300000-ZI/01","hs6":"6307.90","distance":0.223984,"country":"CZ","eligible":true},{"reference":"CZBTI50/208094/2024-580000-04/01","hs6":"6307.90","distance":0.22411,"country":"CZ","eligible":true},{"reference":"CZBTI45/141761/2024-580000-04/01","hs6":"6307.90","distance":0.225171,"country":"CZ","eligible":true},{"reference":"CZBTI50/182882/2023-580000-04/01","hs6":"6307.90","distance":0.225632,"country":"CZ","eligible":true},{"reference":"CZBTI32/152112/2024-580000-04/01","hs6":"6307.90","distance":0.226101,"country":"CZ","eligible":true},{"reference":"CZBTI45/189663/2023-580000-04/01","hs6":"6307.90","distance":0.226645,"country":"CZ","eligible":true},{"reference":"CZBTI48/182418/2023-580000-04/01","hs6":"8479.89","distance":0.22675,"country":"CZ","eligible":true},{"reference":"CZBTI47/445891/2026-300000-ZI/01","hs6":"6307.90","distance":0.232358,"country":"CZ","eligible":true},{"reference":"CZBTI32/189532/2023-580000-04/01","hs6":"6307.90","distance":0.232704,"country":"CZ","eligible":true},{"reference":"CZBTI34/144692/2024-580000-04/01","hs6":"6307.90","distance":0.232908,"country":"CZ","eligible":true},{"reference":"CZBTI32/182743/2023-580000-04/01","hs6":"3926.90","distance":0.235286,"country":"CZ","eligible":true},{"reference":"CZBTI51/189422/2023-580000-04/01","hs6":"6307.90","distance":0.238531,"country":"CZ","eligible":true},{"reference":"CZBTI32/021100/2025-300000-ZI/01","hs6":"3926.90","distance":0.239285,"country":"CZ","eligible":true},{"reference":"CZBTI41/445894/2026-300000-ZI/01","hs6":"6307.90","distance":0.239565,"country":"CZ","eligible":true},{"reference":"CZBTI41/206862/2024-580000-04/01","hs6":"6307.90","distance":0.245795,"country":"CZ","eligible":true},{"reference":"CZBTI32/182908/2023-580000-04/01","hs6":"6307.90","distance":0.247388,"country":"CZ","eligible":true},{"reference":"CZBTI34/189556/2023-580000-04/01","hs6":"8479.89","distance":0.249023,"country":"CZ","eligible":true},{"reference":"CZBTI32/141807/2024-580000-04/01","hs6":"6307.90","distance":0.249732,"country":"CZ","eligible":true},{"reference":"CZBTI34/206856/2024-580000-04/01","hs6":"6307.90","distance":0.249717,"country":"CZ","eligible":true},{"reference":"CZBTI41/062301/2025-580000-04/01","hs6":"5609.00","distance":0.25188,"country":"CZ","eligible":true},{"reference":"CZBTI51/189561/2023-580000-04/01","hs6":"8479.89","distance":0.252318,"country":"CZ","eligible":true},{"reference":"CZBTI45/067359/2025-580000-04/01","hs6":"6307.90","distance":0.254942,"country":"CZ","eligible":true},{"reference":"CZBTI50/251270/2024-580000-04/01","hs6":"5609.00","distance":0.256408,"country":"CZ","eligible":true},{"reference":"CZBTI50/133146/2024-580000-04/01","hs6":"6307.90","distance":0.256494,"country":"CZ","eligible":true},{"reference":"CZBTI32/182774/2023-580000-04/01","hs6":"3926.90","distance":0.260798,"country":"CZ","eligible":true}],
+    "vote_chapters": [
+     "63",
+     "95"
+    ],
+    "not_indexed": [],
+    "vote_hits": [
+     {
+      "reference": "CZBTI47/152108/2024-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.907995,
+      "eligible": false
+     },
+     {
+      "reference": "CZBTI47/002334/2025-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.873772,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI45/152099/2024-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.828365,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI45/189629/2023-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.824522,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI31/208095/2024-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.809447,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI41/152101/2024-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.803608,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI51/144698/2024-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.794959,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI34/182905/2023-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.79192,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI50/538679/2026-300000-ZI/01",
+      "hs6": "6307.90",
+      "similarity": 0.776016,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI50/208094/2024-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.77589,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI45/141761/2024-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.774829,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI50/182882/2023-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.774368,
+      "eligible": true
+     }
+    ],
+    "customs_wording": null,
+    "proposal_chapters": null,
+    "citation_notes": [],
+    "supported": {
+     "rank": 2,
+     "right": true
+    },
+    "on": {
+     "gate": "vote_disagrees",
+     "route": "review",
+     "rank": 1,
+     "chosen": "9503.00",
+     "hit": false
+    }
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI38",
+    "chapter": "95",
+    "language": "en",
+    "expected": "9503.00",
+    "flag": "ok",
+    "top1": "9503.00",
+    "top3": [
+     "9503.00",
+     "9505.90",
+     "9618.00"
+    ],
+    "confidences": [
+     95,
+     60,
+     30
+    ],
+    "confidence": 95,
+    "raw_confidence": 95,
+    "raw": [
+     {
+      "code": "9503.00",
+      "confidence": 95
+     },
+     {
+      "code": "9505.90",
+      "confidence": 60
+     },
+     {
+      "code": "9618.00",
+      "confidence": 30
+     }
+    ],
+    "hit": true,
+    "in_top3": true,
+    "route": "auto_accept",
+    "route_by_confidence": "auto_accept",
+    "gate": "vote_agrees",
+    "vote": {
+     "majority": "9503.00",
+     "share": 1.0,
+     "voters": 5,
+     "candidate": null,
+     "counts": [
+      [
+       "9503.00",
+       5
+      ]
+     ]
+    },
+    "scoped_vote": {
+     "majority": "9503.00",
+     "share": 1.0,
+     "voters": 5,
+     "candidate": null,
+     "counts": [
+      [
+       "9503.00",
+       5
+      ]
+     ]
+    },
+    "status": "checked",
+    "error": null,
+    "precedent_codes": [
+     "9503.00"
+    ],
+    "expected_sent": true,
+    "own_rank": 1,
+    "nearest_hits": [{"reference":"IEBTIIENEN004-2025-BTI38","hs6":"9503.00","distance":0.180068,"country":"IE","eligible":false},{"reference":"XIBTI505070782","hs6":"9503.00","distance":0.341377,"country":"XI","eligible":true},{"reference":"BEBTIDT.50.019.995","hs6":"9503.00","distance":0.349911,"country":"BE","eligible":true},{"reference":"DEBTI10934/26-1","hs6":"9503.00","distance":0.361267,"country":"DE","eligible":true},{"reference":"IEBTIIENEN004-2026-BTI99","hs6":"9503.00","distance":0.364817,"country":"IE","eligible":true},{"reference":"ROBTI2025/004881","hs6":"9503.00","distance":0.365081,"country":"RO","eligible":true},{"reference":"DEBTI15226/25-1","hs6":"9503.00","distance":0.368749,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-07407","hs6":"9503.00","distance":0.370527,"country":"FR","eligible":true},{"reference":"ITBTI2025-0796","hs6":"9503.00","distance":0.374763,"country":"IT","eligible":true},{"reference":"DEBTI26693/26-1","hs6":"9503.00","distance":0.376966,"country":"DE","eligible":true},{"reference":"ITBTI2025-0797","hs6":"9503.00","distance":0.377374,"country":"IT","eligible":true},{"reference":"FRBTIFR-BTI-2026-06857","hs6":"9503.00","distance":0.377795,"country":"FR","eligible":false},{"reference":"ITBTI2025-0799","hs6":"9503.00","distance":0.380038,"country":"IT","eligible":true},{"reference":"DEBTI40865/26-2","hs6":"9503.00","distance":0.381333,"country":"DE","eligible":true},{"reference":"ITBTI2025-0798","hs6":"9503.00","distance":0.381429,"country":"IT","eligible":true},{"reference":"DEBTI17759/25-1","hs6":"9503.00","distance":0.388057,"country":"DE","eligible":true},{"reference":"DEBTI30044/24-1","hs6":"9503.00","distance":0.391474,"country":"DE","eligible":true},{"reference":"IEBTIIENEN004-2026-BTI118","hs6":"9503.00","distance":0.39256,"country":"IE","eligible":true},{"reference":"DEBTI35413/24-1","hs6":"9503.00","distance":0.393535,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2024-02457","hs6":"9503.00","distance":0.393734,"country":"FR","eligible":true},{"reference":"DEBTI8036/25-1","hs6":"9503.00","distance":0.394011,"country":"DE","eligible":true},{"reference":"ESBTIESBTI2026SOL18","hs6":"9503.00","distance":0.394511,"country":"ES","eligible":true},{"reference":"XIBTI505070880","hs6":"9503.00","distance":0.395136,"country":"XI","eligible":true},{"reference":"DEBTI41911/25-1","hs6":"9503.00","distance":0.396932,"country":"DE","eligible":true},{"reference":"DEBTI29453/26-1","hs6":"9503.00","distance":0.400476,"country":"DE","eligible":true},{"reference":"DEBTI8039/25-1","hs6":"9503.00","distance":0.401651,"country":"DE","eligible":true},{"reference":"IEBTIIENEN004-2025-BTI393","hs6":"9503.00","distance":0.402471,"country":"IE","eligible":true},{"reference":"DEBTI39850/25-1","hs6":"9503.00","distance":0.403429,"country":"DE","eligible":true},{"reference":"DEBTI46034/25-1","hs6":"9503.00","distance":0.404551,"country":"DE","eligible":true},{"reference":"DEBTI18878/26-1","hs6":"9503.00","distance":0.405637,"country":"DE","eligible":true},{"reference":"DEBTI34236/25-1","hs6":"9503.00","distance":0.408764,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-00192","hs6":"9503.00","distance":0.409072,"country":"FR","eligible":true},{"reference":"DEBTI13726/24-1","hs6":"9503.00","distance":0.409309,"country":"DE","eligible":true},{"reference":"ESBTIESBTI2025SOL1537","hs6":"9503.00","distance":0.410708,"country":"ES","eligible":true},{"reference":"DEBTI24756/25-1","hs6":"9503.00","distance":0.410912,"country":"DE","eligible":true},{"reference":"DEBTI16569/25-1","hs6":"9503.00","distance":0.411148,"country":"DE","eligible":true},{"reference":"DEBTI26691/26-1","hs6":"9503.00","distance":0.412095,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-01471","hs6":"9503.00","distance":0.412297,"country":"FR","eligible":true},{"reference":"ROBTI2026-005468","hs6":"9503.00","distance":0.412913,"country":"RO","eligible":true},{"reference":"DEBTI26128/24-1","hs6":"9503.00","distance":0.4138,"country":"DE","eligible":true}],
+    "vote_chapters": [
+     "95",
+     "96"
+    ],
+    "not_indexed": [],
+    "vote_hits": [
+     {
+      "reference": "IEBTIIENEN004-2025-BTI38",
+      "hs6": "9503.00",
+      "similarity": 0.819932,
+      "eligible": false
+     },
+     {
+      "reference": "XIBTI505070782",
+      "hs6": "9503.00",
+      "similarity": 0.658623,
+      "eligible": true
+     },
+     {
+      "reference": "BEBTIDT.50.019.995",
+      "hs6": "9503.00",
+      "similarity": 0.650089,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI10934/26-1",
+      "hs6": "9503.00",
+      "similarity": 0.638733,
+      "eligible": true
+     },
+     {
+      "reference": "IEBTIIENEN004-2026-BTI99",
+      "hs6": "9503.00",
+      "similarity": 0.635183,
+      "eligible": true
+     },
+     {
+      "reference": "ROBTI2025/004881",
+      "hs6": "9503.00",
+      "similarity": 0.634919,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI15226/25-1",
+      "hs6": "9503.00",
+      "similarity": 0.631251,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2025-07407",
+      "hs6": "9503.00",
+      "similarity": 0.629473,
+      "eligible": true
+     },
+     {
+      "reference": "ITBTI2025-0796",
+      "hs6": "9503.00",
+      "similarity": 0.625237,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI26693/26-1",
+      "hs6": "9503.00",
+      "similarity": 0.623034,
+      "eligible": true
+     },
+     {
+      "reference": "ITBTI2025-0797",
+      "hs6": "9503.00",
+      "similarity": 0.622626,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2026-06857",
+      "hs6": "9503.00",
+      "similarity": 0.622205,
+      "eligible": false
+     }
+    ],
+    "customs_wording": null,
+    "proposal_chapters": null,
+    "citation_notes": [],
+    "supported": {
+     "rank": null,
+     "right": null
+    },
+    "on": {
+     "gate": "vote_agrees",
+     "route": "auto_accept",
+     "rank": 1,
+     "chosen": "9503.00",
+     "hit": true
+    }
+   }
+  ],
+  [
+   {
+    "reference": "IEBTIIENEN004-2026-BTI23",
+    "chapter": "63",
+    "language": "en",
+    "expected": "6307.90",
+    "flag": "ok",
+    "top1": "6307.90",
+    "top3": [
+     "6307.90",
+     "5808.90",
+     "5806.32"
+    ],
+    "confidences": [
+     95,
+     80,
+     60
+    ],
+    "confidence": 95,
+    "raw_confidence": 95,
+    "raw": [
+     {
+      "code": "6307.90",
+      "confidence": 95
+     },
+     {
+      "code": "5808.90",
+      "confidence": 80
+     },
+     {
+      "code": "5806.32",
+      "confidence": 60
+     }
+    ],
+    "hit": true,
+    "in_top3": true,
+    "route": "review",
+    "route_by_confidence": "auto_accept",
+    "gate": "vote_share_low",
+    "vote": {
+     "majority": "6307.90",
+     "share": 0.4,
+     "voters": 5,
+     "candidate": null,
+     "counts": [
+      [
+       "6307.90",
+       2
+      ],
+      [
+       "5808.90",
+       1
+      ],
+      [
+       "4823.90",
+       1
+      ],
+      [
+       "5806.40",
+       1
+      ]
+     ]
+    },
+    "scoped_vote": {
+     "majority": "6307.90",
+     "share": 0.4,
+     "voters": 5,
+     "candidate": null,
+     "counts": [
+      [
+       "6307.90",
+       2
+      ],
+      [
+       "5808.90",
+       1
+      ],
+      [
+       "5806.40",
+       1
+      ],
+      [
+       "5806.32",
+       1
+      ]
+     ]
+    },
+    "status": "checked",
+    "error": null,
+    "precedent_codes": [
+     "6307.90",
+     "5806.32",
+     "5808.90"
+    ],
+    "expected_sent": true,
+    "own_rank": 1,
+    "nearest_hits": [{"reference":"IEBTIIENEN004-2026-BTI23","hs6":"6307.90","distance":0.032991,"country":"IE","eligible":false},{"reference":"DEBTI26260/24-1","hs6":"5808.90","distance":0.294694,"country":"DE","eligible":true},{"reference":"DEBTI48563/25-1","hs6":"6307.90","distance":0.306284,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2026-01865","hs6":"5806.32","distance":0.311335,"country":"FR","eligible":false},{"reference":"DEBTI14944/24-1","hs6":"6307.90","distance":0.319537,"country":"DE","eligible":true},{"reference":"IEBTIIENEN004-2025-BTI392","hs6":"4823.90","distance":0.322842,"country":"IE","eligible":true},{"reference":"DEBTI14507/24-1","hs6":"5806.40","distance":0.325815,"country":"DE","eligible":true},{"reference":"DEBTI14943/24-1","hs6":"5806.32","distance":0.326013,"country":"DE","eligible":true},{"reference":"SKBTI514144/24/283","hs6":"3926.40","distance":0.32632,"country":"SK","eligible":true},{"reference":"DEBTI14944/24-2","hs6":"6307.90","distance":0.328283,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2026-00477","hs6":"5806.32","distance":0.32883,"country":"FR","eligible":true},{"reference":"DEBTI60458/24-1","hs6":"6307.90","distance":0.32897,"country":"DE","eligible":true},{"reference":"SKBTI514121/24/281","hs6":"3926.40","distance":0.329289,"country":"SK","eligible":true},{"reference":"DEBTI17307/25-1","hs6":"6307.90","distance":0.329884,"country":"DE","eligible":true},{"reference":"DEBTI21118/26-1","hs6":"6307.90","distance":0.329989,"country":"DE","eligible":false},{"reference":"DEBTI60441/24-1","hs6":"6307.90","distance":0.333576,"country":"DE","eligible":true},{"reference":"DEBTI49113/25-1","hs6":"6117.80","distance":0.334443,"country":"DE","eligible":true},{"reference":"DEBTI49429/23-1","hs6":"6307.90","distance":0.335528,"country":"DE","eligible":true},{"reference":"DEBTI17377/25-1","hs6":"6307.90","distance":0.33798,"country":"DE","eligible":true},{"reference":"DEBTI35191/25-1","hs6":"6307.90","distance":0.337954,"country":"DE","eligible":true},{"reference":"DEBTI23183/26-1","hs6":"6307.90","distance":0.338738,"country":"DE","eligible":false},{"reference":"ATBTI2024000254-DEC","hs6":"6307.90","distance":0.34084,"country":"AT","eligible":true},{"reference":"DEBTI17585/24-1","hs6":"6307.90","distance":0.341043,"country":"DE","eligible":true},{"reference":"DEBTI21759/25-1","hs6":"6307.90","distance":0.343117,"country":"DE","eligible":true},{"reference":"DEBTI25252/25-1","hs6":"6307.90","distance":0.343934,"country":"DE","eligible":true},{"reference":"DEBTI60417/24-1","hs6":"6307.90","distance":0.343984,"country":"DE","eligible":true},{"reference":"DEBTI28513/26-1","hs6":"6307.90","distance":0.344111,"country":"DE","eligible":true},{"reference":"DEBTI25254/25-1","hs6":"6307.90","distance":0.344202,"country":"DE","eligible":true},{"reference":"SKBTI514134/24/282","hs6":"4823.90","distance":0.34425,"country":"SK","eligible":true},{"reference":"DEBTI14712/26-1","hs6":"5806.39","distance":0.344834,"country":"DE","eligible":true},{"reference":"DEBTI50534/23-1","hs6":"3926.40","distance":0.344831,"country":"DE","eligible":true},{"reference":"DEBTI39591/23-1","hs6":"6307.90","distance":0.345549,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-04901","hs6":"6307.90","distance":0.3469,"country":"FR","eligible":true},{"reference":"ESBTIESBTI2026REN807","hs6":"6307.90","distance":0.346952,"country":"ES","eligible":true},{"reference":"DEBTI23190/26-1","hs6":"6307.90","distance":0.347293,"country":"DE","eligible":false},{"reference":"DEBTI48015/24-1","hs6":"6307.90","distance":0.347598,"country":"DE","eligible":true},{"reference":"DEBTI40909/23-1","hs6":"5609.00","distance":0.348037,"country":"DE","eligible":true},{"reference":"DEBTI28519/26-1","hs6":"6307.90","distance":0.34837,"country":"DE","eligible":false},{"reference":"NLBTI2025-1771","hs6":"6307.90","distance":0.348384,"country":"NL","eligible":true},{"reference":"DEBTI43745/25-1","hs6":"6307.90","distance":0.350143,"country":"DE","eligible":true}],
+    "vote_chapters": [
+     "58",
+     "63"
+    ],
+    "not_indexed": [],
+    "vote_hits": [
+     {
+      "reference": "IEBTIIENEN004-2026-BTI23",
+      "hs6": "6307.90",
+      "similarity": 0.967009,
+      "eligible": false
+     },
+     {
+      "reference": "DEBTI26260/24-1",
+      "hs6": "5808.90",
+      "similarity": 0.705306,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI48563/25-1",
+      "hs6": "6307.90",
+      "similarity": 0.693716,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2026-01865",
+      "hs6": "5806.32",
+      "similarity": 0.688665,
+      "eligible": false
+     },
+     {
+      "reference": "DEBTI14944/24-1",
+      "hs6": "6307.90",
+      "similarity": 0.680463,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI14507/24-1",
+      "hs6": "5806.40",
+      "similarity": 0.674185,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI14943/24-1",
+      "hs6": "5806.32",
+      "similarity": 0.673987,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI14944/24-2",
+      "hs6": "6307.90",
+      "similarity": 0.671717,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2026-00477",
+      "hs6": "5806.32",
+      "similarity": 0.67117,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI60458/24-1",
+      "hs6": "6307.90",
+      "similarity": 0.67103,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI17307/25-1",
+      "hs6": "6307.90",
+      "similarity": 0.670116,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI21118/26-1",
+      "hs6": "6307.90",
+      "similarity": 0.670011,
+      "eligible": false
+     }
+    ],
+    "customs_wording": null,
+    "proposal_chapters": null,
+    "citation_notes": [],
+    "supported": {
+     "rank": null,
+     "right": null
+    },
+    "on": {
+     "gate": "vote_share_low",
+     "route": "review",
+     "rank": 1,
+     "chosen": "6307.90",
+     "hit": true
+    }
+   },
+   {
+    "reference": "SEBTITV-2026-01096",
+    "chapter": "63",
+    "language": "en",
+    "expected": "6307.90",
+    "flag": "ok",
+    "top1": "9503.00",
+    "top3": [
+     "9503.00",
+     "6307.90",
+     "4205.00"
+    ],
+    "confidences": [
+     95,
+     60,
+     0
+    ],
+    "confidence": 95,
+    "raw_confidence": 95,
+    "raw": [
+     {
+      "code": "9503.00",
+      "confidence": 95
+     },
+     {
+      "code": "6307.90",
+      "confidence": 60
+     },
+     {
+      "code": "4205.00",
+      "confidence": 0
+     }
+    ],
+    "hit": false,
+    "in_top3": true,
+    "route": "review",
+    "route_by_confidence": "auto_accept",
+    "gate": "vote_disagrees",
+    "vote": {
+     "majority": "6307.90",
+     "share": 0.4,
+     "voters": 5,
+     "candidate": 2,
+     "counts": [
+      [
+       "6307.90",
+       2
+      ],
+      [
+       "4205.00",
+       1
+      ],
+      [
+       "9503.00",
+       1
+      ],
+      [
+       "4421.99",
+       1
+      ]
+     ]
+    },
+    "scoped_vote": {
+     "majority": null,
+     "share": 0.4,
+     "voters": 5,
+     "candidate": null,
+     "counts": [
+      [
+       "6307.90",
+       2
+      ],
+      [
+       "9503.00",
+       2
+      ],
+      [
+       "4205.00",
+       1
+      ]
+     ]
+    },
+    "status": "checked",
+    "error": null,
+    "precedent_codes": [
+     "6307.90",
+     "9503.00",
+     "4205.00"
+    ],
+    "expected_sent": true,
+    "own_rank": 1,
+    "nearest_hits": [{"reference":"SEBTITV-2026-01096","hs6":"6307.90","distance":0.080918,"country":"SE","eligible":false},{"reference":"SEBTITV-2025-28542","hs6":"4205.00","distance":0.349344,"country":"SE","eligible":true},{"reference":"SEBTITV-2025-28962","hs6":"6307.90","distance":0.369158,"country":"SE","eligible":true},{"reference":"SEBTITV-2026-09400","hs6":"9503.00","distance":0.374436,"country":"SE","eligible":true},{"reference":"SEBTITV-2025-28976","hs6":"4421.99","distance":0.3767,"country":"SE","eligible":true},{"reference":"SEBTITV-2025-28956","hs6":"6307.90","distance":0.378844,"country":"SE","eligible":true},{"reference":"SEBTITV-2025-28514","hs6":"5609.00","distance":0.383043,"country":"SE","eligible":true},{"reference":"SEBTITV-2025-28516","hs6":"3926.90","distance":0.391613,"country":"SE","eligible":true},{"reference":"BEBTIDT.50.020.651","hs6":"9503.00","distance":0.396883,"country":"BE","eligible":true},{"reference":"SEBTITV-2026-01721","hs6":"6307.90","distance":0.401116,"country":"SE","eligible":true},{"reference":"CZBTI45/141761/2024-580000-04/01","hs6":"6307.90","distance":0.405557,"country":"CZ","eligible":true},{"reference":"DKBTI25-1430297","hs6":"3926.40","distance":0.411603,"country":"DK","eligible":true},{"reference":"DEBTI46027/25-1","hs6":"4016.99","distance":0.413872,"country":"DE","eligible":true},{"reference":"DEBTI45001/25-1","hs6":"4016.99","distance":0.417223,"country":"DE","eligible":true},{"reference":"DKBTI25-5000779","hs6":"9503.00","distance":0.417186,"country":"DK","eligible":true},{"reference":"DEBTI14025/24-1","hs6":"4016.99","distance":0.418751,"country":"DE","eligible":true},{"reference":"DKBTI25-5000457","hs6":"6307.90","distance":0.419003,"country":"DK","eligible":true},{"reference":"DEBTI43057/25-1","hs6":"6307.90","distance":0.420901,"country":"DE","eligible":true},{"reference":"SEBTITV-2025-22443","hs6":"6307.90","distance":0.421066,"country":"SE","eligible":true},{"reference":"DEBTI11497/26-1","hs6":"6307.90","distance":0.421808,"country":"DE","eligible":true},{"reference":"DKBTI24-2728021","hs6":"9503.00","distance":0.422668,"country":"DK","eligible":true},{"reference":"DEBTI45741/25-1","hs6":"4016.99","distance":0.423629,"country":"DE","eligible":true},{"reference":"DEBTI42458/25-1","hs6":"9503.00","distance":0.424164,"country":"DE","eligible":true},{"reference":"DEBTI57678/24-1","hs6":"6307.90","distance":0.424479,"country":"DE","eligible":true},{"reference":"DKBTI25-5643022-2","hs6":"9503.00","distance":0.425595,"country":"DK","eligible":true},{"reference":"DKBTI25-5320345","hs6":"6307.90","distance":0.425984,"country":"DK","eligible":true},{"reference":"DKBTI25-5000560","hs6":"9503.00","distance":0.426473,"country":"DK","eligible":true},{"reference":"DEBTI41088/24-1","hs6":"6307.90","distance":0.426554,"country":"DE","eligible":true},{"reference":"NLBTI2025-0642","hs6":"6307.90","distance":0.428093,"country":"NL","eligible":true},{"reference":"DEBTI45002/25-1","hs6":"4016.99","distance":0.428462,"country":"DE","eligible":true},{"reference":"DEBTI47136/25-1","hs6":"4016.99","distance":0.428712,"country":"DE","eligible":true},{"reference":"DKBTI25-1430334","hs6":"9505.90","distance":0.428742,"country":"DK","eligible":true},{"reference":"DKBTI25-5000547","hs6":"6307.90","distance":0.429543,"country":"DK","eligible":true},{"reference":"DEBTI37340/26-1","hs6":"9503.00","distance":0.43005,"country":"DE","eligible":true},{"reference":"DKBTI25-5000712","hs6":"9505.10","distance":0.430201,"country":"DK","eligible":true},{"reference":"DKBTI24-0408670","hs6":"9503.00","distance":0.430459,"country":"DK","eligible":true},{"reference":"DEBTI13210/26-1","hs6":"6307.90","distance":0.430586,"country":"DE","eligible":true},{"reference":"SEBTITV-2026-10642","hs6":"7907.00","distance":0.431753,"country":"SE","eligible":true},{"reference":"SEBTITV-2024-25506","hs6":"6307.90","distance":0.432554,"country":"SE","eligible":true},{"reference":"DKBTI25-5000483","hs6":"9503.00","distance":0.432905,"country":"DK","eligible":true}],
+    "vote_chapters": [
+     "42",
+     "63",
+     "95"
+    ],
+    "not_indexed": [],
+    "vote_hits": [
+     {
+      "reference": "SEBTITV-2026-01096",
+      "hs6": "6307.90",
+      "similarity": 0.919082,
+      "eligible": false
+     },
+     {
+      "reference": "SEBTITV-2025-28542",
+      "hs6": "4205.00",
+      "similarity": 0.650656,
+      "eligible": true
+     },
+     {
+      "reference": "SEBTITV-2025-28962",
+      "hs6": "6307.90",
+      "similarity": 0.630842,
+      "eligible": true
+     },
+     {
+      "reference": "SEBTITV-2026-09400",
+      "hs6": "9503.00",
+      "similarity": 0.625564,
+      "eligible": true
+     },
+     {
+      "reference": "SEBTITV-2025-28956",
+      "hs6": "6307.90",
+      "similarity": 0.621156,
+      "eligible": true
+     },
+     {
+      "reference": "BEBTIDT.50.020.651",
+      "hs6": "9503.00",
+      "similarity": 0.603117,
+      "eligible": true
+     },
+     {
+      "reference": "SEBTITV-2026-01721",
+      "hs6": "6307.90",
+      "similarity": 0.598884,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI45/141761/2024-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.594443,
+      "eligible": true
+     },
+     {
+      "reference": "DKBTI25-5000779",
+      "hs6": "9503.00",
+      "similarity": 0.582814,
+      "eligible": true
+     },
+     {
+      "reference": "DKBTI25-5000457",
+      "hs6": "6307.90",
+      "similarity": 0.580997,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI43057/25-1",
+      "hs6": "6307.90",
+      "similarity": 0.579099,
+      "eligible": true
+     },
+     {
+      "reference": "SEBTITV-2025-22443",
+      "hs6": "6307.90",
+      "similarity": 0.578934,
+      "eligible": true
+     }
+    ],
+    "customs_wording": null,
+    "proposal_chapters": null,
+    "citation_notes": [],
+    "supported": {
+     "rank": 2,
+     "right": true
+    },
+    "on": {
+     "gate": "vote_disagrees",
+     "route": "review",
+     "rank": 1,
+     "chosen": "9503.00",
+     "hit": false
+    }
+   },
+   {
+    "reference": "IEBTIIENEN004-2024-BTI8",
+    "chapter": "63",
+    "language": "en",
+    "expected": "6307.90",
+    "flag": "ok",
+    "top1": "6307.90",
+    "top3": [
+     "6307.90",
+     "4602.90",
+     "4602.19"
+    ],
+    "confidences": [
+     95,
+     40,
+     35
+    ],
+    "confidence": 95,
+    "raw_confidence": 95,
+    "raw": [
+     {
+      "code": "6307.90",
+      "confidence": 95
+     },
+     {
+      "code": "4602.90",
+      "confidence": 40
+     },
+     {
+      "code": "4602.19",
+      "confidence": 35
+     }
+    ],
+    "hit": true,
+    "in_top3": true,
+    "route": "review",
+    "route_by_confidence": "auto_accept",
+    "gate": "vote_disagrees",
+    "vote": {
+     "majority": "4602.19",
+     "share": 0.6,
+     "voters": 5,
+     "candidate": 3,
+     "counts": [
+      [
+       "4602.19",
+       3
+      ],
+      [
+       "6307.90",
+       1
+      ],
+      [
+       "4602.90",
+       1
+      ]
+     ]
+    },
+    "scoped_vote": {
+     "majority": "4602.19",
+     "share": 0.6,
+     "voters": 5,
+     "candidate": 3,
+     "counts": [
+      [
+       "4602.19",
+       3
+      ],
+      [
+       "6307.90",
+       1
+      ],
+      [
+       "4602.90",
+       1
+      ]
+     ]
+    },
+    "status": "checked",
+    "error": null,
+    "precedent_codes": [
+     "4602.19",
+     "6307.90",
+     "4602.90"
+    ],
+    "expected_sent": true,
+    "own_rank": 1,
+    "nearest_hits": [{"reference":"IEBTIIENEN004-2024-BTI8","hs6":"6307.90","distance":0.144511,"country":"IE","eligible":false},{"reference":"IEBTIIENEN004-2024-BTI5","hs6":"6307.90","distance":0.19439,"country":"IE","eligible":true},{"reference":"IEBTIIENEN004-2024-BTI7","hs6":"6307.90","distance":0.230307,"country":"IE","eligible":true},{"reference":"DEBTI41104/25-1","hs6":"4602.19","distance":0.362974,"country":"DE","eligible":true},{"reference":"DEBTI40335/23-1","hs6":"6307.90","distance":0.373564,"country":"DE","eligible":true},{"reference":"DEBTI41080/25-1","hs6":"4602.19","distance":0.376795,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-05281","hs6":"4602.90","distance":0.381402,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2024-05865","hs6":"4602.19","distance":0.382998,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2025-06224","hs6":"4601.29","distance":0.38496,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2025-00696","hs6":"4202.92","distance":0.386547,"country":"FR","eligible":true},{"reference":"DEBTI40889/25-1","hs6":"4602.19","distance":0.388831,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2024-05866","hs6":"4602.19","distance":0.390961,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2024-03731","hs6":"4602.90","distance":0.392134,"country":"FR","eligible":true},{"reference":"DEBTI47851/24-1","hs6":"5609.00","distance":0.394431,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-03068","hs6":"4602.19","distance":0.397137,"country":"FR","eligible":true},{"reference":"DEBTI18781/26-1","hs6":"5609.00","distance":0.397554,"country":"DE","eligible":true},{"reference":"DEBTI333/26-1","hs6":"5609.00","distance":0.399083,"country":"DE","eligible":true},{"reference":"DEBTI3899/26-1","hs6":"5609.00","distance":0.399553,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2026-02705","hs6":"4823.90","distance":0.399624,"country":"FR","eligible":false},{"reference":"DEBTI46951/25-1","hs6":"4602.19","distance":0.4013,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2024-05864","hs6":"4602.19","distance":0.402936,"country":"FR","eligible":true},{"reference":"FRBTIFR-BTI-2025-00864","hs6":"4602.19","distance":0.403192,"country":"FR","eligible":true},{"reference":"DEBTI18233/26-1","hs6":"4602.90","distance":0.403817,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-03311","hs6":"4602.19","distance":0.403874,"country":"FR","eligible":true},{"reference":"DEBTI47311/24-1","hs6":"6307.90","distance":0.404332,"country":"DE","eligible":true},{"reference":"DEBTI47309/24-1","hs6":"6307.90","distance":0.404675,"country":"DE","eligible":true},{"reference":"DEBTI40784/25-1","hs6":"4602.19","distance":0.40499,"country":"DE","eligible":true},{"reference":"DEBTI6478/26-1","hs6":"6307.90","distance":0.405315,"country":"DE","eligible":true},{"reference":"DEBTI11063/24-1","hs6":"5609.00","distance":0.405387,"country":"DE","eligible":true},{"reference":"DEBTI40042/25-1","hs6":"4602.19","distance":0.406988,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2026-04900","hs6":"4602.19","distance":0.408855,"country":"FR","eligible":false},{"reference":"DEBTI45688/23-1","hs6":"4602.19","distance":0.40909,"country":"DE","eligible":true},{"reference":"DEBTI40929/25-1","hs6":"4602.19","distance":0.409387,"country":"DE","eligible":true},{"reference":"DEBTI6273/26-1","hs6":"6307.90","distance":0.409845,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-04299","hs6":"9505.10","distance":0.410647,"country":"FR","eligible":true},{"reference":"SKBTI163032/26/110","hs6":"4602.19","distance":0.41066,"country":"SK","eligible":true},{"reference":"DEBTI14197/24-1","hs6":"6307.90","distance":0.411377,"country":"DE","eligible":true},{"reference":"DEBTI20225/25-1","hs6":"4602.19","distance":0.411732,"country":"DE","eligible":true},{"reference":"DEBTI21832/25-1","hs6":"6307.90","distance":0.411735,"country":"DE","eligible":true},{"reference":"DEBTI24221/26-1","hs6":"7323.99","distance":0.412408,"country":"DE","eligible":true}],
+    "vote_chapters": [
+     "46",
+     "63"
+    ],
+    "not_indexed": [],
+    "vote_hits": [
+     {
+      "reference": "IEBTIIENEN004-2024-BTI8",
+      "hs6": "6307.90",
+      "similarity": 0.855489,
+      "eligible": false
+     },
+     {
+      "reference": "IEBTIIENEN004-2024-BTI5",
+      "hs6": "6307.90",
+      "similarity": 0.80561,
+      "eligible": true
+     },
+     {
+      "reference": "IEBTIIENEN004-2024-BTI7",
+      "hs6": "6307.90",
+      "similarity": 0.769693,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI41104/25-1",
+      "hs6": "4602.19",
+      "similarity": 0.637026,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI40335/23-1",
+      "hs6": "6307.90",
+      "similarity": 0.626436,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI41080/25-1",
+      "hs6": "4602.19",
+      "similarity": 0.623205,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2025-05281",
+      "hs6": "4602.90",
+      "similarity": 0.618598,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2024-05865",
+      "hs6": "4602.19",
+      "similarity": 0.617002,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2025-06224",
+      "hs6": "4601.29",
+      "similarity": 0.61504,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI40889/25-1",
+      "hs6": "4602.19",
+      "similarity": 0.611169,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI47/304942/2025-300000-ZI/01",
+      "hs6": "4602.19",
+      "similarity": 0.610356,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2024-05866",
+      "hs6": "4602.19",
+      "similarity": 0.609039,
+      "eligible": true
+     }
+    ],
+    "customs_wording": null,
+    "proposal_chapters": null,
+    "citation_notes": [],
+    "supported": {
+     "rank": 3,
+     "right": false
+    },
+    "on": {
+     "gate": "vote_disagrees",
+     "route": "review",
+     "rank": 1,
+     "chosen": "6307.90",
+     "hit": true
+    }
+   },
+   {
+    "reference": "CZBTI47/152108/2024-580000-04/01",
+    "chapter": "63",
+    "language": "cs",
+    "expected": "6307.90",
+    "flag": "ok",
+    "top1": "9503.00",
+    "top3": [
+     "9503.00",
+     "6307.90",
+     "6701.00"
+    ],
+    "confidences": [
+     95,
+     60,
+     40
+    ],
+    "confidence": 95,
+    "raw_confidence": 95,
+    "raw": [
+     {
+      "code": "9503.00",
+      "confidence": 95
+     },
+     {
+      "code": "6307.90",
+      "confidence": 60
+     },
+     {
+      "code": "6701.00",
+      "confidence": 40
+     }
+    ],
+    "hit": false,
+    "in_top3": true,
+    "route": "review",
+    "route_by_confidence": "auto_accept",
+    "gate": "vote_disagrees",
+    "vote": {
+     "majority": "6307.90",
+     "share": 0.6,
+     "voters": 5,
+     "candidate": 2,
+     "counts": [
+      [
+       "6307.90",
+       3
+      ],
+      [
+       "6701.00",
+       1
+      ],
+      [
+       "3926.90",
+       1
+      ]
+     ]
+    },
+    "scoped_vote": {
+     "majority": "6307.90",
+     "share": 0.6,
+     "voters": 5,
+     "candidate": 2,
+     "counts": [
+      [
+       "6307.90",
+       3
+      ],
+      [
+       "6701.00",
+       2
+      ]
+     ]
+    },
+    "status": "checked",
+    "error": null,
+    "precedent_codes": [
+     "6307.90",
+     "6701.00",
+     "3926.90"
+    ],
+    "expected_sent": true,
+    "own_rank": 1,
+    "nearest_hits": [{"reference":"CZBTI47/152108/2024-580000-04/01","hs6":"6307.90","distance":0.092277,"country":"CZ","eligible":false},{"reference":"CZBTI47/002334/2025-580000-04/01","hs6":"6307.90","distance":0.126642,"country":"CZ","eligible":true},{"reference":"CZBTI45/206864/2024-580000-04/01","hs6":"6701.00","distance":0.155085,"country":"CZ","eligible":true},{"reference":"CZBTI45/152099/2024-580000-04/01","hs6":"6307.90","distance":0.172169,"country":"CZ","eligible":true},{"reference":"CZBTI45/189629/2023-580000-04/01","hs6":"6307.90","distance":0.175949,"country":"CZ","eligible":true},{"reference":"CZBTI51/021089/2025-300000-ZI/01","hs6":"3926.90","distance":0.186946,"country":"CZ","eligible":true},{"reference":"CZBTI41/152107/2024-580000-04/01","hs6":"6701.00","distance":0.189045,"country":"CZ","eligible":true},{"reference":"CZBTI31/208095/2024-580000-04/01","hs6":"6307.90","distance":0.191258,"country":"CZ","eligible":true},{"reference":"CZBTI41/152101/2024-580000-04/01","hs6":"6307.90","distance":0.196833,"country":"CZ","eligible":true},{"reference":"CZBTI47/152110/2024-580000-04/01","hs6":"5609.00","distance":0.19708,"country":"CZ","eligible":true},{"reference":"CZBTI47/152113/2024-580000-04/01","hs6":"4303.90","distance":0.201144,"country":"CZ","eligible":true},{"reference":"CZBTI51/144698/2024-580000-04/01","hs6":"6307.90","distance":0.20569,"country":"CZ","eligible":true},{"reference":"CZBTI34/182905/2023-580000-04/01","hs6":"6307.90","distance":0.208719,"country":"CZ","eligible":true},{"reference":"CZBTI34/182902/2023-580000-04/01","hs6":"6701.00","distance":0.214139,"country":"CZ","eligible":true},{"reference":"CZBTI31/192336/2023-580000-04/01","hs6":"6701.00","distance":0.220906,"country":"CZ","eligible":true},{"reference":"CZBTI50/538679/2026-300000-ZI/01","hs6":"6307.90","distance":0.224699,"country":"CZ","eligible":true},{"reference":"CZBTI50/208094/2024-580000-04/01","hs6":"6307.90","distance":0.22487,"country":"CZ","eligible":true},{"reference":"CZBTI45/141761/2024-580000-04/01","hs6":"6307.90","distance":0.225541,"country":"CZ","eligible":true},{"reference":"CZBTI50/182882/2023-580000-04/01","hs6":"6307.90","distance":0.226235,"country":"CZ","eligible":true},{"reference":"CZBTI32/152112/2024-580000-04/01","hs6":"6307.90","distance":0.226614,"country":"CZ","eligible":true},{"reference":"CZBTI45/189663/2023-580000-04/01","hs6":"6307.90","distance":0.22731,"country":"CZ","eligible":true},{"reference":"CZBTI48/182418/2023-580000-04/01","hs6":"8479.89","distance":0.227255,"country":"CZ","eligible":true},{"reference":"CZBTI32/189532/2023-580000-04/01","hs6":"6307.90","distance":0.23316,"country":"CZ","eligible":true},{"reference":"CZBTI47/445891/2026-300000-ZI/01","hs6":"6307.90","distance":0.233297,"country":"CZ","eligible":true},{"reference":"CZBTI34/144692/2024-580000-04/01","hs6":"6307.90","distance":0.233759,"country":"CZ","eligible":true},{"reference":"CZBTI32/182743/2023-580000-04/01","hs6":"3926.90","distance":0.235107,"country":"CZ","eligible":true},{"reference":"CZBTI51/189422/2023-580000-04/01","hs6":"6307.90","distance":0.239589,"country":"CZ","eligible":true},{"reference":"CZBTI32/021100/2025-300000-ZI/01","hs6":"3926.90","distance":0.239677,"country":"CZ","eligible":true},{"reference":"CZBTI41/445894/2026-300000-ZI/01","hs6":"6307.90","distance":0.240324,"country":"CZ","eligible":true},{"reference":"CZBTI41/206862/2024-580000-04/01","hs6":"6307.90","distance":0.246328,"country":"CZ","eligible":true},{"reference":"CZBTI32/182908/2023-580000-04/01","hs6":"6307.90","distance":0.248255,"country":"CZ","eligible":true},{"reference":"CZBTI34/189556/2023-580000-04/01","hs6":"8479.89","distance":0.24905,"country":"CZ","eligible":true},{"reference":"CZBTI34/206856/2024-580000-04/01","hs6":"6307.90","distance":0.250621,"country":"CZ","eligible":true},{"reference":"CZBTI32/141807/2024-580000-04/01","hs6":"6307.90","distance":0.250675,"country":"CZ","eligible":true},{"reference":"CZBTI51/189561/2023-580000-04/01","hs6":"8479.89","distance":0.252435,"country":"CZ","eligible":true},{"reference":"CZBTI41/062301/2025-580000-04/01","hs6":"5609.00","distance":0.252528,"country":"CZ","eligible":true},{"reference":"CZBTI45/067359/2025-580000-04/01","hs6":"6307.90","distance":0.255306,"country":"CZ","eligible":true},{"reference":"CZBTI50/251270/2024-580000-04/01","hs6":"5609.00","distance":0.256748,"country":"CZ","eligible":true},{"reference":"CZBTI50/133146/2024-580000-04/01","hs6":"6307.90","distance":0.257428,"country":"CZ","eligible":true},{"reference":"CZBTI32/182774/2023-580000-04/01","hs6":"3926.90","distance":0.261105,"country":"CZ","eligible":true}],
+    "vote_chapters": [
+     "63",
+     "67",
+     "95"
+    ],
+    "not_indexed": [],
+    "vote_hits": [
+     {
+      "reference": "CZBTI47/152108/2024-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.907723,
+      "eligible": false
+     },
+     {
+      "reference": "CZBTI47/002334/2025-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.873358,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI45/206864/2024-580000-04/01",
+      "hs6": "6701.00",
+      "similarity": 0.844915,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI45/152099/2024-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.827831,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI45/189629/2023-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.824051,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI41/152107/2024-580000-04/01",
+      "hs6": "6701.00",
+      "similarity": 0.810955,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI31/208095/2024-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.808742,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI41/152101/2024-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.803167,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI51/144698/2024-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.79431,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI34/182905/2023-580000-04/01",
+      "hs6": "6307.90",
+      "similarity": 0.791281,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI34/182902/2023-580000-04/01",
+      "hs6": "6701.00",
+      "similarity": 0.785861,
+      "eligible": true
+     },
+     {
+      "reference": "CZBTI31/192336/2023-580000-04/01",
+      "hs6": "6701.00",
+      "similarity": 0.779094,
+      "eligible": true
+     }
+    ],
+    "customs_wording": null,
+    "proposal_chapters": null,
+    "citation_notes": [],
+    "supported": {
+     "rank": 2,
+     "right": true
+    },
+    "on": {
+     "gate": "vote_disagrees",
+     "route": "review",
+     "rank": 1,
+     "chosen": "9503.00",
+     "hit": false
+    }
+   },
+   {
+    "reference": "IEBTIIENEN004-2025-BTI38",
+    "chapter": "95",
+    "language": "en",
+    "expected": "9503.00",
+    "flag": "ok",
+    "top1": "9503.00",
+    "top3": [
+     "9503.00",
+     "9505.90",
+     "9618.00"
+    ],
+    "confidences": [
+     95,
+     60,
+     40
+    ],
+    "confidence": 95,
+    "raw_confidence": 95,
+    "raw": [
+     {
+      "code": "9503.00",
+      "confidence": 95
+     },
+     {
+      "code": "9505.90",
+      "confidence": 60
+     },
+     {
+      "code": "9618.00",
+      "confidence": 40
+     }
+    ],
+    "hit": true,
+    "in_top3": true,
+    "route": "auto_accept",
+    "route_by_confidence": "auto_accept",
+    "gate": "vote_agrees",
+    "vote": {
+     "majority": "9503.00",
+     "share": 1.0,
+     "voters": 5,
+     "candidate": null,
+     "counts": [
+      [
+       "9503.00",
+       5
+      ]
+     ]
+    },
+    "scoped_vote": {
+     "majority": "9503.00",
+     "share": 1.0,
+     "voters": 5,
+     "candidate": null,
+     "counts": [
+      [
+       "9503.00",
+       5
+      ]
+     ]
+    },
+    "status": "checked",
+    "error": null,
+    "precedent_codes": [
+     "9503.00"
+    ],
+    "expected_sent": true,
+    "own_rank": 1,
+    "nearest_hits": [{"reference":"IEBTIIENEN004-2025-BTI38","hs6":"9503.00","distance":0.180768,"country":"IE","eligible":false},{"reference":"XIBTI505070782","hs6":"9503.00","distance":0.341104,"country":"XI","eligible":true},{"reference":"BEBTIDT.50.019.995","hs6":"9503.00","distance":0.348449,"country":"BE","eligible":true},{"reference":"DEBTI10934/26-1","hs6":"9503.00","distance":0.359807,"country":"DE","eligible":true},{"reference":"IEBTIIENEN004-2026-BTI99","hs6":"9503.00","distance":0.366613,"country":"IE","eligible":true},{"reference":"DEBTI15226/25-1","hs6":"9503.00","distance":0.367625,"country":"DE","eligible":true},{"reference":"ROBTI2025/004881","hs6":"9503.00","distance":0.368485,"country":"RO","eligible":true},{"reference":"FRBTIFR-BTI-2025-07407","hs6":"9503.00","distance":0.370945,"country":"FR","eligible":true},{"reference":"ITBTI2025-0796","hs6":"9503.00","distance":0.37508,"country":"IT","eligible":true},{"reference":"ITBTI2025-0797","hs6":"9503.00","distance":0.378417,"country":"IT","eligible":true},{"reference":"FRBTIFR-BTI-2026-06857","hs6":"9503.00","distance":0.37876,"country":"FR","eligible":false},{"reference":"ITBTI2025-0799","hs6":"9503.00","distance":0.380096,"country":"IT","eligible":true},{"reference":"DEBTI26693/26-1","hs6":"9503.00","distance":0.381003,"country":"DE","eligible":true},{"reference":"ITBTI2025-0798","hs6":"9503.00","distance":0.381553,"country":"IT","eligible":true},{"reference":"DEBTI40865/26-2","hs6":"9503.00","distance":0.384195,"country":"DE","eligible":true},{"reference":"DEBTI17759/25-1","hs6":"9503.00","distance":0.390643,"country":"DE","eligible":true},{"reference":"DEBTI35413/24-1","hs6":"9503.00","distance":0.39064,"country":"DE","eligible":true},{"reference":"DEBTI30044/24-1","hs6":"9503.00","distance":0.390845,"country":"DE","eligible":true},{"reference":"ESBTIESBTI2026SOL18","hs6":"9503.00","distance":0.393014,"country":"ES","eligible":true},{"reference":"DEBTI8036/25-1","hs6":"9503.00","distance":0.393257,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2024-02457","hs6":"9503.00","distance":0.394122,"country":"FR","eligible":true},{"reference":"IEBTIIENEN004-2026-BTI118","hs6":"9503.00","distance":0.394406,"country":"IE","eligible":true},{"reference":"DEBTI41911/25-1","hs6":"9503.00","distance":0.394702,"country":"DE","eligible":true},{"reference":"XIBTI505070880","hs6":"9503.00","distance":0.395825,"country":"XI","eligible":true},{"reference":"DEBTI8039/25-1","hs6":"9503.00","distance":0.401299,"country":"DE","eligible":true},{"reference":"IEBTIIENEN004-2025-BTI393","hs6":"9503.00","distance":0.402562,"country":"IE","eligible":true},{"reference":"DEBTI29453/26-1","hs6":"9503.00","distance":0.403032,"country":"DE","eligible":true},{"reference":"DEBTI39850/25-1","hs6":"9503.00","distance":0.402964,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2024-07422","hs6":"9503.00","distance":0.403985,"country":"FR","eligible":true},{"reference":"DEBTI18878/26-1","hs6":"9503.00","distance":0.405286,"country":"DE","eligible":true},{"reference":"DEBTI34236/25-1","hs6":"9503.00","distance":0.40605,"country":"DE","eligible":true},{"reference":"DEBTI46034/25-1","hs6":"9503.00","distance":0.406619,"country":"DE","eligible":true},{"reference":"ESBTIESBTI2025SOL1537","hs6":"9503.00","distance":0.408547,"country":"ES","eligible":true},{"reference":"DEBTI16569/25-1","hs6":"9503.00","distance":0.410481,"country":"DE","eligible":true},{"reference":"DEBTI13726/24-1","hs6":"9503.00","distance":0.411313,"country":"DE","eligible":true},{"reference":"DEBTI24756/25-1","hs6":"9503.00","distance":0.412173,"country":"DE","eligible":true},{"reference":"DEBTI3075/26-1","hs6":"9503.00","distance":0.412844,"country":"DE","eligible":true},{"reference":"DEBTI16571/25-1","hs6":"9503.00","distance":0.41303,"country":"DE","eligible":true},{"reference":"FRBTIFR-BTI-2025-00192","hs6":"9503.00","distance":0.413059,"country":"FR","eligible":true},{"reference":"BEBTIDT.50.020.647","hs6":"9503.00","distance":0.413215,"country":"BE","eligible":true}],
+    "vote_chapters": [
+     "95",
+     "96"
+    ],
+    "not_indexed": [],
+    "vote_hits": [
+     {
+      "reference": "IEBTIIENEN004-2025-BTI38",
+      "hs6": "9503.00",
+      "similarity": 0.819232,
+      "eligible": false
+     },
+     {
+      "reference": "XIBTI505070782",
+      "hs6": "9503.00",
+      "similarity": 0.658896,
+      "eligible": true
+     },
+     {
+      "reference": "BEBTIDT.50.019.995",
+      "hs6": "9503.00",
+      "similarity": 0.651551,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI10934/26-1",
+      "hs6": "9503.00",
+      "similarity": 0.640193,
+      "eligible": true
+     },
+     {
+      "reference": "IEBTIIENEN004-2026-BTI99",
+      "hs6": "9503.00",
+      "similarity": 0.633387,
+      "eligible": true
+     },
+     {
+      "reference": "DEBTI15226/25-1",
+      "hs6": "9503.00",
+      "similarity": 0.632375,
+      "eligible": true
+     },
+     {
+      "reference": "ROBTI2025/004881",
+      "hs6": "9503.00",
+      "similarity": 0.631515,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2025-07407",
+      "hs6": "9503.00",
+      "similarity": 0.629055,
+      "eligible": true
+     },
+     {
+      "reference": "ITBTI2025-0796",
+      "hs6": "9503.00",
+      "similarity": 0.62492,
+      "eligible": true
+     },
+     {
+      "reference": "ITBTI2025-0797",
+      "hs6": "9503.00",
+      "similarity": 0.621583,
+      "eligible": true
+     },
+     {
+      "reference": "FRBTIFR-BTI-2026-06857",
+      "hs6": "9503.00",
+      "similarity": 0.62124,
+      "eligible": false
+     },
+     {
+      "reference": "ITBTI2025-0799",
+      "hs6": "9503.00",
+      "similarity": 0.619904,
+      "eligible": true
+     }
+    ],
+    "customs_wording": null,
+    "proposal_chapters": null,
+    "citation_notes": [],
+    "supported": {
+     "rank": null,
+     "right": null
+    },
+    "on": {
+     "gate": "vote_agrees",
+     "route": "auto_accept",
+     "rank": 1,
+     "chosen": "9503.00",
+     "hit": true
+    }
+   }
+  ]
+ ]
+}

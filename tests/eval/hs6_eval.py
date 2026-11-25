@@ -357,9 +357,32 @@ def parse_counts(counts: Counter, rows: list[dict]) -> dict:
             "failed_lines": sum(r["status"] == "failed" for r in rows)}
 
 
+def _note_block(texts: list[str]) -> str:
+    """Backlog item 22, step 2: the classification notes that apply to a line, joined; the ranking wrapper appends the
+    block to the request. A line in several notes gets all of them."""
+    return "\n\n".join("EU classification note (applies to these goods):\n" + t for t in texts)
+
+
+def note_texts_by_reference(path: Path) -> dict[str, str]:
+    """Backlog item 22, step 2: reference -> the classification notes that apply to it. A note's treatment and control
+    lines share the same note text; a line named in several notes gets all of them."""
+    data = json.loads(path.read_text(encoding="utf-8"))
+    by_ref: dict[str, list[str]] = {}
+    for note in data["notes"]:
+        text = note["deciding_text"]
+        for ref in (*note.get("treatment", ()), *note.get("controls", ())):
+            by_ref.setdefault(ref, []).append(text)
+    return {ref: _note_block(texts) for ref, texts in by_ref.items()}
+
+
 def _ranking(call: Any) -> Any:
-    """client.call, also keeping for the calling thread's line the ranking the model returned, as _rec.rank."""
+    """client.call, also keeping for the calling thread's line the ranking the model returned, as _rec.rank; backlog
+    item 22: and, for the RankOut request only, appending the line's classification notes (eval-only, from
+    _rec.note_text, which run_once sets for the lines of a --notes file)."""
     def wrapper(schema: Any, system: str, user: str, *args: Any, **kwargs: Any) -> Any:
+        note = getattr(_rec, "note_text", None)
+        if schema is RankOut and note:
+            user = f"{user}\n\n{note}"
         result = call(schema, system, user, *args, **kwargs)
         if schema is RankOut:
             _rec.rank = result
@@ -400,13 +423,15 @@ def results_name(base: str, lang: str, expansion: bool, wording: bool | None = N
 def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: int, expansion: bool = False,
              leave_one_out: bool = True, customs_wording: bool = False,
              vote_scope: str = "candidates", proposal_scope: str = "all",
-             family_exclusion: bool = False, siblings: dict[str, frozenset[str]] | None = None) -> tuple[list[dict], float]:
+             family_exclusion: bool = False, siblings: dict[str, frozenset[str]] | None = None,
+             note_texts: dict[str, str] | None = None) -> tuple[list[dict], float]:
     """One pass of the app's HS-6 path over the set: one row per ruling, and the elapsed seconds. `leave_one_out` keeps
     each line's own ruling out; the coolant set has none (feature 014a). `customs_wording` is the switch for the run.
     `vote_scope` "all" runs the vote over every chapter instead of the candidates' (the 014a regression ablation, eval
     only: the app is unchanged). `proposal_scope` "nomenclature" is option (c) (2026-11-19, eval only): the candidate
     proposal reads the rulings of the chapters of the nomenclature search's subheadings only. `family_exclusion`
-    (backlog item 21) keeps a family member's siblings out too, from `siblings`."""
+    (backlog item 21) keeps a family member's siblings out too, from `siblings`. `note_texts` (backlog item 22, eval
+    only) is reference -> classification notes, appended to the ranking request for the listed lines only."""
     clear_expansions()   # an independent run: no query expansion and no rewrite carried over
     lines = [line_text(i, r) for i, r in enumerate(rulings, start=1)]
     base = ClassifyContext(hybrid=True, as_of=as_of, expansion=expansion,   # context_for_shipment for an unknown
@@ -424,6 +449,7 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
     def one(item: tuple[LineText, str]) -> tuple[Any, list, list, Any]:
         line, reference = item
         _rec.searches, _rec.vote_searches, _rec.rank, _rec.proposal_chapters = [], [], None, None
+        _rec.note_text = (note_texts or {}).get(reference)   # backlog item 22: the line's notes, none when not listed
         excluded = frozenset({reference}) if leave_one_out else None   # the leakage guard: never the line's own ruling
         if family_exclusion and excluded is not None and siblings:
             own_siblings = siblings.get(reference)
@@ -1187,6 +1213,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--family-exclusion", action="store_true",
                     help="backlog item 21, eval only: a family member's exclusion also keeps its siblings' rulings out "
                          "(from tests/eval/hs6_eval_families.json); the default keeps only the line's own ruling out")
+    ap.add_argument("--notes", metavar="FILE",
+                    help="backlog item 22, eval only: a notes file (tests/eval/hs6_note_texts.json) whose deciding texts "
+                         "are appended to the ranking request for the listed treatment and control lines only")
+    ap.add_argument("--references", metavar="FILE",
+                    help="eval only: a JSON array of references; the set is filtered to those lines (backlog item 22: the "
+                         "note test runs only the treatment and control lines)")
     args = ap.parse_args(argv)
     if args.replay and args.vote_scope != "candidates":
         ap.error("--vote-scope is for a run: a replay searches no rulings")
@@ -1197,6 +1229,14 @@ def main(argv: list[str] | None = None) -> int:
         ap.error("--family-exclusion is for the 120-line set: the coolant and outside sets have no families")
     if args.family_exclusion and args.replay:
         ap.error("--family-exclusion is for a run: a replay searches no rulings")
+    if args.notes and coolant:
+        ap.error("--notes is for the 120-line set: the coolant and outside sets have no ruling references")
+    if args.notes and args.replay:
+        ap.error("--notes is for a run: a replay searches no model")
+    if args.references and coolant:
+        ap.error("--references is for the 120-line set")
+    if args.references and args.replay:
+        ap.error("--references is for a run: a replay searches no model")
     if args.floor is not None and not args.replay:
         ap.error("--floor is for a --replay: a run uses HS6_VOTE_MIN_SIMILARITY")
     if args.floor is not None and not 0.0 <= args.floor <= 1.0:
@@ -1227,6 +1267,9 @@ def main(argv: list[str] | None = None) -> int:
         data = json.loads(SET.read_text(encoding="utf-8"))
         rulings = eval_rulings(data, args.lang)
     rulings = rulings[:args.limit] if args.limit else rulings
+    if args.references:
+        refs = set(json.loads(Path(args.references).read_text(encoding="utf-8")))
+        rulings = [r for r in rulings if r["reference"] in refs]   # backlog item 22: the note test's lines only
     if not coolant:
         cn8_data = json.loads(Path(args.cn8).read_text(encoding="utf-8"))
         cn8 = cn8_results(cn8_data)
@@ -1240,6 +1283,7 @@ def main(argv: list[str] | None = None) -> int:
     if not coolant:
         family_members = load_families()   # backlog item 21: the 120-line set's families
         siblings = family_siblings(family_members)
+    note_texts = note_texts_by_reference(Path(args.notes)) if args.notes else None   # backlog item 22, eval only
     out, history_file, report_file = set_files(args.set_name)
     as_of = date.fromisoformat(data["built_on"])
     settings, found = run_settings(get_settings(), args.model)
@@ -1276,7 +1320,7 @@ def main(argv: list[str] | None = None) -> int:
         rows, seconds = run_once(rulings, kb, client, as_of, settings.workers, expansion,
                                  leave_one_out=args.set_name != "coolant",
                                  customs_wording=wording, vote_scope=args.vote_scope, proposal_scope=args.proposal_scope,
-                                 family_exclusion=args.family_exclusion, siblings=siblings)
+                                 family_exclusion=args.family_exclusion, siblings=siblings, note_texts=note_texts)
         runs.append(rows)
         parsed.append(parse_counts(invalid, rows))
         elapsed += seconds
@@ -1297,6 +1341,7 @@ def main(argv: list[str] | None = None) -> int:
         **({} if args.vote_scope == "candidates" else {"vote_scope": args.vote_scope}),
         **({} if args.proposal_scope == "all" else {"proposal_scope": args.proposal_scope}),
         **({} if not args.family_exclusion else {"family_exclusion": True}),
+        **({} if not args.notes else {"notes": args.notes}),
         "threshold": DEFAULT_THRESHOLD, "ask_floor": ASK_FLOOR, "temperature": temperature, "seed": seed,
         "repeat": args.repeat, "n": len(rulings), **m,
         "parse": {"retry_limit": client.max_retries, "runs": parsed},
