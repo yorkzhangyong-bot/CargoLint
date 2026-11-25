@@ -477,9 +477,10 @@ def stub_live_run(monkeypatch, runs):
     queue = iter(runs)
 
     def run_once(rulings, kb, client, as_of, workers, expansion=False, leave_one_out=True, customs_wording=False,
-                 vote_scope="candidates", proposal_scope="all"):
+                 vote_scope="candidates", proposal_scope="all", family_exclusion=False, siblings=None):
         calls.append({"references": [r["reference"] for r in rulings], "as_of": as_of, "leave_one_out": leave_one_out,
-                      "customs_wording": customs_wording, "vote_scope": vote_scope, "proposal_scope": proposal_scope})
+                      "customs_wording": customs_wording, "vote_scope": vote_scope, "proposal_scope": proposal_scope,
+                      "family_exclusion": family_exclusion, "siblings": siblings})
         return next(queue), 1.0
 
     monkeypatch.setattr(ev, "run_once", run_once)
@@ -739,8 +740,10 @@ def test_feature_014a_a_typed_sets_entry_has_the_override_on_measures(tmp_path, 
     entry = json.loads(ev.COOLANT_HISTORY.read_text(encoding="utf-8"))[-1]
     assert entry["top1_runs"] == [2, 2, 2] and entry["override_min"] == ev.OVERRIDE_MIN    # the switch off, as before
     on = entry["on"]
-    assert (on["top1_runs"], on["majority_top1"]) == ([7, 7, 7], 7)        # the seven coded lines (coolant-9 since feature
-    assert [r["auto_accept"] for r in on["routes_runs"]] == [9, 9, 9]       # 017, 017/FR-006); the two "ask" lines are
+    # the seven coded lines are all right (coolant-9 since feature 017, 017/FR-006); the two "ask" lines are
+    # auto-accepted, so wrong: hence 7 right, 9 auto-accepts and 2 wrong auto-accepts per run
+    assert (on["top1_runs"], on["majority_top1"]) == ([7, 7, 7], 7)
+    assert [r["auto_accept"] for r in on["routes_runs"]] == [9, 9, 9]
     assert [len(w) for w in on["wrong_auto_runs"]] == [2, 2, 2]
 
 
@@ -1010,3 +1013,82 @@ def test_the_vote_scope_option_reaches_the_run_and_the_entry(tmp_path, monkeypat
     assert history[0]["vote_scope"] == "all" and "vote_scope" not in history[1]   # the product's scope keeps no field
     with pytest.raises(SystemExit):
         ev.main(["--replay", str(tmp_path / "any.json"), "--vote-scope", "all"])
+
+
+# --------------------------------------------------------------------------- backlog item 20: per-level accuracy
+def test_per_level_accuracy_counts_chapter_heading_and_subheading_misses():
+    runs = [[row("A", "3926.90"), row("B", "3926.97"), row("C", "4202.92"), row("D", "3923.10")]]
+    m = ev.measures(runs)
+    assert m["chapter_runs"] == [3]                                  # A, B, D right on the chapter; C not
+    assert m["heading_runs"] == [2]                                  # A, B right on the heading; D and C not
+    assert (m["majority_chapter"], m["majority_heading"]) == (3, 2)
+    assert m["wrong_levels"] == {"subheading": 1, "chapter": 1, "heading": 1}   # B, C, D in that order
+
+
+def test_per_level_majority_truncates_the_majority_code_never_votes_per_level():
+    runs = [
+        [row("A", "3926.90"), row("B", "3926.97")],
+        [row("A", "3926.90"), row("B", "4202.92")],
+        [row("A", "3926.97"), row("B", "3926.97")],
+    ]
+    m = ev.measures(runs)
+    # A: majority "3926.90" (right). B: majority "3926.97" (chapter and heading right, subheading wrong).
+    assert (m["majority_top1"], m["majority_chapter"], m["majority_heading"]) == (1, 2, 2)
+    assert m["wrong_levels"] == {"subheading": 1}
+
+
+# --------------------------------------------------------------------------- backlog item 21: family-aware eval
+def test_family_exclusion_keeps_own_and_siblings_out_but_the_default_keeps_own_only(
+        small_index, fake_embeddings, rules, fake_llm, monkeypatch):
+    from agent.llm import get_client
+    from rag.loader import KnowledgeBase
+    from rag.retriever import BM25Index, HybridRetriever, InMemoryVectorSearch
+
+    coded = "coolant without mineral base oil, for metal working"
+    fake_llm.recorded.setdefault("JudgementOut", {})[coded] = {"vague": False, "missing": [], "reason": "specific"}
+    fake_llm.recorded.setdefault("RankOut", {})[coded] = {"candidates": [
+        {"code": "3926.90", "confidence": 95, "rationale": "r", "history_only": False}]}
+    vectors = InMemoryVectorSearch([(c.id, c.text, c.metadata) for c in small_index.chunks], fake_embeddings)
+    kb = KnowledgeBase(small_index, HybridRetriever(bm25=BM25Index([(c.id, c.text) for c in small_index.chunks]),
+                                                    vectors=vectors, chunks=small_index), BTIStore([]), rules,
+                       {"embedding_model": "fake", "built_at": "2026-11-18T00:00:00"}, fake_embeddings)
+    guards = []
+    classify = ev.classify_lines
+    monkeypatch.setattr(ev, "classify_lines", lambda lines, ctx, *a, **k: guards.append(ctx.exclude_refs)
+                        or classify(lines, ctx, *a, **k))
+    items = ev.coolant_items({"lines": [{"id": "REF", "text": coded, "expected_hs6": "3926.90"}]})
+    siblings = {"REF": frozenset({"SIB1", "SIB2"})}
+    ev.run_once(items, kb, get_client(), date(2026, 11, 18), workers=1, leave_one_out=True)
+    assert guards == [frozenset({"REF"})]                            # the default: the line's own ruling only
+    guards.clear()
+    ev.run_once(items, kb, get_client(), date(2026, 11, 18), workers=1, leave_one_out=True,
+                family_exclusion=True, siblings=siblings)
+    assert guards == [frozenset({"REF", "SIB1", "SIB2"})]            # flag on: own ruling plus the siblings
+
+
+def test_family_metric_scores_each_family_as_the_fraction_of_its_lines_right():
+    runs = [[
+        row("A", "3926.90"), row("B", "3926.90"), row("C", "3923.10"),   # family F1: 2 of 3 right
+        row("X", "3926.90"),                                             # standalone right
+        row("Y", "4202.92"),                                             # standalone wrong
+    ]]
+    m = ev.family_measures(runs, {"F1": ["A", "B", "C"]})
+    assert m["per_family"] == {"F1": 2 / 3}
+    assert m["standalone"] == 1                                          # X; Y wrong
+    assert m["family_majority"] == round(2 / 3 + 1, 4)
+    assert m["family_units"] == 3                                        # 1 family + 2 standalone lines
+
+
+def test_the_families_file_matches_the_set_and_has_no_overlap():
+    set_rulings = json.loads(ev.SET.read_text(encoding="utf-8"))["rulings"]
+    by_ref = {r["reference"]: r for r in set_rulings}
+    data = json.loads(ev.FAMILIES.read_text(encoding="utf-8"))
+    seen: dict[str, str] = {}
+    for family in data["families"]:
+        for member in family["members"]:
+            assert member["reference"] in by_ref, f"{member['reference']} not in the set"
+            assert member["expected_hs6"] == by_ref[member["reference"]]["hs6"]
+            assert set_rulings[member["line_id"] - 1]["reference"] == member["reference"]   # line_id points at it
+            assert member["reference"] not in seen, f"{member['reference']} is in two families"
+            seen[member["reference"]] = family["name"]
+    assert len(seen) == 35 and len(data["families"]) == 12

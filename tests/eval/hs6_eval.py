@@ -150,6 +150,7 @@ OUTSIDE_SET = ROOT / "tests" / "eval" / "hs6_eval_outside_set.json"   # feature 
 OUTSIDE_OUT = ROOT / "tests" / "eval" / "hs6_eval_outside.json"
 OUTSIDE_HISTORY = ROOT / "tests" / "eval" / "hs6_eval_outside_history.json"
 OUTSIDE_REPORT = ROOT / "tests" / "eval" / "hs6_eval_outside.md"
+FAMILIES = ROOT / "tests" / "eval" / "hs6_eval_families.json"   # backlog items 20/21: the 120-line set's near-duplicate families
 TYPED_SETS = ("coolant", "outside")   # sets of typed lines, scored and reported as the coolant set
 HITS_LOGGED = 40
 SEARCHED = 2 * RETRIEVAL_K    # the rulings precedent_codes reads per query vector
@@ -172,6 +173,38 @@ def expected_of(item: dict) -> str | None:
     if "expected_hs6" in item or "expected_route" in item:
         return item.get("expected_hs6")
     return expected_hs6(item)
+
+
+def level_hit(top1: str | None, expected: str | None, level: int) -> bool:
+    """Whether `top1` matches `expected` to `level` digits (2 = chapter, 4 = heading)."""
+    return bool(top1 and expected and top1[:level] == expected[:level])
+
+
+def miss_level(top1: str | None, expected: str | None) -> str | None:
+    """Where a wrong line missed: "chapter", "heading" or "subheading"; None if right or without a code."""
+    if not top1 or not expected or top1 == expected:
+        return None
+    if top1[:2] != expected[:2]:
+        return "chapter"
+    if top1[:4] != expected[:4]:
+        return "heading"
+    return "subheading"
+
+
+def load_families() -> dict[str, list[str]]:
+    """Backlog items 20/21: family name -> member references, from hs6_eval_families.json."""
+    data = json.loads(FAMILIES.read_text(encoding="utf-8"))
+    return {family["name"]: [m["reference"] for m in family["members"]] for family in data["families"]}
+
+
+def family_siblings(members: dict[str, list[str]]) -> dict[str, frozenset[str]]:
+    """Reference -> its family's other references, so a family member's exclusion keeps every sibling out."""
+    out: dict[str, frozenset[str]] = {}
+    for refs in members.values():
+        group = frozenset(refs)
+        for r in refs:
+            out[r] = group - {r}
+    return out
 
 
 def coolant_items(data: dict) -> list[dict]:
@@ -366,12 +399,14 @@ def results_name(base: str, lang: str, expansion: bool, wording: bool | None = N
 
 def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: int, expansion: bool = False,
              leave_one_out: bool = True, customs_wording: bool = False,
-             vote_scope: str = "candidates", proposal_scope: str = "all") -> tuple[list[dict], float]:
+             vote_scope: str = "candidates", proposal_scope: str = "all",
+             family_exclusion: bool = False, siblings: dict[str, frozenset[str]] | None = None) -> tuple[list[dict], float]:
     """One pass of the app's HS-6 path over the set: one row per ruling, and the elapsed seconds. `leave_one_out` keeps
     each line's own ruling out; the coolant set has none (feature 014a). `customs_wording` is the switch for the run.
     `vote_scope` "all" runs the vote over every chapter instead of the candidates' (the 014a regression ablation, eval
     only: the app is unchanged). `proposal_scope` "nomenclature" is option (c) (2026-11-19, eval only): the candidate
-    proposal reads the rulings of the chapters of the nomenclature search's subheadings only."""
+    proposal reads the rulings of the chapters of the nomenclature search's subheadings only. `family_exclusion`
+    (backlog item 21) keeps a family member's siblings out too, from `siblings`."""
     clear_expansions()   # an independent run: no query expansion and no rewrite carried over
     lines = [line_text(i, r) for i, r in enumerate(rulings, start=1)]
     base = ClassifyContext(hybrid=True, as_of=as_of, expansion=expansion,   # context_for_shipment for an unknown
@@ -389,8 +424,12 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
     def one(item: tuple[LineText, str]) -> tuple[Any, list, list, Any]:
         line, reference = item
         _rec.searches, _rec.vote_searches, _rec.rank, _rec.proposal_chapters = [], [], None, None
-        ctx = replace(base, exclude_refs=frozenset({reference}) if leave_one_out else None)   # the leakage guard: never
-                                                                                              # the line's own ruling
+        excluded = frozenset({reference}) if leave_one_out else None   # the leakage guard: never the line's own ruling
+        if family_exclusion and excluded is not None and siblings:
+            own_siblings = siblings.get(reference)
+            if own_siblings:
+                excluded = frozenset({reference}) | own_siblings      # backlog item 21: a family member's siblings too
+        ctx = replace(base, exclude_refs=excluded)
         return (classify_lines([line], ctx, kb, recorder, workers=1)[0], _rec.searches, _rec.vote_searches, _rec.rank,
                 _rec.proposal_chapters)
 
@@ -538,15 +577,24 @@ def _seen(r: dict) -> dict:
 
 
 def measures(runs: list[list[dict]]) -> dict:
-    """The HS-6 layer over N runs of the same lines; `runs` holds each run's rows in set order."""
+    """The HS-6 layer over N runs of the same lines; `runs` holds each run's rows in set order. Chapter (2-digit) and
+    heading (4-digit) accuracy are per run and on the majority's full HS-6 code, truncated after the majority is chosen."""
     n = len(runs[0])
     same_top1 = same_route = majority_hits = 0
+    majority_chapter = majority_heading = 0
+    wrong_levels: Counter = Counter()
     always_wrong, unstable = [], []
     for seen in zip(*runs):
         codes = [r["top1"] for r in seen]
+        expected = seen[0]["expected"]
+        chosen = majority(codes)                                            # the majority's full HS-6 code first
         same_top1 += len(set(codes)) == 1
         same_route += len({r["route"] for r in seen}) == 1
-        majority_hits += majority(codes) == seen[0]["expected"]
+        majority_hits += chosen == expected
+        majority_chapter += level_hit(chosen, expected, 2)
+        majority_heading += level_hit(chosen, expected, 4)
+        if (level := miss_level(chosen, expected)) is not None:
+            wrong_levels[level] += 1
         line = {"reference": seen[0]["reference"], "chapter": seen[0]["chapter"], "expected": seen[0]["expected"],
                 "seen": [_seen(r) for r in seen]}
         if not any(r["hit"] for r in seen):
@@ -555,6 +603,10 @@ def measures(runs: list[list[dict]]) -> dict:
             unstable.append(line)
     return {"top1_runs": [sum(r["hit"] for r in run) for run in runs], "majority_top1": majority_hits,
             "top3_runs": [sum(r["in_top3"] for r in run) for run in runs],
+            "chapter_runs": [sum(level_hit(r["top1"], r["expected"], 2) for r in run) for run in runs],
+            "heading_runs": [sum(level_hit(r["top1"], r["expected"], 4) for r in run) for run in runs],
+            "majority_chapter": majority_chapter, "majority_heading": majority_heading,
+            "wrong_levels": dict(wrong_levels),
             "same_top1": same_top1, "top1_consistency": round(same_top1 / n, 4),
             "same_route": same_route, "route_consistency": round(same_route / n, 4),
             "routes_runs": [{route: sum(r["route"] == route for r in run) for route in ("auto_accept", "review", "ask_shipper")}
@@ -563,6 +615,28 @@ def measures(runs: list[list[dict]]) -> dict:
                                   "confidence": r["confidence"]} for r in run if r["route"] == "auto_accept" and not r["hit"]]
                                 for run in runs],
             "always_wrong": always_wrong, "unstable": unstable}
+
+
+def family_measures(runs: list[list[dict]], members: dict[str, list[str]]) -> dict:
+    """Backlog item 21: the family-aware majority alongside the per-line one. Each family counts once, scored as the
+    fraction of its lines right (by majority, full HS-6); each standalone line counts once. 85 standalone lines plus
+    12 families = 97 units."""
+    majority_right: dict[str, bool] = {}
+    for seen in zip(*runs):
+        codes = [r["top1"] for r in seen]
+        majority_right[seen[0]["reference"]] = majority(codes) == seen[0]["expected"]
+    in_runs = set(majority_right)
+    per_family = {}
+    for name, refs in members.items():
+        present = [r for r in refs if r in in_runs]
+        if present:
+            per_family[name] = sum(majority_right[r] for r in present) / len(present)
+    family_refs = {r for refs in members.values() for r in refs}
+    standalone = sum(majority_right[r] for r in in_runs if r not in family_refs)
+    units = sum(per_family.values()) + standalone
+    return {"family_majority": round(units, 4),
+            "family_units": len(per_family) + sum(1 for r in in_runs if r not in family_refs),
+            "per_family": per_family, "standalone": standalone}
 
 
 def gate_measures(runs: list[list[dict]]) -> dict:
@@ -1110,12 +1184,19 @@ def main(argv: list[str] | None = None) -> int:
                     help="option (c) of the author's decision of 2026-11-19, eval only: the candidate proposal's ruling "
                          "search over every chapter (the app's, default) or within the chapters of the nomenclature "
                          "search's subheadings; the gate's vote reads every chapter either way")
+    ap.add_argument("--family-exclusion", action="store_true",
+                    help="backlog item 21, eval only: a family member's exclusion also keeps its siblings' rulings out "
+                         "(from tests/eval/hs6_eval_families.json); the default keeps only the line's own ruling out")
     args = ap.parse_args(argv)
     if args.replay and args.vote_scope != "candidates":
         ap.error("--vote-scope is for a run: a replay searches no rulings")
     if args.replay and args.proposal_scope != "all":
         ap.error("--proposal-scope is for a run: a replay searches no rulings")
     coolant = args.set_name in TYPED_SETS   # a set of typed lines: the coolant set's scoring, files and report
+    if args.family_exclusion and coolant:
+        ap.error("--family-exclusion is for the 120-line set: the coolant and outside sets have no families")
+    if args.family_exclusion and args.replay:
+        ap.error("--family-exclusion is for a run: a replay searches no rulings")
     if args.floor is not None and not args.replay:
         ap.error("--floor is for a --replay: a run uses HS6_VOTE_MIN_SIMILARITY")
     if args.floor is not None and not 0.0 <= args.floor <= 1.0:
@@ -1154,6 +1235,11 @@ def main(argv: list[str] | None = None) -> int:
             ap.error(f"{len(missing)} lines are missing from {args.cn8}, such as {missing[0]}")
         if args.replay:
             return replay_main(args, data, cn8, cn8_data, args.override_min or OVERRIDE_MIN)
+    family_members: dict[str, list[str]] = {}
+    siblings: dict[str, frozenset[str]] = {}
+    if not coolant:
+        family_members = load_families()   # backlog item 21: the 120-line set's families
+        siblings = family_siblings(family_members)
     out, history_file, report_file = set_files(args.set_name)
     as_of = date.fromisoformat(data["built_on"])
     settings, found = run_settings(get_settings(), args.model)
@@ -1189,7 +1275,8 @@ def main(argv: list[str] | None = None) -> int:
         invalid.clear()
         rows, seconds = run_once(rulings, kb, client, as_of, settings.workers, expansion,
                                  leave_one_out=args.set_name != "coolant",
-                                 customs_wording=wording, vote_scope=args.vote_scope, proposal_scope=args.proposal_scope)
+                                 customs_wording=wording, vote_scope=args.vote_scope, proposal_scope=args.proposal_scope,
+                                 family_exclusion=args.family_exclusion, siblings=siblings)
         runs.append(rows)
         parsed.append(parse_counts(invalid, rows))
         elapsed += seconds
@@ -1201,6 +1288,7 @@ def main(argv: list[str] | None = None) -> int:
         m, x = typed_measures(runs), None
     else:
         m, x = entry_measures(runs, cn8, cn8_data, args.cn8)
+        m = {**m, "family": family_measures(runs, family_members)}   # backlog item 21: per-family metric
     entry = {
         "iteration": iteration, "run_on": date.today().isoformat(), "change": change,
         **({"tag": args.tag} if args.tag else {}), "set": args.set_name, "model": settings.chat_model,
@@ -1208,6 +1296,7 @@ def main(argv: list[str] | None = None) -> int:
         "customs_wording": "on" if wording else "off", "floor": HS6_VOTE_MIN_SIMILARITY,
         **({} if args.vote_scope == "candidates" else {"vote_scope": args.vote_scope}),
         **({} if args.proposal_scope == "all" else {"proposal_scope": args.proposal_scope}),
+        **({} if not args.family_exclusion else {"family_exclusion": True}),
         "threshold": DEFAULT_THRESHOLD, "ask_floor": ASK_FLOOR, "temperature": temperature, "seed": seed,
         "repeat": args.repeat, "n": len(rulings), **m,
         "parse": {"retry_limit": client.max_retries, "runs": parsed},
@@ -1256,6 +1345,10 @@ def main(argv: list[str] | None = None) -> int:
     mx = x["majority"]
     print(f"HS-6 top-1 per run {m['top1_runs']} of {n}; majority {m['majority_top1']}/{n}; in top 3 per run {m['top3_runs']}; "
           f"same top-1 in all runs {m['same_top1']}/{n}; same route {m['same_route']}/{n}")
+    print(f"  chapter per run {m['chapter_runs']}, majority {m['majority_chapter']}/{n}; heading per run {m['heading_runs']}, "
+          f"majority {m['majority_heading']}/{n}; wrong by level {m['wrong_levels']}")
+    print(f"  family metric {m['family']['family_majority']} of {m['family']['family_units']} units "
+          f"({len(m['family']['per_family'])} families, {m['family']['standalone']} standalone right)")
     print(f"  auto-accepted per run {[routes['auto_accept'] for routes in m['routes_runs']]}; wrong but auto-accepted per "
           f"run {[len(w) for w in m['wrong_auto_runs']]}; wrong in every run {len(m['always_wrong'])}")
     print(f"  gate per run {entry['gate_runs']}; no ruling, to review {entry['no_rulings_review_runs']}; right "

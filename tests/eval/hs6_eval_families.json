@@ -1,0 +1,102 @@
+{
+  "note": "Backlog item 21, step 1. Near-duplicate families in the 120-line set (tests/eval/cn8_eval_set.json, built 2026-10-23). line_id is the 1-based position in that file's rulings array; reference is the ruling reference; expected_hs6 is the ruling's hs6 field.",
+  "families": [
+    {
+      "name": "swedish-armrest-covers",
+      "members": [
+        {"line_id": 93, "reference": "SEBTITV-2024-01674", "expected_hs6": "9401.99", "description": "Furniture cover for a sofa armrest (Mobelkladsel), permanent, dobby weave"},
+        {"line_id": 96, "reference": "SEBTITV-2024-01665", "expected_hs6": "9401.99", "description": "Furniture cover for a sofa armrest (Mobelkladsel), permanent, dobby weave"},
+        {"line_id": 98, "reference": "SEBTITV-2024-01658", "expected_hs6": "9401.99", "description": "Furniture cover for a sofa armrest (Mobelkladsel), permanent, dobby weave"},
+        {"line_id": 100, "reference": "SEBTITV-2024-01615", "expected_hs6": "9401.99", "description": "Furniture cover for a sofa armrest (Mobelkladsel), permanent, dobby weave"}
+      ]
+    },
+    {
+      "name": "irish-shoes",
+      "note": "BTI356 (line 52) is coded 6405.20; the other four members are 6404.19. Kept in the family as near-duplicate goods.",
+      "members": [
+        {"line_id": 51, "reference": "IEBTIIENEN004-2024-BTI352", "expected_hs6": "6404.19", "description": "Ladies faux-fur mule slipper, closed toe"},
+        {"line_id": 52, "reference": "IEBTIIENEN004-2024-BTI356", "expected_hs6": "6405.20", "description": "Ladies faux-fur mule slipper, closed toe"},
+        {"line_id": 53, "reference": "IEBTIIENEN004-2024-BTI354", "expected_hs6": "6404.19", "description": "Ladies fur mule slipper, open toe"},
+        {"line_id": 54, "reference": "IEBTIIENEN004-2024-BTI377", "expected_hs6": "6404.19", "description": "Men's mule slipper, closed toe"},
+        {"line_id": 58, "reference": "IEBTIIENEN004-2024-BTI355", "expected_hs6": "6404.19", "description": "Ladies faux-suede mule slipper, closed toe"}
+      ]
+    },
+    {
+      "name": "bikini-tops",
+      "members": [
+        {"line_id": 31, "reference": "IEBTIIENEN004-2026-BTI106", "expected_hs6": "6212.10", "description": "Women's bikini top, two fabric-lined cups"},
+        {"line_id": 33, "reference": "IEBTIIENEN004-2026-BTI108", "expected_hs6": "6212.10", "description": "Women's bikini top, two fabric-lined cups"},
+        {"line_id": 34, "reference": "IEBTIIENEN004-2026-BTI107", "expected_hs6": "6212.10", "description": "Women's bandeau bikini top, removable foam cups"},
+        {"line_id": 35, "reference": "IEBTIIENEN004-2026-BTI89", "expected_hs6": "6212.10", "description": "Women's bandeau bikini top, two fabric-lined cups, clip back"}
+      ]
+    },
+    {
+      "name": "baskets",
+      "members": [
+        {"line_id": 44, "reference": "IEBTIIENEN004-2024-BTI7", "expected_hs6": "6307.90", "description": "Set of 2 baskets, 100% twisted paper yarn"},
+        {"line_id": 45, "reference": "IEBTIIENEN004-2024-BTI5", "expected_hs6": "6307.90", "description": "Set of 3 paper-rope baskets, 100% twisted paper"},
+        {"line_id": 46, "reference": "IEBTIIENEN004-2024-BTI8", "expected_hs6": "6307.90", "description": "Open-weave basket, paper rope over an iron frame"}
+      ]
+    },
+    {
+      "name": "period-pants",
+      "members": [
+        {"line_id": 111, "reference": "IEBTIIENEN004-2026-BTI72", "expected_hs6": "9619.00", "description": "Period pants, knitted nylon, absorbent crotch layers"},
+        {"line_id": 112, "reference": "IEBTIIENEN004-2026-BTI71", "expected_hs6": "9619.00", "description": "Period pants, knitted cotton, absorbent crotch layers"}
+      ]
+    },
+    {
+      "name": "pet-beds",
+      "members": [
+        {"line_id": 92, "reference": "XIBTI505070292", "expected_hs6": "9403.20", "description": "Pet camping bed with a sun canopy, steel frame with fabric cover"},
+        {"line_id": 94, "reference": "XIBTI505070488", "expected_hs6": "9403.20", "description": "Foldable raised camping pet bed, steel frame"},
+        {"line_id": 95, "reference": "XIBTI505070096", "expected_hs6": "9403.20", "description": "Elevated cot dog bed, steel frame with fabric cover"}
+      ]
+    },
+    {
+      "name": "monitors-27",
+      "members": [
+        {"line_id": 87, "reference": "IEBTIIENEN004-2023-BTI625", "expected_hs6": "8528.52", "description": "27-inch LCD colour monitor, 3840x2160"},
+        {"line_id": 90, "reference": "IEBTIIENEN004-2024-BTI118", "expected_hs6": "8528.52", "description": "27-inch LCD colour monitor, 2560x1440"}
+      ]
+    },
+    {
+      "name": "sports-bras",
+      "members": [
+        {"line_id": 32, "reference": "IEBTIIENEN004-2026-BTI75", "expected_hs6": "6212.10", "description": "Strappy crop top, padded cups"},
+        {"line_id": 36, "reference": "IEBTIIENEN004-2026-BTI74", "expected_hs6": "6212.10", "description": "Seam-free wireless sports bra"}
+      ]
+    },
+    {
+      "name": "masks",
+      "members": [
+        {"line_id": 2, "reference": "IEBTIIENEN004-2025-BTI245", "expected_hs6": "3926.90", "description": "Perform stem masks"},
+        {"line_id": 4, "reference": "IEBTIIENEN004-2025-BTI258", "expected_hs6": "3926.90", "description": "Silicone masks of various shapes and sizes"}
+      ]
+    },
+    {
+      "name": "sandals",
+      "note": "BTI122 (line 55) is coded 6402.99; BTI128 (line 57) is 6404.19. Kept in the family as near-duplicate goods.",
+      "members": [
+        {"line_id": 55, "reference": "IEBTIIENEN004-2024-BTI122", "expected_hs6": "6402.99", "description": "Ladies sandals, PU weave strap"},
+        {"line_id": 57, "reference": "IEBTIIENEN004-2024-BTI128", "expected_hs6": "6404.19", "description": "Women's sandals, textile upper"}
+      ]
+    },
+    {
+      "name": "backpacks",
+      "members": [
+        {"line_id": 14, "reference": "IEBTIIENEN004-2024-BTI189", "expected_hs6": "4202.92", "description": "24L backpack"},
+        {"line_id": 17, "reference": "IEBTIIENEN004-2025-BTI264", "expected_hs6": "4202.92", "description": "Back-pack / rucksack"},
+        {"line_id": 19, "reference": "IEBTIIENEN004-2025-BTI227", "expected_hs6": "4202.92", "description": "Backpack, nylon 840D"}
+      ]
+    },
+    {
+      "name": "single-use-assemblies",
+      "members": [
+        {"line_id": 72, "reference": "IEBTIIENEN004-2025-BTI249", "expected_hs6": "8421.39", "description": "Static single-use assembly"},
+        {"line_id": 75, "reference": "IEBTIIENEN004-2024-BTI278", "expected_hs6": "8421.39", "description": "Single-use bottle-end assembly"},
+        {"line_id": 78, "reference": "IEBTIIENEN004-2026-BTI255", "expected_hs6": "8421.39", "description": "Single-use plastic assembly for bioprocessing"}
+      ]
+    }
+  ]
+}
