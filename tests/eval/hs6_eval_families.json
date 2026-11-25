@@ -81,6 +81,22 @@
         {"line_id": 55, "reference": "IEBTIIENEN004-2024-BTI122", "expected_hs6": "6402.99", "description": "Ladies sandals, PU weave strap"},
         {"line_id": 57, "reference": "IEBTIIENEN004-2024-BTI128", "expected_hs6": "6404.19", "description": "Women's sandals, textile upper"}
       ]
+    },
+    {
+      "name": "backpacks",
+      "members": [
+        {"line_id": 14, "reference": "IEBTIIENEN004-2024-BTI189", "expected_hs6": "4202.92", "description": "24L backpack"},
+        {"line_id": 17, "reference": "IEBTIIENEN004-2025-BTI264", "expected_hs6": "4202.92", "description": "Back-pack / rucksack"},
+        {"line_id": 19, "reference": "IEBTIIENEN004-2025-BTI227", "expected_hs6": "4202.92", "description": "Backpack, nylon 840D"}
+      ]
+    },
+    {
+      "name": "single-use-assemblies",
+      "members": [
+        {"line_id": 72, "reference": "IEBTIIENEN004-2025-BTI249", "expected_hs6": "8421.39", "description": "Static single-use assembly"},
+        {"line_id": 75, "reference": "IEBTIIENEN004-2024-BTI278", "expected_hs6": "8421.39", "description": "Single-use bottle-end assembly"},
+        {"line_id": 78, "reference": "IEBTIIENEN004-2026-BTI255", "expected_hs6": "8421.39", "description": "Single-use plastic assembly for bioprocessing"}
+      ]
     }
   ]
 }
