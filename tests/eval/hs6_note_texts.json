@@ -1,56 +1,17 @@
 {
-  "note": "Backlog item 22, step 1. Note texts for the note-text upper-bound test, following item 21 (family-exclusion baseline, docs/reports/021-family-excl.md). Treatment lines are the judgement errors with an identifiable deciding note (right HS-6 present among the candidates but not chosen, iteration 23 majority, family exclusion on). Controls are currently-correct lines (iteration 23 majority) from the same heading/chapter, which receive the same note text. Baskets BTI5/BTI7 are excluded: they are retrieval misses (right code absent), not judgement errors.",
-  "source_and_reuse": "Note texts are quoted verbatim from official EU sources only: the EU Combined Nomenclature 2026 (Commission Implementing Regulation (EU) 2025/1926, Annex I) and the Explanatory Notes to the Combined Nomenclature of the European Union (OJ C 119, 29.3.2019, p. 1, CELEX 52019XC0329(02)). EU law texts are reusable without restriction (Commission Decision 2011/833/EU, CC BY 4.0); source acknowledged.",
+  "note": "Backlog item 22, step 1b. Note texts for the note-text upper-bound test, following item 21 (family-exclusion baseline, docs/reports/021-family-excl.md). Step 1's heading-text notes for 6212, 9619 and 6307 were dropped or replaced: those heading texts are already shown to the model in the nomenclature chunk (ch.text[:900]) for each candidate subheading, so they add no signal. A note is kept only where a genuine EU interpretive text (a CN Explanatory Note, or the reasoning of an EU classification regulation) states the deciding rule. Pet-toys (CNEN to heading 9503) and paper-yarn baskets (Regulation (EU) 2019/927) qualify. Bikini-tops and period-pants were dropped: their rulings decide on the heading/subheading text plus a WCO Harmonised System Explanatory Note (bikini: 'Notes to Chapter 62' + text of 6212; period-pants: 'THE HSEN TO HEADING 9619' + text of 9619 00 50), with no EU CN interpretive note found, so only heading text or a WCO note exists.",
+  "source_and_reuse": "Note texts are quoted verbatim from official EU sources only: the Explanatory Notes to the Combined Nomenclature of the European Union (OJ C 119, 29.3.2019, p. 1, CELEX 52019XC0329(02)) and Commission Implementing Regulation (EU) 2019/927 (OJ L 148, 6.6.2019, p. 19, CELEX 32019R0927). EU law texts are reusable without restriction (Commission Decision 2011/833/EU, CC BY 4.0); source acknowledged.",
   "notes": [
-    {
-      "id": "bikini-tops-6212",
-      "chapter": "62",
-      "heading": "6212",
-      "right_code": "6212.10",
-      "wrong_code": "6112.41",
-      "deciding_text": "6212 Brassières, girdles, corsets, braces, suspenders, garters and similar articles and parts thereof, whether or not knitted or crocheted. 6212 10 Brassières: Brassieres of all types of textile materials, whether or not elasticated, incl. knitted or crocheted.",
-      "oj": "Regulation (EU) 2025/1926, Annex I (CN 2026); reproduced verbatim in OJ C 119, 29.3.2019, p. 1",
-      "celex": "32025R1926",
-      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32025R1926",
-      "treatment": [
-        "IEBTIIENEN004-2026-BTI106",
-        "IEBTIIENEN004-2026-BTI108",
-        "IEBTIIENEN004-2026-BTI107"
-      ],
-      "controls": [
-        "IEBTIIENEN004-2026-BTI89",
-        "IEBTIIENEN004-2026-BTI74"
-      ]
-    },
-    {
-      "id": "period-pants-9619",
-      "chapter": "96",
-      "heading": "9619",
-      "right_code": "9619.00",
-      "wrong_code": "6108.22",
-      "deciding_text": "9619 Sanitary towels (pads) and tampons, napkins (diapers), napkin liners and similar articles, of any material.",
-      "oj": "Regulation (EU) 2025/1926, Annex I (CN 2026)",
-      "celex": "32025R1926",
-      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32025R1926",
-      "treatment": [
-        "IEBTIIENEN004-2026-BTI72",
-        "IEBTIIENEN004-2026-BTI71"
-      ],
-      "controls": [
-        "DEBTI3465/24-1",
-        "FRBTIFR-BTI-2026-02219"
-      ]
-    },
     {
       "id": "paper-baskets-6307",
       "chapter": "63",
       "heading": "6307",
       "right_code": "6307.90",
       "wrong_code": "4602.90",
-      "deciding_text": "6307 Other made-up articles, including dress patterns. 6307 90 Other: Made-up articles of textile materials, incl. dress patterns, n.e.s.",
-      "oj": "Regulation (EU) 2025/1926, Annex I (CN 2026)",
-      "celex": "32025R1926",
-      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32025R1926",
+      "deciding_text": "As the paper strips are twisted, they are considered paper yarn (textile yarn) within the meaning of heading 5308. Classification of the article in Chapter 46 is excluded by virtue of Note 1 to Chapter 46 because textile yarns are not considered 'plaiting materials'. Moreover, the yarns are woven together creating a fabric (warp and weft strands). The basket is therefore not an article of paper yarn but an article made of fabric. Made-up textile articles of any textile fabric which are not more specifically described elsewhere in the Nomenclature are classified under Sub-Chapter I of Chapter 63. The article is therefore to be classified under CN code 6307 90 98 as other made-up textile articles.",
+      "oj": "OJ L 148, 6.6.2019, p. 19 (Commission Implementing Regulation (EU) 2019/927, Annex, reasons column (3))",
+      "celex": "32019R0927",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32019R0927",
       "treatment": [
         "IEBTIIENEN004-2024-BTI8"
       ],
