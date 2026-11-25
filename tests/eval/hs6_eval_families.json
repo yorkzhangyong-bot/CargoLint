@@ -1,0 +1,54 @@
+{
+  "note": "Backlog item 21, step 1. Near-duplicate families in the 120-line set (tests/eval/cn8_eval_set.json, built 2026-10-23). line_id is the 1-based position in that file's rulings array; reference is the ruling reference; expected_hs6 is the ruling's hs6 field.",
+  "families": [
+    {
+      "name": "swedish-chairs",
+      "members": [
+        {"line_id": 93, "reference": "SEBTITV-2024-01674", "expected_hs6": "9401.99", "description": "Furniture cover for a sofa armrest (Mobelkladsel), permanent, dobby weave"},
+        {"line_id": 96, "reference": "SEBTITV-2024-01665", "expected_hs6": "9401.99", "description": "Furniture cover for a sofa armrest (Mobelkladsel), permanent, dobby weave"},
+        {"line_id": 98, "reference": "SEBTITV-2024-01658", "expected_hs6": "9401.99", "description": "Furniture cover for a sofa armrest (Mobelkladsel), permanent, dobby weave"},
+        {"line_id": 100, "reference": "SEBTITV-2024-01615", "expected_hs6": "9401.99", "description": "Furniture cover for a sofa armrest (Mobelkladsel), permanent, dobby weave"}
+      ]
+    },
+    {
+      "name": "irish-shoes",
+      "members": [
+        {"line_id": 51, "reference": "IEBTIIENEN004-2024-BTI352", "expected_hs6": "6404.19", "description": "Ladies faux-fur mule slipper, closed toe"},
+        {"line_id": 52, "reference": "IEBTIIENEN004-2024-BTI356", "expected_hs6": "6405.20", "description": "Ladies faux-fur mule slipper, closed toe"},
+        {"line_id": 53, "reference": "IEBTIIENEN004-2024-BTI354", "expected_hs6": "6404.19", "description": "Ladies fur mule slipper, open toe"},
+        {"line_id": 54, "reference": "IEBTIIENEN004-2024-BTI377", "expected_hs6": "6404.19", "description": "Men's mule slipper, closed toe"},
+        {"line_id": 58, "reference": "IEBTIIENEN004-2024-BTI355", "expected_hs6": "6404.19", "description": "Ladies faux-suede mule slipper, closed toe"}
+      ]
+    },
+    {
+      "name": "bikini-tops",
+      "members": [
+        {"line_id": 31, "reference": "IEBTIIENEN004-2026-BTI106", "expected_hs6": "6212.10", "description": "Women's bikini top, two fabric-lined cups"},
+        {"line_id": 33, "reference": "IEBTIIENEN004-2026-BTI108", "expected_hs6": "6212.10", "description": "Women's bikini top, two fabric-lined cups"},
+        {"line_id": 34, "reference": "IEBTIIENEN004-2026-BTI107", "expected_hs6": "6212.10", "description": "Women's bandeau bikini top, removable foam cups"}
+      ]
+    },
+    {
+      "name": "baskets",
+      "members": [
+        {"line_id": 44, "reference": "IEBTIIENEN004-2024-BTI7", "expected_hs6": "6307.90", "description": "Set of 2 baskets, 100% twisted paper yarn"},
+        {"line_id": 45, "reference": "IEBTIIENEN004-2024-BTI5", "expected_hs6": "6307.90", "description": "Set of 3 paper-rope baskets, 100% twisted paper"},
+        {"line_id": 46, "reference": "IEBTIIENEN004-2024-BTI8", "expected_hs6": "6307.90", "description": "Open-weave basket, paper rope over an iron frame"}
+      ]
+    },
+    {
+      "name": "period-pants",
+      "members": [
+        {"line_id": 111, "reference": "IEBTIIENEN004-2026-BTI72", "expected_hs6": "9619.00", "description": "Period pants, knitted nylon, absorbent crotch layers"},
+        {"line_id": 112, "reference": "IEBTIIENEN004-2026-BTI71", "expected_hs6": "9619.00", "description": "Period pants, knitted cotton, absorbent crotch layers"}
+      ]
+    },
+    {
+      "name": "furniture",
+      "members": [
+        {"line_id": 94, "reference": "XIBTI505070488", "expected_hs6": "9403.20", "description": "Foldable raised camping pet bed, steel frame"},
+        {"line_id": 95, "reference": "XIBTI505070096", "expected_hs6": "9403.20", "description": "Elevated cot dog bed, steel frame with fabric cover"}
+      ]
+    }
+  ]
+}
