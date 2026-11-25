@@ -67,7 +67,7 @@ Future work, in priority order. Each entry is a short sketch, not a spec; run it
     - **Texts.** Certificate texts need the Certificate object, and footnote CD 370's text needs the Footnote object. Neither is loaded today.
     - **Interim.** A caption under "Requirements" saying that the controls apply under conditions, with the EU TARIC link.
 
-19. **Cleanup.** Retire `ASK_FLOOR`: it no longer routes since 014a's vague rule, but the setting and its `ask_floor` parameter remain, in about 50 call sites and in the eval history format. Update the twelve-chapter list in `CargoLint_Project_Intro.md` §10.
+19. **Cleanup.** Retire `ASK_FLOOR`: it no longer routes since 014a's vague rule, but the setting and its `ask_floor` parameter remain, in about 50 call sites and in the eval history format. Update the twelve-chapter list in `CargoLint_Project_Intro.md` §10. `refresh_ebti.py` should call `write_sources_md` so `SOURCES.md` can't drift.
 
 Items 20–25 come from a review of the HSCodeComp paper (Alibaba, arXiv 2510.19631,
 [abstract](https://arxiv.org/abs/2510.19631), [PDF](https://arxiv.org/pdf/2510.19631)) against CargoLint's own eval
