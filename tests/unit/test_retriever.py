@@ -192,3 +192,15 @@ class TestPrecedentCodes:
                               excerpt_chars=30)
         assert out[0]["excerpt"] == "a" * 200                       # the Source excerpt stays the 200-char description
         assert out[0]["prompt_excerpt"] == "b" * 30                 # the prompt excerpt is the reasoning, capped
+
+    def test_description_plus_reasoning_caps_each_part_separately(self):
+        from rag.bti import BTIStore
+        from rag.retriever import precedent_codes
+
+        store = BTIStore([
+            {"reference": "NL-1", "code": "3926.90", "member_state": "NL", "valid_from": "2024-01-01",
+             "valid_to": "2027-01-01", "description": "d" * 500, "reasoning": "r" * 500},
+        ])
+        out = precedent_codes(self._Vectors([["bti:NL-1"]]), store, [[0.1]], k=3,
+                              excerpt_from="description+reasoning", excerpt_chars=60)
+        assert out[0]["prompt_excerpt"] == "d" * 200 + " | " + "r" * 60   # description keeps 200, reasoning capped at 60

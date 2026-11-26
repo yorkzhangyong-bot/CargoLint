@@ -285,11 +285,12 @@ def precedent_codes(bti_vectors: VectorSearch, bti_store: Any, query_vectors: li
     several similar rulings outranks one backed by a single ruling. Returns one entry per code, best first:
     {code, score, rulings, reference, member_state, excerpt, prompt_excerpt}, where reference/excerpt are the best-ranked
     ruling. `excerpt` is always the flattened description capped at 200 (feature 004: the Source card); `prompt_excerpt`
-    is what the ranking prompt shows, taken from `excerpt_from` ("description", "reasoning" or "description+reasoning")
-    capped at `excerpt_chars`, so with the defaults the two are equal (backlog item 22). Rulings unknown to the store,
-    without a code, or not valid on `as_of` are skipped, and so are the references in `exclude_refs` (feature 006: an
-    evaluation keeps a line's own ruling out; the product excludes nothing). `hits` are the searches already run for the
-    query vectors (feature 006: the HS-6 vote reads the same ones).
+    is what the ranking prompt shows, taken from `excerpt_from` ("description", "reasoning" or "description+reasoning"):
+    "description" and "reasoning" are capped at `excerpt_chars`; "description+reasoning" keeps the description at its
+    fixed 200 chars and caps only the reasoning part at `excerpt_chars`. With the defaults the two are equal (backlog
+    item 22). Rulings unknown to the store, without a code, or not valid on `as_of` are skipped, and so are the
+    references in `exclude_refs` (feature 006: an evaluation keeps a line's own ruling out; the product excludes
+    nothing). `hits` are the searches already run for the query vectors (feature 006: the HS-6 vote reads the same ones).
     """
     if hits is None:
         hits = [bti_vectors.search_by_vector(vec, k * 2, None) for vec in query_vectors]
@@ -306,7 +307,8 @@ def precedent_codes(bti_vectors: VectorSearch, bti_store: Any, query_vectors: li
         if entry is None:
             description = " ".join((rec.get("description") or "").split())
             if excerpt_from == "description+reasoning":
-                prompt = (description + " | " + " ".join((rec.get("reasoning") or "").split()))[:excerpt_chars]
+                reasoning = " ".join((rec.get("reasoning") or "").split())
+                prompt = description[:200] + " | " + reasoning[:excerpt_chars]
             else:
                 prompt = " ".join((rec.get(excerpt_from) or "").split())[:excerpt_chars]
             entry = by_code[code] = {"code": code, "score": 0.0, "rulings": 0, "reference": rec.get("reference", ""),
