@@ -157,3 +157,38 @@ class TestPrecedentCodes:
         from rag.retriever import precedent_codes
 
         assert precedent_codes(self._Vectors([[]]), self._store(), [[0.1]], k=3) == []
+
+    def test_prompt_excerpt_comes_from_excerpt_from_and_defaults_to_the_description(self):
+        from rag.bti import BTIStore
+        from rag.retriever import precedent_codes
+
+        store = BTIStore([
+            {"reference": "NL-1", "code": "3926.90", "member_state": "NL", "valid_from": "2024-01-01",
+             "valid_to": "2027-01-01", "description": "Protective  case for a smartphone,   of silicone",
+             "reasoning": "GIR 1 and 6. Note 2 to chapter 39."},
+        ])
+        by_default = precedent_codes(self._Vectors([["bti:NL-1"]]), store, [[0.1]], k=3)
+        assert by_default[0]["excerpt"] == "Protective case for a smartphone, of silicone"
+        assert by_default[0]["prompt_excerpt"] == by_default[0]["excerpt"]      # defaults: byte-identical
+
+        as_reasoning = precedent_codes(self._Vectors([["bti:NL-1"]]), store, [[0.1]], k=3, excerpt_from="reasoning")
+        assert as_reasoning[0]["prompt_excerpt"] == "GIR 1 and 6. Note 2 to chapter 39."
+        assert as_reasoning[0]["excerpt"] == "Protective case for a smartphone, of silicone"   # the Source keeps the description
+
+        both = precedent_codes(self._Vectors([["bti:NL-1"]]), store, [[0.1]], k=3,
+                               excerpt_from="description+reasoning")
+        assert both[0]["prompt_excerpt"] == ("Protective case for a smartphone, of silicone | "
+                                             "GIR 1 and 6. Note 2 to chapter 39.")
+
+    def test_prompt_excerpt_is_capped_at_excerpt_chars(self):
+        from rag.bti import BTIStore
+        from rag.retriever import precedent_codes
+
+        store = BTIStore([
+            {"reference": "NL-1", "code": "3926.90", "member_state": "NL", "valid_from": "2024-01-01",
+             "valid_to": "2027-01-01", "description": "a" * 500, "reasoning": "b" * 500},
+        ])
+        out = precedent_codes(self._Vectors([["bti:NL-1"]]), store, [[0.1]], k=3, excerpt_from="reasoning",
+                              excerpt_chars=30)
+        assert out[0]["excerpt"] == "a" * 200                       # the Source excerpt stays the 200-char description
+        assert out[0]["prompt_excerpt"] == "b" * 30                 # the prompt excerpt is the reasoning, capped

@@ -251,7 +251,7 @@ def classify_one(line: LineText, ctx: ClassifyContext, kb, client: StructuredCal
         p = prec_by_code.get(ch.code)
         if p:
             more = f' · {p["rulings"]} matching rulings' if p["rulings"] > 1 else ""
-            tag += f' (BTI precedent {p["reference"]}, {p["member_state"]}: "{p["excerpt"]}"{more})'
+            tag += f' (BTI precedent {p["reference"]}, {p["member_state"]}: "{p.get("prompt_excerpt", p["excerpt"])}"{more})'
         user.append(f"[{ch.id}]{tag} {ch.text[:900]}")
     ranked: RankOut = validate_classification(client.call(RankOut, RANK_SYSTEM, "\n".join(user)))
     candidates: list[Candidate] = []

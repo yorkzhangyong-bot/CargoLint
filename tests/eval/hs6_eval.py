@@ -269,6 +269,15 @@ def _proposal_in(original: Any) -> Any:
     return wrapper
 
 
+def _precedent_excerpt_in(original: Any, excerpt_from: str, excerpt_chars: int) -> Any:
+    """Backlog item 22, eval only: precedent_codes with the ranking prompt's precedent excerpt taken from `excerpt_from`
+    ("description", "reasoning" or "description+reasoning") capped at `excerpt_chars`; the Source excerpt stays the
+    description (the product's), so with the defaults the two are equal and the output is byte-identical."""
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        return original(*args, excerpt_from=excerpt_from, excerpt_chars=excerpt_chars, **kwargs)
+    return wrapper
+
+
 def nearest_hits(searches: list[list[tuple[str, float]]], own: str, kb: Any, as_of: date) -> list[dict]:
     """The rulings nearest to a line's query vectors, each once at its smallest cosine distance, nearest first (equal
     distances by id, as rag.retriever.stable_order), at most HITS_LOGGED, with what the store says about each."""
@@ -424,14 +433,18 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
              leave_one_out: bool = True, customs_wording: bool = False,
              vote_scope: str = "candidates", proposal_scope: str = "all",
              family_exclusion: bool = False, siblings: dict[str, frozenset[str]] | None = None,
-             note_texts: dict[str, str] | None = None) -> tuple[list[dict], float]:
+             note_texts: dict[str, str] | None = None, precedent_excerpt: str = "description",
+             precedent_excerpt_chars: int = 200) -> tuple[list[dict], float]:
     """One pass of the app's HS-6 path over the set: one row per ruling, and the elapsed seconds. `leave_one_out` keeps
     each line's own ruling out; the coolant set has none (feature 014a). `customs_wording` is the switch for the run.
     `vote_scope` "all" runs the vote over every chapter instead of the candidates' (the 014a regression ablation, eval
     only: the app is unchanged). `proposal_scope` "nomenclature" is option (c) (2026-11-19, eval only): the candidate
     proposal reads the rulings of the chapters of the nomenclature search's subheadings only. `family_exclusion`
     (backlog item 21) keeps a family member's siblings out too, from `siblings`. `note_texts` (backlog item 22, eval
-    only) is reference -> classification notes, appended to the ranking request for the listed lines only."""
+    only) is reference -> classification notes, appended to the ranking request for the listed lines only.
+    `precedent_excerpt` / `precedent_excerpt_chars` (backlog item 22, eval only) choose what the ranking prompt shows
+    for each BTI precedent ("description", "reasoning" or "description+reasoning") and how much, via the harness
+    wrapping `precedent_codes`; the product always shows the description excerpt."""
     clear_expansions()   # an independent run: no query expansion and no rewrite carried over
     lines = [line_text(i, r) for i, r in enumerate(rulings, start=1)]
     base = ClassifyContext(hybrid=True, as_of=as_of, expansion=expansion,   # context_for_shipment for an unknown
@@ -465,12 +478,19 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
         search = vectors.search_by_vector
         vectors.search_by_vector = _logged(search, unscoped=vote_scope == "all")   # the instance only, for this run
     scoped_proposal = proposal_scope == "nomenclature"                              # option (c), for this run only
-    if scoped_proposal:
-        retriever, proposal = kb.retriever, classify_tool.precedent_codes
-        own_search = "search" in vars(retriever)
-        nomenclature = retriever.search
-        retriever.search = _nomenclature_logged(nomenclature)
-        classify_tool.precedent_codes = _proposal_in(proposal)
+    excerpt_off = precedent_excerpt == "description" and precedent_excerpt_chars == 200
+    original_precedent = classify_tool.precedent_codes
+    if scoped_proposal or not excerpt_off:
+        proposal = original_precedent
+        if not excerpt_off:
+            proposal = _precedent_excerpt_in(proposal, precedent_excerpt, precedent_excerpt_chars)   # backlog item 22
+        if scoped_proposal:
+            retriever = kb.retriever
+            own_search = "search" in vars(retriever)
+            nomenclature = retriever.search
+            retriever.search = _nomenclature_logged(nomenclature)
+            proposal = _proposal_in(proposal)
+        classify_tool.precedent_codes = proposal
     try:
         done = run_per_line(todo, one, lambda item, exc: None, workers=workers)
     finally:
@@ -479,12 +499,13 @@ def run_once(rulings: list[dict], kb: Any, client: Any, as_of: date, workers: in
                 vectors.search_by_vector = search
             else:
                 del vectors.search_by_vector
-        if scoped_proposal:
-            classify_tool.precedent_codes = proposal
-            if own_search:
-                retriever.search = nomenclature
-            else:
-                del retriever.search
+        if scoped_proposal or not excerpt_off:
+            classify_tool.precedent_codes = original_precedent
+            if scoped_proposal:
+                if own_search:
+                    retriever.search = nomenclature
+                else:
+                    del retriever.search
     elapsed = time.perf_counter() - t0
     classified = {line.line_no: res for (line, _), res in zip(todo, done)}
     rows = []
@@ -1219,6 +1240,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--references", metavar="FILE",
                     help="eval only: a JSON array of references; the set is filtered to those lines (backlog item 22: the "
                          "note test runs only the treatment and control lines)")
+    ap.add_argument("--precedent-excerpt", choices=("description", "reasoning", "description+reasoning"),
+                    default="description",
+                    help="backlog item 22, eval only: what the ranking prompt shows for each BTI precedent, instead of "
+                         "the first 200 chars of its description (the product's, the default)")
+    ap.add_argument("--precedent-excerpt-chars", type=int, default=200,
+                    help="backlog item 22, eval only: the length cap for --precedent-excerpt (default 200)")
     args = ap.parse_args(argv)
     if args.replay and args.vote_scope != "candidates":
         ap.error("--vote-scope is for a run: a replay searches no rulings")
@@ -1237,6 +1264,10 @@ def main(argv: list[str] | None = None) -> int:
         ap.error("--references is for the 120-line set")
     if args.references and args.replay:
         ap.error("--references is for a run: a replay searches no model")
+    if args.precedent_excerpt != "description" and args.replay:
+        ap.error("--precedent-excerpt is for a run: a replay searches no model")
+    if args.precedent_excerpt_chars < 1:
+        ap.error("--precedent-excerpt-chars must be 1 or more")
     if args.floor is not None and not args.replay:
         ap.error("--floor is for a --replay: a run uses HS6_VOTE_MIN_SIMILARITY")
     if args.floor is not None and not 0.0 <= args.floor <= 1.0:
@@ -1320,7 +1351,9 @@ def main(argv: list[str] | None = None) -> int:
         rows, seconds = run_once(rulings, kb, client, as_of, settings.workers, expansion,
                                  leave_one_out=args.set_name != "coolant",
                                  customs_wording=wording, vote_scope=args.vote_scope, proposal_scope=args.proposal_scope,
-                                 family_exclusion=args.family_exclusion, siblings=siblings, note_texts=note_texts)
+                                 family_exclusion=args.family_exclusion, siblings=siblings, note_texts=note_texts,
+                                 precedent_excerpt=args.precedent_excerpt,
+                                 precedent_excerpt_chars=args.precedent_excerpt_chars)
         runs.append(rows)
         parsed.append(parse_counts(invalid, rows))
         elapsed += seconds
@@ -1342,6 +1375,8 @@ def main(argv: list[str] | None = None) -> int:
         **({} if args.proposal_scope == "all" else {"proposal_scope": args.proposal_scope}),
         **({} if not args.family_exclusion else {"family_exclusion": True}),
         **({} if not args.notes else {"notes": args.notes}),
+        **({} if args.precedent_excerpt == "description" and args.precedent_excerpt_chars == 200
+            else {"precedent_excerpt": args.precedent_excerpt, "precedent_excerpt_chars": args.precedent_excerpt_chars}),
         "threshold": DEFAULT_THRESHOLD, "ask_floor": ASK_FLOOR, "temperature": temperature, "seed": seed,
         "repeat": args.repeat, "n": len(rulings), **m,
         "parse": {"retry_limit": client.max_retries, "runs": parsed},

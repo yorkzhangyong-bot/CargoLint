@@ -31,6 +31,9 @@
 | 22 | 2026-11-23 | 017-after | 3 | 78 / 77 / 78 of 120 | 78/120 | 105 / 104 / 105 of 120 | 116/120 | 118/120 | 3 / 3 / 2 | 64 / 63 / 65 of 120 | 63 / 64 / 62 | 18 / 16 / 18 | $0.5328 (€0.4902), 399 s |
 | 23 | 2026-11-25 | 021-family-excl | 3 | 75 / 74 / 75 of 120 | 75/120 | 99 / 100 / 101 of 120 | 112/120 | 117/120 | 1 / 2 / 2 | 61 / 60 / 62 of 120 | 56 / 58 / 57 | 20 / 18 / 20 | $0.5306 (€0.4882), 455 s |
 | 24 | 2026-11-25 | 022-notes | 3 | 3 / 3 / 3 of 5 | 3/5 | 5 / 5 / 5 of 5 | 5/5 | 5/5 | 0 / 0 / 0 | 2 / 2 / 2 of 5 | 1 / 1 / 1 | 2 / 2 / 2 | $0.0244 (€0.0224), 152 s |
+| 25 | 2026-11-26 | 022-notes-b | 3 | 0 / 0 / 0 of 2 | 0/2 | 0 / 0 / 0 of 2 | 2/2 | 2/2 | 0 / 0 / 0 | 0 / 0 / 0 of 2 | 0 / 0 / 0 | 0 / 0 / 0 | $0.0084 (€0.0077), 27 s |
+| 26 | 2026-11-26 | 022-reasoning | 3 | 13 / 14 / 13 of 43 | 13/43 | 37 / 36 / 36 of 43 | 41/43 | 43/43 | 1 / 1 / 1 | 10 / 12 / 11 of 43 | 10 / 10 / 10 | 4 / 5 / 4 | $0.1938 (€0.1783), 87 s |
+| 27 | 2026-11-26 | 022-reasoning-desc | 3 | 17 / 18 / 18 of 43 | 17/43 | 40 / 41 / 41 of 43 | 41/43 | 42/43 | 1 / 1 / 1 | 14 / 15 / 16 of 43 | 13 / 13 / 14 | 4 / 5 / 4 | $0.1922 (€0.1768), 93 s |
 
 ## Iteration 1 (hs6-baseline, openai/gpt-4o-mini, 2026-10-25)
 
@@ -2610,4 +2613,273 @@ With the switch on, at least 5 of the nearest rulings at the model's candidate 2
 
 Overrides that fired per run: 0 / 0 / 0, of which chose the right HS-6: 0 / 0 / 0. The rulings' majority supported the model's candidate 2 or 3 on 3 / 3 / 3 lines per run; that candidate was the right HS-6 on 2 / 2 / 2.
 
-Model: google/gemini-2.5-flash. Line-by-line results of the latest run, iteration 24 (022-notes): `tests/eval/hs6_eval.json`; since feature 007 each run also keeps its own, `tests/eval/hs6_eval_<tag>.json`; earlier runs are in the git history of `hs6_eval.json`.
+## Iteration 25 (022-notes-b, google/gemini-2.5-flash, en, query expansion off, customs wording off, 2026-11-26)
+
+Invalid answers (retried at most 2 times): run 1: 0 retried (0 not valid JSON, 0 not the schema), 0 calls still invalid, 0 lines failed; run 2: 0 retried (0 not valid JSON, 0 not the schema), 0 calls still invalid, 0 lines failed; run 3: 0 retried (0 not valid JSON, 0 not the schema), 0 calls still invalid, 0 lines failed.
+
+The model's own confidence of its top-1 (before the vague cap), all runs, right / wrong: 90: 0 / 3 · 0: 0 / 3.
+
+| Run | Top-1 | In top 3 | Auto-accept | Review | Ask the shipper | Wrong, auto-accepted |
+|---|---|---|---|---|---|---|
+| 1 | 0/2 | 0/2 | 0 | 2 | 0 | 0 |
+| 2 | 0/2 | 0/2 | 0 | 2 | 0 | 0 |
+| 3 | 0/2 | 0/2 | 0 | 2 | 0 | 0 |
+
+### Vote gate
+
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 0 | 0 | 1 | 0 | 0 | 0 | 1 | 0 | 0 | 0 |
+| 2 | 0 | 0 | 1 | 0 | 0 | 0 | 1 | 0 | 0 | 0 |
+| 3 | 0 | 0 | 1 | 0 | 0 | 0 | 1 | 0 | 0 | 0 |
+
+### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
+
+The CN-8 eval starts from the correct HS-6, so a line is right end to end only when both are right. Majority: the majority top-1 of each eval; run k: run k of both.
+
+| | HS-6 right, CN-8 right (end to end) | HS-6 right, CN-8 wrong | HS-6 wrong, CN-8 right | HS-6 wrong, CN-8 wrong |
+|---|---|---|---|---|
+| Majority | 0 | 0 | 2 | 0 |
+| Run 1 | 0 | 0 | 2 | 0 |
+| Run 2 | 0 | 0 | 2 | 0 |
+| Run 3 | 0 | 0 | 2 | 0 |
+
+On majority results 2 of 2 lines end wrong: 2 from the HS-6 step (the CN-8 step would have failed too on 0 of them), 0 from the CN-8 step alone. End-to-end estimate per run: 0 / 0 / 0 of 2.
+
+Wrong top-1 results (line × run): 6; the correct HS-6 was among the candidates shown to the model in 0 (0.0%).
+
+Leakage guard: each line's own ruling was its nearest ruling in 2 / 2 / 2 of 2 lines (per run), among the 12 the precedent search reads in 2 / 2 / 2; the guard kept it out of the precedents.
+
+### Lines wrong in every run (2)
+
+- IEBTIIENEN004-2024-BTI7 (chapter 63, expected 6307.90): 4602.90 (90, review) · 4602.90 (90, review) · 4602.90 (90, review); correct in the top 3 in 0 of 3 runs. "SET OF 2 BASKETS; MADE OF 100% PAPER TWISTED INTO PAPER YARN THEN SEWED"
+- IEBTIIENEN004-2024-BTI5 (chapter 63, expected 6307.90): 4602.19 (0, review) · 4602.19 (0, review) · 4602.19 (0, review); correct in the top 3 in 0 of 3 runs. "SET OF 3 PAPER ROPE BASKETS; IT IS MADE OF 100% PAPER TWISTED. MANUFACTURE PROC…"
+
+### Lines whose top-1 differed between runs (0)
+
+### Wrong but auto-accepted (the HS-6 layer)
+
+Per run: 0 / 0 / 0. In every run: 0 lines, each among the lines wrong in every run above.
+
+### Precedent override (feature 008)
+
+With the switch on, at least 5 of the nearest rulings at the model's candidate 2 or 3 choose that candidate and auto-accept it. The entry above is the switch off; the switch on is replayed from the same model answers and rulings, so the two differ only where an override fired. HS-6 right: the HS-6 chosen, the top-1 when no override fired.
+
+| Run | Switch | HS-6 right | Auto-accepted | Wrong, auto-accepted | Right auto-accepts | End to end (estimate) |
+|---|---|---|---|---|---|---|
+| 1 | off | 0/2 | 0 | 0 | 0 | 0/2 |
+| 1 | on | 0/2 | 0 | 0 | 0 | 0/2 |
+| 2 | off | 0/2 | 0 | 0 | 0 | 0/2 |
+| 2 | on | 0/2 | 0 | 0 | 0 | 0/2 |
+| 3 | off | 0/2 | 0 | 0 | 0 | 0/2 |
+| 3 | on | 0/2 | 0 | 0 | 0 | 0/2 |
+
+Overrides that fired per run: 0 / 0 / 0, of which chose the right HS-6: 0 / 0 / 0. The rulings' majority supported the model's candidate 2 or 3 on 0 / 0 / 0 lines per run; that candidate was the right HS-6 on 0 / 0 / 0.
+
+## Iteration 26 (022-reasoning, google/gemini-2.5-flash, en, query expansion off, customs wording off, 2026-11-26)
+
+Invalid answers (retried at most 2 times): run 1: 0 retried (0 not valid JSON, 0 not the schema), 0 calls still invalid, 0 lines failed; run 2: 0 retried (0 not valid JSON, 0 not the schema), 0 calls still invalid, 0 lines failed; run 3: 0 retried (0 not valid JSON, 0 not the schema), 0 calls still invalid, 0 lines failed.
+
+The model's own confidence of its top-1 (before the vague cap), all runs, right / wrong: 98: 1 / 2 · 95: 39 / 81 · 90: 0 / 4 · 88: 0 / 1 · 85: 0 / 1.
+
+| Run | Top-1 | In top 3 | Auto-accept | Review | Ask the shipper | Wrong, auto-accepted |
+|---|---|---|---|---|---|---|
+| 1 | 13/43 | 37/43 | 10 | 31 | 2 | 1 |
+| 2 | 14/43 | 36/43 | 10 | 31 | 2 | 1 |
+| 3 | 13/43 | 36/43 | 10 | 31 | 2 | 1 |
+
+### Vote gate
+
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 10 | 23 | 5 | 3 | 0 | 0 | 2 | 0 | 9 | 4 |
+| 2 | 10 | 22 | 5 | 4 | 0 | 0 | 2 | 0 | 9 | 5 |
+| 3 | 10 | 22 | 6 | 3 | 0 | 0 | 2 | 0 | 9 | 4 |
+
+### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
+
+The CN-8 eval starts from the correct HS-6, so a line is right end to end only when both are right. Majority: the majority top-1 of each eval; run k: run k of both.
+
+| | HS-6 right, CN-8 right (end to end) | HS-6 right, CN-8 wrong | HS-6 wrong, CN-8 right | HS-6 wrong, CN-8 wrong |
+|---|---|---|---|---|
+| Majority | 11 | 2 | 21 | 9 |
+| Run 1 | 10 | 3 | 22 | 8 |
+| Run 2 | 12 | 2 | 19 | 10 |
+| Run 3 | 11 | 2 | 21 | 9 |
+
+On majority results 32 of 43 lines end wrong: 30 from the HS-6 step (the CN-8 step would have failed too on 9 of them), 2 from the CN-8 step alone. End-to-end estimate per run: 10 / 12 / 11 of 43.
+
+Wrong top-1 results (line × run): 89; the correct HS-6 was among the candidates shown to the model in 86 (96.6%).
+
+Leakage guard: each line's own ruling was its nearest ruling in 40 / 40 / 40 of 43 lines (per run), among the 12 the precedent search reads in 43 / 43 / 43; the guard kept it out of the precedents.
+
+### Lines wrong in every run (29)
+
+- IEBTIIENEN004-2025-BTI463 (chapter 39, expected 3926.90): 4016.99 (95, review) · 4016.99 (95, review) · 4016.99 (95, review); correct in the top 3 in 2 of 3 runs. "The product is an orange coloured cushion part used inside a gear shifter, unde…"
+- IEBTIIENEN004-2023-BTI572 (chapter 39, expected 3923.10): 8609.00 (59, ask_shipper) · 8609.00 (59, ask_shipper) · 8609.00 (59, ask_shipper); correct in the top 3 in 3 of 3 runs. "Celsius SSM Shipper It is used to ship Pharmaceutical Drug Substance on an inte…"
+- IEBTIIENEN004-2024-BTI284 (chapter 42, expected 4202.12): 4202.92 (95, review) · 4202.92 (95, review) · 4202.92 (95, review); correct in the top 3 in 0 of 3 runs. "Slim lightweight structured ipad sleeve with front zippered pocket for accessor…"
+- IEBTIIENEN004-2024-BTI145 (chapter 42, expected 4202.92): 4202.22 (95, review) · 4202.22 (95, review) · 4202.22 (95, review); correct in the top 3 in 3 of 3 runs. "Travel bag Outer surface is made of polyester, Made from 99.9& Polyester, 0.1% …"
+- IEBTIIENEN004-2025-BTI449 (chapter 42, expected 4202.92): 4202.12 (95, review) · 4202.12 (95, review) · 4202.12 (95, review); correct in the top 3 in 1 of 3 runs. "Multifunction pencil case with calculator and pencil sharpener. The predominant…"
+- IEBTIIENEN004-2025-BTI227 (chapter 42, expected 4202.92): 4202.22 (95, review) · 4202.22 (95, review) · 4202.22 (95, review); correct in the top 3 in 3 of 3 runs. "BACKPACK, NYLON 840D, DETACHABLE SHOULDER STRAPS, ZIPPERED POCKETS \[Hip PAck Ol…"
+- IEBTIIENEN004-2026-BTI106 (chapter 62, expected 6212.10): 6112.41 (95, review) · 6112.41 (95, review) · 6112.41 (95, review); correct in the top 3 in 3 of 3 runs. "Women's bikini top Consists of two separate fabric lined cups; Two vertical sel…"
+- IEBTIIENEN004-2026-BTI108 (chapter 62, expected 6212.10): 6112.41 (95, review) · 6112.41 (95, review) · 6112.41 (95, review); correct in the top 3 in 3 of 3 runs. "Women's bikini top Consists of two separate fabric lined cups; Two vertical sel…"
+- IEBTIIENEN004-2026-BTI107 (chapter 62, expected 6212.10): 6112.41 (95, review) · 6112.41 (95, review) · 6112.41 (95, review); correct in the top 3 in 3 of 3 runs. "A women's bandeau bikini top It consists of two removable foam cups inside whic…"
+- DEBTI7623/25-1 (chapter 62, expected 6202.40): 6204.33 (95, review) · 6204.33 (95, review) · 6204.33 (95, review); correct in the top 3 in 0 of 3 runs. "Blouson, sog. Jacke für Frauen, Größe M, Foto siehe Anlage, - aus ca. 0,3 mm di…"
+- SEBTITV-2026-01096 (chapter 63, expected 6307.90): 9503.00 (98, review) · 9503.00 (98, review) · 9503.00 (95, review); correct in the top 3 in 3 of 3 runs. "Varan är enligt uppgift en konfektionerad hundleksak i form av en gris. Varan ä…"
+- IEBTIIENEN004-2024-BTI8 (chapter 63, expected 6307.90): 4602.90 (95, review) · 4602.90 (95, review) · 4602.90 (95, review); correct in the top 3 in 1 of 3 runs. "OPEN WEAVE BASKET; MADE OF 100% PAPER TWISTED PAPER ROPE AND IRON FRAME. IT CON…"
+- MTBTI2025-018 (chapter 63, expected 6307.90): 6306.12 (95, review) · 6306.12 (95, review) · 6306.12 (95, review); correct in the top 3 in 3 of 3 runs. "Woven polyester fabric, 100% waterproof. Hemmed all round and can be tightened …"
+- XIBTI505066180 (chapter 63, expected 6307.90): 9404.90 (95, review) · 8708.21 (95, review) · 9404.90 (95, review); correct in the top 3 in 2 of 3 runs. "The product is a seat belt pad to be used in conjunction with the car booster s…"
+- MTBTI2025-017 (chapter 63, expected 6307.90): 6305.90 (95, review) · 6305.90 (95, review) · 6305.90 (95, review); correct in the top 3 in 3 of 3 runs. "Cylindrical woven finish textile article with a zip fastner or velcro at the to…"
+- CZBTI47/152108/2024-580000-04/01 (chapter 63, expected 6307.90): 9503.00 (95, review) · 9503.00 (95, review) · 9503.00 (95, review); correct in the top 3 in 3 of 3 runs. "Dle deklarovaných údajů se jedná o textilní vycpávaný výrobek - hračku pro kočk…"
+- IEBTIIENEN004-2024-BTI356 (chapter 64, expected 6405.20): 6404.19 (95, review) · 6404.19 (95, review) · 6404.19 (95, review); correct in the top 3 in 3 of 3 runs. "LADIES FAUX FUR MULE STYLE SLIPPER WITH A CLOSED IN TOE. UPPERS OF TEXTILE, OUT…"
+- XIBTI505060394 (chapter 73, expected 7326.90): 8303.00 (95, review) · 8303.00 (95, review) · 8303.00 (95, review); correct in the top 3 in 3 of 3 runs. "A metal box with a hinged lid measuring 625(D) x 1210(W) x 645mm(H). Weight is …"
+- IEBTIIENEN004-2025-BTI301 (chapter 73, expected 7325.99): 9026.90 (95, review) · 9026.90 (95, review) · 9026.90 (95, review); correct in the top 3 in 1 of 3 runs. "1. Stainless steel X5000 Housing 2. Circular Housing , with 4 Cable entries , U…"
+- IEBTIIENEN004-2026-BTI19 (chapter 84, expected 8415.10): 8415.82 (95, review) · 8415.82 (95, review) · 8415.82 (95, review); correct in the top 3 in 0 of 3 runs. "Railway HVAC Systems. These are self contained systems that regulate the interi…"
+- IEBTIIENEN004-2026-BTI68 (chapter 84, expected 8479.89): 8419.89 (95, review) · 8419.89 (95, review) · 8419.89 (95, review); correct in the top 3 in 3 of 3 runs. "A buffer preparation skid assembly. This is a stainless-steel vessel with a hea…"
+- IEBTIIENEN004-2026-BTI60 (chapter 85, expected 8538.90): 8536.30 (95, review) · 8536.30 (95, review) · 8536.30 (95, review); correct in the top 3 in 3 of 3 runs. "RESIDUAL CURRENT DETECTION MODULE CONSISTING OF A SENSOR PRINTED CIRCUIT BOARD …"
+- IEBTIIENEN004-2025-BTI336 (chapter 85, expected 8538.90): 3925.90 (95, review) · 3925.90 (95, review) · 3925.90 (95, review); correct in the top 3 in 0 of 3 runs. "IT IS MADE OF PLASTIC AND IS USED TO HOLD THE SENSOR ON THE CEILING SO THAT ONL…"
+- XIBTI505059567 (chapter 85, expected 8504.40): 8471.80 (95, review) · 8471.80 (95, review) · 8471.80 (95, review); correct in the top 3 in 3 of 3 runs. "Body Worn Camera Docking Station Black docking station with magnetic self-locat…"
+- MTBTI2025-011 (chapter 94, expected 9405.42): 9405.11 (95, auto_accept) · 9405.11 (95, auto_accept) · 9405.11 (95, auto_accept); correct in the top 3 in 3 of 3 runs. "An emergency light fitting with LEDs, having an internal power source in the fo…"
+- SEBTITV-2026-09785 (chapter 94, expected 9405.42): 9405.31 (95, review) · 9405.31 (95, review) · 9405.31 (95, review); correct in the top 3 in 3 of 3 runs. "Elektrisk belysningsartikel enligt uppgift bestående av en vit stålram formad s…"
+- IEBTIIENEN004-2026-BTI72 (chapter 96, expected 9619.00): 6108.22 (95, review) · 6108.22 (95, review) · 6108.22 (95, review); correct in the top 3 in 3 of 3 runs. "Period Pants. They are made of knitted nylon fabric with an additional non-remo…"
+- IEBTIIENEN004-2026-BTI71 (chapter 96, expected 9619.00): 6108.21 (95, review) · 6108.21 (95, review) · 6108.21 (95, review); correct in the top 3 in 3 of 3 runs. "Period Pants. They are made of knitted cotton fabric with an additional non-rem…"
+- IEBTIIENEN004-2026-BTI222 (chapter 96, expected 9609.10): 9609.90 (59, ask_shipper) · 9609.90 (59, ask_shipper) · 9609.90 (59, ask_shipper); correct in the top 3 in 3 of 3 runs. "Sketching and drawing set consisting of the following: • 44 pencils • 7 charcoa…"
+
+### Lines whose top-1 differed between runs (2)
+
+- IEBTIIENEN004-2026-BTI23 (expected 6307.90): 5808.90 (95, review) · 6307.90 (95, review) · 5808.90 (95, review)
+- XIBTI505066180 (expected 6307.90): 9404.90 (95, review) · 8708.21 (95, review) · 9404.90 (95, review)
+
+### Wrong but auto-accepted (the HS-6 layer)
+
+Per run: 1 / 1 / 1. In every run: 1 line, each among the lines wrong in every run above.
+
+### Precedent override (feature 008)
+
+With the switch on, at least 5 of the nearest rulings at the model's candidate 2 or 3 choose that candidate and auto-accept it. The entry above is the switch off; the switch on is replayed from the same model answers and rulings, so the two differ only where an override fired. HS-6 right: the HS-6 chosen, the top-1 when no override fired.
+
+| Run | Switch | HS-6 right | Auto-accepted | Wrong, auto-accepted | Right auto-accepts | End to end (estimate) |
+|---|---|---|---|---|---|---|
+| 1 | off | 13/43 | 10 | 1 | 9 | 10/43 |
+| 1 | on | 16/43 | 13 | 1 | 12 | 13/43 |
+| 2 | off | 14/43 | 10 | 1 | 9 | 12/43 |
+| 2 | on | 17/43 | 13 | 1 | 12 | 14/43 |
+| 3 | off | 13/43 | 10 | 1 | 9 | 11/43 |
+| 3 | on | 16/43 | 13 | 1 | 12 | 13/43 |
+
+Overrides that fired per run: 3 / 3 / 3, of which chose the right HS-6: 3 / 3 / 3. The rulings' majority supported the model's candidate 2 or 3 on 20 / 18 / 19 lines per run; that candidate was the right HS-6 on 17 / 15 / 16.
+
+- run 1: MTBTI2025-017 (expected 6307.90): candidate 3, 6307.90, instead of 6305.90; right
+- run 1: IEBTIIENEN004-2026-BTI72 (expected 9619.00): candidate 2, 9619.00, instead of 6108.22; right
+- run 1: IEBTIIENEN004-2026-BTI71 (expected 9619.00): candidate 2, 9619.00, instead of 6108.21; right
+- run 2: MTBTI2025-017 (expected 6307.90): candidate 3, 6307.90, instead of 6305.90; right
+- run 2: IEBTIIENEN004-2026-BTI72 (expected 9619.00): candidate 2, 9619.00, instead of 6108.22; right
+- run 2: IEBTIIENEN004-2026-BTI71 (expected 9619.00): candidate 2, 9619.00, instead of 6108.21; right
+- run 3: MTBTI2025-017 (expected 6307.90): candidate 3, 6307.90, instead of 6305.90; right
+- run 3: IEBTIIENEN004-2026-BTI72 (expected 9619.00): candidate 2, 9619.00, instead of 6108.22; right
+- run 3: IEBTIIENEN004-2026-BTI71 (expected 9619.00): candidate 2, 9619.00, instead of 6108.21; right
+
+## Iteration 27 (022-reasoning-desc, google/gemini-2.5-flash, en, query expansion off, customs wording off, 2026-11-26)
+
+Invalid answers (retried at most 2 times): run 1: 0 retried (0 not valid JSON, 0 not the schema), 0 calls still invalid, 0 lines failed; run 2: 0 retried (0 not valid JSON, 0 not the schema), 0 calls still invalid, 0 lines failed; run 3: 0 retried (0 not valid JSON, 0 not the schema), 0 calls still invalid, 0 lines failed.
+
+The model's own confidence of its top-1 (before the vague cap), all runs, right / wrong: 98: 8 / 2 · 95: 42 / 70 · 90: 3 / 4.
+
+| Run | Top-1 | In top 3 | Auto-accept | Review | Ask the shipper | Wrong, auto-accepted |
+|---|---|---|---|---|---|---|
+| 1 | 17/43 | 40/43 | 13 | 28 | 2 | 1 |
+| 2 | 18/43 | 41/43 | 13 | 28 | 2 | 1 |
+| 3 | 18/43 | 41/43 | 14 | 27 | 2 | 1 |
+
+### Vote gate
+
+Gate reasons per run; not gated: a flagged or failed line, or one without a candidate. Vetoed: the gate passed, but the vote of the candidates' chapters sent the line to review (rule (a), feature 014a). Lost: right top-1 results the confidence rule alone would have auto-accepted and the gate did not.
+
+| Run | Vote agrees | Vote disagrees | Tie | Share low | Vetoed | No ruling | Not gated | No ruling, to review | Right auto-accepts | Lost |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 13 | 19 | 5 | 4 | 0 | 0 | 2 | 0 | 12 | 4 |
+| 2 | 13 | 18 | 6 | 4 | 0 | 0 | 2 | 0 | 12 | 5 |
+| 3 | 14 | 18 | 5 | 4 | 0 | 0 | 2 | 0 | 13 | 4 |
+
+### Cross-layer: HS-6 (this eval) × CN-8 (CN-8 eval iteration 11)
+
+The CN-8 eval starts from the correct HS-6, so a line is right end to end only when both are right. Majority: the majority top-1 of each eval; run k: run k of both.
+
+| | HS-6 right, CN-8 right (end to end) | HS-6 right, CN-8 wrong | HS-6 wrong, CN-8 right | HS-6 wrong, CN-8 wrong |
+|---|---|---|---|---|
+| Majority | 15 | 2 | 17 | 9 |
+| Run 1 | 14 | 3 | 18 | 8 |
+| Run 2 | 15 | 3 | 16 | 9 |
+| Run 3 | 16 | 2 | 16 | 9 |
+
+On majority results 28 of 43 lines end wrong: 26 from the HS-6 step (the CN-8 step would have failed too on 9 of them), 2 from the CN-8 step alone. End-to-end estimate per run: 14 / 15 / 16 of 43.
+
+Wrong top-1 results (line × run): 76; the correct HS-6 was among the candidates shown to the model in 73 (96.0%).
+
+Leakage guard: each line's own ruling was its nearest ruling in 40 / 40 / 40 of 43 lines (per run), among the 12 the precedent search reads in 43 / 43 / 43; the guard kept it out of the precedents.
+
+### Lines wrong in every run (24)
+
+- IEBTIIENEN004-2025-BTI463 (chapter 39, expected 3926.90): 4016.99 (95, review) · 4016.99 (95, review) · 4016.99 (95, review); correct in the top 3 in 3 of 3 runs. "The product is an orange coloured cushion part used inside a gear shifter, unde…"
+- IEBTIIENEN004-2023-BTI572 (chapter 39, expected 3923.10): 8609.00 (59, ask_shipper) · 8609.00 (59, ask_shipper) · 8609.00 (59, ask_shipper); correct in the top 3 in 3 of 3 runs. "Celsius SSM Shipper It is used to ship Pharmaceutical Drug Substance on an inte…"
+- IEBTIIENEN004-2024-BTI284 (chapter 42, expected 4202.12): 4202.92 (95, review) · 4202.92 (95, review) · 4202.92 (95, review); correct in the top 3 in 0 of 3 runs. "Slim lightweight structured ipad sleeve with front zippered pocket for accessor…"
+- IEBTIIENEN004-2024-BTI145 (chapter 42, expected 4202.92): 4202.22 (95, review) · 4202.22 (95, review) · 4202.22 (95, review); correct in the top 3 in 3 of 3 runs. "Travel bag Outer surface is made of polyester, Made from 99.9& Polyester, 0.1% …"
+- IEBTIIENEN004-2025-BTI449 (chapter 42, expected 4202.92): 4202.12 (95, review) · 4202.12 (95, review) · 4202.12 (95, review); correct in the top 3 in 3 of 3 runs. "Multifunction pencil case with calculator and pencil sharpener. The predominant…"
+- IEBTIIENEN004-2025-BTI227 (chapter 42, expected 4202.92): 4202.22 (95, review) · 4202.22 (95, review) · 4202.22 (95, review); correct in the top 3 in 3 of 3 runs. "BACKPACK, NYLON 840D, DETACHABLE SHOULDER STRAPS, ZIPPERED POCKETS \[Hip PAck Ol…"
+- IEBTIIENEN004-2026-BTI106 (chapter 62, expected 6212.10): 6112.41 (95, review) · 6112.41 (95, review) · 6112.41 (95, review); correct in the top 3 in 3 of 3 runs. "Women's bikini top Consists of two separate fabric lined cups; Two vertical sel…"
+- IEBTIIENEN004-2026-BTI108 (chapter 62, expected 6212.10): 6112.41 (95, review) · 6112.41 (95, review) · 6112.41 (95, review); correct in the top 3 in 3 of 3 runs. "Women's bikini top Consists of two separate fabric lined cups; Two vertical sel…"
+- IEBTIIENEN004-2026-BTI107 (chapter 62, expected 6212.10): 6112.41 (98, review) · 6112.41 (95, review) · 6112.41 (95, review); correct in the top 3 in 3 of 3 runs. "A women's bandeau bikini top It consists of two removable foam cups inside whic…"
+- SEBTITV-2026-01096 (chapter 63, expected 6307.90): 9503.00 (95, review) · 9503.00 (95, review) · 9503.00 (95, review); correct in the top 3 in 3 of 3 runs. "Varan är enligt uppgift en konfektionerad hundleksak i form av en gris. Varan ä…"
+- IEBTIIENEN004-2024-BTI8 (chapter 63, expected 6307.90): 4602.90 (95, review) · 4602.90 (95, review) · 4602.90 (95, review); correct in the top 3 in 3 of 3 runs. "OPEN WEAVE BASKET; MADE OF 100% PAPER TWISTED PAPER ROPE AND IRON FRAME. IT CON…"
+- MTBTI2025-018 (chapter 63, expected 6307.90): 6306.12 (95, review) · 6306.12 (95, review) · 6306.12 (95, review); correct in the top 3 in 3 of 3 runs. "Woven polyester fabric, 100% waterproof. Hemmed all round and can be tightened …"
+- XIBTI505066180 (chapter 63, expected 6307.90): 8708.21 (90, review) · 8708.21 (95, review) · 8708.21 (95, review); correct in the top 3 in 3 of 3 runs. "The product is a seat belt pad to be used in conjunction with the car booster s…"
+- MTBTI2025-017 (chapter 63, expected 6307.90): 6305.90 (95, review) · 6305.90 (95, review) · 6305.90 (95, review); correct in the top 3 in 3 of 3 runs. "Cylindrical woven finish textile article with a zip fastner or velcro at the to…"
+- CZBTI47/152108/2024-580000-04/01 (chapter 63, expected 6307.90): 9503.00 (95, review) · 9503.00 (95, review) · 9503.00 (95, review); correct in the top 3 in 3 of 3 runs. "Dle deklarovaných údajů se jedná o textilní vycpávaný výrobek - hračku pro kočk…"
+- IEBTIIENEN004-2024-BTI356 (chapter 64, expected 6405.20): 6404.19 (95, review) · 6404.19 (95, review) · 6404.19 (95, review); correct in the top 3 in 3 of 3 runs. "LADIES FAUX FUR MULE STYLE SLIPPER WITH A CLOSED IN TOE. UPPERS OF TEXTILE, OUT…"
+- XIBTI505060394 (chapter 73, expected 7326.90): 8303.00 (95, review) · 8303.00 (95, review) · 8303.00 (95, review); correct in the top 3 in 2 of 3 runs. "A metal box with a hinged lid measuring 625(D) x 1210(W) x 645mm(H). Weight is …"
+- IEBTIIENEN004-2025-BTI301 (chapter 73, expected 7325.99): 9026.90 (95, review) · 9026.90 (95, review) · 9026.90 (95, review); correct in the top 3 in 0 of 3 runs. "1. Stainless steel X5000 Housing 2. Circular Housing , with 4 Cable entries , U…"
+- IEBTIIENEN004-2026-BTI19 (chapter 84, expected 8415.10): 8415.82 (95, review) · 8415.82 (95, review) · 8415.82 (95, review); correct in the top 3 in 3 of 3 runs. "Railway HVAC Systems. These are self contained systems that regulate the interi…"
+- IEBTIIENEN004-2026-BTI68 (chapter 84, expected 8479.89): 8419.89 (95, review) · 8419.89 (95, review) · 8419.89 (95, review); correct in the top 3 in 3 of 3 runs. "A buffer preparation skid assembly. This is a stainless-steel vessel with a hea…"
+- IEBTIIENEN004-2026-BTI60 (chapter 85, expected 8538.90): 8536.30 (95, review) · 8536.30 (95, review) · 8536.30 (95, review); correct in the top 3 in 3 of 3 runs. "RESIDUAL CURRENT DETECTION MODULE CONSISTING OF A SENSOR PRINTED CIRCUIT BOARD …"
+- XIBTI505059567 (chapter 85, expected 8504.40): 8471.80 (95, review) · 8471.80 (95, review) · 8471.80 (95, review); correct in the top 3 in 3 of 3 runs. "Body Worn Camera Docking Station Black docking station with magnetic self-locat…"
+- MTBTI2025-011 (chapter 94, expected 9405.42): 9405.11 (95, auto_accept) · 9405.11 (98, auto_accept) · 9405.11 (95, auto_accept); correct in the top 3 in 3 of 3 runs. "An emergency light fitting with LEDs, having an internal power source in the fo…"
+- IEBTIIENEN004-2026-BTI72 (chapter 96, expected 9619.00): 6108.22 (95, review) · 6108.22 (95, review) · 6108.22 (95, review); correct in the top 3 in 3 of 3 runs. "Period Pants. They are made of knitted nylon fabric with an additional non-remo…"
+
+### Lines whose top-1 differed between runs (2)
+
+- IEBTIIENEN004-2024-BTI315 (expected 4202.32): 4202.92 (95, review) · 4202.32 (95, review) · 4202.92 (95, review)
+- IEBTIIENEN004-2026-BTI71 (expected 9619.00): 6108.21 (95, review) · 6108.21 (95, review) · 9619.00 (98, auto_accept)
+
+### Wrong but auto-accepted (the HS-6 layer)
+
+Per run: 1 / 1 / 1. In every run: 1 line, each among the lines wrong in every run above.
+
+### Precedent override (feature 008)
+
+With the switch on, at least 5 of the nearest rulings at the model's candidate 2 or 3 choose that candidate and auto-accept it. The entry above is the switch off; the switch on is replayed from the same model answers and rulings, so the two differ only where an override fired. HS-6 right: the HS-6 chosen, the top-1 when no override fired.
+
+| Run | Switch | HS-6 right | Auto-accepted | Wrong, auto-accepted | Right auto-accepts | End to end (estimate) |
+|---|---|---|---|---|---|---|
+| 1 | off | 17/43 | 13 | 1 | 12 | 14/43 |
+| 1 | on | 20/43 | 16 | 1 | 15 | 17/43 |
+| 2 | off | 18/43 | 13 | 1 | 12 | 15/43 |
+| 2 | on | 21/43 | 16 | 1 | 15 | 17/43 |
+| 3 | off | 18/43 | 14 | 1 | 13 | 16/43 |
+| 3 | on | 20/43 | 16 | 1 | 15 | 17/43 |
+
+Overrides that fired per run: 3 / 3 / 2, of which chose the right HS-6: 3 / 3 / 2. The rulings' majority supported the model's candidate 2 or 3 on 15 / 16 / 15 lines per run; that candidate was the right HS-6 on 13 / 14 / 13.
+
+- run 1: MTBTI2025-017 (expected 6307.90): candidate 2, 6307.90, instead of 6305.90; right
+- run 1: IEBTIIENEN004-2026-BTI72 (expected 9619.00): candidate 2, 9619.00, instead of 6108.22; right
+- run 1: IEBTIIENEN004-2026-BTI71 (expected 9619.00): candidate 2, 9619.00, instead of 6108.21; right
+- run 2: MTBTI2025-017 (expected 6307.90): candidate 2, 6307.90, instead of 6305.90; right
+- run 2: IEBTIIENEN004-2026-BTI72 (expected 9619.00): candidate 2, 9619.00, instead of 6108.22; right
+- run 2: IEBTIIENEN004-2026-BTI71 (expected 9619.00): candidate 2, 9619.00, instead of 6108.21; right
+- run 3: MTBTI2025-017 (expected 6307.90): candidate 2, 6307.90, instead of 6305.90; right
+- run 3: IEBTIIENEN004-2026-BTI72 (expected 9619.00): candidate 2, 9619.00, instead of 6108.22; right
+
+Model: google/gemini-2.5-flash. Line-by-line results of the latest run, iteration 27 (022-reasoning-desc): `tests/eval/hs6_eval.json`; since feature 007 each run also keeps its own, `tests/eval/hs6_eval_<tag>.json`; earlier runs are in the git history of `hs6_eval.json`.

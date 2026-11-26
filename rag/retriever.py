@@ -277,15 +277,19 @@ class HybridRetriever:
 
 def precedent_codes(bti_vectors: VectorSearch, bti_store: Any, query_vectors: list[list[float]], k: int = RETRIEVAL_K,
                     rrf_k: int = RRF_K, as_of: Any = None, exclude_refs: frozenset[str] | None = None,
-                    hits: list[list[tuple[str, float]]] | None = None) -> list[dict[str, Any]]:
+                    hits: list[list[tuple[str, float]]] | None = None,
+                    excerpt_from: str = "description", excerpt_chars: int = 200) -> list[dict[str, Any]]:
     """Precedent-driven retrieval: rank HS-6 codes by the BTI rulings whose goods match the queries.
 
     Each query's nearest rulings are fused with RRF; a code's score is the sum over its rulings, so a code backed by
     several similar rulings outranks one backed by a single ruling. Returns one entry per code, best first:
-    {code, score, rulings, reference, member_state, excerpt}, where reference/excerpt are the best-ranked ruling.
-    Rulings unknown to the store, without a code, or not valid on `as_of` are skipped, and so are the references in
-    `exclude_refs` (feature 006: an evaluation keeps a line's own ruling out; the product excludes nothing). `hits` are
-    the searches already run for the query vectors (feature 006: the HS-6 vote reads the same ones).
+    {code, score, rulings, reference, member_state, excerpt, prompt_excerpt}, where reference/excerpt are the best-ranked
+    ruling. `excerpt` is always the flattened description capped at 200 (feature 004: the Source card); `prompt_excerpt`
+    is what the ranking prompt shows, taken from `excerpt_from` ("description", "reasoning" or "description+reasoning")
+    capped at `excerpt_chars`, so with the defaults the two are equal (backlog item 22). Rulings unknown to the store,
+    without a code, or not valid on `as_of` are skipped, and so are the references in `exclude_refs` (feature 006: an
+    evaluation keeps a line's own ruling out; the product excludes nothing). `hits` are the searches already run for the
+    query vectors (feature 006: the HS-6 vote reads the same ones).
     """
     if hits is None:
         hits = [bti_vectors.search_by_vector(vec, k * 2, None) for vec in query_vectors]
@@ -300,9 +304,14 @@ def precedent_codes(bti_vectors: VectorSearch, bti_store: Any, query_vectors: li
             continue
         entry = by_code.get(code)
         if entry is None:
-            excerpt = " ".join((rec.get("description") or "").split())[:200]
+            description = " ".join((rec.get("description") or "").split())
+            if excerpt_from == "description+reasoning":
+                prompt = (description + " | " + " ".join((rec.get("reasoning") or "").split()))[:excerpt_chars]
+            else:
+                prompt = " ".join((rec.get(excerpt_from) or "").split())[:excerpt_chars]
             entry = by_code[code] = {"code": code, "score": 0.0, "rulings": 0, "reference": rec.get("reference", ""),
-                                     "member_state": rec.get("member_state", ""), "excerpt": excerpt}
+                                     "member_state": rec.get("member_state", ""), "excerpt": description[:200],
+                                     "prompt_excerpt": prompt}
         entry["score"] += score
         entry["rulings"] += 1
     return sorted(by_code.values(), key=lambda e: -e["score"])

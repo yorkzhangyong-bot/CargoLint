@@ -477,10 +477,12 @@ def stub_live_run(monkeypatch, runs):
     queue = iter(runs)
 
     def run_once(rulings, kb, client, as_of, workers, expansion=False, leave_one_out=True, customs_wording=False,
-                 vote_scope="candidates", proposal_scope="all", family_exclusion=False, siblings=None, note_texts=None):
+                 vote_scope="candidates", proposal_scope="all", family_exclusion=False, siblings=None, note_texts=None,
+                 precedent_excerpt="description", precedent_excerpt_chars=200):
         calls.append({"references": [r["reference"] for r in rulings], "as_of": as_of, "leave_one_out": leave_one_out,
                       "customs_wording": customs_wording, "vote_scope": vote_scope, "proposal_scope": proposal_scope,
-                      "family_exclusion": family_exclusion, "siblings": siblings, "note_texts": note_texts})
+                      "family_exclusion": family_exclusion, "siblings": siblings, "note_texts": note_texts,
+                      "precedent_excerpt": precedent_excerpt, "precedent_excerpt_chars": precedent_excerpt_chars})
         return next(queue), 1.0
 
     monkeypatch.setattr(ev, "run_once", run_once)
@@ -1097,13 +1099,16 @@ def test_the_families_file_matches_the_set_and_has_no_overlap():
 # --------------------------------------------------------------------------- backlog item 22: the note-text injection
 def test_note_texts_by_reference_maps_each_listed_line_to_its_notes():
     by_ref = ev.note_texts_by_reference(ev.ROOT / "tests" / "eval" / "hs6_note_texts.json")
-    # 3 treatment + 3 controls, but BTI23 is a control in two notes, so five unique references
-    assert set(by_ref) == {"IEBTIIENEN004-2024-BTI8", "IEBTIIENEN004-2026-BTI23", "SEBTITV-2026-01096",
-                           "CZBTI47/152108/2024-580000-04/01", "IEBTIIENEN004-2025-BTI38"}
+    # baskets: BTI8/BTI5/BTI7 + control BTI23; pet-toys: SEBTITV/CZBTI + controls BTI38, BTI23; BTI23 in two notes
+    assert set(by_ref) == {"IEBTIIENEN004-2024-BTI8", "IEBTIIENEN004-2024-BTI5", "IEBTIIENEN004-2024-BTI7",
+                           "IEBTIIENEN004-2026-BTI23", "SEBTITV-2026-01096", "CZBTI47/152108/2024-580000-04/01",
+                           "IEBTIIENEN004-2025-BTI38"}
     for ref, text in by_ref.items():
         assert text.startswith("EU classification note (applies to these goods):\n")
     assert by_ref["IEBTIIENEN004-2024-BTI8"].count("EU classification note") == 1        # the baskets note only
     assert "paper strips are twisted" in by_ref["IEBTIIENEN004-2024-BTI8"]
+    assert by_ref["IEBTIIENEN004-2024-BTI5"].count("EU classification note") == 1        # BTI5/BTI7 now baskets treatment too
+    assert "paper strips are twisted" in by_ref["IEBTIIENEN004-2024-BTI7"]
     assert by_ref["IEBTIIENEN004-2026-BTI23"].count("EU classification note") == 2       # baskets + pet toys, joined
     assert "intended exclusively for animals" in by_ref["IEBTIIENEN004-2026-BTI23"]
     assert "paper strips are twisted" in by_ref["IEBTIIENEN004-2026-BTI23"]
@@ -1153,3 +1158,27 @@ def test_references_filters_the_set_and_notes_reach_run_once(tmp_path, monkeypat
     assert calls[0]["references"] == ["A", "C"]                              # only the listed lines run
     assert set(calls[0]["note_texts"]) == {"A", "C"}                         # both treatment and controls get the note
     assert "DECIDING" in calls[0]["note_texts"]["A"] and "DECIDING" in calls[0]["note_texts"]["C"]
+
+
+def test_precedent_reasoning_reaches_the_ranking_prompt(small_index, fake_embeddings, rules, fake_llm):
+    from agent.llm import get_client
+    from rag.loader import KnowledgeBase
+    from rag.retriever import BM25Index, HybridRetriever, InMemoryVectorSearch
+
+    bti = BTIStore([{"reference": "NL-1", "code": "3926.90", "member_state": "NL", "valid_from": "2024-01-01",
+                     "valid_to": "2027-01-01", "description": "Protective case for a smartphone",
+                     "reasoning": "GIR 1 and 6. Note 2 to chapter 39."}])
+    bti_vectors = SimpleNamespace(search_by_vector=lambda *a, **k: [("bti:NL-1", 0.99)])
+    kb = KnowledgeBase(small_index, HybridRetriever(bm25=BM25Index([(c.id, c.text) for c in small_index.chunks]),
+                                                    vectors=InMemoryVectorSearch(
+                                                        [(c.id, c.text, c.metadata) for c in small_index.chunks],
+                                                        fake_embeddings),
+                                                    chunks=small_index), bti, rules,
+                       {"embedding_model": "fake", "built_at": "2026-11-18T00:00:00"}, fake_embeddings,
+                       bti_vectors=bti_vectors)
+    rulings = [{"reference": "LISTED", "chapter": "39", "cn8": "39269097", "language": "en",
+                "description": "alpha goods line"}]
+    ev.run_once(rulings, kb, get_client(), date(2026, 11, 18), workers=1, precedent_excerpt="reasoning")
+    prompts = fake_llm.prompts_for("RankOut")
+    assert any("GIR 1 and 6. Note 2 to chapter 39." in p for p in prompts)   # the reasoning is the precedent excerpt
+    assert not any("Protective case for a smartphone" in p for p in prompts)  # the description is not (it is not in the chunk)
